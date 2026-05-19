@@ -13,7 +13,7 @@ When `instructor_repo_token` is provided the action:
 1. Resolves the assignment name from the student repo's `template_repository` field (set automatically by GitHub Classroom). For non-Classroom repos it falls back to the source repository name.
 2. Derives the instructor repository name as `{assignment-name}-grillmycode` in the same organisation.
 3. Creates the repository as **private** on first run if it does not already exist.
-4. Writes the full assessment (questions and answers) to `{student-login}.md` at the root of the instructor repository, overwriting any previous run for the same student.
+4. Creates a folder named `{student-login}/` in the instructor repository and writes the full assessment (questions and answers) to `{student-login}/questions.md`, overwriting any previous run for the same student. The folder is created automatically if it does not already exist.
 
 The student-facing report is unaffected — whether it includes answers is still controlled by the existing `include_answers` input.
 
@@ -64,7 +64,7 @@ For a Classroom assignment named `assignment-1`:
 
 - Student repos: `your-org/assignment-1-student-login`
 - Instructor repo (auto-created): `your-org/assignment-1-grillmycode`
-- File written per student: `student-login.md`
+- File written per student: `student-login/questions.md`
 
 The assignment name is resolved automatically from the `template_repository` that GitHub Classroom sets on every student repo — no configuration is needed beyond the token.
 
@@ -73,7 +73,7 @@ The assignment name is resolved automatically from the `template_repository` tha
 For a generic repository named `my-project`:
 
 - Instructor repo (auto-created): `your-org/my-project-grillmycode`
-- File written per student: `student-login.md` (resolved from the most recent non-bot git commit author)
+- File written per student: `student-login/questions.md` (resolved from the most recent non-bot git commit author)
 
 ## Instructor report contents
 

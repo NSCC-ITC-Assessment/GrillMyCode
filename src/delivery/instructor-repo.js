@@ -5,7 +5,7 @@
  * a private instructor-only repository using the GitHub Contents API. The
  * repository is created automatically if it does not already exist.
  *
- * The file is written to the root of the repository as {studentLogin}.md.
+ * The file is written to {studentLogin}/questions.md inside the repository.
  * The repository is named {assignmentName}-grillmycode and lives in the same
  * organisation as the student repositories.
  *
@@ -58,11 +58,12 @@ export async function deliverToInstructorRepo({
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
 
-  const filePath = `${studentLogin}.md`;
+  const filePath = `${studentLogin}/questions.md`;
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const message = `chore: update assessment for ${studentLogin} at ${shortHead} [skip ci]`;
 
   // Fetch the existing file's blob SHA (required by the API when updating).
+  // The student folder is created implicitly by the API if it does not exist.
   let existingSha;
   try {
     const { data } = await octokit.rest.repos.getContent({
@@ -73,7 +74,7 @@ export async function deliverToInstructorRepo({
     existingSha = data.sha;
   } catch (err) {
     if (err.status !== 404) throw err;
-    // File does not exist yet — will be created.
+    // File (and folder) does not exist yet — both will be created.
   }
 
   await octokit.rest.repos.createOrUpdateFileContents({
@@ -85,5 +86,5 @@ export async function deliverToInstructorRepo({
     sha: existingSha,
   });
 
-  core.info(`Instructor assessment written to ${owner}/${instructorRepoName}: ${filePath}`);
+  core.info(`Instructor assessment written to ${owner}/${instructorRepoName}/${filePath}`);
 }

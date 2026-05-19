@@ -103,7 +103,7 @@ When the first student opens a pull request:
 1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode`) exists in your org.
 3. If it does not exist yet, the action **creates it automatically as a private repository**.
-4. It writes the full Q+A assessment to `{student-login}.md` at the root of the instructor repo.
+4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
 
 For subsequent students the repo already exists — the action just adds or updates their individual file.
 
@@ -117,16 +117,16 @@ After the first student submission, find the instructor repository at:
 https://github.com/{your-org}/{assignment-name}-grillmycode
 ```
 
-Each student's assessment is a single file at the root:
+Each student's assessment is stored in a dedicated folder:
 
 ```
-{student-login}.md
+{student-login}/questions.md
 ```
 
 For example, if your org is `my-school`, your assignment is `lab-3`, and a student's login is `jsmith`:
 
 - Instructor repo: `https://github.com/my-school/lab-3-grillmycode`
-- Student file: `https://github.com/my-school/lab-3-grillmycode/blob/main/jsmith.md`
+- Student file: `https://github.com/my-school/lab-3-grillmycode/blob/main/jsmith/questions.md`
 
 Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student.
 
