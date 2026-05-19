@@ -257,11 +257,13 @@ runs:
     INPUT_AI_PROVIDER: ${{ inputs.ai_provider }}
     INPUT_AI_MODEL: ${{ inputs.ai_model }}
     INPUT_AI_RETRY_MAX_ATTEMPTS: ${{ inputs.ai_retry_max_attempts }}
+    INPUT_AI_TEMPERATURE: ${{ inputs.ai_temperature }}
     INPUT_API_KEY: ${{ inputs.api_key }}
     INPUT_AZURE_ENDPOINT: ${{ inputs.azure_endpoint }}
     INPUT_NUM_QUESTIONS: ${{ inputs.num_questions }}
     INPUT_INCLUDE_PATTERNS: ${{ inputs.include_patterns }}
     INPUT_EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
+    INPUT_EXCLUDE_WORKFLOW_FILES: ${{ inputs.exclude_workflow_files }}
     INPUT_OUTPUT_FILE: ${{ inputs.output_file }}
     INPUT_POST_PR_COMMENT: ${{ inputs.post_pr_comment }}
     INPUT_POST_ISSUE: ${{ inputs.post_issue }}
