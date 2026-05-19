@@ -268,7 +268,9 @@ async function run() {
     }
 
     // ── Write to instructor repository ──────────────────────────────────────
-    if (inputs.instructorRepoToken) {
+    if (!inputs.instructorRepoToken) {
+      core.info('instructor_repo_token is not set — skipping instructor repository delivery.');
+    } else {
       const instructorOctokit = github.getOctokit(inputs.instructorRepoToken, {
         headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
       });
