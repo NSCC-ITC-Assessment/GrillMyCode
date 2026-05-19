@@ -16,7 +16,7 @@ sidebar_position: 1
 | `api_key` | No | | API key for the provider. For `github-models`, leave empty to use `github_token`, or supply an instructor PAT to override it |
 | `azure_endpoint` | No | | Azure OpenAI endpoint URL (required for `azure-openai`) |
 | `num_questions` | No | `5` | Number of questions to generate (minimum 1, maximum 50). Values above 50 are automatically capped |
-| `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:**. Answers are written in plain, everyday language and avoid technical jargon. Useful for generating an instructor copy |
+| `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the student-facing report. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting. Answers are written in plain, everyday language and avoid technical jargon |
 | `include_patterns` | No | | Comma-separated globs for files to include |
 | `exclude_patterns` | No | *(common non-code files)* | Comma-separated globs for files to exclude |
 | `output_file` | No | `grill-my-code.md` | Filename for the output Markdown file |
@@ -24,6 +24,7 @@ sidebar_position: 1
 | `post_issue` | No | `false` | Create a GitHub Issue with the assessment. Automatically assigned to the student who authored the head commit |
 | `post_discussion` | No | `false` | Create a GitHub Discussion with the assessment. Discussions are enabled automatically if not already on |
 | `discussion_category` | No | `Assessments` | Discussion category name |
+| `instructor_repo_token` | No | | PAT with `repo` scope and permission to create repositories in the same organisation. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode` in the same organisation. The repository is created automatically on first run. The assignment name is resolved from the student repo's `template_repository` (GitHub Classroom), falling back to the source repo name. Leave empty to disable instructor repository delivery |
 | `additional_context` | No | | Instructor-specific instructions for this assignment. Injected into the system prompt and takes precedence over default behaviour. Supports multi-line instructions |
 | `assignment_context` | No | | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `additional_context`. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"README.md, docs/brief.pdf, rubric.docx"` |
 | `assignment_context_max_chars` | No | `20000` | Maximum total characters read from all `assignment_context` files combined. Prevents large files from flooding the prompt. Values below 1 are clamped to 1 |

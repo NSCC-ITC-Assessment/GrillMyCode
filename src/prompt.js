@@ -38,7 +38,6 @@ export function buildPrompt({
   context: extraContext,
   assignmentContext,
   truncated,
-  includeAnswers,
 }) {
   const assignmentContextSection = assignmentContext
     ? `\n\n---\n\nASSIGNMENT CONTEXT — HIGH PRIORITY\nThe following files describe the assignment requirements. They take precedence over the general guidelines above. Use them to focus your questions on the specific learning objectives and requirements of this assignment. Instructor instructions below take precedence over this section if there is any conflict.\n\n${assignmentContext}`
@@ -49,7 +48,7 @@ export function buildPrompt({
     : '';
 
   const system = `
-You are an expert programming educator. Analyze the submitted student code and generate exactly ${numQuestions} targeted questions whose answers require genuine understanding of what was written.
+You are an expert programming educator. Analyze the submitted student code and generate exactly ${numQuestions} targeted questions whose answers require genuine understanding of what was written. You must produce exactly ${numQuestions} questions — no more, no fewer. Producing a different number is an error.
 
 Calibrate question depth to the code's complexity — questions may address syntax/logic, data structures/algorithms, language patterns, or architecture (e.g. MVC, layering).
 
@@ -105,7 +104,7 @@ def hello_world():
 
 
 
-Generate exactly ${numQuestions} questions in total across all sections combined. Do not generate fewer, do not generate more.
+Generate exactly ${numQuestions} questions in total across all sections combined — this is a hard limit. Stop after question ${numQuestions}. Do not generate question ${numQuestions + 1} or beyond.
 First generate specific code-based questions grounded directly in the visible code.
 If you cannot reach ${numQuestions} specific code-based questions without becoming shallow or repetitive, fill the remaining slots with a **## Broader Questions** section.
 
@@ -117,15 +116,23 @@ Broader Questions must:
 
 If ${numQuestions} specific code-based questions can be generated without becoming shallow, repetitive, or forced, omit the **## Broader Questions** section entirely.
 
-${includeAnswers ? `\n\nAfter each question, add the answer indented with three spaces (to align with the body text of the numbered list item) in this exact format:\n\n   **Answer:** [Your answer here]\n\nDo NOT place a --- separator between the question and its answer. The --- separator must only appear after the answer, to separate one question-answer pair from the next.\n\nWrite the answer in plain, everyday language that a non-technical person could understand. Avoid jargon — if a technical term is essential, explain it in simple words. Keep the answer as short and direct as possible.` : ''}
 
-Respond only with the generated Markdown question content${includeAnswers ? ' (questions and their answers)' : ''}. Do not include explanations, introductions, or summaries${includeAnswers ? '' : ', or answers'}.${assignmentContextSection}${contextSection}`;
+
+After each question, add the answer indented with three spaces (to align with the body text of the numbered list item) in this exact format:
+
+   **Answer:** [Your answer here]
+
+Do NOT place a --- separator between the question and its answer. The --- separator must only appear after the answer, to separate one question-answer pair from the next.
+
+Write the answer in plain, everyday language that a non-technical person could understand. Avoid jargon — if a technical term is essential, explain it in simple words. Keep the answer as short and direct as possible.
+
+Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, or summaries.${assignmentContextSection}${contextSection}`;
 
   const truncatedNote = truncated
     ? '\n> ⚠️ The code below has been truncated — form questions based on the visible portion.\n'
     : '';
 
-  const user = `Analyze the submitted student code and generate exactly ${numQuestions} targeted questions requiring genuine understanding of what was written.
+  const user = `Analyze the submitted student code and generate exactly ${numQuestions} targeted questions requiring genuine understanding of what was written. Stop at question ${numQuestions}.
 
 **Changed files:** ${files.join(', ')}${truncatedNote}
 ${codeContent}`;

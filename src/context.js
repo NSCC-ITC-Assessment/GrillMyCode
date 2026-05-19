@@ -135,6 +135,74 @@ export function resolveBranch(ctx) {
 }
 
 /**
+ * Resolves the assignment name for the instructor repository.
+ *
+ * For GitHub Classroom repos, the student's repository is created from a
+ * template whose name is the assignment slug (e.g. "assignment-1"). The
+ * GitHub API exposes this via `template_repository.name`. For non-Classroom
+ * repos (where no template was used), the source repository name is used as
+ * the assignment name.
+ */
+/**
+ * Strips the student login suffix from a GitHub Classroom repo name.
+ *
+ * Classroom repos follow the pattern {assignment-slug}-{student-login}.
+ * Because we have the confirmed student login we can strip it unambiguously
+ * even when the login itself contains hyphens.
+ *
+ * Returns the stripped name, or the original if no match is found.
+ */
+function stripStudentLoginSuffix(repoName, studentLogin) {
+  if (studentLogin && repoName.toLowerCase().endsWith('-' + studentLogin.toLowerCase())) {
+    return repoName.slice(0, -(studentLogin.length + 1));
+  }
+  return repoName;
+}
+
+/**
+ * Resolves the assignment name for the instructor repository.
+ *
+ * Resolution order (first match wins):
+ *   1. template_repository.name — set by GitHub Classroom when the assignment
+ *      has a starter code repository. This is the cleanest source.
+ *   2. Strip "-{studentLogin}" suffix from the repo name — handles Classroom
+ *      assignments created without starter code (template_repository is null
+ *      in that case). Because studentLogin is already confirmed, this is
+ *      unambiguous even for logins that contain hyphens.
+ *   3. Full source repo name — generic fallback for non-Classroom repos.
+ */
+export async function resolveAssignmentName(ctx, octokit, studentLogin) {
+  try {
+    const { data } = await octokit.rest.repos.get({
+      owner: ctx.repo.owner,
+      repo: ctx.repo.repo,
+    });
+    if (data.template_repository?.name) {
+      return data.template_repository.name;
+    }
+    // template_repository is null — either a Classroom assignment created
+    // without starter code, or a non-Classroom repo. If the repo name contains
+    // a hyphen it is likely a Classroom repo; warn so the instructor knows the
+    // assignment name is being inferred rather than read from the template.
+    if (ctx.repo.repo.includes('-')) {
+      core.warning(
+        `Instructor repo: template_repository is not set on ${ctx.repo.repo}. ` +
+          `This is expected for Classroom assignments created without starter code. ` +
+          `Inferring assignment name by stripping the student login suffix — ` +
+          `verify the instructor repository name is correct after the first run.`,
+      );
+    }
+    return stripStudentLoginSuffix(ctx.repo.repo, studentLogin);
+  } catch (err) {
+    core.warning(
+      `Could not fetch repository metadata to resolve assignment name: ${err.message}. ` +
+        `Falling back to source repository name.`,
+    );
+    return stripStudentLoginSuffix(ctx.repo.repo, studentLogin);
+  }
+}
+
+/**
  * Derives the effective output file path under the .assessment/ folder.
  *
  * On main/master (or when the branch is unknown) the file is named after
