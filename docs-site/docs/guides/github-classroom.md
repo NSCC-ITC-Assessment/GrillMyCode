@@ -64,3 +64,7 @@ See the [GitHub Models section of the AI Providers page](../ai-providers#using-a
 ## Assessment issue assignment
 
 When `post_issue: 'true'` is set, the created issue is automatically assigned to the student who authored the head commit. The action resolves the student login by walking the commit range newest-first and skipping commits from `skip_committers` — ensuring the action's own assessment-file commit is never mistaken for a student commit.
+
+## Private instructor repository
+
+The action can automatically store a private copy of every assessment — including both questions and answers — in a repository that only instructors can access. See the [Instructor Setup guide](instructor-setup) for step-by-step instructions on enabling this for your classroom.

@@ -19,8 +19,12 @@ The student-facing report is unaffected — whether it includes answers is still
 
 ## Prerequisites
 
-1. Create a PAT (classic or fine-grained) with `repo` scope **and** permission to create repositories in the organisation.
-2. Add the token as a repository secret named `INSTRUCTOR_REPO_TOKEN` on every student repository (or at the organisation level via a shared secret).
+See the **[Instructor Setup guide](../guides/instructor-setup)** for full step-by-step instructions, including how to create the PAT and add it as an org-level secret so all student repositories inherit it automatically.
+
+In short:
+
+1. Create a PAT with `repo` scope (classic) or Administration + Contents write permissions (fine-grained).
+2. Add it as an **org-level** Actions secret named `INSTRUCTOR_REPO_TOKEN` — this makes it available to all student repos without any per-repo configuration.
 
 ## Example workflow
 
