@@ -134,6 +134,19 @@ jobs:
           # Discussion category name (must already exist in repository settings).
           discussion_category: "Assessments"
 
+          # ── Instructor repository ─────────────────────────────────────────
+
+          # PAT with repo scope and permission to create repositories in the
+          # same organisation as the student repositories. When provided, the
+          # action writes a private instructor-only report (questions AND answers)
+          # to a repository named {assignment-name}-grillmycode in the same org.
+          # The repository is auto-created on first run if it does not exist.
+          # The assignment name is resolved from the student repo's
+          # template_repository (GitHub Classroom), falling back to the source
+          # repo name for non-Classroom setups.
+          # Leave empty (default) to disable instructor repository delivery.
+          # instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+
           # ── Comment stripping ─────────────────────────────────────────────
 
           # When false (default), inline and block comments are stripped from

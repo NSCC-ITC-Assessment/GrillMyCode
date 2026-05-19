@@ -110,5 +110,6 @@ export function readInputs() {
     })(),
     baseSha: core.getInput('base_sha') || '',
     headSha: core.getInput('head_sha') || '',
+    instructorRepoToken: core.getInput('instructor_repo_token') || '',
   };
 }

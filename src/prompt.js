@@ -38,7 +38,6 @@ export function buildPrompt({
   context: extraContext,
   assignmentContext,
   truncated,
-  includeAnswers,
 }) {
   const assignmentContextSection = assignmentContext
     ? `\n\n---\n\nASSIGNMENT CONTEXT — HIGH PRIORITY\nThe following files describe the assignment requirements. They take precedence over the general guidelines above. Use them to focus your questions on the specific learning objectives and requirements of this assignment. Instructor instructions below take precedence over this section if there is any conflict.\n\n${assignmentContext}`
@@ -117,9 +116,17 @@ Broader Questions must:
 
 If ${numQuestions} specific code-based questions can be generated without becoming shallow, repetitive, or forced, omit the **## Broader Questions** section entirely.
 
-${includeAnswers ? `\n\nAfter each question, add the answer indented with three spaces (to align with the body text of the numbered list item) in this exact format:\n\n   **Answer:** [Your answer here]\n\nDo NOT place a --- separator between the question and its answer. The --- separator must only appear after the answer, to separate one question-answer pair from the next.\n\nWrite the answer in plain, everyday language that a non-technical person could understand. Avoid jargon — if a technical term is essential, explain it in simple words. Keep the answer as short and direct as possible.` : ''}
 
-Respond only with the generated Markdown question content${includeAnswers ? ' (questions and their answers)' : ''}. Do not include explanations, introductions, or summaries${includeAnswers ? '' : ', or answers'}.${assignmentContextSection}${contextSection}`;
+
+After each question, add the answer indented with three spaces (to align with the body text of the numbered list item) in this exact format:
+
+   **Answer:** [Your answer here]
+
+Do NOT place a --- separator between the question and its answer. The --- separator must only appear after the answer, to separate one question-answer pair from the next.
+
+Write the answer in plain, everyday language that a non-technical person could understand. Avoid jargon — if a technical term is essential, explain it in simple words. Keep the answer as short and direct as possible.
+
+Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, or summaries.${assignmentContextSection}${contextSection}`;
 
   const truncatedNote = truncated
     ? '\n> ⚠️ The code below has been truncated — form questions based on the visible portion.\n'

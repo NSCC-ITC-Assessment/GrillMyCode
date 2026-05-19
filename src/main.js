@@ -18,10 +18,11 @@ import {
   MAX_DIFF_CHARS,
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
+  INSTRUCTOR_REPO_SUFFIX,
   STUDENT_RESOLUTION_SKIP_COMMITTERS,
 } from './constants.js';
 import { readInputs } from './inputs.js';
-import { resolveSHAs, resolveBranch, resolveOutputFile } from './context.js';
+import { resolveSHAs, resolveBranch, resolveOutputFile, resolveAssignmentName } from './context.js';
 import { getChangedFiles, getDiff, findStudentCommitSha } from './git.js';
 import {
   filterFiles,
@@ -36,6 +37,21 @@ import { formatReport } from './report.js';
 import { commitAssessmentFile } from './delivery/commit.js';
 import { postIssue } from './delivery/issue.js';
 import { postDiscussion } from './delivery/discussion.js';
+import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+
+/**
+ * Removes answer lines from AI-generated Q+A text for student-facing output.
+ * The AI always generates answers; this strips them programmatically when
+ * include_answers is false, so the instructor copy always retains full Q+A.
+ *
+ * Matches lines of the form "   **Answer:** ..." (3-space indent) and collapses
+ * any resulting triple+ blank lines down to a double blank line.
+ */
+function stripAnswers(text) {
+  return text.replace(/^ {3}\*\*Answer:\*\*[^\n]*/gm, '').replace(/\n{3,}/g, '\n\n');
+}
 
 // ─── Entry Point ─────────────────────────────────────────────────────────────
 
@@ -57,6 +73,9 @@ async function run() {
     // Prevent the external API key from appearing in workflow logs.
     if (inputs.apiKey && inputs.apiKey !== inputs.githubToken) {
       core.setSecret(inputs.apiKey);
+    }
+    if (inputs.instructorRepoToken) {
+      core.setSecret(inputs.instructorRepoToken);
     }
 
     // ── Resolve the commit range ────────────────────────────────────────────
@@ -159,7 +178,6 @@ async function run() {
       context: inputs.additionalContext,
       assignmentContext,
       truncated,
-      includeAnswers: inputs.includeAnswers,
     });
     core.debug(`Prompt messages:\n${JSON.stringify(messages, null, 2)}`);
 
@@ -170,7 +188,7 @@ async function run() {
     const effectiveApiKey =
       inputs.aiProvider === 'github-models' ? inputs.apiKey || inputs.githubToken : inputs.apiKey;
 
-    const questions = await callAI({
+    const rawQuestions = await callAI({
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       apiKey: effectiveApiKey,
@@ -179,6 +197,11 @@ async function run() {
       retryMaxAttempts: inputs.aiRetryMaxAttempts,
       temperature: inputs.aiTemperature,
     });
+
+    // Strip answers for student-facing output when include_answers is false.
+    // The AI always generates answers; rawQuestions always contains the full
+    // Q+A and is used unchanged for the instructor report.
+    const questions = inputs.includeAnswers ? rawQuestions : stripAnswers(rawQuestions);
 
     // ── Write output ────────────────────────────────────────────────────────
     const report = formatReport({
@@ -242,6 +265,43 @@ async function run() {
         headSha,
         categoryName: inputs.discussionCategory,
       });
+    }
+
+    // ── Write to instructor repository ──────────────────────────────────────
+    if (inputs.instructorRepoToken) {
+      const instructorOctokit = github.getOctokit(inputs.instructorRepoToken, {
+        headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
+      });
+      const assignmentName = await resolveAssignmentName(ctx, octokit, studentLogin);
+      const instructorRepoName = assignmentName + INSTRUCTOR_REPO_SUFFIX;
+      const instructorReport = formatReport({
+        questions: rawQuestions,
+        files,
+        allChangedFiles: allFiles,
+        baseSha,
+        headSha,
+        truncated,
+        provider: inputs.aiProvider,
+        model: inputs.aiModel,
+        branchName,
+        assignmentContextFiles,
+        studentLogin,
+        sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
+      });
+      try {
+        await deliverToInstructorRepo({
+          octokit: instructorOctokit,
+          owner: ctx.repo.owner,
+          instructorRepoName,
+          studentLogin,
+          content: instructorReport,
+          headSha,
+        });
+      } catch (err) {
+        core.error(
+          `Failed to write to instructor repository ${ctx.repo.owner}/${instructorRepoName}: ${err.message}`,
+        );
+      }
     }
   } catch (err) {
     core.setFailed(`Assessment failed: ${err.message}`);

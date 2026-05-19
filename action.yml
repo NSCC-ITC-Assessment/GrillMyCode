@@ -78,8 +78,10 @@ inputs:
   include_answers:
     description: >
       When true, each question is immediately followed by its answer, labelled
-      "Answer:". Answers use plain, everyday language and avoid technical jargon.
-      Useful for generating a marked instructor copy alongside the student copy.
+      "Answer:", in the student-facing report. The instructor repository
+      (when instructor_repo_token is configured) always includes answers
+      regardless of this setting. Answers use plain, everyday language and
+      avoid technical jargon.
     required: false
     default: "false"
 
@@ -140,6 +142,18 @@ inputs:
       Example: "Assessments"
     required: false
     default: "Assessments"
+
+  instructor_repo_token:
+    description: >
+      Personal Access Token (PAT) with repo scope and permission to create
+      repositories in the same organisation as the student repositories.
+      When provided, the action writes a private instructor-only assessment
+      file (questions and answers) to a repository named
+      {assignment-name}-grillmycode in the same organisation. The repository
+      is created automatically on first run if it does not already exist.
+      Leave empty to disable instructor repository delivery.
+    required: false
+    default: ""
 
   assignment_context:
     description: >

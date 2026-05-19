@@ -120,6 +120,12 @@ export const COMMENT_REMOVER_BIN = '/usr/local/bin/rmcm';
 export const MIN_QUESTIONS = 1;
 
 /**
+ * Suffix appended to the assignment name to form the instructor repository
+ * name (e.g. "assignment-1" + INSTRUCTOR_REPO_SUFFIX → "assignment-1-grillmycode").
+ */
+export const INSTRUCTOR_REPO_SUFFIX = '-grillmycode';
+
+/**
  * Default maximum total characters read from all assignment_context files
  * combined. Overridable via the assignment_context_max_chars action input.
  * Prevents large files from flooding the prompt.

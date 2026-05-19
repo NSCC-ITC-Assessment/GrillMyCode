@@ -9,6 +9,14 @@ import { GIT_SHA_SHORT_LENGTH } from './constants.js';
 
 /**
  * Assembles the full Markdown assessment report.
+ *
+ * The optional `studentLogin`, `sourceRepo`, and `allChangedFiles` parameters
+ * are used when generating the instructor copy of the report:
+ *   - studentLogin     — GitHub login of the assessed student
+ *   - sourceRepo       — full "owner/repo" name of the student's repository
+ *   - allChangedFiles  — unfiltered list of all files changed since the base
+ *                        SHA; when provided it replaces the filtered `files`
+ *                        list in the report metadata
  */
 export function formatReport({
   questions,
@@ -20,11 +28,15 @@ export function formatReport({
   model,
   branchName,
   assignmentContextFiles,
+  studentLogin,
+  sourceRepo,
+  allChangedFiles,
 }) {
   const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
   const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
-  const fileList = files.map((f) => `\`${f}\``).join(', ');
+  const displayFiles = allChangedFiles ?? files;
+  const fileList = displayFiles.map((f) => `\`${f}\``).join(', ');
   const truncNote = truncated
     ? '> **⚠️ Note:** The content was truncated — questions may not cover all changes.\n'
     : '';
@@ -37,10 +49,15 @@ export function formatReport({
       ? `> **Assignment Context:** ${assignmentContextFiles.map((f) => `\`${f}\``).join(', ')}\n`
       : '';
 
+  const studentNote = studentLogin ? `> **Student:** \`${studentLogin}\`\n` : '';
+  const sourceRepoNote = sourceRepo ? `> **Repository:** \`${sourceRepo}\`\n` : '';
+
   return [
     '## Grill My Code',
     '',
     `> **Generated:** ${date}`,
+    studentNote,
+    sourceRepoNote,
     `> **Commits reviewed:** \`${shortBase}\` → \`${shortHead}\``,
     branchNote,
     `> **Code Files Assessed:** ${fileList}`,
