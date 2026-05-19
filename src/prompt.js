@@ -48,7 +48,7 @@ export function buildPrompt({
     : '';
 
   const system = `
-You are an expert programming educator. Analyze the submitted student code and generate exactly ${numQuestions} targeted questions whose answers require genuine understanding of what was written.
+You are an expert programming educator. Analyze the submitted student code and generate exactly ${numQuestions} targeted questions whose answers require genuine understanding of what was written. You must produce exactly ${numQuestions} questions — no more, no fewer. Producing a different number is an error.
 
 Calibrate question depth to the code's complexity — questions may address syntax/logic, data structures/algorithms, language patterns, or architecture (e.g. MVC, layering).
 
@@ -104,7 +104,7 @@ def hello_world():
 
 
 
-Generate exactly ${numQuestions} questions in total across all sections combined. Do not generate fewer, do not generate more.
+Generate exactly ${numQuestions} questions in total across all sections combined — this is a hard limit. Stop after question ${numQuestions}. Do not generate question ${numQuestions + 1} or beyond.
 First generate specific code-based questions grounded directly in the visible code.
 If you cannot reach ${numQuestions} specific code-based questions without becoming shallow or repetitive, fill the remaining slots with a **## Broader Questions** section.
 
@@ -132,7 +132,7 @@ Respond only with the generated Markdown question content (questions and their a
     ? '\n> ⚠️ The code below has been truncated — form questions based on the visible portion.\n'
     : '';
 
-  const user = `Analyze the submitted student code and generate exactly ${numQuestions} targeted questions requiring genuine understanding of what was written.
+  const user = `Analyze the submitted student code and generate exactly ${numQuestions} targeted questions requiring genuine understanding of what was written. Stop at question ${numQuestions}.
 
 **Changed files:** ${files.join(', ')}${truncatedNote}
 ${codeContent}`;
