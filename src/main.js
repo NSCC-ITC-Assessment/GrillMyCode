@@ -279,7 +279,6 @@ async function run() {
       const instructorReport = formatReport({
         questions: rawQuestions,
         files,
-        allChangedFiles: allFiles,
         baseSha,
         headSha,
         truncated,
