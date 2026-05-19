@@ -292,3 +292,4 @@ runs:
     INPUT_BASE_SHA: ${{ inputs.base_sha }}
     INPUT_HEAD_SHA: ${{ inputs.head_sha }}
     INPUT_INCLUDE_ANSWERS: ${{ inputs.include_answers }}
+    INPUT_INSTRUCTOR_REPO_TOKEN: ${{ inputs.instructor_repo_token }}
