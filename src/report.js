@@ -49,7 +49,7 @@ export function formatReport({
       ? `> **Assignment Context:** ${assignmentContextFiles.map((f) => `\`${f}\``).join(', ')}\n`
       : '';
 
-  const studentNote = studentLogin ? `> **Student:** \`${studentLogin}\`\n` : '';
+  const studentNote = studentLogin ? `\n> **Student:** \`${studentLogin}\`\n` : '';
   const sourceRepoNote = sourceRepo ? `> **Repository:** \`${sourceRepo}\`\n` : '';
 
   return [
