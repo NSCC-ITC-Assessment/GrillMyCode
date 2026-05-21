@@ -79,18 +79,11 @@ export const COMMENT_STRIP_TIMEOUT_MS = 10_000;
 export const DEFAULT_AI_TEMPERATURE = 0.5;
 
 /**
- * How many times to retry a Contents API write immediately after a fresh
- * instructor repository is created.  GitHub's auto_init initialisation is
- * asynchronous, so the first write often returns 404 before the default
- * branch is ready.
+ * Default branch name used when initialising a new instructor repository.
+ * The branch is created explicitly via the Git Data API so the name must be
+ * known up-front.
  */
-export const INSTRUCTOR_REPO_INIT_RETRIES = 5;
-
-/**
- * Milliseconds to wait between each retry attempt when the instructor repo's
- * default branch is not yet ready after creation.
- */
-export const INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS = 2000;
+export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
 
 /**
  * AI nucleus-sampling probability mass cutoff.

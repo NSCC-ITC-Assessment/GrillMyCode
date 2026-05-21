@@ -15,11 +15,7 @@
 
 import * as core from '@actions/core';
 import { Buffer } from 'node:buffer';
-import {
-  GIT_SHA_SHORT_LENGTH,
-  INSTRUCTOR_REPO_INIT_RETRIES,
-  INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS,
-} from '../constants.js';
+import { GIT_SHA_SHORT_LENGTH, INSTRUCTOR_REPO_DEFAULT_BRANCH } from '../constants.js';
 
 /**
  * GitHub Actions workflow YAML committed into each newly-created instructor
@@ -50,72 +46,68 @@ jobs:
 const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/student-questions-added.yml';
 
 /**
- * Commits the student-questions workflow into the instructor repo if it does
- * not already exist.  Called once, immediately after repo creation.
- */
-async function ensureStudentQuestionsWorkflow(octokit, owner, instructorRepoName) {
-  try {
-    await octokit.rest.repos.getContent({
-      owner,
-      repo: instructorRepoName,
-      path: STUDENT_QUESTIONS_WORKFLOW_PATH,
-    });
-    // File already present — nothing to do.
-    return;
-  } catch (err) {
-    if (err.status !== 404) throw err;
-  }
-
-  // Retry because GitHub's auto_init is asynchronous — the default branch may
-  // not be ready for writes until a moment after createInOrg returns.
-  let lastErr;
-  for (let attempt = 1; attempt <= INSTRUCTOR_REPO_INIT_RETRIES; attempt++) {
-    try {
-      await octokit.rest.repos.createOrUpdateFileContents({
-        owner,
-        repo: instructorRepoName,
-        path: STUDENT_QUESTIONS_WORKFLOW_PATH,
-        message: 'chore: add student-questions-added workflow [skip ci]',
-        content: Buffer.from(STUDENT_QUESTIONS_WORKFLOW, 'utf-8').toString('base64'),
-      });
-      core.info(
-        `Workflow committed to ${owner}/${instructorRepoName}/${STUDENT_QUESTIONS_WORKFLOW_PATH}`,
-      );
-      return;
-    } catch (err) {
-      if (err.status !== 404) throw err;
-      core.info(
-        `Instructor repo not yet ready (attempt ${attempt}/${INSTRUCTOR_REPO_INIT_RETRIES}) — retrying in ${INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS}ms…`,
-      );
-      lastErr = err;
-      await new Promise((resolve) => setTimeout(resolve, INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS));
-    }
-  }
-  throw lastErr;
-}
-
-/**
  * Ensures the instructor repository exists, creating it (private) if not.
- * When the repository is first created the student-questions workflow is also
- * committed so it is available from the very first push.
+ *
+ * When the repository is first created the student-questions workflow is
+ * committed as the initial commit using the Git Data API.  This avoids the
+ * race condition where GitHub's auto_init may not have landed by the time
+ * the Contents API is called.
  */
 async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
   try {
     await octokit.rest.repos.get({ owner, repo: instructorRepoName });
+    return; // already exists
   } catch (err) {
     if (err.status !== 404) throw err;
-
-    core.info(`Instructor repository ${owner}/${instructorRepoName} not found — creating it now.`);
-    await octokit.rest.repos.createInOrg({
-      org: owner,
-      name: instructorRepoName,
-      private: true,
-      auto_init: true,
-    });
-    core.info(`Instructor repository ${owner}/${instructorRepoName} created (private).`);
-
-    await ensureStudentQuestionsWorkflow(octokit, owner, instructorRepoName);
   }
+
+  core.info(`Instructor repository ${owner}/${instructorRepoName} not found — creating it now.`);
+  await octokit.rest.repos.createInOrg({
+    org: owner,
+    name: instructorRepoName,
+    private: true,
+  });
+
+  // Build the initial commit with the workflow file using the Git Data API.
+  // The Contents API cannot write to a repo that has no commits yet.
+  const { data: blob } = await octokit.rest.git.createBlob({
+    owner,
+    repo: instructorRepoName,
+    content: STUDENT_QUESTIONS_WORKFLOW,
+    encoding: 'utf-8',
+  });
+
+  const { data: tree } = await octokit.rest.git.createTree({
+    owner,
+    repo: instructorRepoName,
+    tree: [
+      {
+        path: STUDENT_QUESTIONS_WORKFLOW_PATH,
+        mode: '100644',
+        type: 'blob',
+        sha: blob.sha,
+      },
+    ],
+  });
+
+  const { data: commit } = await octokit.rest.git.createCommit({
+    owner,
+    repo: instructorRepoName,
+    message: 'chore: add student-questions-added workflow [skip ci]',
+    tree: tree.sha,
+    parents: [],
+  });
+
+  await octokit.rest.git.createRef({
+    owner,
+    repo: instructorRepoName,
+    ref: `refs/heads/${INSTRUCTOR_REPO_DEFAULT_BRANCH}`,
+    sha: commit.sha,
+  });
+
+  core.info(
+    `Instructor repository ${owner}/${instructorRepoName} created (private) with student-questions workflow.`,
+  );
 }
 
 /**
