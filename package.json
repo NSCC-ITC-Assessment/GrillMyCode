@@ -1,9 +1,9 @@
 {
-  "name": "code-comprehension-assessment",
+  "name": "grill-my-code",
   "version": "1.0.0",
   "description": "Analyses code changes and uses AI to generate targeted comprehension questions for viva voce or written assessments.",
   "main": "src/main.js",
-  "packageManager": "pnpm@11.1.2",
+  "packageManager": "pnpm@11.1.3",
   "engines": {
     "node": ">=24"
   },
