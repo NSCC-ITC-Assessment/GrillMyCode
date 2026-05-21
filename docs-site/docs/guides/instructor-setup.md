@@ -102,8 +102,9 @@ When the first student opens a pull request:
 
 1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode`) exists in your org.
-3. If it does not exist yet, the action **creates it automatically as a private repository**.
+3. If it does not exist yet, the action **creates it automatically as a private repository** and commits a `student-questions-added.yml` GitHub Actions workflow into it.
 4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
+5. The push of `questions.md` triggers the `student-questions-added` workflow inside the instructor repository, which writes a `{student-login}/future_brightspace_quiz.txt` placeholder file. This is a temporary stub — it will be replaced with real Brightspace quiz generation in a future release.
 
 For subsequent students the repo already exists — the action just adds or updates their individual file.
 
