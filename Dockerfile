@@ -1,36 +1,16 @@
-# ---------------------------------------------------------------------------
-# Stage 1 — build the rmcm binary from source
-# ---------------------------------------------------------------------------
-FROM rust:slim-bookworm AS rmcm-builder
-
-# git is required to clone the source repository
-RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Clone the production branch and build the release binary.
-# The Cargo profile already enables strip = true and LTO so the output is
-# small and self-contained.
-RUN git clone --depth 1 --branch production \
-        https://github.com/NSCC-ITC-Assessment/comment-remover.git /build
-WORKDIR /build
-RUN cargo build --release --all-features
-
-# ---------------------------------------------------------------------------
-# Stage 2 — final action image
-# ---------------------------------------------------------------------------
 FROM node:26-slim
 
-# Install git, corepack, and pnpm.
+# Install git, corepack, pnpm, and the rmcm binary.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git \
+    && apt-get install -y --no-install-recommends git curl ca-certificates \
     && rm -rf /var/lib/apt/lists/* \
+    && curl -fsSL \
+        "https://github.com/NSCC-ITC-Assessment/comment-remover/releases/download/grill-my-code/rmcm-linux-x86_64" \
+        -o /usr/local/bin/rmcm \
+    && chmod +x /usr/local/bin/rmcm \
     && npm install -g corepack \
     && corepack enable \
     && corepack prepare pnpm@latest --activate
-
-# Copy the rmcm binary built in stage 1
-COPY --from=rmcm-builder /build/target/release/rmcm /usr/local/bin/rmcm
 
 # Copy package files and install production dependencies
 WORKDIR /action
