@@ -24,7 +24,7 @@ Create a Personal Access Token that the action will use to create and write to t
 2. Click **Generate new token (classic)**.
 3. Give it a descriptive name, e.g. `GrillMyCode instructor delivery`.
 4. Set an expiry that suits your retention policy (e.g. 1 year).
-5. Select the **`repo`** scope (the full checkbox — this covers creating private org repos and reading/writing file contents).
+5. Select the **`repo`** scope (the full checkbox — this covers creating private org repos and reading/writing file contents) and the **`workflow`** scope (required to commit GitHub Actions workflow files into the instructor repository).
 6. Click **Generate token** and copy the value immediately.
 
 #### Fine-grained PAT (more restrictive)
@@ -33,7 +33,7 @@ Create a Personal Access Token that the action will use to create and write to t
 2. Click **Generate new token**.
 3. Set **Resource owner** to your organisation.
 4. Under **Organisation permissions**, grant **Administration: Read and Write** (required to create new repositories).
-5. Under **Repository permissions**, grant **Contents: Read and Write** (required to write assessment files).
+5. Under **Repository permissions**, grant **Contents: Read and Write** (required to write assessment files) and **Workflows: Read and Write** (required to commit GitHub Actions workflow files into the instructor repository).
 6. Click **Generate token** and copy the value.
 
 :::note

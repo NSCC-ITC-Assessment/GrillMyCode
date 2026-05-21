@@ -88,6 +88,10 @@ export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
  * How many times to poll for the instructor repository's default branch ref
  * after creation before giving up.  GitHub's auto_init commit is
  * asynchronous, so the ref may not appear immediately.
+ *
+ * Note: writing to `.github/workflows/` via the Contents API requires the
+ * `workflow` scope on a classic PAT, or Workflows: Read and Write on a
+ * fine-grained PAT.  Without it the API returns 404 regardless of timing.
  */
 export const INSTRUCTOR_REPO_INIT_RETRIES = 10;
 
@@ -99,6 +103,7 @@ export const INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS = 1000;
 
 /**
  * AI nucleus-sampling probability mass cutoff.
+ * Keeps the model focused while still allowing varied phrasing.
  */
 export const AI_TOP_P = 0.95;
 
