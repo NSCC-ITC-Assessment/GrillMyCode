@@ -1,3 +1,21 @@
+# GrillMyCode Action — Container Image
+#
+# Builds the runtime environment for the GrillMyCode GitHub Action.
+#
+# Stages / layers (in order):
+#   1. Base image    — node:26-slim (Debian-based, minimal footprint)
+#   2. System deps   — git (repository operations), curl + ca-certificates
+#                      (downloading the rmcm binary), corepack/pnpm (package
+#                      manager used by this project), and the rmcm binary itself
+#                      (strips comments from source files before AI review).
+#   3. Dependencies  — Production-only Node dependencies installed via pnpm
+#                      with a frozen lockfile so the image is fully reproducible.
+#   4. Source code   — The action's src/ directory and the entrypoint shell
+#                      script are copied in and made executable.
+#
+# The container is invoked by GitHub Actions via the ENTRYPOINT defined in
+# action.yml, which calls /entrypoint.sh → node src/main.js.
+
 FROM node:26-slim
 
 # Install git, corepack, pnpm, and the rmcm binary.
