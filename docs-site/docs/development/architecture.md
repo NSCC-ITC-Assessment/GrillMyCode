@@ -68,7 +68,6 @@ stripCommentsFromFiles()
     │
 buildCodeContent()
     │  Formats stripped files as fenced Markdown code blocks
-    │  Truncates to MAX_DIFF_CHARS (12 000) if needed
     │
 readAssignmentContextFiles()
     │  Reads files from GITHUB_WORKSPACE that match assignment_context globs

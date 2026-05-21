@@ -15,7 +15,6 @@ import * as github from '@actions/github';
 import fs from 'fs';
 import path from 'path';
 import {
-  MAX_DIFF_CHARS,
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
@@ -147,15 +146,7 @@ async function run() {
       core.warning('Code content was empty after processing — falling back to raw diff.');
     }
 
-    let truncated = false;
-    if (codeContent.length > MAX_DIFF_CHARS) {
-      codeContent =
-        codeContent.substring(0, MAX_DIFF_CHARS) + '\n\n[content truncated due to size]';
-      truncated = true;
-      core.warning(
-        `Content truncated to ${MAX_DIFF_CHARS} characters to stay within AI context limits.`,
-      );
-    }
+    const truncated = false;
 
     // ── Generate questions using AI ─────────────────────────────────────────
     const { content: assignmentContext, matchedFiles: assignmentContextFiles } =

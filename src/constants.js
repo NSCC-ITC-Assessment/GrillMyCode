@@ -44,13 +44,6 @@ export const DEFAULT_EXCLUDE_PATTERNS = [
 ];
 
 /**
- * Maximum number of characters from the diff sent to the AI.
- * Keeps token usage within model context-window limits while leaving
- * enough headroom for the system prompt and the generated response.
- */
-export const MAX_DIFF_CHARS = 12000;
-
-/**
  * Maximum number of questions that can be generated in a single run.
  * Values supplied via num_questions above this limit are silently capped.
  */
