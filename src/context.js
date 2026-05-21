@@ -186,8 +186,8 @@ export async function resolveAssignmentName(ctx, octokit, studentLogin) {
     // assignment name is being inferred rather than read from the template.
     if (ctx.repo.repo.includes('-')) {
       core.warning(
-        `Instructor repo: template_repository is not set on ${ctx.repo.repo}. ` +
-          `This is expected for Classroom assignments created without starter code. ` +
+        `Instructor repo: GitHub Classroom did not populate template_repository on ${ctx.repo.repo} — ` +
+          `this is common even for template-based assignments depending on how Classroom created the repo. ` +
           `Inferring assignment name by stripping the student login suffix — ` +
           `verify the instructor repository name is correct after the first run.`,
       );
