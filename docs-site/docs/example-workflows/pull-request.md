@@ -23,7 +23,7 @@ jobs:
       pull-requests: write  # required to post the PR comment
       models: read          # required to call GitHub Models API
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0    # full history required for diff resolution
 

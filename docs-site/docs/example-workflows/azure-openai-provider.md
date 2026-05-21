@@ -31,7 +31,7 @@ jobs:
       contents: read
       pull-requests: write  # required to post the PR comment
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0    # full history required for diff resolution
 

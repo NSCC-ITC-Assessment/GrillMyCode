@@ -25,7 +25,7 @@ jobs:
       issues: write         # required to create the GitHub Issue
       models: read          # required to call GitHub Models API
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           fetch-depth: 0    # full history required for diff resolution
 
