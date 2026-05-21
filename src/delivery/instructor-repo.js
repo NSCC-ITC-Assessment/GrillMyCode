@@ -57,10 +57,13 @@ const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/student-questions-add
  * visible (it is applied asynchronously after the API returns).  Only once
  * the default branch ref resolves is it safe to write via the Contents API.
  */
+/**
+ * Returns true if the repository was just created, false if it already existed.
+ */
 async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
   try {
     await octokit.rest.repos.get({ owner, repo: instructorRepoName });
-    return; // already exists
+    return false; // already exists
   } catch (err) {
     if (err.status !== 404) throw err;
   }
@@ -103,6 +106,27 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
     );
   }
 
+  core.info(`Instructor repository ${owner}/${instructorRepoName} created (private).`);
+  return true;
+}
+
+/**
+ * Writes the student-questions workflow to the instructor repo if it does not
+ * already exist.  Called after the questions.md write so the repo is
+ * guaranteed to be fully initialised and accepting Content API writes.
+ */
+async function ensureStudentQuestionsWorkflow(octokit, owner, instructorRepoName) {
+  try {
+    await octokit.rest.repos.getContent({
+      owner,
+      repo: instructorRepoName,
+      path: STUDENT_QUESTIONS_WORKFLOW_PATH,
+    });
+    return; // already present
+  } catch (err) {
+    if (err.status !== 404) throw err;
+  }
+
   await octokit.rest.repos.createOrUpdateFileContents({
     owner,
     repo: instructorRepoName,
@@ -112,7 +136,7 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
   });
 
   core.info(
-    `Instructor repository ${owner}/${instructorRepoName} created (private) with student-questions workflow.`,
+    `Workflow committed to ${owner}/${instructorRepoName}/${STUDENT_QUESTIONS_WORKFLOW_PATH}`,
   );
 }
 
@@ -135,9 +159,23 @@ export async function deliverToInstructorRepo({
   content,
   headSha,
 }) {
-  await ensureInstructorRepo(octokit, owner, instructorRepoName);
-
+  const isNewRepo = await ensureInstructorRepo(octokit, owner, instructorRepoName);
   const filePath = `${studentLogin}/questions.md`;
+
+  if (isNewRepo) {
+    // Write an empty placeholder first so the workflow file is committed before
+    // the real content lands — this ensures the workflow triggers on the actual
+    // write below.
+    await octokit.rest.repos.createOrUpdateFileContents({
+      owner,
+      repo: instructorRepoName,
+      path: filePath,
+      message: `chore: initialise ${studentLogin} assessment placeholder [skip ci]`,
+      content: Buffer.from('', 'utf-8').toString('base64'),
+    });
+    await ensureStudentQuestionsWorkflow(octokit, owner, instructorRepoName);
+  }
+
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const message = `chore: update assessment for ${studentLogin} at ${shortHead} [skip ci]`;
 
