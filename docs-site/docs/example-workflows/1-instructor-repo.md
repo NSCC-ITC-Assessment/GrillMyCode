@@ -12,8 +12,9 @@ When `instructor_repo_token` is provided the action:
 
 1. Resolves the assignment name from the student repo's `template_repository` field (set automatically by GitHub Classroom). For non-Classroom repos it falls back to the source repository name.
 2. Derives the instructor repository name as `{assignment-name}-grillmycode` in the same organisation.
-3. Creates the repository as **private** on first run if it does not already exist.
+3. Creates the repository as **private** on first run if it does not already exist, and commits a `student-questions-added.yml` GitHub Actions workflow into it.
 4. Creates a folder named `{student-login}/` in the instructor repository and writes the full assessment (questions and answers) to `{student-login}/questions.md`, overwriting any previous run for the same student. The folder is created automatically if it does not already exist.
+5. Each push of a `questions.md` file triggers the `student-questions-added` workflow inside the instructor repository, which currently writes a `{student-login}/future_brightspace_quiz.txt` placeholder. This file is a temporary stub — it will be replaced with real Brightspace quiz generation in a future release.
 
 The student-facing report is unaffected — whether it includes answers is still controlled by the existing `include_answers` input.
 
@@ -23,7 +24,7 @@ See the **[Instructor Setup guide](../guides/instructor-setup)** for full step-b
 
 In short:
 
-1. Create a PAT with `repo` scope (classic) or Administration + Contents write permissions (fine-grained).
+1. Create a PAT with `repo` **and** `workflow` scopes (classic) or Contents + Workflows read/write permissions (fine-grained). The `workflow` scope is required to commit the `student-questions-added.yml` workflow file into the instructor repository on creation.
 2. Add it as an **org-level** Actions secret named `INSTRUCTOR_REPO_TOKEN` — this makes it available to all student repos without any per-repo configuration.
 
 ## Example workflow
