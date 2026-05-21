@@ -45,6 +45,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
 
       - name: Log trigger
         run: |
@@ -56,12 +58,7 @@ jobs:
       - name: Get student directory
         id: student
         run: |
-          CHANGED=$(jq -r '[
-            (.head_commit.added // [])[],
-            (.head_commit.modified // [])[],
-            ((.commits // [])[].added // [])[],
-            ((.commits // [])[].modified // [])[]
-          ] | .[] | select(endswith("questions.md"))' "$GITHUB_EVENT_PATH" | head -1)
+          CHANGED=$(git diff HEAD~1 HEAD --name-only | grep 'questions[.]md$' | head -1)
           echo "dir=$(dirname "$CHANGED")" >> "$GITHUB_OUTPUT"
 
       - name: Generate future Brightspace quiz placeholder
@@ -88,6 +85,7 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "$STUDENT_DIR/future_brightspace_quiz.txt"
           git diff --staged --quiet || git commit -m "chore: add Brightspace quiz placeholder for \${{ github.actor }} [skip ci]"
+          git pull --rebase
           git push
 `;
 
