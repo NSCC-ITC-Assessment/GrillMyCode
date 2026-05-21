@@ -55,7 +55,8 @@ jobs:
 
       - name: Generate future Brightspace quiz placeholder
         run: |
-          cat > future_brightspace_quiz.txt <<'EOF'
+          STUDENT_DIR=$(git diff-tree --no-commit-id -r --name-only \${{ github.sha }} | grep 'questions\\.md$' | head -1 | xargs dirname)
+          cat > "$STUDENT_DIR/future_brightspace_quiz.txt" <<'EOF'
           Brightspace Quiz Placeholder
           =============================
           This file is a placeholder for a future feature.
@@ -71,9 +72,10 @@ jobs:
 
       - name: Commit placeholder file
         run: |
+          STUDENT_DIR=$(git diff-tree --no-commit-id -r --name-only \${{ github.sha }} | grep 'questions\\.md$' | head -1 | xargs dirname)
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add future_brightspace_quiz.txt
+          git add "$STUDENT_DIR/future_brightspace_quiz.txt"
           git diff --staged --quiet || git commit -m "chore: add Brightspace quiz placeholder for \${{ github.actor }} [skip ci]"
           git push
 `;
