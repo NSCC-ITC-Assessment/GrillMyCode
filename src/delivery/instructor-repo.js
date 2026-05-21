@@ -56,7 +56,12 @@ jobs:
       - name: Get student directory
         id: student
         run: |
-          CHANGED=$(jq -r '[(.commits // [])[].added[], (.commits // [])[].modified[]] | .[] | select(endswith("questions.md"))' "$GITHUB_EVENT_PATH" | head -1)
+          CHANGED=$(jq -r '[
+            (.head_commit.added // [])[],
+            (.head_commit.modified // [])[],
+            ((.commits // [])[].added // [])[],
+            ((.commits // [])[].modified // [])[]
+          ] | .[] | select(endswith("questions.md"))' "$GITHUB_EVENT_PATH" | head -1)
           echo "dir=$(dirname "$CHANGED")" >> "$GITHUB_OUTPUT"
 
       - name: Generate future Brightspace quiz placeholder
