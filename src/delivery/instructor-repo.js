@@ -24,9 +24,10 @@ import {
 
 /**
  * GitHub Actions workflow YAML committed into each newly-created instructor
- * repository.  It fires whenever a student's questions.md file is pushed and
- * currently serves as a proof-of-concept trigger — the "notify" step simply
- * logs the event so you can confirm the pipeline executes.
+ * repository.  It fires whenever a student's questions.md file is pushed.
+ * Currently it logs the trigger event and writes a future_brightspace_quiz.txt
+ * placeholder — a stub for the Brightspace quiz generation that will be
+ * implemented here in a future release.
  */
 const STUDENT_QUESTIONS_WORKFLOW = `name: Student Questions Added
 
@@ -39,13 +40,42 @@ jobs:
   notify:
     name: Acknowledge student questions
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
       - name: Log trigger
         run: |
           echo "A student questions file was added or updated."
           echo "Repository : \${{ github.repository }}"
           echo "Triggered by: \${{ github.actor }}"
           echo "Ref        : \${{ github.ref }}"
+
+      - name: Generate future Brightspace quiz placeholder
+        run: |
+          cat > future_brightspace_quiz.txt <<'EOF'
+          Brightspace Quiz Placeholder
+          =============================
+          This file is a placeholder for a future feature.
+
+          When fully implemented, a Brightspace-compatible quiz will be
+          automatically generated here based on the student's submitted
+          questions.md file.
+
+          Student  : \${{ github.actor }}
+          Triggered: \${{ github.event.head_commit.timestamp }}
+          Ref      : \${{ github.ref }}
+          EOF
+
+      - name: Commit placeholder file
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add future_brightspace_quiz.txt
+          git diff --staged --quiet || git commit -m "chore: add Brightspace quiz placeholder for \${{ github.actor }} [skip ci]"
+          git push
 `;
 
 const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/student-questions-added.yml';
