@@ -96,8 +96,11 @@ inputs:
   exclude_patterns:
     description: >
       Comma-separated glob patterns for files to exclude from the assessment.
-      Defaults to common non-code files (lock files, images, build artifacts, etc.).
-      Providing a value here completely replaces the default list.
+      Defaults to common non-code files (lock files, images, build artefacts,
+      Markdown files, etc.). WARNING: providing a value here completely replaces
+      the default list — it does not extend it. You are responsible for
+      re-including any patterns you still want excluded (e.g. node_modules/**,
+      **/*.md, **/*.png).
     required: false
     default: ""
 

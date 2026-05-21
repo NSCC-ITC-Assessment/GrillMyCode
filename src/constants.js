@@ -35,6 +35,7 @@ export const DEFAULT_EXCLUDE_PATTERNS = [
   '**/*.woff2',
   '**/*.ttf',
   '**/*.eot',
+  '**/*.md',
   '**/*.pdf',
   '**/*.zip',
   '**/*.tar.gz',
