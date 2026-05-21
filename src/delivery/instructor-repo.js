@@ -15,7 +15,11 @@
 
 import * as core from '@actions/core';
 import { Buffer } from 'node:buffer';
-import { GIT_SHA_SHORT_LENGTH } from '../constants.js';
+import {
+  GIT_SHA_SHORT_LENGTH,
+  INSTRUCTOR_REPO_INIT_RETRIES,
+  INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS,
+} from '../constants.js';
 
 /**
  * GitHub Actions workflow YAML committed into each newly-created instructor
@@ -62,17 +66,32 @@ async function ensureStudentQuestionsWorkflow(octokit, owner, instructorRepoName
     if (err.status !== 404) throw err;
   }
 
-  await octokit.rest.repos.createOrUpdateFileContents({
-    owner,
-    repo: instructorRepoName,
-    path: STUDENT_QUESTIONS_WORKFLOW_PATH,
-    message: 'chore: add student-questions-added workflow [skip ci]',
-    content: Buffer.from(STUDENT_QUESTIONS_WORKFLOW, 'utf-8').toString('base64'),
-  });
-
-  core.info(
-    `Workflow committed to ${owner}/${instructorRepoName}/${STUDENT_QUESTIONS_WORKFLOW_PATH}`,
-  );
+  // Retry because GitHub's auto_init is asynchronous — the default branch may
+  // not be ready for writes until a moment after createInOrg returns.
+  let lastErr;
+  for (let attempt = 1; attempt <= INSTRUCTOR_REPO_INIT_RETRIES; attempt++) {
+    try {
+      await octokit.rest.repos.createOrUpdateFileContents({
+        owner,
+        repo: instructorRepoName,
+        path: STUDENT_QUESTIONS_WORKFLOW_PATH,
+        message: 'chore: add student-questions-added workflow [skip ci]',
+        content: Buffer.from(STUDENT_QUESTIONS_WORKFLOW, 'utf-8').toString('base64'),
+      });
+      core.info(
+        `Workflow committed to ${owner}/${instructorRepoName}/${STUDENT_QUESTIONS_WORKFLOW_PATH}`,
+      );
+      return;
+    } catch (err) {
+      if (err.status !== 404) throw err;
+      core.info(
+        `Instructor repo not yet ready (attempt ${attempt}/${INSTRUCTOR_REPO_INIT_RETRIES}) — retrying in ${INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS}ms…`,
+      );
+      lastErr = err;
+      await new Promise((resolve) => setTimeout(resolve, INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS));
+    }
+  }
+  throw lastErr;
 }
 
 /**
