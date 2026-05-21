@@ -79,11 +79,23 @@ export const COMMENT_STRIP_TIMEOUT_MS = 10_000;
 export const DEFAULT_AI_TEMPERATURE = 0.5;
 
 /**
- * Default branch name used when initialising a new instructor repository.
- * The branch is created explicitly via the Git Data API so the name must be
- * known up-front.
+ * Fallback default branch name for a newly created instructor repository,
+ * used when the API response does not include a default_branch value.
  */
 export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
+
+/**
+ * How many times to poll for the instructor repository's default branch ref
+ * after creation before giving up.  GitHub's auto_init commit is
+ * asynchronous, so the ref may not appear immediately.
+ */
+export const INSTRUCTOR_REPO_INIT_RETRIES = 10;
+
+/**
+ * Milliseconds to wait between each polling attempt while waiting for the
+ * instructor repository's default branch to become available.
+ */
+export const INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS = 1000;
 
 /**
  * AI nucleus-sampling probability mass cutoff.
