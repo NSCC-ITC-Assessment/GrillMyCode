@@ -180,19 +180,26 @@ export async function resolveAssignmentName(ctx, octokit, studentLogin) {
     if (data.template_repository?.name) {
       return data.template_repository.name;
     }
-    // template_repository is null — either a Classroom assignment created
-    // without starter code, or a non-Classroom repo. If the repo name contains
-    // a hyphen it is likely a Classroom repo; warn so the instructor knows the
-    // assignment name is being inferred rather than read from the template.
-    if (ctx.repo.repo.includes('-')) {
+    // template_repository is null — GitHub Classroom does not reliably populate
+    // this field even for template-based assignments; it depends on how Classroom
+    // internally created the repo. Fall back to stripping the student login suffix.
+    // Only warn when the suffix strip doesn't match (i.e. the login wasn't found
+    // at the end of the repo name), since in that case the inferred name is the
+    // full repo name and may be wrong.
+    const inferred = stripStudentLoginSuffix(ctx.repo.repo, studentLogin);
+    if (inferred === ctx.repo.repo) {
       core.warning(
-        `Instructor repo: GitHub Classroom did not populate template_repository on ${ctx.repo.repo} — ` +
-          `this is common even for template-based assignments depending on how Classroom created the repo. ` +
-          `Inferring assignment name by stripping the student login suffix — ` +
-          `verify the instructor repository name is correct after the first run.`,
+        `Instructor repo: could not strip student login suffix from "${ctx.repo.repo}" — ` +
+          `student login "${studentLogin}" was not found at the end of the repo name. ` +
+          `Using the full repository name as the assignment name. ` +
+          `Verify the instructor repository name is correct after the first run.`,
+      );
+    } else {
+      core.info(
+        `Instructor repo: inferred assignment name "${inferred}" by stripping student login suffix from "${ctx.repo.repo}".`,
       );
     }
-    return stripStudentLoginSuffix(ctx.repo.repo, studentLogin);
+    return inferred;
   } catch (err) {
     core.warning(
       `Could not fetch repository metadata to resolve assignment name: ${err.message}. ` +
