@@ -53,9 +53,15 @@ jobs:
           echo "Triggered by: \${{ github.actor }}"
           echo "Ref        : \${{ github.ref }}"
 
+      - name: Get student directory
+        id: student
+        run: |
+          CHANGED=$(jq -r '[(.commits // [])[].added[], (.commits // [])[].modified[]] | .[] | select(endswith("questions.md"))' "$GITHUB_EVENT_PATH" | head -1)
+          echo "dir=$(dirname "$CHANGED")" >> "$GITHUB_OUTPUT"
+
       - name: Generate future Brightspace quiz placeholder
         run: |
-          STUDENT_DIR=$(git diff-tree --no-commit-id -r --name-only \${{ github.sha }} | grep 'questions\\.md$' | head -1 | xargs dirname)
+          STUDENT_DIR="\${{ steps.student.outputs.dir }}"
           cat > "$STUDENT_DIR/future_brightspace_quiz.txt" <<'EOF'
           Brightspace Quiz Placeholder
           =============================
@@ -72,7 +78,7 @@ jobs:
 
       - name: Commit placeholder file
         run: |
-          STUDENT_DIR=$(git diff-tree --no-commit-id -r --name-only \${{ github.sha }} | grep 'questions\\.md$' | head -1 | xargs dirname)
+          STUDENT_DIR="\${{ steps.student.outputs.dir }}"
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "$STUDENT_DIR/future_brightspace_quiz.txt"
