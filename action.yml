@@ -152,7 +152,7 @@ inputs:
       repositories in the same organisation as the student repositories.
       When provided, the action writes a private instructor-only assessment
       file (questions and answers) to a repository named
-      {assignment-name}-grillmycode in the same organisation. The repository
+      {assignment-name}-grillmycode-instructor in the same organisation. The repository
       is created automatically on first run if it does not already exist.
       Leave empty to disable instructor repository delivery.
     required: false

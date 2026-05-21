@@ -139,9 +139,9 @@ export const MIN_QUESTIONS = 1;
 
 /**
  * Suffix appended to the assignment name to form the instructor repository
- * name (e.g. "assignment-1" + INSTRUCTOR_REPO_SUFFIX → "assignment-1-grillmycode").
+ * name (e.g. "assignment-1" + INSTRUCTOR_REPO_SUFFIX → "assignment-1-grillmycode-instructor").
  */
-export const INSTRUCTOR_REPO_SUFFIX = '-grillmycode';
+export const INSTRUCTOR_REPO_SUFFIX = '-grillmycode-instructor';
 
 /**
  * Default maximum total characters read from all assignment_context files
