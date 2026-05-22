@@ -2,3 +2,87 @@
 # rewrites this file to point to the branch image, but that change must
 # never flow back into main when the branch is merged via PR.
 action.yml merge=ours
+
+
+# =============================================================================
+# GLOBAL REPOSITORY DEFAULTS
+# =============================================================================
+# Automatically normalize line endings for all text files.
+# Ensures LF inside the repo/container, while allowing OS-native defaults locally.
+* text=auto
+
+# =============================================================================
+# DOCKER & CI/CD OPERATIONS (STRICT LF REQUIRED)
+# =============================================================================
+# Crucial: Forces LF line endings. Even one CRLF character here will cause
+# the Linux kernel inside your Docker container to crash on startup.
+Dockerfile text eol=lf
+docker-compose.yml text
+entrypoint.sh text eol=lf
+*.sh text eol=lf
+
+# =============================================================================
+# GITHUB ACTION METADATA
+# =============================================================================
+# Ensures clean YAML formatting and parsing by GitHub runner environments.
+action.yml text
+action.yaml text
+.github/workflows/*.yml text
+.github/workflows/*.yaml text
+
+# =============================================================================
+# JAVASCRIPT / NODE.JS WEB STACK
+# =============================================================================
+# Standard source, style, and configuration file declarations.
+*.js text
+*.cjs text
+*.mjs text
+*.ts text
+*.jsx text
+*.tsx text
+*.json text
+*.html text
+*.css text
+*.md text
+*.mdx text
+*.txt text
+
+# =============================================================================
+# CONFIGURATION & REPO DATA
+# =============================================================================
+*.yml text
+*.yaml text
+*.toml text
+*.xml text
+.editorconfig text
+.gitignore text
+.npmrc text
+.prettierrc text
+.eslintrc text
+
+# =============================================================================
+# GENERATED FILES & LOCKFILES (HIDDEN FROM PR DIFFS)
+# =============================================================================
+# Treats lockfiles and compiled output as text, but hides them from GitHub 
+# pull request diff views to reduce code review clutter.
+package-lock.json text linguist-generated=true
+yarn.lock text linguist-generated=true
+pnpm-lock.yaml text linguist-generated=true
+dist/**/*.js text linguist-generated=true
+build/**/*.js text linguist-generated=true
+
+# =============================================================================
+# STATIC BINARY ASSETS
+# =============================================================================
+# Explicitly marks files as binary data so Git never touches their internal bytes.
+*.jpg binary
+*.jpeg binary
+*.png binary
+*.gif binary
+*.ico binary
+*.svg text
+*.pdf binary
+*.pptx binary
+*.woff binary
+*.woff2 binary
+*.ttf binary
