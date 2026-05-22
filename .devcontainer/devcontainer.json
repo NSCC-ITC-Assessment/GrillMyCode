@@ -4,7 +4,7 @@
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
   "onCreateCommand": "corepack prepare pnpm@11.1.3 --activate",
-  "postCreateCommand": "pnpm install",
+  "postCreateCommand": "pnpm install && git config merge.ours.driver true",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 
   // ─── VS Code ───────────────────────────────────────────────────────────────

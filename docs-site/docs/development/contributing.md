@@ -37,9 +37,12 @@ These prerequisites apply only if you are **not** using the dev container.
 git clone https://github.com/NSCC-ITC-Assessment/GrillMyCode.git
 cd GrillMyCode
 pnpm install
+git config merge.ours.driver true
 ```
 
 `pnpm install` installs all dependencies **and** sets up the Husky pre-commit hooks automatically via the `prepare` script.
+
+`git config merge.ours.driver true` registers the merge driver that prevents the branch-image reference in `action.yml` from overwriting the `main` reference when a branch is merged. This is configured automatically inside the dev container and Codespaces — it only needs to be run manually for a plain local clone. The command is scoped to this repository only (it writes to `.git/config`) and has no effect on any other projects.
 
 ---
 
