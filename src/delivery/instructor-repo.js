@@ -61,22 +61,59 @@ jobs:
           CHANGED=$(git diff HEAD~1 HEAD --name-only | grep 'questions[.]md$' | head -1)
           echo "dir=$(dirname "$CHANGED")" >> "$GITHUB_OUTPUT"
 
-      - name: Generate future Brightspace quiz placeholder
+      - name: Extract questions and answers for Brightspace
+        env:
+          STUDENT_DIR: \${{ steps.student.outputs.dir }}
+          STUDENT: \${{ github.actor }}
+          TIMESTAMP: \${{ github.event.head_commit.timestamp }}
         run: |
-          STUDENT_DIR="\${{ steps.student.outputs.dir }}"
-          cat > "$STUDENT_DIR/future_brightspace_quiz.txt" <<'EOF'
-          Brightspace Quiz Placeholder
-          =============================
-          This file is a placeholder for a future feature.
-
-          When fully implemented, a Brightspace-compatible quiz will be
-          automatically generated here based on the student's submitted
-          questions.md file.
-
-          Student  : \${{ github.actor }}
-          Triggered: \${{ github.event.head_commit.timestamp }}
-          Ref      : \${{ github.ref }}
-          EOF
+          python3 <<'PYEOF'
+          import os
+          student_dir = os.environ['STUDENT_DIR']
+          student = os.environ.get('STUDENT', 'unknown')
+          timestamp = os.environ.get('TIMESTAMP', '')
+          qmd = os.path.join(student_dir, 'questions.md')
+          out = os.path.join(student_dir, 'future_brightspace_quiz.txt')
+          with open(qmd) as f:
+              content = f.read()
+          NL = chr(10)
+          blocks = content.split(NL + '---' + NL)
+          results = []
+          for block in blocks:
+              question = None
+              answer = None
+              incorrect = []
+              in_inc = False
+              for line in block.splitlines():
+                  if not question and line and line[0].isdigit() and '. ' in line:
+                      question = line.split('. ', 1)[1].strip()
+                  elif line.startswith('   **Answer:** '):
+                      answer = line[15:].strip()
+                      in_inc = False
+                  elif line.startswith('   **Incorrect Options:**'):
+                      in_inc = True
+                  elif in_inc and line.startswith('   - '):
+                      incorrect.append(line[5:].strip())
+              if question and answer:
+                  results.append((question, answer, incorrect))
+          with open(out, 'w') as f:
+              print('Brightspace Quiz Extract', file=f)
+              print('========================', file=f)
+              print('Student  :', student, file=f)
+              print('Triggered:', timestamp, file=f)
+              print(file=f)
+              for i, (q, a, opts) in enumerate(results, 1):
+                  print(f'Question {i}:', file=f)
+                  print(q, file=f)
+                  print(file=f)
+                  print(file=f)
+                  print(f'- [CORRECT] {a}', file=f)
+                  for opt in opts:
+                      print(f'- {opt}', file=f)
+                  print(file=f)
+                  print('-' * 40, file=f)
+                  print(file=f)
+          PYEOF
 
       - name: Commit placeholder file
         run: |
@@ -84,7 +121,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "$STUDENT_DIR/future_brightspace_quiz.txt"
-          git diff --staged --quiet || git commit -m "chore: add Brightspace quiz placeholder for \${{ github.actor }} [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: update Brightspace quiz extract for \${{ github.actor }} [skip ci]"
           git pull --rebase
           git push
 `;
