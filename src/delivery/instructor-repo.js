@@ -85,15 +85,16 @@ jobs:
               incorrect = []
               in_inc = False
               for line in block.splitlines():
+                  stripped = line.strip()
                   if not question and line and line[0].isdigit() and '. ' in line:
                       question = line.split('. ', 1)[1].strip()
-                  elif line.startswith('   **Answer:** '):
-                      answer = line[15:].strip()
+                  elif stripped.startswith('**Answer:** '):
+                      answer = stripped[len('**Answer:** '):].strip()
                       in_inc = False
-                  elif line.startswith('   **Incorrect Options:**'):
+                  elif stripped.startswith('**Incorrect Options:**'):
                       in_inc = True
-                  elif in_inc and line.startswith('   - '):
-                      incorrect.append(line[5:].strip())
+                  elif in_inc and stripped.startswith('- '):
+                      incorrect.append(stripped[2:].strip())
               if question and answer:
                   results.append((question, answer, incorrect))
           with open(out, 'w') as f:
