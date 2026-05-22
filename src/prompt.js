@@ -98,6 +98,7 @@ Constraints:
 - Reference specific named code elements; embed a short inline backtick snippet in the question sentence
 - Code snippets must be syntactically complete — use \`// ...\` for omitted sections, and close all blocks
 - Only ask about code present in the visible snippet — not truncated content
+- If answering the question requires knowing the value of a parameter, variable, or data structure defined elsewhere in the code, include that definition in the snippet. Use a second fenced code block if needed (e.g. show where the array is defined, then show the function that uses it). Never ask a question whose answer depends on a value not visible in the snippet.
 - The question text must not reveal the answer — do not use leading phrasing ("Doesn't this..."), do not bold/italicize the key term from the answer, and do not frame the question so only one option grammatically fits
 - Use plain markdown text for questions (no bold headings, no oversized text)
 
