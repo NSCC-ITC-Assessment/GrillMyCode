@@ -68,7 +68,7 @@ jobs:
           TIMESTAMP: \${{ github.event.head_commit.timestamp }}
         run: |
           python3 <<'PYEOF'
-          import os
+          import os, re
           student_dir = os.environ['STUDENT_DIR']
           student = os.environ.get('STUDENT', 'unknown')
           timestamp = os.environ.get('TIMESTAMP', '')
@@ -79,14 +79,26 @@ jobs:
           NL = chr(10)
           blocks = content.split(NL + '---' + NL)
           results = []
+          last_file_path = None
+          last_snippet = None
           for block in blocks:
               question = None
               answer = None
               incorrect = []
+              file_path = None
+              snippet_lines = []
               in_inc = False
+              in_snippet = False
               for line in block.splitlines():
                   stripped = line.strip()
-                  if not question and line and line[0].isdigit() and '. ' in line:
+                  fp_match = re.match(r'^\\*\\*\`(.+?)\`\\*\\*\\s*$', stripped)
+                  if fp_match and not question:
+                      file_path = fp_match.group(1)
+                  elif stripped.startswith('\`\`\`') and not question:
+                      in_snippet = not in_snippet
+                  elif in_snippet:
+                      snippet_lines.append(line.rstrip())
+                  elif not question and line and line[0].isdigit() and '. ' in line:
                       question = line.split('. ', 1)[1].strip()
                   elif stripped.startswith('**Answer:** '):
                       answer = stripped[len('**Answer:** '):].strip()
@@ -95,18 +107,32 @@ jobs:
                       in_inc = True
                   elif in_inc and stripped.startswith('- '):
                       incorrect.append(stripped[2:].strip())
+              if file_path:
+                  last_file_path = file_path
+              else:
+                  file_path = last_file_path
+              if snippet_lines:
+                  last_snippet = snippet_lines
+              else:
+                  snippet_lines = last_snippet or []
               if question and answer:
-                  results.append((question, answer, incorrect))
+                  results.append((question, answer, incorrect, file_path, snippet_lines))
           with open(out, 'w') as f:
               print('Brightspace Quiz Extract', file=f)
               print('========================', file=f)
               print('Student  :', student, file=f)
               print('Triggered:', timestamp, file=f)
               print(file=f)
-              for i, (q, a, opts) in enumerate(results, 1):
+              for i, (q, a, opts, fp, snippet) in enumerate(results, 1):
                   print(f'Question {i}:', file=f)
-                  print(q, file=f)
+                  if fp:
+                      print(f'File: {fp}', file=f)
+                  if snippet:
+                      print(file=f)
+                      for sl in snippet:
+                          print(sl, file=f)
                   print(file=f)
+                  print(q, file=f)
                   print(file=f)
                   print(f'- [CORRECT] {a}', file=f)
                   for opt in opts:
