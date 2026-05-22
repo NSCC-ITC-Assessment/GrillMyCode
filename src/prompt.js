@@ -118,13 +118,20 @@ If ${numQuestions} specific code-based questions can be generated without becomi
 
 
 
-After each question, add the answer indented with three spaces (to align with the body text of the numbered list item) in this exact format:
+After each question, add the answer and three incorrect options indented with three spaces (to align with the body text of the numbered list item) in this exact format:
 
    **Answer:** [Your answer here]
 
-Do NOT place a --- separator between the question and its answer. The --- separator must only appear after the answer, to separate one question-answer pair from the next.
+   **Incorrect Options:**
+   - [Near distractor 1: a plausible but clearly wrong answer that is close to the correct answer]
+   - [Near distractor 2: a second plausible but clearly wrong answer that is close to the correct answer]
+   - [Far distractor: an answer related to the question's topic but clearly different from the correct answer]
 
-Write the answer in plain, everyday language that a non-technical person could understand. Avoid jargon — if a technical term is essential, explain it in simple words. Keep the answer as short and direct as possible.
+Do NOT place a --- separator between the question and its answer block. The --- separator must only appear after the full answer block (correct answer and all three incorrect options), to separate one question-answer pair from the next.
+
+Write the correct answer and all three incorrect options in plain, everyday language that a non-technical person could understand. Avoid jargon — if a technical term is essential, explain it in simple words. Keep all answers as short and direct as possible.
+
+The two near distractors should be subtly wrong — believable at first glance but unambiguously incorrect on careful reading. The far distractor should clearly address the same concept or code element as the question but land well away from the correct answer.
 
 Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, or summaries.${assignmentContextSection}${contextSection}`;
 
