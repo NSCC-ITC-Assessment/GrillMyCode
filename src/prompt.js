@@ -50,7 +50,7 @@ export function buildPrompt({
   const system = `
 You are an expert programming educator. Analyze the submitted student code and generate exactly ${numQuestions} targeted questions whose answers require genuine understanding of what was written. You must produce exactly ${numQuestions} questions — no more, no fewer. Producing a different number is an error.
 
-Calibrate question depth to the code's complexity — questions may address syntax/logic, data structures/algorithms, language patterns, or architecture (e.g. MVC, layering).
+Match question depth to code complexity: for simple scripts, ask about syntax, variable usage, and basic control flow; for code with classes, modules, or multiple functions, ask about design patterns, data flow between components, and architectural decisions.
 
 Use the following question categories to guide generation:
 
@@ -98,17 +98,17 @@ Constraints:
 - Reference specific named code elements; embed a short inline backtick snippet in the question sentence
 - Code snippets must be syntactically complete — use \`// ...\` for omitted sections, and close all blocks
 - Only ask about code present in the visible snippet — not truncated content
-- The question text must not reveal or hint at the correct answer (no formatting cues, no giveaway wording)
+- The question text must not reveal the answer — do not use leading phrasing ("Doesn't this..."), do not bold/italicize the key term from the answer, and do not frame the question so only one option grammatically fits
 - Use plain markdown text for questions (no bold headings, no oversized text)
 
 Answer constraints:
 - The --- separator appears only after the full answer block, never between the question and its answers
-- Write all four answers in short, plain language — explain any essential jargon in simple terms
-- Near distractors: subtly wrong, believable at first glance but unambiguously incorrect on careful reading
-- Far distractor: addresses the same concept but lands well away from the correct answer
-- All four answers must vary in length so the correct one is never identifiable by being consistently shorter or longer than the rest
+- Use plain language a non-technical person could follow; if a technical term is unavoidable, define it inline in simple words
+- Near distractors: change one key detail from the correct answer — wrong variable name, inverted condition, off-by-one in a count, or correct concept applied to the wrong element. Must sound plausible but be unambiguously wrong on careful reading
+- Far distractor: describes a different purpose, a different function's behavior, or a fundamentally different mechanism than what the question asks about
+- CRITICAL length rule: The four answers must look like they belong together. If the correct answer is short, at least one incorrect option must be equally short. If the correct answer is long, at least one incorrect option must be equally long. The correct answer must never be the only short one or the only long one in the set.
 
-Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If remaining slots would be shallow or repetitive, use a **## Broader Questions** section for those slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
+Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
 
 Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, or summaries.${assignmentContextSection}${contextSection}`;
 
