@@ -155,12 +155,12 @@ jobs:
             if (item.filePath) lines.push('File: ' + item.filePath);
             if (item.snippet.length) {
               const lang = detectLang(item.filePath);
-              const code = item.snippet.join('\n');
+              const code = item.snippet.join('\\n');
               const grammar = Prism.languages[lang];
               const highlighted = grammar ? Prism.highlight(code, grammar, lang) : code;
               lines.push('Language: ' + lang + '  [colorized-html]');
               lines.push('');
-              highlighted.split('\n').forEach(function(hl) { lines.push(hl); });
+              highlighted.split('\\n').forEach(function(hl) { lines.push(hl); });
             }
             lines.push('', item.question, '', '- [CORRECT] ' + item.answer);
             item.incorrect.forEach(function(opt) { lines.push('- ' + opt); });
