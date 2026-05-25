@@ -61,22 +61,114 @@ jobs:
           CHANGED=$(git diff HEAD~1 HEAD --name-only | grep 'questions[.]md$' | head -1)
           echo "dir=$(dirname "$CHANGED")" >> "$GITHUB_OUTPUT"
 
-      - name: Generate future Brightspace quiz placeholder
+      - name: Install Node.js dependencies
+        run: npm install --prefix /tmp/quiz-deps prismjs
+
+      - name: Extract questions and answers for Brightspace
+        env:
+          STUDENT_DIR: \${{ steps.student.outputs.dir }}
+          STUDENT: \${{ github.actor }}
+          TIMESTAMP: \${{ github.event.head_commit.timestamp }}
         run: |
-          STUDENT_DIR="\${{ steps.student.outputs.dir }}"
-          cat > "$STUDENT_DIR/future_brightspace_quiz.txt" <<'EOF'
-          Brightspace Quiz Placeholder
-          =============================
-          This file is a placeholder for a future feature.
+          node <<'JSEOF'
+          const fs = require('fs');
+          const path = require('path');
+          const Prism = require('/tmp/quiz-deps/node_modules/prismjs');
+          const loadLanguages = require('/tmp/quiz-deps/node_modules/prismjs/components/index.js');
+          loadLanguages(['javascript','typescript','jsx','tsx','python','ruby','java','kotlin','csharp','cpp','c','go','rust','php','swift','bash','css','scss','yaml','json','sql','markdown']);
 
-          When fully implemented, a Brightspace-compatible quiz will be
-          automatically generated here based on the student's submitted
-          questions.md file.
+          function detectLang(fp) {
+            if (!fp) return 'plaintext';
+            const ext = fp.split('.').pop().toLowerCase();
+            const map = {
+              js: 'javascript', mjs: 'javascript', cjs: 'javascript',
+              ts: 'typescript', tsx: 'tsx', jsx: 'jsx',
+              py: 'python', rb: 'ruby', java: 'java', kt: 'kotlin',
+              cs: 'csharp', cpp: 'cpp', c: 'c', go: 'go', rs: 'rust',
+              php: 'php', swift: 'swift', sh: 'bash', bash: 'bash',
+              html: 'markup', htm: 'markup', xml: 'markup',
+              css: 'css', scss: 'scss', json: 'json',
+              yml: 'yaml', yaml: 'yaml', sql: 'sql', md: 'markdown',
+            };
+            return map[ext] || 'plaintext';
+          }
 
-          Student  : \${{ github.actor }}
-          Triggered: \${{ github.event.head_commit.timestamp }}
-          Ref      : \${{ github.ref }}
-          EOF
+          const studentDir = process.env.STUDENT_DIR;
+          const student = process.env.STUDENT || 'unknown';
+          const timestamp = process.env.TIMESTAMP || '';
+
+          const qmd = path.join(studentDir, 'questions.md');
+          const out = path.join(studentDir, 'future_brightspace_quiz.txt');
+
+          const content = fs.readFileSync(qmd, 'utf8');
+          const blocks = content.split('\\n---\\n');
+          const results = [];
+          let lastFilePath = null;
+          let lastSnippet = null;
+
+          for (const block of blocks) {
+            let question = null, answer = null, filePath = null;
+            const incorrect = [], snippetLines = [];
+            let inInc = false, inSnippet = false;
+
+            for (const line of block.split('\\n')) {
+              const stripped = line.trim();
+              const fpMatch = !question && stripped.match(/^\\*\\*\`(.+?)\`\\*\\*\\s*$/);
+              if (fpMatch) {
+                filePath = fpMatch[1];
+              } else if (stripped.startsWith('\`\`\`') && !question) {
+                inSnippet = !inSnippet;
+              } else if (inSnippet) {
+                snippetLines.push(line.trimEnd());
+              } else if (!question && line && /^\\d+\\. /.test(line)) {
+                question = line.split('. ').slice(1).join('. ').trim();
+              } else if (stripped.startsWith('**Answer:** ')) {
+                answer = stripped.slice('**Answer:** '.length).trim();
+                inInc = false;
+              } else if (stripped.startsWith('**Incorrect Options:**')) {
+                inInc = true;
+              } else if (inInc && stripped.startsWith('- ')) {
+                incorrect.push(stripped.slice(2).trim());
+              }
+            }
+
+            if (filePath) lastFilePath = filePath;
+            else filePath = lastFilePath;
+            const finalSnippet = snippetLines.length ? snippetLines : (lastSnippet || []);
+            if (snippetLines.length) lastSnippet = snippetLines;
+
+            if (question && answer) {
+              results.push({ question, answer, incorrect, filePath, snippet: finalSnippet });
+            }
+          }
+
+          const lines = [
+            'Brightspace Quiz Extract',
+            '========================',
+            'Student  : ' + student,
+            'Triggered: ' + timestamp,
+            '',
+          ];
+
+          results.forEach(function(item, i) {
+            lines.push('Question ' + (i + 1) + ':');
+            if (item.filePath) lines.push('File: ' + item.filePath);
+            if (item.snippet.length) {
+              const lang = detectLang(item.filePath);
+              const code = item.snippet.join('\n');
+              const grammar = Prism.languages[lang];
+              const highlighted = grammar ? Prism.highlight(code, grammar, lang) : code;
+              lines.push('Language: ' + lang + '  [colorized-html]');
+              lines.push('');
+              highlighted.split('\n').forEach(function(hl) { lines.push(hl); });
+            }
+            lines.push('', item.question, '', '- [CORRECT] ' + item.answer);
+            item.incorrect.forEach(function(opt) { lines.push('- ' + opt); });
+            lines.push('', '-'.repeat(40), '');
+          });
+
+          fs.writeFileSync(out, lines.join('\\n'));
+          JSEOF
 
       - name: Commit placeholder file
         run: |
@@ -84,7 +176,7 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
           git add "$STUDENT_DIR/future_brightspace_quiz.txt"
-          git diff --staged --quiet || git commit -m "chore: add Brightspace quiz placeholder for \${{ github.actor }} [skip ci]"
+          git diff --staged --quiet || git commit -m "chore: update Brightspace quiz extract for \${{ github.actor }} [skip ci]"
           git pull --rebase
           git push
 `;

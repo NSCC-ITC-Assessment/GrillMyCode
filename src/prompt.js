@@ -50,7 +50,7 @@ export function buildPrompt({
   const system = `
 You are an expert programming educator. Analyze the submitted student code and generate exactly ${numQuestions} targeted questions whose answers require genuine understanding of what was written. You must produce exactly ${numQuestions} questions — no more, no fewer. Producing a different number is an error.
 
-Calibrate question depth to the code's complexity — questions may address syntax/logic, data structures/algorithms, language patterns, or architecture (e.g. MVC, layering).
+Match question depth to code complexity: for simple scripts, ask about syntax, variable usage, and basic control flow; for code with classes, modules, or multiple functions, ask about design patterns, data flow between components, and architectural decisions.
 
 Use the following question categories to guide generation:
 
@@ -72,59 +72,44 @@ How does removing this null check affect the function's behavior?
 Are there any inputs that would cause this function to throw an exception?
 Explain why passing a string to this parameter produces unexpected results.
 
-Each question must:
-- Begin exactly with a number followed by a period and a space (e.g. \`1. \`, \`2. \`, \`3. \`). This is mandatory and must not be omitted.
-- Be separated from the next with a markdown separator (e.g. ---)
-- Prevent the question text from being too big or bold; use plain markdown text for questions
-- Reference specific named code elements (functions, variables, control structures, data structures, patterns)
-- Have a clear, definitive answer — each question should be suitable for use in a multiple-choice scenario where exactly one option is unambiguously correct. Questions may begin with what, when, where, why, how, which, if, is/are, does/do, or "explain why" as long as this constraint is met.
-- For formatting reasons, make sure that questions are followed by a blank line before adding the separator (i.e. do not place the separator immediately after the question text)
-- Embed a short inline backtick snippet within the question sentence itself — not on a separate line before it
-- Use an appropriately language-tagged fenced code block whenever the language can be identified.
-- Code snippets must always be syntactically complete — never leave a block, function, or structure unclosed. If surrounding code is omitted for brevity, use \`// ...\` (or the language's comment equivalent) as a placeholder to indicate hidden/irrelevant code, and ensure all braces, brackets, or indentation blocks are properly closed.
-- Be prefixed with: (1) the relative file path as bold inline-code (e.g. **\`src/utils/cart.js\`**), then (2) the exact relevant line or snippet as a fenced code block with the appropriate language tag, then (3) the question itself
-- Ensure that any code mentioned in the question is present in the visible code snippet — do not ask about code that may have been truncated
-- The examples below illustrate possible educational question categories generally, but the generated output must remain comprehension-focused and must not ask the student to improve, critique, optimize, or refactor the code.
-- Not reveal or imply the answer
+Each question must follow this exact format:
 
-Sample question format:
+**\`path/to/file.ext\`**
 
-
-
-**\`sample-file.py\`**
-
-\`\`\`python
-def hello_world():
-    print("This will be colorized as Python code!")
+\`\`\`language
+def example():
+    // relevant code snippet
 \`\`\`
 
-1. What is the purpose of the \`hello_world\` function in sample-file.py?
+1. Plain-text question referencing \`specific_code_element\` from the snippet?
+
+   **Answer:** Correct answer here
+
+   **Incorrect Options:**
+   - Near distractor 1
+   - Near distractor 2
+   - Far distractor
 
 ---
 
+Constraints:
+- Each question must have exactly one unambiguously correct answer
+- Questions must be comprehension-focused — never ask the student to improve, critique, optimize, or refactor
+- Reference specific named code elements; embed a short inline backtick snippet in the question sentence
+- Code snippets must be syntactically complete — use \`// ...\` for omitted sections, and close all blocks
+- Only ask about code present in the visible snippet — not truncated content
+- If answering the question requires knowing the value of a parameter, variable, or data structure defined elsewhere in the code, include that definition in the snippet. Use a second fenced code block if needed (e.g. show where the array is defined, then show the function that uses it). Never ask a question whose answer depends on a value not visible in the snippet.
+- The question text must not reveal the answer — do not use leading phrasing ("Doesn't this..."), do not bold/italicize the key term from the answer, and do not frame the question so only one option grammatically fits
+- Use plain markdown text for questions (no bold headings, no oversized text)
 
+Answer constraints:
+- The --- separator appears only after the full answer block, never between the question and its answers
+- Use plain language a non-technical person could follow; if a technical term is unavoidable, define it inline in simple words
+- Near distractors: change one key detail from the correct answer — wrong variable name, inverted condition, off-by-one in a count, or correct concept applied to the wrong element. Must sound plausible but be unambiguously wrong on careful reading
+- Far distractor: describes a different purpose, a different function's behavior, or a fundamentally different mechanism than what the question asks about
+- CRITICAL length rule: Option lengths must vary unpredictably — the correct answer must not be identifiable by its length. Across the full set of questions, the correct answer should be the longest option in roughly the same proportion as it is the shortest; it should frequently be mid-length or shorter than one or more distractors. Deliberately expand distractors with a qualifying clause, a parenthetical, or a "because…" reason when needed to prevent the correct answer from consistently standing out as the longest. A student who always picks the longest option should be wrong as often as right.
 
-Generate exactly ${numQuestions} questions in total across all sections combined — this is a hard limit. Stop after question ${numQuestions}. Do not generate question ${numQuestions + 1} or beyond.
-First generate specific code-based questions grounded directly in the visible code.
-If you cannot reach ${numQuestions} specific code-based questions without becoming shallow or repetitive, fill the remaining slots with a **## Broader Questions** section.
-
-Broader Questions must:
-- Continue the numbering sequence
-- Focus only on concepts, patterns, or technologies directly inferable from the visible code
-- Never assume unseen implementation details, unless specified in the extra context section
-- Remain comprehension-focused rather than improvement-focused
-
-If ${numQuestions} specific code-based questions can be generated without becoming shallow, repetitive, or forced, omit the **## Broader Questions** section entirely.
-
-
-
-After each question, add the answer indented with three spaces (to align with the body text of the numbered list item) in this exact format:
-
-   **Answer:** [Your answer here]
-
-Do NOT place a --- separator between the question and its answer. The --- separator must only appear after the answer, to separate one question-answer pair from the next.
-
-Write the answer in plain, everyday language that a non-technical person could understand. Avoid jargon — if a technical term is essential, explain it in simple words. Keep the answer as short and direct as possible.
+Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
 
 Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, or summaries.${assignmentContextSection}${contextSection}`;
 

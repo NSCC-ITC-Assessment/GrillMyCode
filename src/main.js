@@ -41,15 +41,26 @@ import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
 /**
- * Removes answer lines from AI-generated Q+A text for student-facing output.
- * The AI always generates answers; this strips them programmatically when
- * include_answers is false, so the instructor copy always retains full Q+A.
+ * Strips distractor content from AI-generated Q+A output.
  *
- * Matches lines of the form "   **Answer:** ..." (3-space indent) and collapses
- * any resulting triple+ blank lines down to a double blank line.
+ * Incorrect options (header + bullets) are always removed — they are
+ * generated solely to enable quiz-style delivery and should not appear in
+ * any rendered report.
+ *
+ * The correct answer line is removed only when keepAnswers is false
+ * (i.e. when producing student-facing output without include_answers).
+ *
+ * Collapses any resulting triple+ blank lines down to a double blank line.
  */
-function stripAnswers(text) {
-  return text.replace(/^ {3}\*\*Answer:\*\*[^\n]*/gm, '').replace(/\n{3,}/g, '\n\n');
+function stripAnswers(text, { keepAnswers = false } = {}) {
+  let result = text;
+  if (!keepAnswers) {
+    result = result.replace(/^ {3}\*\*Answer:\*\*[^\n]*/gm, '');
+  }
+  return result
+    .replace(/^ {3}\*\*Incorrect Options:\*\*[^\n]*/gm, '')
+    .replace(/^ {3}- [^\n]*/gm, '')
+    .replace(/\n{3,}/g, '\n\n');
 }
 
 // ─── Entry Point ─────────────────────────────────────────────────────────────
@@ -189,10 +200,9 @@ async function run() {
       temperature: inputs.aiTemperature,
     });
 
-    // Strip answers for student-facing output when include_answers is false.
-    // The AI always generates answers; rawQuestions always contains the full
-    // Q+A and is used unchanged for the instructor report.
-    const questions = inputs.includeAnswers ? rawQuestions : stripAnswers(rawQuestions);
+    // Always strip incorrect options; also strip the correct answer when
+    // include_answers is false. rawQuestions is the unmodified AI output.
+    const questions = stripAnswers(rawQuestions, { keepAnswers: inputs.includeAnswers });
 
     // ── Write output ────────────────────────────────────────────────────────
     const report = formatReport({
