@@ -103,6 +103,20 @@ jobs:
       - name: Audit dependencies
         run: pnpm audit
 
+  action-image-tag:
+    name: action.yml Image Tag
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Ensure action.yml points to :latest
+        run: |
+          tag=$(grep -oP '(?<=grillmycode:)[^"]+' action.yml)
+          if [[ "$tag" != "latest" ]]; then
+            echo "::error file=action.yml::action.yml image tag must be ':latest' on main, but found ':${tag}'. Reset it before merging."
+            exit 1
+          fi
+
   docker:
     name: Docker Build
     runs-on: ubuntu-latest
