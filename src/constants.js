@@ -79,6 +79,14 @@ export const DEFAULT_AI_TEMPERATURE = 0.5;
 export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
 
 /**
+ * Character-count threshold above which the correct answer is considered
+ * "long". When a correct answer exceeds this length, at least two of its
+ * three distractors must be strictly longer than the correct answer to
+ * prevent students from identifying the right option by its length.
+ */
+export const DISTRACTOR_LONGER_THRESHOLD = 50;
+
+/**
  * How many times to poll for the instructor repository's default branch ref
  * after creation before giving up.  GitHub's auto_init commit is
  * asynchronous, so the ref may not appear immediately.

@@ -4,6 +4,7 @@
  * Constructs the system and user messages sent to the AI provider.
  * Contains the full assessment rubric and formatting instructions.
  */
+import { DISTRACTOR_LONGER_THRESHOLD } from './constants.js';
 
 /**
  * Builds the [system, user] message array for the chat completions API.
@@ -108,6 +109,7 @@ Answer constraints:
 - Near distractors: change one key detail from the correct answer — wrong variable name, inverted condition, off-by-one in a count, or correct concept applied to the wrong element. Must sound plausible but be unambiguously wrong on careful reading
 - Far distractor: describes a different purpose, a different function's behavior, or a fundamentally different mechanism than what the question asks about
 - CRITICAL length rule: Option lengths must vary unpredictably — the correct answer must not be identifiable by its length. Across the full set of questions, the correct answer should be the longest option in roughly the same proportion as it is the shortest; it should frequently be mid-length or shorter than one or more distractors. Deliberately expand distractors with a qualifying clause, a parenthetical, or a "because…" reason when needed to prevent the correct answer from consistently standing out as the longest. A student who always picks the longest option should be wrong as often as right.
+- MANDATORY long-answer rule: If the correct answer exceeds ${DISTRACTOR_LONGER_THRESHOLD} characters, at least two of the three distractors must be strictly longer than the correct answer in character count. Achieve this by adding a specific technical detail, a "because…" clause, or a parenthetical explanation to those distractors. This rule takes precedence over general length variation — do not produce a long correct answer with all shorter distractors.
 
 Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
 
