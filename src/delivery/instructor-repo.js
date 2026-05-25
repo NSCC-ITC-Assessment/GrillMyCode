@@ -61,86 +61,114 @@ jobs:
           CHANGED=$(git diff HEAD~1 HEAD --name-only | grep 'questions[.]md$' | head -1)
           echo "dir=$(dirname "$CHANGED")" >> "$GITHUB_OUTPUT"
 
+      - name: Install Node.js dependencies
+        run: npm install --prefix /tmp/quiz-deps prismjs
+
       - name: Extract questions and answers for Brightspace
         env:
           STUDENT_DIR: \${{ steps.student.outputs.dir }}
           STUDENT: \${{ github.actor }}
           TIMESTAMP: \${{ github.event.head_commit.timestamp }}
         run: |
-          python3 <<'PYEOF'
-          import os, re
-          student_dir = os.environ['STUDENT_DIR']
-          student = os.environ.get('STUDENT', 'unknown')
-          timestamp = os.environ.get('TIMESTAMP', '')
-          qmd = os.path.join(student_dir, 'questions.md')
-          out = os.path.join(student_dir, 'future_brightspace_quiz.txt')
-          with open(qmd) as f:
-              content = f.read()
-          NL = chr(10)
-          blocks = content.split(NL + '---' + NL)
-          results = []
-          last_file_path = None
-          last_snippet = None
-          for block in blocks:
-              question = None
-              answer = None
-              incorrect = []
-              file_path = None
-              snippet_lines = []
-              in_inc = False
-              in_snippet = False
-              for line in block.splitlines():
-                  stripped = line.strip()
-                  fp_match = re.match(r'^\\*\\*\`(.+?)\`\\*\\*\\s*$', stripped)
-                  if fp_match and not question:
-                      file_path = fp_match.group(1)
-                  elif stripped.startswith('\`\`\`') and not question:
-                      in_snippet = not in_snippet
-                  elif in_snippet:
-                      snippet_lines.append(line.rstrip())
-                  elif not question and line and line[0].isdigit() and '. ' in line:
-                      question = line.split('. ', 1)[1].strip()
-                  elif stripped.startswith('**Answer:** '):
-                      answer = stripped[len('**Answer:** '):].strip()
-                      in_inc = False
-                  elif stripped.startswith('**Incorrect Options:**'):
-                      in_inc = True
-                  elif in_inc and stripped.startswith('- '):
-                      incorrect.append(stripped[2:].strip())
-              if file_path:
-                  last_file_path = file_path
-              else:
-                  file_path = last_file_path
-              if snippet_lines:
-                  last_snippet = snippet_lines
-              else:
-                  snippet_lines = last_snippet or []
-              if question and answer:
-                  results.append((question, answer, incorrect, file_path, snippet_lines))
-          with open(out, 'w') as f:
-              print('Brightspace Quiz Extract', file=f)
-              print('========================', file=f)
-              print('Student  :', student, file=f)
-              print('Triggered:', timestamp, file=f)
-              print(file=f)
-              for i, (q, a, opts, fp, snippet) in enumerate(results, 1):
-                  print(f'Question {i}:', file=f)
-                  if fp:
-                      print(f'File: {fp}', file=f)
-                  if snippet:
-                      print(file=f)
-                      for sl in snippet:
-                          print(sl, file=f)
-                  print(file=f)
-                  print(q, file=f)
-                  print(file=f)
-                  print(f'- [CORRECT] {a}', file=f)
-                  for opt in opts:
-                      print(f'- {opt}', file=f)
-                  print(file=f)
-                  print('-' * 40, file=f)
-                  print(file=f)
-          PYEOF
+          node <<'JSEOF'
+          const fs = require('fs');
+          const path = require('path');
+          const Prism = require('/tmp/quiz-deps/node_modules/prismjs');
+          const loadLanguages = require('/tmp/quiz-deps/node_modules/prismjs/components/index.js');
+          loadLanguages(['javascript','typescript','jsx','tsx','python','ruby','java','kotlin','csharp','cpp','c','go','rust','php','swift','bash','css','scss','yaml','json','sql','markdown']);
+
+          function detectLang(fp) {
+            if (!fp) return 'plaintext';
+            const ext = fp.split('.').pop().toLowerCase();
+            const map = {
+              js: 'javascript', mjs: 'javascript', cjs: 'javascript',
+              ts: 'typescript', tsx: 'tsx', jsx: 'jsx',
+              py: 'python', rb: 'ruby', java: 'java', kt: 'kotlin',
+              cs: 'csharp', cpp: 'cpp', c: 'c', go: 'go', rs: 'rust',
+              php: 'php', swift: 'swift', sh: 'bash', bash: 'bash',
+              html: 'markup', htm: 'markup', xml: 'markup',
+              css: 'css', scss: 'scss', json: 'json',
+              yml: 'yaml', yaml: 'yaml', sql: 'sql', md: 'markdown',
+            };
+            return map[ext] || 'plaintext';
+          }
+
+          const studentDir = process.env.STUDENT_DIR;
+          const student = process.env.STUDENT || 'unknown';
+          const timestamp = process.env.TIMESTAMP || '';
+
+          const qmd = path.join(studentDir, 'questions.md');
+          const out = path.join(studentDir, 'future_brightspace_quiz.txt');
+
+          const content = fs.readFileSync(qmd, 'utf8');
+          const blocks = content.split('\\n---\\n');
+          const results = [];
+          let lastFilePath = null;
+          let lastSnippet = null;
+
+          for (const block of blocks) {
+            let question = null, answer = null, filePath = null;
+            const incorrect = [], snippetLines = [];
+            let inInc = false, inSnippet = false;
+
+            for (const line of block.split('\\n')) {
+              const stripped = line.trim();
+              const fpMatch = !question && stripped.match(/^\\*\\*\`(.+?)\`\\*\\*\\s*$/);
+              if (fpMatch) {
+                filePath = fpMatch[1];
+              } else if (stripped.startsWith('\`\`\`') && !question) {
+                inSnippet = !inSnippet;
+              } else if (inSnippet) {
+                snippetLines.push(line.trimEnd());
+              } else if (!question && line && /^\\d+\\. /.test(line)) {
+                question = line.split('. ').slice(1).join('. ').trim();
+              } else if (stripped.startsWith('**Answer:** ')) {
+                answer = stripped.slice('**Answer:** '.length).trim();
+                inInc = false;
+              } else if (stripped.startsWith('**Incorrect Options:**')) {
+                inInc = true;
+              } else if (inInc && stripped.startsWith('- ')) {
+                incorrect.push(stripped.slice(2).trim());
+              }
+            }
+
+            if (filePath) lastFilePath = filePath;
+            else filePath = lastFilePath;
+            const finalSnippet = snippetLines.length ? snippetLines : (lastSnippet || []);
+            if (snippetLines.length) lastSnippet = snippetLines;
+
+            if (question && answer) {
+              results.push({ question, answer, incorrect, filePath, snippet: finalSnippet });
+            }
+          }
+
+          const lines = [
+            'Brightspace Quiz Extract',
+            '========================',
+            'Student  : ' + student,
+            'Triggered: ' + timestamp,
+            '',
+          ];
+
+          results.forEach(function(item, i) {
+            lines.push('Question ' + (i + 1) + ':');
+            if (item.filePath) lines.push('File: ' + item.filePath);
+            if (item.snippet.length) {
+              const lang = detectLang(item.filePath);
+              const code = item.snippet.join('\n');
+              const grammar = Prism.languages[lang];
+              const highlighted = grammar ? Prism.highlight(code, grammar, lang) : code;
+              lines.push('Language: ' + lang + '  [colorized-html]');
+              lines.push('');
+              highlighted.split('\n').forEach(function(hl) { lines.push(hl); });
+            }
+            lines.push('', item.question, '', '- [CORRECT] ' + item.answer);
+            item.incorrect.forEach(function(opt) { lines.push('- ' + opt); });
+            lines.push('', '-'.repeat(40), '');
+          });
+
+          fs.writeFileSync(out, lines.join('\\n'));
+          JSEOF
 
       - name: Commit placeholder file
         run: |
