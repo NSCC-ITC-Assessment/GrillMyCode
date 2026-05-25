@@ -68,6 +68,8 @@ jobs:
 
           const qmd = path.join(studentDir, 'questions.md');
           const out = path.join(studentDir, 'future_brightspace_quiz.txt');
+          const prismCss = fs.readFileSync('/tmp/quiz-deps/node_modules/prismjs/themes/prism.css', 'utf8');
+          const styleTag = '<style>' + prismCss + '</style>';
 
           const content = fs.readFileSync(qmd, 'utf8');
           const blocks = content.split('\n---\n');
@@ -135,9 +137,7 @@ jobs:
               const code = item.snippet.join('\n');
               const grammar = Prism.languages[lang];
               const highlighted = grammar ? Prism.highlight(code, grammar, lang) : code;
-              lines.push('Language: ' + lang + (grammar ? '  [colorized-html]' : ''));
-              lines.push('');
-              highlighted.split('\n').forEach(function(hl) { lines.push(hl); });
+              lines.push(styleTag + '<pre class="language-' + lang + '"><code class="language-' + lang + '">' + highlighted + '</code></pre>');
             }
             lines.push('', item.question, '', '- [CORRECT] ' + item.answer);
             item.incorrect.forEach(function(opt) { lines.push('- ' + opt); });
