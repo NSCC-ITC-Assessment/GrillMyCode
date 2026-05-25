@@ -87,6 +87,15 @@ export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
 export const DISTRACTOR_LONGER_THRESHOLD = 50;
 
 /**
+ * Maximum character count for a "short" correct answer. At least one in
+ * every three questions must target a correct answer within this length
+ * (e.g. a literal return value, boolean, numeric result, or short identifier)
+ * so that overall answer lengths span from a few characters up to multi-sentence
+ * explanations.
+ */
+export const SHORT_ANSWER_MAX_CHARS = 20;
+
+/**
  * How many times to poll for the instructor repository's default branch ref
  * after creation before giving up.  GitHub's auto_init commit is
  * asynchronous, so the ref may not appear immediately.
