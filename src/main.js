@@ -43,7 +43,7 @@ import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
 /**
  * Strips distractor content from AI-generated Q+A output.
  *
- * Incorrect options (header + bullets) are always removed — they are
+ * Incorrect options for quiz (header + bullets) are always removed — they are
  * generated solely to enable quiz-style delivery and should not appear in
  * any rendered report.
  *
@@ -58,7 +58,7 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
     result = result.replace(/^ {3}\*\*Answer:\*\*[^\n]*/gm, '');
   }
   return result
-    .replace(/^ {3}\*\*Incorrect Options:\*\*[^\n]*/gm, '')
+    .replace(/^ {3}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
     .replace(/^ {3}- [^\n]*/gm, '')
     .replace(/\n{3,}/g, '\n\n');
 }
@@ -200,7 +200,7 @@ async function run() {
       temperature: inputs.aiTemperature,
     });
 
-    // Always strip incorrect options; also strip the correct answer when
+    // Always strip incorrect options for quiz; also strip the correct answer when
     // include_answers is false. rawQuestions is the unmodified AI output.
     const questions = stripAnswers(rawQuestions, { keepAnswers: inputs.includeAnswers });
 

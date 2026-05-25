@@ -86,7 +86,7 @@ def example():
 
    **Answer:** Correct answer here
 
-   **Incorrect Options:**
+   **Incorrect Options for Quiz:**
    - Near distractor 1
    - Near distractor 2
    - Far distractor

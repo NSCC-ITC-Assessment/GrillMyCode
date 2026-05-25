@@ -1,7 +1,7 @@
 /**
  * Shared constants for the Code Comprehension Question Generator.
  *
- * Centralising these values avoids magic numbers scattered throughout the
+ * Centralizing these values avoids magic numbers scattered throughout the
  * codebase and makes tuning easier — change a value here and it takes effect
  * everywhere automatically.
  */

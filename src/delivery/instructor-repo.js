@@ -7,7 +7,7 @@
  *
  * The file is written to {studentLogin}/questions.md inside the repository.
  * The repository is named {assignmentName}-grillmycode and lives in the same
- * organisation as the student repositories.
+ * organization as the student repositories.
  *
  * A separate instructor PAT (instructor_repo_token) is used for all API calls
  * in this module — the student's github_token is never used here.
@@ -125,7 +125,7 @@ jobs:
               } else if (stripped.startsWith('**Answer:** ')) {
                 answer = stripped.slice('**Answer:** '.length).trim();
                 inInc = false;
-              } else if (stripped.startsWith('**Incorrect Options:**')) {
+              } else if (stripped.startsWith('**Incorrect Options for Quiz:**')) {
                 inInc = true;
               } else if (inInc && stripped.startsWith('- ')) {
                 incorrect.push(stripped.slice(2).trim());
