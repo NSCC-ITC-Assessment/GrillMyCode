@@ -55,11 +55,11 @@ import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
 function stripAnswers(text, { keepAnswers = false } = {}) {
   let result = text;
   if (!keepAnswers) {
-    result = result.replace(/^ {3}\*\*Answer:\*\*[^\n]*/gm, '');
+    result = result.replace(/^ {3,4}\*\*Answer:\*\*[^\n]*/gm, '');
   }
   return result
-    .replace(/^ {3}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
-    .replace(/^ {3}- [^\n]*/gm, '')
+    .replace(/^ {3,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
+    .replace(/^ {3,4}- [^\n]*/gm, '')
     .replace(/\n{3,}/g, '\n\n');
 }
 
