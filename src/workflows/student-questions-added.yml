@@ -75,17 +75,23 @@ jobs:
           let lastFilePath = null;
           let lastSnippet = null;
 
+          let lastSnippetLang = null;
+
           for (const block of blocks) {
-            let question = null, answer = null, filePath = null;
+            let question = null, answer = null, filePath = null, snippetLang = null;
             const incorrect = [], snippetLines = [];
             let inInc = false, inSnippet = false;
 
             for (const line of block.split('\n')) {
               const stripped = line.trim();
-              const fpMatch = !question && stripped.match(/^\*\*`(.+?)`\*\*\s*$/);
+              const fpMatch = !question && stripped.match(/^\*\*`?(.+?)`?\*\*\s*$/);
               if (fpMatch) {
                 filePath = fpMatch[1];
               } else if (stripped.startsWith('```') && !question) {
+                if (!inSnippet) {
+                  const fenceLang = stripped.slice(3).trim();
+                  if (fenceLang) snippetLang = fenceLang;
+                }
                 inSnippet = !inSnippet;
               } else if (inSnippet) {
                 snippetLines.push(line.trimEnd());
@@ -103,11 +109,13 @@ jobs:
 
             if (filePath) lastFilePath = filePath;
             else filePath = lastFilePath;
+            if (snippetLang) lastSnippetLang = snippetLang;
+            else snippetLang = lastSnippetLang;
             const finalSnippet = snippetLines.length ? snippetLines : (lastSnippet || []);
             if (snippetLines.length) lastSnippet = snippetLines;
 
             if (question && answer) {
-              results.push({ question, answer, incorrect, filePath, snippet: finalSnippet });
+              results.push({ question, answer, incorrect, filePath, snippetLang, snippet: finalSnippet });
             }
           }
 
@@ -123,11 +131,11 @@ jobs:
             lines.push('Question ' + (i + 1) + ':');
             if (item.filePath) lines.push('File: ' + item.filePath);
             if (item.snippet.length) {
-              const lang = detectLang(item.filePath);
+              const lang = item.snippetLang || detectLang(item.filePath);
               const code = item.snippet.join('\n');
               const grammar = Prism.languages[lang];
               const highlighted = grammar ? Prism.highlight(code, grammar, lang) : code;
-              lines.push('Language: ' + lang + '  [colorized-html]');
+              lines.push('Language: ' + lang + (grammar ? '  [colorized-html]' : ''));
               lines.push('');
               highlighted.split('\n').forEach(function(hl) { lines.push(hl); });
             }
