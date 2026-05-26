@@ -111,6 +111,13 @@ export const INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS = 1000;
 export const AI_TOP_P = 0.95;
 
 /**
+ * Maximum output tokens for the AI response.
+ * 50 questions with code snippets + answers typically requires 12,000–16,000
+ * tokens. Setting a generous limit prevents early truncation by the API.
+ */
+export const AI_MAX_OUTPUT_TOKENS = 16_384;
+
+/**
  * Bot account substrings that are always excluded when resolving the student
  * login from the commit history. This list is applied unconditionally,
  * regardless of the user-configured skip_committers input (which controls

@@ -63,6 +63,27 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
     .replace(/\n{3,}/g, '\n\n');
 }
 
+/**
+ * Truncates AI output to at most `maxQuestions` numbered questions.
+ *
+ * If the model over-generates (e.g. produces more questions than were
+ * requested because it hit the token limit), this finds the start of question
+ * maxQuestions+1 and removes everything from that point onward.
+ */
+function truncateToMaxQuestions(text, maxQuestions) {
+  // Questions are numbered: "1.", "2.", … at the start of a line (possibly
+  // preceded by whitespace). Look for the start of question maxQuestions+1.
+  const overflowPattern = new RegExp(`(?:^|\\n)(?=\\s*${maxQuestions + 1}\\.\\s)`);
+  const match = overflowPattern.exec(text);
+  if (match) {
+    core.warning(
+      `AI generated more than ${maxQuestions} questions — truncating to the requested count.`,
+    );
+    return text.substring(0, match.index).trimEnd();
+  }
+  return text;
+}
+
 // ─── Entry Point ─────────────────────────────────────────────────────────────
 
 async function run() {
@@ -190,15 +211,18 @@ async function run() {
     const effectiveApiKey =
       inputs.aiProvider === 'github-models' ? inputs.apiKey || inputs.githubToken : inputs.apiKey;
 
-    const rawQuestions = await callAI({
-      provider: inputs.aiProvider,
-      model: inputs.aiModel,
-      apiKey: effectiveApiKey,
-      endpoint: inputs.azureEndpoint,
-      messages,
-      retryMaxAttempts: inputs.aiRetryMaxAttempts,
-      temperature: inputs.aiTemperature,
-    });
+    const rawQuestions = truncateToMaxQuestions(
+      await callAI({
+        provider: inputs.aiProvider,
+        model: inputs.aiModel,
+        apiKey: effectiveApiKey,
+        endpoint: inputs.azureEndpoint,
+        messages,
+        retryMaxAttempts: inputs.aiRetryMaxAttempts,
+        temperature: inputs.aiTemperature,
+      }),
+      inputs.numQuestions,
+    );
 
     // Always strip incorrect options for quiz; also strip the correct answer when
     // include_answers is false. rawQuestions is the unmodified AI output.
