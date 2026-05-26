@@ -82,7 +82,7 @@ jobs:
           for (const block of blocks) {
             let question = null, answer = null, filePath = null, snippetLang = null;
             const incorrect = [], snippetLines = [];
-            let inInc = false, inSnippet = false;
+            let inInc = false, inSnippet = false, inAnswer = false;
 
             for (const line of block.split('\n')) {
               const stripped = line.trim();
@@ -99,10 +99,17 @@ jobs:
                 snippetLines.push(line.trimEnd());
               } else if (!question && line && /^\d+\. /.test(line)) {
                 question = line.split('. ').slice(1).join('. ').trim();
-              } else if (stripped.startsWith('**Answer:** ')) {
-                answer = stripped.slice('**Answer:** '.length).trim();
+              } else if (stripped === '**Answer:**' || stripped.startsWith('**Answer:** ')) {
+                inAnswer = true;
                 inInc = false;
+                // Support inline answer: **Answer:** text on the same line
+                const inline = stripped.slice('**Answer:**'.length).trim();
+                if (inline) { answer = inline; inAnswer = false; }
+              } else if (inAnswer && stripped.startsWith('- ')) {
+                answer = stripped.slice(2).trim();
+                inAnswer = false;
               } else if (stripped.startsWith('**Incorrect Options for Quiz:**')) {
+                inAnswer = false;
                 inInc = true;
               } else if (inInc && stripped.startsWith('- ')) {
                 incorrect.push(stripped.slice(2).trim());

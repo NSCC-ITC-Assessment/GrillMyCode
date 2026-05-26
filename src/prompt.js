@@ -84,7 +84,8 @@ def example():
 
 1. Plain-text question referencing \`specific_code_element\` from the snippet?
 
-   **Answer:** Correct answer here
+   **Answer:** 
+   - Correct answer here
 
    **Incorrect Options for Quiz:**
    - Near distractor 1
@@ -109,7 +110,7 @@ Answer constraints:
 - Near distractors: change one key detail from the correct answer — wrong variable name, inverted condition, off-by-one in a count, or correct concept applied to the wrong element. Must sound plausible but be unambiguously wrong on careful reading
 - Far distractor: describes a different purpose, a different function's behavior, or a fundamentally different mechanism than what the question asks about
 - CRITICAL length rule: Option lengths must vary unpredictably — the correct answer must not be identifiable by its length. Across the full set of questions, the correct answer should be the longest option in roughly the same proportion as it is the shortest; it should frequently be mid-length or shorter than one or more distractors. A student who always picks the longest option should be wrong as often as right.
-- MANDATORY option-length balance rule: For every question, calculate the character count of the correct answer. If the correct answer exceeds ${DISTRACTOR_LONGER_THRESHOLD} characters, at least one distractor must be within ±20% of the correct answer's length (e.g., if correct is 162 characters, one distractor should be 130–194 characters). Achieve this by adding parenthetical details, technical specifications, supporting details, or qualifying clauses to those distractors. Never produce a long correct answer with all three distractors significantly shorter.
+- MANDATORY length-verification rule: Before finalizing each question, output a length-verification line immediately after the full answer block: \`<!-- Length verification: Correct: XX | D1: XX | D2: XX | D3: XX -->\`. If the correct answer exceeds ${DISTRACTOR_LONGER_THRESHOLD} characters, at least one distractor must have a character count within ±20% of the correct answer (e.g., if correct is 162, at least one distractor must be 130–194 chars). If this condition is not met, revise the distractors by adding parenthetical details, technical specifications, or clarifying clauses until the balance requirement is satisfied. Only include the final markdown question output in your response — the length verification is for internal validation only, so output it as an HTML comment.
 - MANDATORY short-answer requirement: At least one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, a specific return value (\`42\`, \`null\`, \`True\`), a single keyword, or a short identifier. Output-trace questions work well here. The distractors for these questions must also be short (a few characters to one short phrase) so the correct answer cannot be identified by being the only short option.
 
 Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
