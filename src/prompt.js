@@ -110,16 +110,17 @@ Answer constraints:
 - Near distractors: change one key detail from the correct answer — wrong variable name, inverted condition, off-by-one in a count, or correct concept applied to the wrong element. Must sound plausible but be unambiguously wrong on careful reading
 - Far distractor: describes a different purpose, a different function's behavior, or a fundamentally different mechanism than what the question asks about
 
-CRITICAL — Option length anti-pattern prevention:
-The #1 failure mode in generated quizzes is a long, nuanced correct answer with short, lazy distractors. This makes the correct answer identifiable by length alone. To prevent this, follow this MANDATORY writing process for EVERY question:
+CRITICAL — Option length balance:
+All four options (correct + 3 distractors) must be written with equal care and specificity. Every option must read like a confident answer a student might give — include specific code elements, mechanisms, or reasoning. No throwaway one-liner distractors next to a detailed correct answer. Minimum length for ANY option: 12 words.
 
-Step 1: Write the three INCORRECT options FIRST. Each distractor must be a confident, detailed technical claim — include a specific mechanism, a named code element, and a "because" or "since" clause explaining WHY it would behave that way. Distractors must sound like answers a student who misread the code would confidently give. Minimum: each distractor must be at least 15 words.
+MANDATORY length distribution across the full question set:
+- Assign each question a "correct-answer length role" before writing it, cycling through: SHORT, MID, LONG, SHORT, MID, LONG, etc.
+- SHORT: The correct answer is the shortest of the four options. Write distractors with extra detail (a "because" clause or parenthetical).
+- MID: The correct answer is mid-length — at least one distractor is shorter AND at least one distractor is longer.
+- LONG: The correct answer is the longest of the four options. Keep distractors slightly more concise.
+- This ensures roughly equal distribution. A student who always picks the longest, shortest, or mid-length option gains no advantage.
 
-Step 2: Write the CORRECT answer LAST. It must be CONCISE — state the fact without over-explaining. If the correct answer naturally requires a qualifier (e.g. "but X happens because Y"), that is fine, but do NOT pad it with unnecessary elaboration. Aim for the correct answer to be shorter than at least one distractor.
-
-Step 3: Verify — count approximate lengths. If the correct answer is the longest of the four options, you MUST go back and expand at least one distractor with additional (wrong) technical detail until it is longer. Output a verification comment: \`<!-- Lengths: C=XX | D1=XX | D2=XX | D3=XX -->\`
-
-Across the full set of questions, the correct answer must be the longest option in NO MORE than 2 out of every ${numQuestions} questions. A test-taker who always picks the longest option must score BELOW 25%.
+After each question, output: \`<!-- Lengths: C=XX | D1=XX | D2=XX | D3=XX | Role=SHORT/MID/LONG -->\`
 
 - MANDATORY short-answer requirement: At least one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, a specific return value (\`42\`, \`null\`, \`True\`), a single keyword, or a short identifier. Output-trace questions work well here. The distractors for these questions must also be short (a few characters to one short phrase) so the correct answer cannot be identified by being the only short option.
 
