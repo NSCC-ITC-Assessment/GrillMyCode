@@ -80,11 +80,11 @@ export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
 
 /**
  * Character-count threshold above which the correct answer is considered
- * "long". When a correct answer exceeds this length, at least two of its
- * three distractors must be strictly longer than the correct answer to
- * prevent students from identifying the right option by its length.
+ * "long". When a correct answer exceeds this length, distractors must be
+ * length-balanced to prevent students from identifying the right option by
+ * its length alone. See prompt.js for enforcement rules.
  */
-export const DISTRACTOR_LONGER_THRESHOLD = 50;
+export const DISTRACTOR_LONGER_THRESHOLD = 100;
 
 /**
  * Maximum character count for a "short" correct answer. At least one in
