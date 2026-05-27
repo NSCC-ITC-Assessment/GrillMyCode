@@ -4,7 +4,7 @@
  * Constructs the system and user messages sent to the AI provider.
  * Contains the full assessment rubric and formatting instructions.
  */
-import { SHORT_ANSWER_MAX_CHARS } from './constants.js';
+import { SHORT_ANSWER_MAX_CHARS, LONG_ANSWER_MAX_CHARS } from './constants.js';
 
 /**
  * Builds the [system, user] message array for the chat completions API.
@@ -133,7 +133,10 @@ SHORT-ANSWER QUESTIONS (exactly one in every three):
 LENGTH RULE (all other questions):
 Every option must read like a confident answer a student might give — include specific code elements, mechanisms, or reasoning in ALL four options. No throwaway one-liner distractors next to a detailed correct answer.
 - Each option (correct and distractors) must be at least 8 words. Answers shorter than 8 words lack the specificity needed to test comprehension.
-- Write the correct answer first. Then write each distractor so its word count is within ±20% of the correct answer's word count. No distractor may be more than 20% shorter or more than 20% longer than the correct answer.
+- Write the correct answer first. Then write each distractor so its word count is no more than 20% SHORTER than the correct answer's word count. There is no upper bound on distractor length — a distractor may be longer than the correct answer.
+- Because the correct answer is capped at ${LONG_ANSWER_MAX_CHARS} characters, it is expected that some distractors will exceed the correct answer in length. This is intentional and desirable for visual balance.
+- CORRECT ANSWER LENGTH CAP: The correct answer for all long-answer questions (i.e. not short-answer) must be ${LONG_ANSWER_MAX_CHARS} characters or fewer. Write the correct answer concisely so it fits within this limit. Distractors are exempt from this cap and may be longer than ${LONG_ANSWER_MAX_CHARS} characters if needed to balance option lengths.
+- VISUAL BALANCE (MANDATORY): For every long-answer question, at least one distractor MUST be at least as long as the correct answer (character count). This is a hard requirement, not a suggestion. After writing each question, verify: is max(distractor lengths) >= correct answer length? If not, lengthen one or more distractors until this condition is met. Vary which distractor is the longest across the full set of questions.
 - STRUCTURAL MATCHING: Every distractor must mirror the syntactic and logical structure of the correct answer. This has two forms:
   - **Multi-step process**: If the correct answer describes a multi-step process (e.g. "reads X, splits by Y, stores in Z"), every distractor must also describe a multi-step process with comparable structural detail. A single-clause distractor like "creates a randomized map" next to a three-clause correct answer is a violation — rewrite it with the same clause structure (e.g. "generates random coordinates using Math.random(), assigns them to grid cells, and stores them in a 1D array").
   - **Embedded reasoning**: If the correct answer contains a parenthetical, a "since…" clause, or a "because…" sub-clause that explains *why* something is true (e.g. "…(since \`Number('0')\` equals 0, which is not greater than 0, so it fails this guard anyway)"), EVERY distractor must also contain an embedded reasoning clause of comparable length and specificity. A short one-clause distractor like "Because JavaScript evaluates conditions from right to left" next to a correct answer with an embedded 18-word explanation is a structural mismatch — it is REJECTED. Rewrite it to include its own embedded reasoning (e.g. "Because \`coordinates.slice(1)\` returns an empty string for single-character inputs (since \`Number('')\` coerces to 0, which is not > 0 and would trigger this guard anyway)").
@@ -151,7 +154,24 @@ If your distractors lack embedded reasoning while the correct answer has it — 
 - After writing all four options, verify: longest option ÷ shortest option ≤ 1.5. If not, rewrite until satisfied.
 - After each question, if possible include: \`<!-- Lengths: C=XX | D1=XX | D2=XX | D3=XX -->\` (word counts)
 
-FORMAT REMINDER: Each question must have **Answer:** with one bullet (the correct answer) followed by a blank line then **Incorrect Options for Quiz:** with three bullets (the distractors). Do not merge all options into a single list.
+MANDATORY BULLET STRUCTURE — this is a rejection-level rule, not a formatting preference:
+Every question MUST follow this exact bullet anatomy:
+
+\`\`\`
+**Answer:**
+- &lt;one bullet — the correct answer, as a complete sentence&gt;
+
+**Incorrect Options for Quiz:**
+- &lt;one bullet — distractor 1&gt;
+- &lt;one bullet — distractor 2&gt;
+- &lt;one bullet — distractor 3&gt;
+\`\`\`
+
+Violations that will cause output rejection:
+- Writing \`**Answer:** &lt;plain text with no bullet&gt;\` — the correct answer MUST be a bullet, not bare inline text
+- Merging the **Answer:** and **Incorrect Options for Quiz:** sections into a single flat list
+- Placing the correct answer directly after the \`**Answer:**\` heading on the same line without a newline
+- Skipping the blank line between the last correct-answer bullet and the \`**Incorrect Options for Quiz:**\` heading
 
 Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
 
@@ -169,6 +189,9 @@ Every question from 1 to ${numQuestions} must appear completely with its code sn
 
 ANTI-OVER-GENERATION RULE — CRITICAL:
 Do NOT generate more than ${numQuestions} questions. After writing question ${numQuestions} in full, STOP IMMEDIATELY. Do not write question ${numQuestions + 1}. Producing extra questions beyond ${numQuestions} is equally as invalid as producing too few. Once the --- separator after question ${numQuestions}'s answer block is written, your response is complete — emit no further content.
+
+SHORT-ANSWER TRACKER:
+Track your count of short-answer questions as you write. A short-answer question is one whose correct answer is ${SHORT_ANSWER_MAX_CHARS} characters or fewer (e.g. \`42\`, \`null\`, \`True\`, a single keyword, or a short identifier). You MUST have exactly floor(${numQuestions} / 3) short-answer questions — no more, no fewer. After writing each question, pause and verify: if your short-answer count is less than floor(N/3) at question N, the next question should be short-answer; if it is already met, the next question must NOT be short-answer. Stop and revise any question that breaks this ratio.
 
 Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, summaries, or closing remarks.${assignmentContextSection}${contextSection}`;
 

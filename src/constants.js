@@ -88,6 +88,13 @@ export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
 export const SHORT_ANSWER_MAX_CHARS = 20;
 
 /**
+ * Maximum character count for a "long" correct answer (i.e. all non-short-answer
+ * questions).  Distractors are exempt from this cap and may be longer to allow
+ * for visual balance across the four options.
+ */
+export const LONG_ANSWER_MAX_CHARS = 100;
+
+/**
  * How many times to poll for the instructor repository's default branch ref
  * after creation before giving up.  GitHub's auto_init commit is
  * asynchronous, so the ref may not appear immediately.
