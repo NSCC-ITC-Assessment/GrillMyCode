@@ -21,7 +21,7 @@ const STEPS = [
 ];
 
 const INITIAL_CONFIG = {
-  triggerEvent: 'pull_request',
+  triggerEvent: 'workflow_dispatch',
   prTypes: ['opened', 'synchronize'],
   pushBranches: ['main'],
 
@@ -85,7 +85,7 @@ export default function WorkflowWizard() {
       const next = { ...prev, ...patch };
       // Auto-uncheck PR comment delivery when trigger no longer includes pull_request
       if ('triggerEvent' in patch) {
-        const isPr = next.triggerEvent === 'pull_request' || next.triggerEvent === 'push+pull_request';
+        const isPr = ['pull_request+workflow_dispatch', 'push+pull_request+workflow_dispatch'].includes(next.triggerEvent);
         if (!isPr) next.postPrComment = false;
       }
       return next;

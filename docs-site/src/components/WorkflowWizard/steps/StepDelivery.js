@@ -2,8 +2,10 @@ import React from 'react';
 import styles from '../styles.module.css';
 
 export default function StepDelivery({ cfg, onChange }) {
-  const isPrTrigger =
-    cfg.triggerEvent === 'pull_request' || cfg.triggerEvent === 'push+pull_request';
+  const isPrTrigger = [
+    'pull_request+workflow_dispatch',
+    'push+pull_request+workflow_dispatch',
+  ].includes(cfg.triggerEvent);
 
   return (
     <div>

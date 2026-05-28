@@ -3,29 +3,24 @@ import styles from '../styles.module.css';
 
 const TRIGGERS = [
   {
-    value: 'pull_request',
-    label: 'Pull Request',
-    description: 'Run when a student opens or updates a pull request.',
-  },
-  {
-    value: 'push',
-    label: 'Push to branch',
-    description: 'Run when code is pushed directly to a branch (e.g. main). Good for non-PR workflows.',
-  },
-  {
-    value: 'push+pull_request',
-    label: 'Push + Pull Request',
-    description: 'Run on both PR events and direct pushes.',
-  },
-  {
     value: 'workflow_dispatch',
-    label: 'Manual (workflow_dispatch)',
+    label: 'Manual only',
     description: 'Run only when triggered manually from the Actions tab. Useful for testing.',
   },
   {
+    value: 'pull_request+workflow_dispatch',
+    label: 'Pull Request or Manual',
+    description: 'Run on pull request events and allow manual triggering from the Actions tab.',
+  },
+  {
     value: 'push+workflow_dispatch',
-    label: 'Push + Manual',
+    label: 'Push or Manual',
     description: 'Run on pushes and allow manual triggering.',
+  },
+  {
+    value: 'push+pull_request+workflow_dispatch',
+    label: 'Push or Pull Request or Manual',
+    description: 'Run on pushes, PR events, and allow manual triggering.',
   },
 ];
 
@@ -39,12 +34,15 @@ export default function StepTrigger({ cfg, onChange }) {
   }
 
   const prTypes = cfg.prTypes || ['opened', 'synchronize'];
-  const showPrOptions =
-    cfg.triggerEvent === 'pull_request' || cfg.triggerEvent === 'push+pull_request';
-  const showBranchOption =
-    cfg.triggerEvent === 'push' ||
-    cfg.triggerEvent === 'push+workflow_dispatch' ||
-    cfg.triggerEvent === 'push+pull_request';
+  const showPrOptions = [
+    'pull_request+workflow_dispatch',
+    'push+pull_request+workflow_dispatch',
+  ].includes(cfg.triggerEvent);
+
+  const showBranchOption = [
+    'push+workflow_dispatch',
+    'push+pull_request+workflow_dispatch',
+  ].includes(cfg.triggerEvent);
 
   return (
     <div>

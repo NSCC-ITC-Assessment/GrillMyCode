@@ -52,19 +52,23 @@ export function generateYaml(cfg) {
   // ── on ────────────────────────────────────────────────────────────────────
   lines.push('on:');
 
-  if (cfg.triggerEvent === 'pull_request' || cfg.triggerEvent === 'push+pull_request') {
+  const hasPr = ['pull_request+workflow_dispatch', 'push+pull_request+workflow_dispatch'].includes(cfg.triggerEvent);
+  const hasPush = ['push+workflow_dispatch', 'push+pull_request+workflow_dispatch'].includes(cfg.triggerEvent);
+  const hasDispatch = true; // all options include workflow_dispatch
+
+  if (hasPr) {
     lines.push('  pull_request:');
     const types = cfg.prTypes && cfg.prTypes.length > 0 ? cfg.prTypes : ['opened', 'synchronize'];
     lines.push(`    types: [${types.join(', ')}]`);
   }
 
-  if (cfg.triggerEvent === 'push' || cfg.triggerEvent === 'push+workflow_dispatch' || cfg.triggerEvent === 'push+pull_request') {
+  if (hasPush) {
     lines.push('  push:');
     const branches = cfg.pushBranches && cfg.pushBranches.length > 0 ? cfg.pushBranches : ['main'];
     lines.push(`    branches: [${branches.map((b) => `"${b}"`).join(', ')}]`);
   }
 
-  if (cfg.triggerEvent === 'workflow_dispatch' || cfg.triggerEvent === 'push+workflow_dispatch') {
+  if (hasDispatch) {
     lines.push('  workflow_dispatch:');
   }
 
