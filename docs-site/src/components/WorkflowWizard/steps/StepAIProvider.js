@@ -12,6 +12,7 @@ const PROVIDERS = [
     value: 'openai',
     label: 'OpenAI',
     description: 'Calls the OpenAI API directly. Requires an OPENAI_API_KEY secret.',
+    comingSoon: true,
   },
   {
     value: 'openrouter',
@@ -24,6 +25,7 @@ const PROVIDERS = [
     label: 'Azure OpenAI',
     description:
       'Calls an Azure OpenAI deployment. Requires both an API key secret and an endpoint secret.',
+    comingSoon: true,
   },
 ];
 
@@ -64,12 +66,16 @@ export default function StepAIProvider({ cfg, onChange }) {
         </span>
         <div className={styles.radioGroup}>
           {PROVIDERS.map((p) => (
-            <label key={p.value} className={styles.radioLabel}>
+            <label
+              key={p.value}
+              className={p.comingSoon ? styles.radioLabelDisabled : styles.radioLabel}
+            >
               <input
                 type="radio"
                 name="aiProvider"
                 value={p.value}
                 checked={cfg.aiProvider === p.value}
+                disabled={!!p.comingSoon}
                 onChange={() =>
                   onChange({
                     aiProvider: p.value,
@@ -80,7 +86,10 @@ export default function StepAIProvider({ cfg, onChange }) {
                 }
               />
               <span>
-                <strong>{p.label}</strong>
+                <strong>
+                  {p.label}
+                  {p.comingSoon && <span className={styles.comingSoonBadge}>Coming Soon</span>}
+                </strong>
                 <div className={styles.radioDescription}>{p.description}</div>
               </span>
             </label>

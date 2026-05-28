@@ -43,7 +43,7 @@ export default function StepQuestions({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Assignment context files</label>
+        <label className={styles.label}>Assignment context files <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Comma-separated file glob(s) whose contents are read from the repo and injected into the
           AI prompt as assignment context — useful for README files, assignment briefs, rubrics, or
@@ -62,7 +62,7 @@ export default function StepQuestions({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Additional context / instructions</label>
+        <label className={styles.label}>Additional context / instructions <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Instructor-specific instructions injected at the end of the AI system prompt. Use this to
           focus questions on particular topics, concepts, or requirements. Supports multi-line text.{' '}

@@ -73,7 +73,7 @@ export default function StepDelivery({ cfg, onChange }) {
         {cfg.postDiscussion && (
           <div className={styles.subField} style={{ marginTop: '0.75rem' }}>
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Discussion category</label>
+              <label className={styles.label}>Discussion category <span className={styles.optionalBadge}>optional</span></label>
               <span className={styles.hint}>
                 The category name to post under. This category must already exist in the repository's
                 Discussion settings. The default <code>Assessments</code> category will be used if
@@ -113,7 +113,7 @@ export default function StepDelivery({ cfg, onChange }) {
         {cfg.instructorRepoEnabled && (
           <div className={styles.subField} style={{ marginTop: '0.75rem' }}>
             <div className={styles.fieldGroup}>
-              <label className={styles.label}>Instructor repo token secret name</label>
+              <label className={styles.label}>Instructor repo token secret name <span className={styles.optionalBadge}>optional</span></label>
               <span className={styles.hint}>
                 The name of the GitHub Actions secret holding your instructor PAT. Add it as an
                 org-level secret so all student repos inherit it automatically. See the{' '}

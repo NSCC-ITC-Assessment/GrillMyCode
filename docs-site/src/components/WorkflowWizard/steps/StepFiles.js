@@ -5,7 +5,7 @@ export default function StepFiles({ cfg, onChange }) {
   return (
     <div>
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Include patterns</label>
+        <label className={styles.label}>Include patterns <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Comma-separated glob patterns for files to <strong>include</strong> in the assessment. Leave
           empty to include all files not matched by the exclude list. Most instructors can leave this
@@ -23,7 +23,7 @@ export default function StepFiles({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Exclude patterns</label>
+        <label className={styles.label}>Exclude patterns <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Comma-separated glob patterns for files to <strong>exclude</strong>. The action has a
           sensible built-in default list (node_modules, lock files, build artefacts, images, etc.).{' '}
@@ -94,7 +94,7 @@ export default function StepFiles({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Skip committers</label>
+        <label className={styles.label}>Skip committers <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Comma-separated list of author name or email substrings. A leading run of commits whose
           author matches any entry is skipped (e.g. bot commits from GitHub Classroom setup). Only

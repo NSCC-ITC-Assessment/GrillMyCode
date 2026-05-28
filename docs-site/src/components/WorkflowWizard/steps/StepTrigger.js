@@ -102,7 +102,7 @@ export default function StepTrigger({ cfg, onChange }) {
       {showBranchOption && (
         <div className={styles.subField}>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Branch name</label>
+            <label className={styles.label}>Branch name <span className={styles.optionalBadge}>optional</span></label>
             <span className={styles.hint}>
               The branch that push events should be watched on (e.g. <code>main</code> or{' '}
               <code>feedback</code>).

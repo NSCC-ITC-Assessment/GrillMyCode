@@ -123,6 +123,34 @@
   color: var(--ifm-color-content);
 }
 
+.optionalBadge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 400;
+  color: var(--ifm-color-content-secondary);
+  background: var(--ifm-color-emphasis-200);
+  border-radius: 3px;
+  padding: 0.05em 0.4em;
+  margin-left: 0.45em;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.comingSoonBadge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: #92400e;
+  background: #fef3c7;
+  border-radius: 3px;
+  padding: 0.05em 0.4em;
+  margin-left: 0.45em;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 .hint {
   display: block;
   font-size: 0.78rem;
@@ -173,6 +201,15 @@
   gap: 0.6rem;
   cursor: pointer;
   font-size: 0.875rem;
+}
+
+.radioLabelDisabled {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+  cursor: not-allowed;
+  font-size: 0.875rem;
+  opacity: 0.45;
 }
 
 .radioLabel input,

@@ -18,7 +18,7 @@ export default function StepAdvanced({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Output file name</label>
+        <label className={styles.label}>Output file name <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Basename of the Markdown file written to the student's repository under{' '}
           <code>.assessment/</code>. Directory components are ignored — only the filename matters.
@@ -35,7 +35,7 @@ export default function StepAdvanced({ cfg, onChange }) {
 
       <div className={styles.inlineRow}>
         <div className={styles.fieldGroup}>
-          <label className={styles.label}>AI temperature</label>
+          <label className={styles.label}>AI temperature <span className={styles.optionalBadge}>optional</span></label>
           <span className={styles.hint}>
             Controls randomness (0.0 = deterministic, 1.0 = most varied). Lower values produce
             more consistent questions across runs. Default: <code>0.5</code>
@@ -56,7 +56,7 @@ export default function StepAdvanced({ cfg, onChange }) {
         </div>
 
         <div className={styles.fieldGroup}>
-          <label className={styles.label}>Max retry attempts</label>
+          <label className={styles.label}>Max retry attempts <span className={styles.optionalBadge}>optional</span></label>
           <span className={styles.hint}>
             Total attempts (initial + retries) when the AI provider returns an error or rate-limit
             response. Values below 1 are clamped to 1. Default: <code>5</code>
@@ -75,7 +75,7 @@ export default function StepAdvanced({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Assignment context max characters</label>
+        <label className={styles.label}>Assignment context max characters <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Maximum total characters read from all <code>assignment_context</code> files combined.
           Increase if your assignment brief is large; decrease to limit token usage. Values below 1
@@ -96,7 +96,7 @@ export default function StepAdvanced({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Base SHA override</label>
+        <label className={styles.label}>Base SHA override <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Manually override the base commit SHA for the diff. Leave empty for automatic detection
           (recommended). Must be paired with a Head SHA for both to take effect.
@@ -112,7 +112,7 @@ export default function StepAdvanced({ cfg, onChange }) {
 
       {cfg.baseSha && (
         <div className={styles.fieldGroup}>
-          <label className={styles.label}>Head SHA override</label>
+          <label className={styles.label}>Head SHA override <span className={styles.optionalBadge}>optional</span></label>
           <span className={styles.hint}>
             The head commit SHA to diff against. Only applied when Base SHA is also provided.
           </span>
