@@ -1,3 +1,79 @@
+/* ── Intro / landing page ────────────────────────────────────────────────── */
+
+.introPage {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  padding: 3rem 1rem 5rem;
+}
+
+.introCard {
+  max-width: 640px;
+  width: 100%;
+  background: var(--ifm-card-background-color, var(--ifm-background-surface-color));
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: var(--ifm-card-border-radius, 0.5rem);
+  padding: 2.5rem 2.5rem 2rem;
+  text-align: center;
+}
+
+.introIcon {
+  font-size: 3rem;
+  line-height: 1;
+  margin-bottom: 0.75rem;
+}
+
+.introTitle {
+  font-size: 2rem;
+  font-weight: 800;
+  margin: 0 0 1rem;
+  color: var(--ifm-color-content);
+}
+
+.introLead {
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--ifm-color-content-secondary);
+  margin-bottom: 1.5rem;
+}
+
+.introFeatures {
+  text-align: left;
+  margin: 0 0 1.5rem;
+  padding-left: 1.4rem;
+  line-height: 1.75;
+  font-size: 0.9rem;
+  color: var(--ifm-color-content);
+}
+
+.introNote {
+  font-size: 0.85rem;
+  color: var(--ifm-color-content-secondary);
+  margin-bottom: 2rem;
+  line-height: 1.55;
+}
+
+.btnStart {
+  padding: 0.75rem 2.25rem;
+  background: var(--ifm-color-primary);
+  color: #fff;
+  border: none;
+  border-radius: var(--ifm-global-radius);
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s, transform 0.1s;
+}
+
+.btnStart:hover {
+  background: var(--ifm-color-primary-dark);
+  transform: translateY(-1px);
+}
+
+.btnStart:active {
+  transform: translateY(0);
+}
+
 /* ── Wizard container ──────────────────────────────────────────────────────── */
 
 .wizard {

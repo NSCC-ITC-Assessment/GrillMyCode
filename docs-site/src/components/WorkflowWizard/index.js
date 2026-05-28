@@ -84,8 +84,38 @@ function getStepError(stepIndex, cfg) {
 }
 
 export default function WorkflowWizard() {
+  const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [cfg, setCfg] = useState(INITIAL_CONFIG);
+
+  if (!started) {
+    return (
+      <div className={styles.introPage}>
+        <div className={styles.introCard}>
+          <div className={styles.introIcon} aria-hidden="true">🧙</div>
+          <h1 className={styles.introTitle}>Workflow Wizard</h1>
+          <p className={styles.introLead}>
+            Generate a ready-to-use GitHub Actions workflow for{' '}
+            <strong>GrillMyCode</strong> — without writing a single line of YAML by hand.
+          </p>
+          <ul className={styles.introFeatures}>
+            <li>Choose your <strong>trigger event</strong> (push, pull request, manual dispatch, or any combination)</li>
+            <li>Pick your <strong>AI provider</strong> and model</li>
+            <li>Configure <strong>question generation</strong> and delivery destinations</li>
+            <li>Fine-tune <strong>file patterns</strong> and advanced options</li>
+            <li>Copy the finished <strong>YAML</strong> straight into your repository</li>
+          </ul>
+          <p className={styles.introNote}>
+            The wizard takes about two minutes and walks you through each setting one step at a time.
+            You can go back and change anything before copying the final workflow.
+          </p>
+          <button className={styles.btnStart} onClick={() => setStarted(true)}>
+            Start Wizard →
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   function handleChange(patch) {
     setCfg((prev) => {
