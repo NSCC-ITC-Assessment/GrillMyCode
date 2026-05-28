@@ -125,16 +125,17 @@
 
 .optionalBadge {
   display: inline-block;
-  font-size: 0.68rem;
-  font-weight: 400;
-  color: var(--ifm-color-content-secondary);
-  background: var(--ifm-color-emphasis-200);
-  border-radius: 3px;
-  padding: 0.05em 0.4em;
-  margin-left: 0.45em;
+  font-size: 0.7rem;
+  font-weight: 500;
+  color: #1d6a8c;
+  background: #dbeafe;
+  border: 1px solid #bfdbfe;
+  border-radius: 4px;
+  padding: 0.1em 0.5em;
+  margin-left: 0.5em;
   vertical-align: middle;
   text-transform: uppercase;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.05em;
 }
 
 .comingSoonBadge {

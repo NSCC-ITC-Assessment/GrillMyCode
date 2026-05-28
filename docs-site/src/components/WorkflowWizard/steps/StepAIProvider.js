@@ -117,8 +117,6 @@ export default function StepAIProvider({ cfg, onChange }) {
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Model</label>
         <span className={styles.hint}>
-          {cfg.aiProvider === 'github-models' &&
-            'The only currently verified and supported GitHub Models model is "gpt-4.1". GrillMyCode may not currently perform well with other available Github Models.'}
           {cfg.aiProvider === 'openai' && 'Enter the OpenAI model ID (e.g. gpt-4o, gpt-4-turbo).'}
           {cfg.aiProvider === 'openrouter' &&
             'Select a pre-defined model or choose "Own Choice" to enter any OpenRouter model ID.'}
@@ -193,6 +191,11 @@ export default function StepAIProvider({ cfg, onChange }) {
             </select>
             {!modelSuggestions.includes(cfg.aiModel) && (
               <>
+                <div className={styles.notice} style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)', marginTop: '0.5rem', marginBottom: '0.4rem' }}>
+                  <strong>⚠️ Unsupported model warning:</strong> Only <code>gpt-4.1</code> is currently
+                  verified to work well with GrillMyCode. Other GitHub Models models may produce
+                  unreliable or poor-quality assessments. Only proceed if you know what you're doing.
+                </div>
                 <input
                   type="text"
                   className={styles.input}
