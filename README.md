@@ -68,7 +68,7 @@ Ready-to-use workflows for each configuration are available in the [example work
 Generates questions whenever a student opens or updates a PR, and posts them as a PR comment.
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 on:
   pull_request:
     types: [opened, synchronize]
@@ -96,7 +96,7 @@ jobs:
 Generates questions on every push. Useful when students work directly on a branch without opening a PR.
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 on:
   push:
     branches-ignore: [main, master]

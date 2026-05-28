@@ -15,7 +15,7 @@ In addition, the `skip_committers` input (defaulting to `github-classroom[bot],g
 ## Recommended workflow for Classroom
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 on:
   pull_request:
     types: [opened, synchronize]

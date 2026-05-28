@@ -9,7 +9,7 @@ Generates assessment questions whenever a student opens or updates a pull reques
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 
 on:
   pull_request:

@@ -18,7 +18,7 @@ Add these in **Settings → Secrets and variables → Actions** on the student r
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 
 on:
   pull_request:

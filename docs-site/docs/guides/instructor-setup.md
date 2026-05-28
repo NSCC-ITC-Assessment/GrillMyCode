@@ -66,7 +66,7 @@ Open the **starter/template repository** for the assignment (the repo you set as
 **`.github/workflows/grill-my-code.yml`**
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 
 on:
   pull_request:

@@ -11,7 +11,7 @@ GrillMyCode is a GitHub Action — there is nothing to install. Add a workflow f
 ## Minimal workflow
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 on:
   pull_request:
     types: [opened, synchronize]

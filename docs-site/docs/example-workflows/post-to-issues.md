@@ -11,7 +11,7 @@ If an issue already exists for the same branch, its title and body are **updated
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
 ```yaml
-name: Code Assessment
+name: Grill My Code
 
 on:
   pull_request:
