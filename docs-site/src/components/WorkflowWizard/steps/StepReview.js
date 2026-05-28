@@ -4,42 +4,51 @@ import { generateYaml } from '../generateYaml';
 
 function buildChecklist(cfg) {
   const items = [
-    'Copy the workflow above to `.github/workflows/grill-my-code.yml` in the student (or template) repository.',
-    'Ensure the repository has Actions enabled (Settings → Actions → Allow all actions).',
+    {
+      text: 'Copy the workflow above to `.github/workflows/grill-my-code.yml` in the student (or template) repository.',
+    },
+    {
+      text: 'Ensure the repository has Actions enabled (Settings → Actions → Allow all actions).',
+    },
   ];
 
   if (cfg.aiProvider === 'github-models') {
-    items.push(
-      'GitHub Models is selected — no API key needed. The built-in GITHUB_TOKEN is used automatically.',
-    );
+    items.push({
+      text: 'GitHub Models is selected — no API key needed. The built-in GITHUB_TOKEN is used automatically.',
+    });
   } else {
     const secretName = cfg.apiKeySecret || 'OPENAI_API_KEY';
-    items.push(
-      `Add the secret "${secretName}" to the repository (or organisation) via Settings → Secrets and variables → Actions.`,
-    );
+    items.push({
+      text: `Add the secret "${secretName}" to the repository (or organisation) via Settings → Secrets and variables → Actions.`,
+      linkHref: '/docs/ai-providers',
+      linkLabel: 'AI Providers docs',
+    });
   }
 
   if (cfg.aiProvider === 'azure-openai') {
     const endpointSecret = cfg.azureEndpointSecret || 'AZURE_OPENAI_ENDPOINT';
-    items.push(
-      `Add the Azure endpoint secret "${endpointSecret}" with the full deployment URL.`,
-    );
+    items.push({
+      text: `Add the Azure endpoint secret "${endpointSecret}" with the full deployment URL.`,
+      linkHref: '/docs/ai-providers',
+      linkLabel: 'AI Providers docs',
+    });
   }
 
   if (cfg.instructorRepoEnabled) {
     const tokenSecret = cfg.instructorRepoTokenSecret || 'INSTRUCTOR_REPO_TOKEN';
-    items.push(
-      `Create a Personal Access Token with "repo" and "workflow" scopes and add it as an org-level secret named "${tokenSecret}".`,
-    );
-    items.push(
-      'See the Instructor Setup guide (/docs/guides/instructor-setup) for full step-by-step instructions.',
-    );
+    items.push({
+      text: `Create a Personal Access Token with "repo" and "workflow" scopes and add it as an org-level secret named "${tokenSecret}".`,
+      linkHref: '/docs/guides/instructor-setup',
+      linkLabel: 'Instructor Setup guide',
+    });
   }
 
   if (cfg.postDiscussion) {
-    items.push(
-      `Ensure the Discussion category "${cfg.discussionCategory || 'Assessments'}" exists in the repository's Discussion settings.`,
-    );
+    items.push({
+      text: `Ensure the Discussion category "${cfg.discussionCategory || 'Assessments'}" exists in the repository's Discussion settings.`,
+      linkHref: '/docs/example-workflows/post-to-discussions',
+      linkLabel: 'Post to Discussions example',
+    });
   }
 
   return items;
@@ -78,11 +87,21 @@ export default function StepReview({ cfg }) {
       </div>
 
       <h3 style={{ marginTop: '1.75rem', marginBottom: '0.5rem', fontSize: '1rem' }}>
-        Before you go — checklist
+        Next Steps (based on your choices)
       </h3>
       <ul className={styles.checklist}>
         {checklist.map((item, i) => (
-          <li key={i}>{item}</li>
+          <li key={i}>
+            {item.text}
+            {item.linkHref && (
+              <>
+                {' '}
+                <a href={item.linkHref} target="_blank" rel="noopener noreferrer">
+                  {item.linkLabel}
+                </a>
+              </>
+            )}
+          </li>
         ))}
       </ul>
     </div>
