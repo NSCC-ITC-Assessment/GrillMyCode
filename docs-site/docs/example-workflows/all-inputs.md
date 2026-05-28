@@ -43,11 +43,11 @@ jobs:
           ai_provider: "github-models"
 
           # Model identifier for the chosen provider.
-          # GitHub Models: gpt-4o, gpt-4o-mini, Phi-3-mini-128k-instruct
+          # GitHub Models: gpt-4.1
           # OpenAI:        gpt-4o, gpt-4-turbo
           # Azure OpenAI:  your deployment name
           # OpenRouter:    provider/model-name format (e.g. anthropic/claude-3-5-sonnet)
-          ai_model: "gpt-4o"
+          ai_model: "gpt-4.1"
 
           # Total number of attempts (initial + retries) when calling the AI provider.
           # Retries are triggered by 429 (rate limit), 500, 502, 503, 504, and network
@@ -71,11 +71,12 @@ jobs:
           # ── Question generation ───────────────────────────────────────────
 
           # Number of comprehension questions to generate. Minimum 1, maximum 50.
-          num_questions: "5"
+          num_questions: "10"
 
-          # When true, each question is immediately followed by its answer, labelled
-          # "Answer:". Answers use plain, everyday language and avoid technical jargon.
-          # Useful for generating an instructor copy alongside the student copy.
+          # When true, answers are shown to the student immediately after each
+          # question — this defeats the purpose of the assessment. Leave false
+          # in almost all cases. The instructor repository always includes
+          # answers regardless of this setting.
           # include_answers: "false"
 
           # Assignment-specific instructions for the AI. Injected at the end of

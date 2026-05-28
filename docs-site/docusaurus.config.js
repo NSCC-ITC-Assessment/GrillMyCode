@@ -82,6 +82,11 @@ const config = {
             label: 'Docs',
           },
           {
+            to: '/workflow-wizard',
+            position: 'left',
+            label: 'Workflow Wizard',
+          },
+          {
             href: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode',
             label: 'GitHub',
             position: 'right',

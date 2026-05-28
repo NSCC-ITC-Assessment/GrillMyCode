@@ -131,7 +131,7 @@ docker run --rm \
   -e GITHUB_WORKSPACE=/workspace \
   -e INPUT_GITHUB_TOKEN=<your-token> \
   -e INPUT_AI_PROVIDER=github-models \
-  -e INPUT_NUM_QUESTIONS=5 \
+  -e INPUT_NUM_QUESTIONS=10 \
   -v $(pwd):/workspace \
   grillmycode-local
 ```

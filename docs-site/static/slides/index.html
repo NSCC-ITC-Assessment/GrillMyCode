@@ -400,8 +400,8 @@ def add(a, b):
             <table class="provider-table">
               <thead><tr><th>Input</th><th>Default</th><th>What it does</th></tr></thead>
               <tbody>
-                <tr><td><span class="mono">num_questions</span></td><td>5</td><td>How many questions to generate (1–50)</td></tr>
-                <tr><td><span class="mono">include_answers</span></td><td>false</td><td>Append model answers for an instructor copy</td></tr>
+                <tr><td><span class="mono">num_questions</span></td><td>10</td><td>How many questions to generate (1–50)</td></tr>
+                <tr><td><span class="mono">include_answers</span></td><td>false</td><td>Show answers to the student — leave off in almost all cases</td></tr>
                 <tr><td><span class="mono">additional_context</span></td><td>—</td><td>Free-text instructor instructions injected into the prompt</td></tr>
                 <tr><td><span class="mono">assignment_context</span></td><td>—</td><td>Globs for brief/rubric files to inject into the prompt</td></tr>
                 <tr><td><span class="mono">include_patterns</span></td><td>—</td><td>Limit assessment to specific file globs</td></tr>
@@ -438,7 +438,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          num_questions: '5'
+          num_questions: '10'
           additional_context: 'Assignment 3 – Python list comprehensions'</code></pre>
         </section>
 

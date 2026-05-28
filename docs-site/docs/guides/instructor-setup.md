@@ -87,7 +87,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          num_questions: "5"
+          num_questions: "10"
           additional_context: "Replace this with a short description of the assignment"
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 ```
