@@ -270,7 +270,7 @@ runs:
   # This tag is a dev placeholder — the release workflow replaces it with an
   # immutable patch tag (e.g. :v1.0.3) each time a version tag is pushed.
   # Consumers pinning to GrillMyCode@v1 always resolve to the released image.
-  image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:workflow_wizard"
+  image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:latest"
   env:
     INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
     INPUT_AI_PROVIDER: ${{ inputs.ai_provider }}
