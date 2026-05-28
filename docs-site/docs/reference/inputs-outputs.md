@@ -15,8 +15,8 @@ sidebar_position: 1
 | `ai_temperature` | No | `0.5` | Controls the randomness of the AI's output (0.0 = fully deterministic, 1.0 = most random). Lower values produce more consistent questions; higher values produce more varied output |
 | `api_key` | No | | API key for the provider. For `github-models`, leave empty to use `github_token`, or supply an instructor PAT to override it |
 | `azure_endpoint` | No | | Azure OpenAI endpoint URL (required for `azure-openai`) |
-| `num_questions` | No | `5` | Number of questions to generate (minimum 1, maximum 50). Values above 50 are automatically capped |
-| `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the student-facing report. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting. Answers are written in plain, everyday language and avoid technical jargon |
+| `num_questions` | No | `10` | Number of questions to generate (minimum 1, maximum 50). Values above 50 are automatically capped |
+| `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting |
 | `include_patterns` | No | | Comma-separated globs for files to include |
 | `exclude_patterns` | No | *(common non-code files)* | Comma-separated globs for files to exclude |
 | `output_file` | No | `grill-my-code.md` | Basename for the output Markdown file. Always written under the `.assessment/` folder (e.g. `grill-my-code.md` → `.assessment/grill-my-code.md`) |

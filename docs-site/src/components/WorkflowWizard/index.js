@@ -30,7 +30,7 @@ const INITIAL_CONFIG = {
   apiKeySecret: '',
   azureEndpointSecret: '',
 
-  numQuestions: 5,
+  numQuestions: 10,
   includeAnswers: false,
   additionalContext: '',
   assignmentContext: '',
@@ -57,6 +57,22 @@ const INITIAL_CONFIG = {
   headSha: '',
 };
 
+const OPENROUTER_MODEL_VALUES = ['deepseek/deepseek-v4-flash', 'minimax/minimax-m2.7', 'stepfun/step-3.5-flash', 'tencent/hy3-preview'];
+
+function getStepError(stepIndex, cfg) {
+  if (stepIndex === 1) {
+    if (cfg.aiProvider === 'openrouter' && !OPENROUTER_MODEL_VALUES.includes(cfg.aiModel)) {
+      if (!cfg.aiModel || !cfg.aiModel.trim()) {
+        return 'Please enter a model ID for OpenRouter before continuing.';
+      }
+      if (!/^[^/]+\/[^/]+$/.test(cfg.aiModel.trim())) {
+        return 'Model ID must be in provider/model format (e.g. anthropic/claude-3-5-sonnet).';
+      }
+    }
+  }
+  return null;
+}
+
 export default function WorkflowWizard() {
   const [step, setStep] = useState(0);
   const [cfg, setCfg] = useState(INITIAL_CONFIG);
@@ -66,6 +82,7 @@ export default function WorkflowWizard() {
   }
 
   function handleNext() {
+    if (getStepError(step, cfg)) return;
     setStep((s) => Math.min(STEPS.length - 1, s + 1));
   }
 
@@ -75,6 +92,7 @@ export default function WorkflowWizard() {
 
   const { title, subtitle, Component } = STEPS[step];
   const isLast = step === STEPS.length - 1;
+  const stepError = getStepError(step, cfg);
 
   return (
     <div className={styles.wizard}>
@@ -125,7 +143,13 @@ export default function WorkflowWizard() {
           <span />
         )}
         {!isLast && (
-          <button className={styles.btnPrimary} onClick={handleNext}>
+          <button
+            className={styles.btnPrimary}
+            onClick={handleNext}
+            disabled={!!stepError}
+            style={stepError ? { opacity: 0.5, cursor: 'not-allowed' } : undefined}
+            title={stepError || undefined}
+          >
             Next →
           </button>
         )}

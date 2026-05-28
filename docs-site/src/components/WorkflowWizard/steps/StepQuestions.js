@@ -8,7 +8,7 @@ export default function StepQuestions({ cfg, onChange }) {
         <label className={styles.label}>Number of questions</label>
         <span className={styles.hint}>
           How many comprehension questions the AI should generate per assessment. Minimum 1, maximum
-          50. Most instructors find 3–7 questions to be a good balance.
+          50.
         </span>
         <input
           type="number"
@@ -32,9 +32,11 @@ export default function StepQuestions({ cfg, onChange }) {
           <span>
             <strong>Include answers</strong>
             <div className={styles.radioDescription}>
-              When enabled, each question is immediately followed by its answer (labelled
-              "Answer:"). Useful for generating an instructor copy alongside the student copy.
-              The instructor repository delivery always includes answers regardless of this setting.
+              When enabled, answers are shown to the student immediately after each
+              question (labelled "Answer:"). In almost all cases you should leave
+              this <strong>off</strong> — the entire point of the assessment is for
+              the student to determine the answers themselves. The instructor
+              repository delivery always includes answers regardless of this setting.
             </div>
           </span>
         </label>

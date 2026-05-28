@@ -53,7 +53,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          num_questions: "5"
+          num_questions: "10"
           # Store a full Q+A copy in the private instructor repository.
           # The repository is created automatically if it does not exist.
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}

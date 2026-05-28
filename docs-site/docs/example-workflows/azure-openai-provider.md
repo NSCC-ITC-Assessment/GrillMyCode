@@ -42,7 +42,7 @@ jobs:
           ai_model: "my-gpt4o-deployment"  # replace with your deployment name
           api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
           azure_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
-          num_questions: "5"
+          num_questions: "10"
           additional_context: "Cloud Computing — Azure services and deployment"
 ```
 

@@ -30,7 +30,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          num_questions: "5"
+          num_questions: "10"
           additional_context: "Assignment 3 — Python list comprehensions"
 ```
 

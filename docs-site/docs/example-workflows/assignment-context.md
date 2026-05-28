@@ -31,7 +31,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          num_questions: "5"
+          num_questions: "10"
           # Read files from the repository and inject their contents into the
           # AI prompt automatically. Globs are matched against the full relative
           # path from the repo root, so subdirectory paths and wildcards work

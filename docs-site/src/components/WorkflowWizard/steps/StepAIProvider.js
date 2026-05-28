@@ -88,6 +88,23 @@ export default function StepAIProvider({ cfg, onChange }) {
         </div>
       </div>
 
+      {isOpenRouter && (
+        <div className={styles.notice} style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)' }}>
+          <strong>💸 Cost reminder:</strong> OpenRouter charges per token based on the model you
+          select. Pricing varies significantly between models — some are free, others can be
+          expensive at scale. Check{' '}
+          <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
+            openrouter.ai/models
+          </a>{' '}
+          for the current pricing of your chosen model before deploying to a class of students.
+          <br /><br />
+          The pre-defined models in the list above have been specifically chosen because they are
+          very cheap — typically <strong>less than 1 cent per API call</strong> — and have been
+          tested to work well with GrillMyCode. If you choose your own model, be sure to verify
+          its pricing first.
+        </div>
+      )}
+
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Model</label>
         <span className={styles.hint}>
@@ -95,7 +112,7 @@ export default function StepAIProvider({ cfg, onChange }) {
             'Pick from the models available via GitHub Models. "gpt-4o" is the recommended default.'}
           {cfg.aiProvider === 'openai' && 'Enter the OpenAI model ID (e.g. gpt-4o, gpt-4-turbo).'}
           {cfg.aiProvider === 'openrouter' &&
-            'Select a pre-defined model or choose "Custom" to enter any OpenRouter model ID.'}
+            'Select a pre-defined model or choose "Own Choice" to enter any OpenRouter model ID.'}
           {cfg.aiProvider === 'azure-openai' && 'Enter your Azure OpenAI deployment name.'}
         </span>
         {isOpenRouter ? (
@@ -113,17 +130,39 @@ export default function StepAIProvider({ cfg, onChange }) {
                   {m.label} ({m.value})
                 </option>
               ))}
-              <option value="__custom__">Custom…</option>
+              <option value="__custom__">Own Choice…</option>
             </select>
             {!OPENROUTER_MODELS.some((m) => m.value === cfg.aiModel) && (
-              <input
-                type="text"
-                className={styles.input}
-                style={{ marginTop: '0.5rem' }}
-                value={cfg.aiModel}
-                onChange={(e) => onChange({ aiModel: e.target.value })}
-                placeholder="e.g. anthropic/claude-3-5-sonnet"
-              />
+              <>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem', marginTop: '0.5rem' }}>
+                  <input
+                    type="text"
+                    className={styles.input}
+                    style={{ flex: 2, borderColor: (cfg.aiModel && cfg.aiModel.trim() && !/^[^/]+\/[^/]+$/.test(cfg.aiModel.trim())) || (!cfg.aiModel || !cfg.aiModel.trim()) ? 'var(--ifm-color-danger)' : undefined }}
+                    value={cfg.aiModel}
+                    onChange={(e) => onChange({ aiModel: e.target.value })}
+                    placeholder="e.g. anthropic/claude-3-5-sonnet"
+                  />
+                  <a
+                    href="https://openrouter.ai/models"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                  >
+                    Browse models ↗
+                  </a>
+                </div>
+                {(!cfg.aiModel || !cfg.aiModel.trim()) && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--ifm-color-danger)', marginTop: '0.3rem', display: 'block' }}>
+                    Please enter a model ID before continuing.
+                  </span>
+                )}
+                {cfg.aiModel && cfg.aiModel.trim() && !/^[^/]+\/[^/]+$/.test(cfg.aiModel.trim()) && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--ifm-color-danger)', marginTop: '0.3rem', display: 'block' }}>
+                    Model ID must be in <code>provider/model</code> format (e.g. <code>anthropic/claude-3-5-sonnet</code>).
+                  </span>
+                )}
+              </>
             )}
           </>
         ) : modelSuggestions.length > 0 ? (
@@ -137,7 +176,7 @@ export default function StepAIProvider({ cfg, onChange }) {
                 {m}
               </option>
             ))}
-            <option value="__custom__">Custom…</option>
+            <option value="__custom__">Own Choice…</option>
           </select>
         ) : (
           <input

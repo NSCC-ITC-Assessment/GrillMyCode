@@ -71,11 +71,12 @@ jobs:
           # ── Question generation ───────────────────────────────────────────
 
           # Number of comprehension questions to generate. Minimum 1, maximum 50.
-          num_questions: "5"
+          num_questions: "10"
 
-          # When true, each question is immediately followed by its answer, labelled
-          # "Answer:". Answers use plain, everyday language and avoid technical jargon.
-          # Useful for generating an instructor copy alongside the student copy.
+          # When true, answers are shown to the student immediately after each
+          # question — this defeats the purpose of the assessment. Leave false
+          # in almost all cases. The instructor repository always includes
+          # answers regardless of this setting.
           # include_answers: "false"
 
           # Assignment-specific instructions for the AI. Injected at the end of
