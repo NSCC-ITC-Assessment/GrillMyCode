@@ -36,7 +36,7 @@ const INITIAL_CONFIG = {
   assignmentContext: '',
   assignmentContextMaxChars: 20000,
 
-  postPrComment: true,
+  postPrComment: false,
   postIssue: false,
   postDiscussion: false,
   discussionCategory: 'Assessments',
