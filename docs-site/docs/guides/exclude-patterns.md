@@ -11,7 +11,7 @@ The `exclude_patterns` input controls which files are excluded from the assessed
 When no `exclude_patterns` value is provided, a built-in list of common non-code files is used automatically. This list covers:
 
 - Package lock files (`**/*.lock`, `**/pnpm-lock.yaml`, etc.)
-- Dependency directories (`node_modules/**`, `vendor/**`)
+- Dependency directories (`node_modules/**`)
 - Build outputs and minified assets (`dist/**`, `build/**`, `**/*.min.js`)
 - Images and binary files (`**/*.png`, `**/*.jpg`, `**/*.pdf`, etc.)
 - Markdown files (`**/*.md`) — excluded from the assessed diff by default, since they typically describe the assignment rather than the student's solution. They can still be passed to the AI via [`assignment_context`](../reference/inputs-outputs.md)

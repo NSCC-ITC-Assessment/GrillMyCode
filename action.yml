@@ -124,8 +124,8 @@ inputs:
   post_issue:
     description: >
       Create a GitHub Issue in the repository containing the assessment questions.
-      The issue title includes the branch name and head commit SHA so each
-      assessment run produces a distinct, searchable issue.
+      If an open issue for the same branch already exists, it is updated in place
+      (title, body) rather than replaced, preserving issue history and comments.
       Set to "true" to enable.
     required: false
     default: "false"
@@ -133,7 +133,8 @@ inputs:
   post_discussion:
     description: >
       Create a GitHub Discussion in the repository containing the assessment
-      questions. Requires Discussions to be enabled on the repository.
+      questions. If Discussions are not enabled on the repository, the action
+      enables them automatically.
       Set to "true" to enable.
     required: false
     default: "false"

@@ -101,7 +101,7 @@ That's it. When GitHub Classroom distributes the assignment, every student repos
 When the first student opens a pull request:
 
 1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
-2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode`) exists in your org.
+2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.
 3. If it does not exist yet, the action **creates it automatically as a private repository** and commits a `student-questions-added.yml` GitHub Actions workflow into it.
 4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
 5. The push of `questions.md` triggers the `student-questions-added` workflow inside the instructor repository, which writes a `{student-login}/future_brightspace_quiz.txt` placeholder file. This is a temporary stub — it will be replaced with real Brightspace quiz generation in a future release.
@@ -115,7 +115,7 @@ For subsequent students the repo already exists — the action just adds or upda
 After the first student submission, find the instructor repository at:
 
 ```
-https://github.com/{your-org}/{assignment-name}-grillmycode
+https://github.com/{your-org}/{assignment-name}-grillmycode-instructor
 ```
 
 Each student's assessment is stored in a dedicated folder:
@@ -126,8 +126,8 @@ Each student's assessment is stored in a dedicated folder:
 
 For example, if your org is `my-school`, your assignment is `lab-3`, and a student's login is `jsmith`:
 
-- Instructor repo: `https://github.com/my-school/lab-3-grillmycode`
-- Student file: `https://github.com/my-school/lab-3-grillmycode/blob/main/jsmith/questions.md`
+- Instructor repo: `https://github.com/my-school/lab-3-grillmycode-instructor`
+- Student file: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/questions.md`
 
 Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student.
 
@@ -135,7 +135,7 @@ Re-running the action (e.g. when a student pushes more commits) overwrites the e
 
 ## Assignments without a starter repo
 
-If your Classroom assignment has no starter code repository, GitHub does not set `template_repository` on student repos. The action falls back to stripping the student login suffix from the repo name to infer the assignment name. For example, a student repo named `lab-3-jsmith` with student login `jsmith` produces an instructor repo named `lab-3-grillmycode`.
+If your Classroom assignment has no starter code repository, GitHub does not set `template_repository` on student repos. The action falls back to stripping the student login suffix from the repo name to infer the assignment name. For example, a student repo named `lab-3-jsmith` with student login `jsmith` produces an instructor repo named `lab-3-grillmycode-instructor`.
 
 A workflow warning is emitted on each run to confirm the inferred name — check it after the first submission to verify the instructor repo was created with the expected name.
 
@@ -150,4 +150,4 @@ For assignments without a starter repo, add the workflow file directly to each s
 | Create instructor PAT | Once per org | GitHub → Settings → Developer settings |
 | Add `INSTRUCTOR_REPO_TOKEN` org secret | Once per org | Org → Settings → Secrets and variables → Actions |
 | Add workflow file with `instructor_repo_token` | Once per assignment | Assignment's starter/template repo |
-| Instructor repo created | Automatically on first student submission | `{org}/{assignment-name}-grillmycode` |
+| Instructor repo created | Automatically on first student submission | `{org}/{assignment-name}-grillmycode-instructor` |

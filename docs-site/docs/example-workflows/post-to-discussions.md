@@ -8,7 +8,7 @@ Creates a GitHub Discussion for each assessment run. Useful for class-wide visib
 
 If Discussions are not enabled on the repository when the action runs, they are **enabled automatically**. The named category (e.g. `Assessments`) must already exist in the repository's Discussions settings before the first run, or the action will fail.
 
-Each run supersedes the previous: existing open assessment discussions for the same branch are deleted before a new one is created.
+Each run supersedes the previous: existing open assessment discussions for the same branch are commented (noting the superseding run) and **locked** before a new one is created.
 
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
