@@ -13,10 +13,11 @@ export default function StepDelivery({ cfg, onChange }) {
 
       {/* PR comment */}
       <div className={styles.fieldGroup}>
-        <label className={styles.checkboxLabel}>
+        <label className={isPrTrigger ? styles.checkboxLabel : styles.checkboxLabelDisabled}>
           <input
             type="checkbox"
             checked={cfg.postPrComment}
+            disabled={!isPrTrigger}
             onChange={(e) => onChange({ postPrComment: e.target.checked })}
           />
           <span>
@@ -25,11 +26,7 @@ export default function StepDelivery({ cfg, onChange }) {
               Posts the assessment directly on the student's pull request. Requires a PR-based
               trigger event and <code>pull-requests: write</code> permission.
               {!isPrTrigger && (
-                <strong style={{ color: 'var(--ifm-color-warning)' }}>
-                  {' '}
-                  Note: your selected trigger is not a pull_request event — this option won't be
-                  active.
-                </strong>
+                <span> Not available — your selected trigger does not include a pull request event.</span>
               )}
             </div>
           </span>

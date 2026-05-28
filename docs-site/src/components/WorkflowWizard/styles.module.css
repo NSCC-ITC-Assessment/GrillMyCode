@@ -204,7 +204,8 @@
   font-size: 0.875rem;
 }
 
-.radioLabelDisabled {
+.radioLabelDisabled,
+.checkboxLabelDisabled {
   display: flex;
   align-items: flex-start;
   gap: 0.6rem;

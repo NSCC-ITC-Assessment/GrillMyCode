@@ -81,7 +81,15 @@ export default function WorkflowWizard() {
   const [cfg, setCfg] = useState(INITIAL_CONFIG);
 
   function handleChange(patch) {
-    setCfg((prev) => ({ ...prev, ...patch }));
+    setCfg((prev) => {
+      const next = { ...prev, ...patch };
+      // Auto-uncheck PR comment delivery when trigger no longer includes pull_request
+      if ('triggerEvent' in patch) {
+        const isPr = next.triggerEvent === 'pull_request' || next.triggerEvent === 'push+pull_request';
+        if (!isPr) next.postPrComment = false;
+      }
+      return next;
+    });
   }
 
   function handleNext() {
