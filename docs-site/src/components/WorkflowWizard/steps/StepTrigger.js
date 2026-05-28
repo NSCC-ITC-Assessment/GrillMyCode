@@ -5,7 +5,7 @@ const TRIGGERS = [
   {
     value: 'workflow_dispatch',
     label: 'Manual only',
-    description: 'Run only when triggered manually from the Actions tab. Useful for testing.',
+    description: 'Run only when triggered manually from the Actions tab.',
   },
   {
     value: 'pull_request+workflow_dispatch',
