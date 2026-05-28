@@ -63,7 +63,7 @@ See [architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/develo
 
 Ready-to-use workflows for each configuration are available in the [example workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) section of the docs site. Copy the relevant YAML into `.github/workflows/` in your repository.
 
-### Pull request (recommended)
+### Pull request
 
 Generates questions whenever a student opens or updates a PR, and posts them as a PR comment.
 

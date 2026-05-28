@@ -39,7 +39,7 @@ Copy this file to `.github/workflows/grill-my-code.yml` in the student repositor
 
 | Trigger | When to use |
 |---|---|
-| `pull_request` | Students submit work via pull requests (recommended) |
+| `pull_request` | Students submit work via pull requests |
 | `push` | Students work directly on a branch without opening a PR |
 | `issue_comment` | Re-trigger from a PR comment |
 

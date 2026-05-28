@@ -2,7 +2,7 @@
 sidebar_position: 1
 ---
 
-# Pull Request (Recommended)
+# Pull Request
 
 Generates assessment questions whenever a student opens or updates a pull request. Questions are posted as a PR comment so the instructor can see them inline alongside the submitted code.
 
@@ -36,9 +36,9 @@ jobs:
 
 ## Why pull requests?
 
-The pull request trigger is the recommended approach for GitHub Classroom because:
+The pull request trigger works well when:
 
-- It gives students a clear submission point
+- Students submit work via pull requests
 - The questions appear inline on the PR, visible to both student and instructor
 - `fetch-depth: 0` ensures the full commit history is available for diff resolution
 - The diff base is automatically resolved from the PR's base branch
