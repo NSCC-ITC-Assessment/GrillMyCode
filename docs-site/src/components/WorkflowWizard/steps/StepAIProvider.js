@@ -118,7 +118,7 @@ export default function StepAIProvider({ cfg, onChange }) {
         <label className={styles.label}>Model</label>
         <span className={styles.hint}>
           {cfg.aiProvider === 'github-models' &&
-            'The only currently supported GitHub Models model is "gpt-4.1".'}
+            'The only currently verified and supported GitHub Models model is "gpt-4.1". GrillMyCode may not currently perform well with other available Github Models.'}
           {cfg.aiProvider === 'openai' && 'Enter the OpenAI model ID (e.g. gpt-4o, gpt-4-turbo).'}
           {cfg.aiProvider === 'openrouter' &&
             'Select a pre-defined model or choose "Own Choice" to enter any OpenRouter model ID.'}
@@ -175,18 +175,43 @@ export default function StepAIProvider({ cfg, onChange }) {
             )}
           </>
         ) : modelSuggestions.length > 0 ? (
-          <select
-            className={styles.select}
-            value={cfg.aiModel}
-            onChange={(e) => onChange({ aiModel: e.target.value })}
-          >
-            {modelSuggestions.map((m) => (
-              <option key={m} value={m}>
-                {m}
-              </option>
-            ))}
-            <option value="__custom__">Own Choice…</option>
-          </select>
+          <>
+            <select
+              className={styles.select}
+              value={modelSuggestions.includes(cfg.aiModel) ? cfg.aiModel : '__custom__'}
+              onChange={(e) => {
+                if (e.target.value !== '__custom__') onChange({ aiModel: e.target.value });
+                else onChange({ aiModel: '' });
+              }}
+            >
+              {modelSuggestions.map((m) => (
+                <option key={m} value={m}>
+                  {m}
+                </option>
+              ))}
+              <option value="__custom__">Own Choice…</option>
+            </select>
+            {!modelSuggestions.includes(cfg.aiModel) && (
+              <>
+                <input
+                  type="text"
+                  className={styles.input}
+                  style={{
+                    marginTop: '0.5rem',
+                    borderColor: (!cfg.aiModel || !cfg.aiModel.trim()) ? 'var(--ifm-color-danger)' : undefined,
+                  }}
+                  value={cfg.aiModel}
+                  onChange={(e) => onChange({ aiModel: e.target.value })}
+                  placeholder="e.g. gpt-4.1-mini"
+                />
+                {(!cfg.aiModel || !cfg.aiModel.trim()) && (
+                  <span style={{ fontSize: '0.78rem', color: 'var(--ifm-color-danger)', marginTop: '0.3rem', display: 'block' }}>
+                    Please enter a model ID before continuing.
+                  </span>
+                )}
+              </>
+            )}
+          </>
         ) : (
           <input
             type="text"
@@ -198,15 +223,6 @@ export default function StepAIProvider({ cfg, onChange }) {
                 ? 'my-deployment-name'
                 : 'gpt-4.1'
             }
-          />
-        )}
-        {cfg.aiModel === '__custom__' && !isOpenRouter && (
-          <input
-            type="text"
-            className={styles.input}
-            style={{ marginTop: '0.5rem' }}
-            placeholder="Enter model ID"
-            onChange={(e) => onChange({ aiModel: e.target.value })}
           />
         )}
       </div>

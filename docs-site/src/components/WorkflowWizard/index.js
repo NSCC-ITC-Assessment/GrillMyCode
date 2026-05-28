@@ -69,6 +69,9 @@ function getStepError(stepIndex, cfg) {
         return 'Model ID must be in provider/model format (e.g. anthropic/claude-3-5-sonnet).';
       }
     }
+    if (cfg.aiProvider === 'github-models' && (!cfg.aiModel || !cfg.aiModel.trim())) {
+      return 'Please enter a model ID before continuing.';
+    }
   }
   return null;
 }
