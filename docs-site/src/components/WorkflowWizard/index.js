@@ -6,18 +6,20 @@ import StepTrigger from './steps/StepTrigger';
 import StepAIProvider from './steps/StepAIProvider';
 import StepQuestions from './steps/StepQuestions';
 import StepDelivery from './steps/StepDelivery';
+import StepInstructorRepo from './steps/StepInstructorRepo';
 import StepFiles from './steps/StepFiles';
 import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
 
 const STEPS = [
-  { label: 'Trigger', title: 'When should the assessment run?', subtitle: 'Choose the GitHub event that starts the workflow.', Component: StepTrigger },
-  { label: 'AI', title: 'Which AI provider?', subtitle: 'Select the model that generates the comprehension questions.', Component: StepAIProvider },
-  { label: 'Questions', title: 'Question settings', subtitle: 'Configure how many questions are generated and what context the AI receives.', Component: StepQuestions },
-  { label: 'Delivery', title: 'Where is the assessment delivered?', subtitle: 'Choose one or more destinations for the generated questions.', Component: StepDelivery },
-  { label: 'Files', title: 'Which files are assessed?', subtitle: 'Control which student files are included in the diff sent to the AI.', Component: StepFiles },
-  { label: 'Advanced', title: 'Advanced settings', subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.', Component: StepAdvanced },
-  { label: 'Review', title: 'Your workflow is ready', subtitle: 'Copy the generated YAML into your assignment repository.', Component: StepReview },
+  { label: 'Trigger',    title: 'When should the assessment run?',     subtitle: 'Choose the GitHub event that starts the workflow.',                                              Component: StepTrigger },
+  { label: 'AI',         title: 'Which AI provider?',                   subtitle: 'Select the model that generates the comprehension questions.',                              Component: StepAIProvider },
+  { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions are generated and what context the AI receives.',             Component: StepQuestions },
+  { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Choose one or more destinations for the generated questions.',                             Component: StepDelivery },
+  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository.',          Component: StepInstructorRepo },
+  { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff sent to the AI.',                    Component: StepFiles },
+  { label: 'Advanced',   title: 'Advanced settings',                    subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
+  { label: 'Review',     title: 'Your workflow is ready',               subtitle: 'Copy the generated YAML into your assignment repository.',                                Component: StepReview },
 ];
 
 const INITIAL_CONFIG = {
@@ -40,7 +42,7 @@ const INITIAL_CONFIG = {
   postIssue: false,
   postDiscussion: false,
   discussionCategory: 'Assessments',
-  instructorRepoEnabled: false,
+  instructorRepoEnabled: true,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
   includePatterns: '',
