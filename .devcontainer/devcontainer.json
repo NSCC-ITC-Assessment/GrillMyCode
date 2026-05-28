@@ -32,7 +32,10 @@
         // Dev quality-of-life
         "streetsidesoftware.code-spell-checker",
         "christian-kohler.path-intellisense",
-        "EditorConfig.EditorConfig"
+        "EditorConfig.EditorConfig",
+
+        // Copilot customizations evaluations
+        "ms-vscode.vscode-chat-customizations-evaluations"
       ],
       "settings": {
         // ── Formatting ──────────────────────────────────────────────────────
