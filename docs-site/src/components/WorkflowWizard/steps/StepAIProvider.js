@@ -107,7 +107,7 @@ export default function StepAIProvider({ cfg, onChange }) {
           </a>{' '}
           for the current pricing of your chosen model before deploying to a class of students.
           <br /><br />
-          The pre-defined models in the list above have been specifically chosen because they are
+          The pre-defined models in the list below have been specifically chosen because they are
           very cheap — typically <strong>less than 1 cent per API call</strong> — and have been
           tested to work well with GrillMyCode. If you choose your own model, be sure to verify
           its pricing first.
