@@ -14,6 +14,7 @@ import {
   DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS,
   DEFAULT_AI_RETRY_MAX_ATTEMPTS,
   DEFAULT_AI_TEMPERATURE,
+  DEFAULT_NUM_QUESTIONS,
 } from './constants.js';
 
 export function readInputs() {
@@ -22,7 +23,7 @@ export function readInputs() {
 
   const rawNumQuestions = Math.max(
     MIN_QUESTIONS,
-    parseInt(core.getInput('num_questions') || '10', 10),
+    parseInt(core.getInput('num_questions') || String(DEFAULT_NUM_QUESTIONS), 10),
   );
   const numQuestions = Math.min(MAX_QUESTIONS, rawNumQuestions);
   if (rawNumQuestions > MAX_QUESTIONS) {

@@ -32,7 +32,7 @@ const INITIAL_CONFIG = {
   apiKeySecret: '',
   azureEndpointSecret: '',
 
-  numQuestions: 10,
+  numQuestions: 20,
   includeAnswers: false,
   additionalContext: '',
   assignmentContext: '',

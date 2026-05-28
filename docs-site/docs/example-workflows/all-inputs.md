@@ -71,7 +71,7 @@ jobs:
           # ── Question generation ───────────────────────────────────────────
 
           # Number of comprehension questions to generate. Minimum 1, maximum 50.
-          num_questions: "10"
+          num_questions: "20"
 
           # When true, answers are shown to the student immediately after each
           # question — this defeats the purpose of the assessment. Leave false

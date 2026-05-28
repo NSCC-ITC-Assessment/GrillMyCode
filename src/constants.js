@@ -161,6 +161,11 @@ export const COMMENT_REMOVER_BIN = '/usr/local/bin/rmcm';
 export const MIN_QUESTIONS = 1;
 
 /**
+ * Default number of questions generated when num_questions is not supplied.
+ */
+export const DEFAULT_NUM_QUESTIONS = 20;
+
+/**
  * Suffix appended to the assignment name to form the instructor repository
  * name (e.g. "assignment-1" + INSTRUCTOR_REPO_SUFFIX → "assignment-1-grillmycode-instructor").
  */

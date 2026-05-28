@@ -38,7 +38,7 @@ jobs:
           post_discussion: "true"
           discussion_category: "Assessments"
           post_pr_comment: "false"
-          num_questions: "10"
+          num_questions: "20"
           additional_context: "Assignment 4 — Database design and SQL queries"
 ```
 

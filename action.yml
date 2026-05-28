@@ -73,7 +73,7 @@ inputs:
   num_questions:
     description: "Number of comprehension questions to generate (minimum 1, maximum 50). Supplied values above 50 are automatically capped to 50."
     required: false
-    default: "10"
+    default: "20"
 
   include_answers:
     description: >

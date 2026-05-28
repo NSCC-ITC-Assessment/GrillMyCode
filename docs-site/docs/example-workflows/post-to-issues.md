@@ -34,7 +34,7 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           post_issue: "true"
           post_pr_comment: "false"
-          num_questions: "10"
+          num_questions: "20"
           additional_context: "Assignment 2 — Data structures and algorithms"
 ```
 

@@ -8,7 +8,7 @@ const DEFAULTS = {
   aiModel: 'gpt-4.1',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
-  numQuestions: 10,
+  numQuestions: 20,
   includeAnswers: false,
   additionalContext: '',
   assignmentContext: '',
