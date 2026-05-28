@@ -5,7 +5,7 @@ const TRIGGERS = [
   {
     value: 'pull_request',
     label: 'Pull Request',
-    description: 'Run when a student opens or updates a pull request. The most common trigger for GitHub Classroom.',
+    description: 'Run when a student opens or updates a pull request.',
   },
   {
     value: 'push',
@@ -51,8 +51,7 @@ export default function StepTrigger({ cfg, onChange }) {
       <div className={styles.fieldGroup}>
         <label className={styles.label}>What triggers the workflow?</label>
         <span className={styles.hint}>
-          Choose the GitHub event that should start the code assessment. For GitHub Classroom, Pull
-          Request is recommended.
+          Choose the GitHub event that should start the code assessment.
         </span>
         <div className={styles.radioGroup}>
           {TRIGGERS.map((t) => (
