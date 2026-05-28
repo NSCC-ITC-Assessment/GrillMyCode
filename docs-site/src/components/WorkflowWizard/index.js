@@ -75,6 +75,11 @@ function getStepError(stepIndex, cfg) {
       return 'Please enter a model ID before continuing.';
     }
   }
+  if (stepIndex === 4) {
+    if (cfg.instructorRepoEnabled && (!cfg.instructorRepoTokenSecret || !cfg.instructorRepoTokenSecret.trim())) {
+      return 'Please enter a secret name for the instructor repo token before continuing.';
+    }
+  }
   return null;
 }
 
