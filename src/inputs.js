@@ -47,7 +47,7 @@ export function readInputs() {
   return {
     githubToken: core.getInput('github_token', { required: true }),
     aiProvider: core.getInput('ai_provider') || 'github-models',
-    aiModel: core.getInput('ai_model') || 'gpt-4o',
+    aiModel: core.getInput('ai_model') || 'gpt-4.1',
     aiRetryMaxAttempts: Math.max(
       1,
       parseInt(core.getInput('ai_retry_max_attempts') || String(DEFAULT_AI_RETRY_MAX_ATTEMPTS), 10),

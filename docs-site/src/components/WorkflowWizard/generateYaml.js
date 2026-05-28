@@ -5,7 +5,7 @@
 
 const DEFAULTS = {
   aiProvider: 'github-models',
-  aiModel: 'gpt-4o',
+  aiModel: 'gpt-4.1',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   numQuestions: 10,

@@ -26,7 +26,7 @@ const INITIAL_CONFIG = {
   pushBranches: ['main'],
 
   aiProvider: 'github-models',
-  aiModel: 'gpt-4o',
+  aiModel: 'gpt-4.1',
   apiKeySecret: '',
   azureEndpointSecret: '',
 

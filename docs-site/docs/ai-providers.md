@@ -34,7 +34,7 @@ Uses the [GitHub Models](https://github.com/marketplace/models) inference endpoi
 
 | Input | Notes |
 |---|---|
-| `ai_model` | Defaults to `gpt-4o`. Any model listed on the [GitHub Models marketplace](https://github.com/marketplace/models) is valid. Examples: `gpt-4o-mini`, `Phi-3-mini-128k-instruct` |
+| `ai_model` | Defaults to `gpt-4.1`. The only currently supported model on GitHub Models is `gpt-4.1`. See the [GitHub Models marketplace](https://github.com/marketplace/models) for the full catalogue. |
 | `api_key` | Leave empty to use `github_token` automatically. Supply an instructor PAT here to authenticate calls under the instructor's account — see [Using an instructor token](#using-an-instructor-token) below |
 
 ### Using an instructor token
@@ -87,7 +87,7 @@ Supplying an instructor's Personal Access Token via `api_key` changes whose acco
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     ai_provider: 'github-models'
-    ai_model: 'gpt-4o-mini'
+    ai_model: 'gpt-4.1'
 ```
 
 ---

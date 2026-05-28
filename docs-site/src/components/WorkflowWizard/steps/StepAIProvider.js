@@ -35,7 +35,7 @@ const PROVIDER_DEFAULT_SECRETS = {
   'azure-openai': 'AZURE_OPENAI_API_KEY',
 };
 
-const GITHUB_MODELS = ['gpt-4o', 'gpt-4o-mini', 'Phi-3-mini-128k-instruct'];
+const GITHUB_MODELS = ['gpt-4.1'];
 const OPENAI_MODELS = ['gpt-4o', 'gpt-4-turbo', 'gpt-4o-mini'];
 const OPENROUTER_MODELS = [
   { label: 'Deepseek V4 Flash', value: 'deepseek/deepseek-v4-flash' },
@@ -79,7 +79,7 @@ export default function StepAIProvider({ cfg, onChange }) {
                 onChange={() =>
                   onChange({
                     aiProvider: p.value,
-                    aiModel: p.value === 'openrouter' ? OPENROUTER_MODELS[0].value : 'gpt-4o',
+                    aiModel: p.value === 'openrouter' ? OPENROUTER_MODELS[0].value : 'gpt-4.1',
                     apiKeySecret: PROVIDER_DEFAULT_SECRETS[p.value] ?? '',
                     azureEndpointSecret: p.value === 'azure-openai' ? 'AZURE_OPENAI_ENDPOINT' : '',
                   })
@@ -118,7 +118,7 @@ export default function StepAIProvider({ cfg, onChange }) {
         <label className={styles.label}>Model</label>
         <span className={styles.hint}>
           {cfg.aiProvider === 'github-models' &&
-            'Pick from the models available via GitHub Models. "gpt-4o" is the recommended default.'}
+            'The only currently supported GitHub Models model is "gpt-4.1".'}
           {cfg.aiProvider === 'openai' && 'Enter the OpenAI model ID (e.g. gpt-4o, gpt-4-turbo).'}
           {cfg.aiProvider === 'openrouter' &&
             'Select a pre-defined model or choose "Own Choice" to enter any OpenRouter model ID.'}
@@ -196,7 +196,7 @@ export default function StepAIProvider({ cfg, onChange }) {
             placeholder={
               cfg.aiProvider === 'azure-openai'
                 ? 'my-deployment-name'
-                : 'gpt-4o'
+                : 'gpt-4.1'
             }
           />
         )}

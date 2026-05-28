@@ -43,11 +43,11 @@ jobs:
           ai_provider: "github-models"
 
           # Model identifier for the chosen provider.
-          # GitHub Models: gpt-4o, gpt-4o-mini, Phi-3-mini-128k-instruct
+          # GitHub Models: gpt-4.1
           # OpenAI:        gpt-4o, gpt-4-turbo
           # Azure OpenAI:  your deployment name
           # OpenRouter:    provider/model-name format (e.g. anthropic/claude-3-5-sonnet)
-          ai_model: "gpt-4o"
+          ai_model: "gpt-4.1"
 
           # Total number of attempts (initial + retries) when calling the AI provider.
           # Retries are triggered by 429 (rate limit), 500, 502, 503, 504, and network

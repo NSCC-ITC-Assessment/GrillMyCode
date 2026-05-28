@@ -10,7 +10,7 @@ sidebar_position: 1
 |---|---|---|---|
 | `github_token` | Yes | `${{ github.token }}` | GitHub token for API access and GitHub Models credential |
 | `ai_provider` | No | `github-models` | AI provider: `github-models`, `openai`, `openrouter`, or `azure-openai` |
-| `ai_model` | No | `gpt-4o` | Model identifier for the chosen provider |
+| `ai_model` | No | `gpt-4.1` | Model identifier for the chosen provider |
 | `ai_retry_max_attempts` | No | `5` | Total number of attempts (initial + retries) when calling the AI provider. Retries are triggered by transient errors: 429 (rate limit), 500, 502, 503, 504, and network-level failures. Values below 1 are clamped to 1 |
 | `ai_temperature` | No | `0.5` | Controls the randomness of the AI's output (0.0 = fully deterministic, 1.0 = most random). Lower values produce more consistent questions; higher values produce more varied output |
 | `api_key` | No | | API key for the provider. For `github-models`, leave empty to use `github_token`, or supply an instructor PAT to override it |
