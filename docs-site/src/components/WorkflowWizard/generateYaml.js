@@ -3,6 +3,19 @@
  * Only emits inputs that differ from their defaults to keep output minimal.
  */
 
+/**
+ * Normalises a pattern string that may use commas, newlines, or a mix as
+ * delimiters. Returns a single comma-separated string with each entry trimmed
+ * and empty entries removed.
+ */
+function normalizePatterns(value) {
+  return value
+    .split(/[,\r\n]+/)
+    .map((p) => p.trim())
+    .filter(Boolean)
+    .join(', ');
+}
+
 const DEFAULTS = {
   aiProvider: 'github-models',
   aiModel: 'gpt-4.1',
@@ -146,10 +159,10 @@ export function generateYaml(cfg) {
 
   // ── File filtering ─────────────────────────────────────────────────────────
   if (cfg.includePatterns && differ(cfg, 'includePatterns')) {
-    lines.push(`          include_patterns: ${yamlStr(cfg.includePatterns)}`);
+    lines.push(`          include_patterns: ${yamlStr(normalizePatterns(cfg.includePatterns))}`);
   }
   if (cfg.excludePatterns && differ(cfg, 'excludePatterns')) {
-    lines.push(`          exclude_patterns: ${yamlStr(cfg.excludePatterns)}`);
+    lines.push(`          exclude_patterns: ${yamlStr(normalizePatterns(cfg.excludePatterns))}`);
   }
   if (differ(cfg, 'excludeWorkflowFiles')) {
     lines.push(`          exclude_workflow_files: ${yamlStr(cfg.excludeWorkflowFiles)}`);

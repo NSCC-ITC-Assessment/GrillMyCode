@@ -65,10 +65,9 @@ export default function StepFiles({ cfg, onChange }) {
           entirely — repeat the defaults alongside your additions if you want both.
         </span>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-          <input
-            type="text"
+          <textarea
             className={styles.input}
-            style={{ flex: 1 }}
+            style={{ flex: 1, resize: 'vertical', minHeight: '4rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
             value={cfg.excludePatterns}
             onChange={(e) => onChange({ excludePatterns: e.target.value })}
             placeholder="Leave empty to use built-in defaults"
