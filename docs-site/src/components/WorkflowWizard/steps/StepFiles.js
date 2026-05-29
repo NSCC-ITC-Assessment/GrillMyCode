@@ -1,6 +1,40 @@
 import React from 'react';
 import styles from '../styles.module.css';
 
+// Kept in sync with DEFAULT_EXCLUDE_PATTERNS in src/constants.js
+const DEFAULT_EXCLUDE_PATTERNS = [
+  'node_modules/**',
+  '**/*.lock',
+  'package-lock.json',
+  'yarn.lock',
+  'pnpm-lock.yaml',
+  '**/*.min.js',
+  '**/*.min.css',
+  'dist/**',
+  'build/**',
+  '.next/**',
+  '.nuxt/**',
+  '__pycache__/**',
+  '**/*.pyc',
+  '.git/**',
+  '**/*.png',
+  '**/*.jpg',
+  '**/*.jpeg',
+  '**/*.gif',
+  '**/*.ico',
+  '**/*.svg',
+  '**/*.woff',
+  '**/*.woff2',
+  '**/*.ttf',
+  '**/*.eot',
+  '**/*.md',
+  '**/*.pdf',
+  '**/*.zip',
+  '**/*.tar.gz',
+  '.assessment/**',
+  '_assessment/**',
+].join(', ');
+
 export default function StepFiles({ cfg, onChange }) {
   return (
     <div>
@@ -30,13 +64,24 @@ export default function StepFiles({ cfg, onChange }) {
           <strong>Warning:</strong> providing a value here <em>replaces</em> the default list
           entirely — repeat the defaults alongside your additions if you want both.
         </span>
-        <input
-          type="text"
-          className={styles.input}
-          value={cfg.excludePatterns}
-          onChange={(e) => onChange({ excludePatterns: e.target.value })}
-          placeholder="Leave empty to use built-in defaults"
-        />
+        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+          <input
+            type="text"
+            className={styles.input}
+            style={{ flex: 1 }}
+            value={cfg.excludePatterns}
+            onChange={(e) => onChange({ excludePatterns: e.target.value })}
+            placeholder="Leave empty to use built-in defaults"
+          />
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            title="Populate with the built-in default exclude patterns so you can add to or modify them"
+            onClick={() => onChange({ excludePatterns: DEFAULT_EXCLUDE_PATTERNS })}
+          >
+            Load defaults
+          </button>
+        </div>
       </div>
 
       <div className={styles.fieldGroup}>

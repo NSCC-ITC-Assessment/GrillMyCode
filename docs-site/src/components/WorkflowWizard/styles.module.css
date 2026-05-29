@@ -416,6 +416,25 @@
   background: #219a52;
 }
 
+.secondaryBtn {
+  padding: 0.45rem 0.85rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  background: transparent;
+  color: var(--ifm-color-primary);
+  border: 1.5px solid var(--ifm-color-primary);
+  border-radius: var(--ifm-global-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, color 0.15s;
+  flex-shrink: 0;
+}
+
+.secondaryBtn:hover {
+  background: var(--ifm-color-primary);
+  color: #fff;
+}
+
 .checklist {
   margin-top: 1.5rem;
   list-style: none;
