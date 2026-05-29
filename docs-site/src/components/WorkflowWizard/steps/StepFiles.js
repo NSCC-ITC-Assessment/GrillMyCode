@@ -96,24 +96,6 @@ export default function StepFiles({ cfg, onChange }) {
   return (
     <div>
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Include patterns <span className={styles.optionalBadge}>optional</span></label>
-        <span className={styles.hint}>
-          Comma-separated glob patterns for files to <strong>include</strong> in the assessment. Leave
-          empty to include all files not matched by the exclude list. Most instructors can leave this
-          blank.{' '}
-          <em>Example: </em>
-          <code>src/**/*.py</code>
-        </span>
-        <input
-          type="text"
-          className={styles.input}
-          value={cfg.includePatterns}
-          onChange={(e) => onChange({ includePatterns: e.target.value })}
-          placeholder="Leave empty to include all non-excluded files"
-        />
-      </div>
-
-      <div className={styles.fieldGroup}>
         <label className={styles.label}>Exclude patterns <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Comma-separated glob patterns for files to <strong>exclude</strong>. The action has a
@@ -138,6 +120,24 @@ export default function StepFiles({ cfg, onChange }) {
             Load defaults
           </button>
         </div>
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Include patterns <span className={styles.optionalBadge}>optional</span></label>
+        <span className={styles.hint}>
+          Comma-separated glob patterns for files to <strong>include</strong> in the assessment. Leave
+          empty to include all files not matched by the exclude list. Most instructors can leave this
+          blank.{' '}
+          <em>Example: </em>
+          <code>src/**/*.py</code>
+        </span>
+        <input
+          type="text"
+          className={styles.input}
+          value={cfg.includePatterns}
+          onChange={(e) => onChange({ includePatterns: e.target.value })}
+          placeholder="Leave empty to include all non-excluded files"
+        />
       </div>
 
     </div>
