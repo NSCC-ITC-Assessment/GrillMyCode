@@ -259,4 +259,4 @@ Full documentation is available at **https://nscc-itc-assessment.github.io/Grill
 | [Architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/architecture)        | How the Docker-based action is structured and executed                          |
 | [Example Workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) | Copy-paste workflow files for each configuration                                |
 | [Contributing](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/contributing)        | Local development setup, commit conventions, and the release process            |
-| [Versioning](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning)            | Release guide — cutting patch and major versions                                |
+| [Versioning](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning)            | Release guide — patch, minor, and major releases                                |

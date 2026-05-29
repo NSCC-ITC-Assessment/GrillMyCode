@@ -4,8 +4,9 @@
 
 ## Type of change
 
-- [ ] Bug fix (patch release — no new functionality)
-- [ ] New functionality (new major release — see [versioning.md](../docs-site/docs/development/versioning.md))
+- [ ] Bug fix (patch release — no new functionality, no behaviour change)
+- [ ] Non-breaking new functionality (minor release — see [versioning.md](../docs-site/docs/development/versioning.md))
+- [ ] Breaking change (major release — existing workflow files would stop working)
 - [ ] Documentation / chore (no release needed)
 
 ## Checklist
