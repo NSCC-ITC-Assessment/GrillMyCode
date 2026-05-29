@@ -20,15 +20,20 @@ Previous major versions enter **maintenance mode** when a new major is released 
 
 ## Tag strategy
 
-When you push a tag like `v2.1.3`, the release workflow produces three image tags on `ghcr.io`:
+When you push a tag like `v2.1.3`, the release workflow produces four image tags on `ghcr.io`:
 
 | Image Tag | Updates When | Use Case |
 |---|---|---|
 | `v2.1.3` | Never (immutable) | Pinning to an exact known-good build |
+| `v2.1` | Any `v2.1.x` is released | Rollback channel within a minor line |
 | `v2` | Any `v2.x.x` is released | Receiving all fixes and features automatically (recommended) |
 | `latest` | Any release | Always the newest — not recommended for consumers |
 
-All consumer repos should reference the **major** tag (e.g. `v1`) in their workflow files.
+All consumer repos should reference the **major** tag (e.g. `v1`) in their workflow files. This is the value hard-coded in `action.yml` — it only changes when a new major version is released.
+
+:::note
+`action.yml` always references the **major** tag (e.g. `:v1`) and is **never modified by the release workflow**. It is only updated manually when a breaking-change major version is released.
+:::
 
 ---
 
@@ -37,8 +42,10 @@ All consumer repos should reference the **major** tag (e.g. `v1`) in their workf
 Pushing a tag is the single action that triggers everything. When you run `git push origin vX.Y.Z`:
 
 1. The `release.yml` workflow fires
-2. It builds the Docker image and pushes it to `ghcr.io` with three version tags
+2. It builds the Docker image and pushes it to `ghcr.io` with four version tags (`vX.Y.Z`, `vX.Y`, `vX`, `latest`)
 3. It automatically creates a **GitHub Release** with auto-generated release notes
+
+No files are committed or modified during release. The repository is not touched after the tag is pushed — the release is a pure build-and-publish operation.
 
 You do not need to manually create the GitHub Release through the UI.
 
@@ -112,7 +119,14 @@ git tag v2.0.0
 git push origin v2.0.0
 ```
 
-**What happens:** `v2.0.0` and `v2` are created. `latest` is updated. `v1` is **not affected** — consumers stay on the previous version until they deliberately update to `@v2`.
+**What happens:** `v2.0.0`, `v2.0`, and `v2` are created. `latest` is updated. `v1` is **not affected** — consumers stay on the previous version until they deliberately update to `@v2`.
+
+Because this is a breaking change, you must also manually update `action.yml` to reference the new major tag before merging:
+
+```yaml
+# action.yml — runs section
+image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:v2"
+```
 
 ---
 

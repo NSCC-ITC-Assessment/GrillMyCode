@@ -42,7 +42,7 @@ git config merge.ours.driver true
 
 `pnpm install` installs all dependencies **and** sets up the Husky pre-commit hooks automatically via the `prepare` script.
 
-`git config merge.ours.driver true` registers the merge driver that prevents the branch-image reference in `action.yml` from overwriting the `main` reference when a branch is merged. This is configured automatically inside the dev container and Codespaces — it only needs to be run manually for a plain local clone. The command is scoped to this repository only (it writes to `.git/config`) and has no effect on any other projects.
+`git config merge.ours.driver true` registers the merge driver that prevents branch-specific `action.yml` changes from flowing back into `main` when a feature branch is merged. The branch-build workflow rewrites `action.yml` on non-main branches to point to that branch's container image for testing — the merge driver ensures `main` always retains its major-tag reference (e.g. `:v1`) regardless. This is configured automatically inside the dev container and Codespaces — it only needs to be run manually for a plain local clone. The command is scoped to this repository only (it writes to `.git/config`) and has no effect on any other projects.
 
 ---
 
