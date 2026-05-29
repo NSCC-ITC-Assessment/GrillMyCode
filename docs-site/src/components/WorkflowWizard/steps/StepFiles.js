@@ -3,6 +3,7 @@ import styles from '../styles.module.css';
 
 // Kept in sync with DEFAULT_EXCLUDE_PATTERNS in src/constants.js
 const DEFAULT_EXCLUDE_PATTERNS = [
+  // JavaScript / Node.js
   'node_modules/**',
   '**/*.lock',
   'package-lock.json',
@@ -10,29 +11,85 @@ const DEFAULT_EXCLUDE_PATTERNS = [
   'pnpm-lock.yaml',
   '**/*.min.js',
   '**/*.min.css',
+  
+  // Common build output
   'dist/**',
   'build/**',
+  'out/**',
+  'coverage/**',
+  '.nyc_output/**',
+  
+  // Next.js / Nuxt
   '.next/**',
   '.nuxt/**',
+  '.output/**',
+  
+  // SvelteKit / Astro / Expo / Parcel / Turborepo
+  '.svelte-kit/**',
+  '.astro/**',
+  '.expo/**',
+  '.parcel-cache/**',
+  '.turbo/**',
+  
+  // Python
   '__pycache__/**',
   '**/*.pyc',
+  '.venv/**',
+  'venv/**',
+  '.pytest_cache/**',
+  '**/*.egg-info/**',
+  '.tox/**',
+  
+  // Java / JVM
+  '**/*.class',
+  '**/*.jar',
+  'target/**',
+  '.gradle/**',
+  
+  // Ruby
+  '.bundle/**',
+  
+  // PHP / Go / Ruby vendor
+  'vendor/**',
+  
+  // .NET
+  'obj/**',
+  
+  // C / C++
+  '**/*.o',
+  '**/*.a',
+  '**/*.so',
+  
+  // Version control
   '.git/**',
+  '.gitignore',
+  
+  // Images
   '**/*.png',
   '**/*.jpg',
   '**/*.jpeg',
   '**/*.gif',
   '**/*.ico',
   '**/*.svg',
+  
+  // Fonts
   '**/*.woff',
   '**/*.woff2',
   '**/*.ttf',
   '**/*.eot',
+  
+  // Documents / archives
   '**/*.md',
   '**/*.pdf',
   '**/*.zip',
   '**/*.tar.gz',
+  
+  // Source maps and logs
+  '**/*.map',
+  '**/*.log',
+  
+  // GrillMyCode assessment internals
   '.assessment/**',
-  '_assessment/**',
 ].join(', ');
 
 export default function StepFiles({ cfg, onChange }) {
