@@ -25,7 +25,7 @@ Every push to the repository triggers one of three build pipelines, depending on
 | Environment | Trigger | Image tag produced | Purpose |
 |---|---|---|---|
 | **DEV** | Push to any feature / fix branch | `:branch-name` (sanitized) | Validate the build compiles and passes checks before review |
-| **STAGING** | Merge to `main` | `:latest` | Integration point — code that has been reviewed and merged but not yet versioned |
+| **STAGING** | Merge to `main` | `:next` | Integration point — code that has been reviewed and merged but not yet versioned |
 | **PROD** | Push of a `v*` tag | `:v1.x.x`, `:v1.x`, `:v1`, `:latest` | Stable, versioned releases consumed by instructors |
 
 ### DEV — branch builds
@@ -34,15 +34,11 @@ When you push source-code changes to any branch other than `main`, `branch-build
 
 ### STAGING — `main` after merge
 
-Once a PR is merged to `main`, `build-and-push.yml` fires and pushes the image under `:latest`. At this point the code is complete and reviewed but has not been assigned a version number. The `:latest` tag at this stage represents "what would ship next" — it is useful for integration testing but should not be pinned in instructor workflow files because it is a moving target.
+Once a PR is merged to `main`, `staging-build.yml` fires and pushes the image under `:next`. At this point the code is complete and reviewed but has not been assigned a version number. The `:next` tag represents "what would ship next" — it is useful for integration testing but should not be pinned in instructor workflow files because it is a moving target.
 
 ### PROD — versioned releases
 
 Pushing a `v*` tag (e.g. `v1.2.0`) triggers `release.yml`, which produces four immutable-or-rolling tags (see the [tag strategy](#tag-strategy) section below) and creates a GitHub Release. Only at this point should instructor workflows be updated to reference a new version — and most never need to, because they pin to a major tag like `@v1` that is updated automatically.
-
-:::note
-The `build-and-push.yml` workflow is named **"Build and Push Docker Image (Dev)"** in the Actions tab — this is a historical naming artefact. Its trigger is `main` merges and it represents the **staging** tier, not the dev tier.
-:::
 
 ---
 
@@ -55,7 +51,8 @@ When you push a tag like `v2.1.3`, the release workflow produces four image tags
 | `v2.1.3` | Never (immutable) | Pinning to an exact known-good build |
 | `v2.1` | Any `v2.1.x` is released | Rollback channel within a minor line |
 | `v2` | Any `v2.x.x` is released | Receiving all fixes and features automatically (recommended) |
-| `latest` | Any release | Always the newest — not recommended for consumers |
+| `latest` | Any release | Always the newest stable build — not recommended for consumers |
+| `next` | Any merge to `main` | Pre-release staging build — for integration testing only |
 
 All consumer repos should reference the **major** tag (e.g. `v1`) in their workflow files. This is the value hard-coded in `action.yml` — it only changes when a new major version is released.
 
