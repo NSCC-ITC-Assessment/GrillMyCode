@@ -1,6 +1,6 @@
-# Keep main's action.yml during branch merges — the branch-build workflow
-# rewrites this file to point to the branch image, but that change must
-# never flow back into main when the branch is merged via PR.
+# Keep main's action.yml during branch merges — prevents any accidental
+# branch-specific changes to this file from overwriting the canonical
+# major-tag reference when a branch is merged via PR.
 action.yml merge=ours
 
 

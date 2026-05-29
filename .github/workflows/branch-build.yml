@@ -31,7 +31,7 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      contents: read
       packages: write
 
     steps:
@@ -39,7 +39,8 @@ jobs:
 
       - name: Lowercase repository name
         id: repo
-        run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+        run: |
+          echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
 
       - name: Sanitize branch name for Docker tag
         id: tag
@@ -54,19 +55,10 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push image
+      - name: Build and push DEV image
         uses: docker/build-push-action@v7
         with:
           context: .
           push: true
-          tags: ghcr.io/${{ steps.repo.outputs.name }}:${{ steps.tag.outputs.value }}
-
-      - name: Update action.yml image reference
-        run: |
-          sed -i "s|image: \"docker://ghcr.io/${{ steps.repo.outputs.name }}:.*\"|image: \"docker://ghcr.io/${{ steps.repo.outputs.name }}:${{ steps.tag.outputs.value }}\"|" action.yml
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add action.yml
-          git diff --staged --quiet || git commit -m "chore: update image reference to ${{ steps.tag.outputs.value }} [skip ci]"
-          git pull --rebase
-          git push
+          tags: |
+            ghcr.io/${{ steps.repo.outputs.name }}:branch-${{ steps.tag.outputs.value }}
