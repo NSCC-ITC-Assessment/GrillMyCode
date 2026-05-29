@@ -4,7 +4,7 @@
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
   "onCreateCommand": "corepack prepare pnpm@11.1.3 --activate",
-  "postCreateCommand": "pnpm install && git config merge.ours.driver true && curl -fsSL https://github.com/NSCC-ITC-Assessment/comment-remover/releases/download/grill-my-code/rmcm-linux-x86_64 -o /usr/local/bin/rmcm && chmod +x /usr/local/bin/rmcm",
+  "postCreateCommand": "pnpm install && git config merge.ours.driver true",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 
   // ─── VS Code ───────────────────────────────────────────────────────────────
