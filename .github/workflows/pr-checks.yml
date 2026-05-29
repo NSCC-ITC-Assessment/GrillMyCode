@@ -109,11 +109,11 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      - name: Ensure action.yml points to :latest
+      - name: Ensure action.yml points to :v1
         run: |
           tag=$(grep -oP '(?<=grillmycode:)[^"]+' action.yml)
-          if [[ "$tag" != "latest" ]]; then
-            echo "::error file=action.yml::action.yml image tag must be ':latest' on main, but found ':${tag}'. The branch-build workflow rewrites this file to point to the branch image — revert it before merging by running: git checkout origin/main -- action.yml && git commit -m 'fix: restore action.yml image tag to :latest'"
+          if [[ "$tag" != "v1" ]]; then
+            echo "::error file=action.yml::action.yml image tag must be ':v1' on main, but found ':${tag}'. Restore it by running: git checkout origin/main -- action.yml && git commit -m 'fix: restore action.yml image tag to :v1'"
             exit 1
           fi
 

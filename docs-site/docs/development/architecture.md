@@ -216,4 +216,6 @@ Three workflows build and publish Docker images. They are mutually exclusive by 
 
 All three workflows ignore documentation-only changes (`docs-site/**`, `README.md`, etc.) to avoid unnecessary image rebuilds.
 
+The canonical tag in `action.yml` is the major tag (e.g. `:v1`). The `action-image-tag` PR check enforces this and will fail if the tag has been changed manually on a branch.
+
 See [Versioning & Releases](versioning) for the full release process.
