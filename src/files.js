@@ -36,7 +36,8 @@ export function filterFiles(files, excludePatterns, overridePatterns = []) {
 
 /**
  * Fetches the content of each file at headSha and returns raw file entries.
- * Files that cannot be read (e.g. deleted) are silently skipped.
+ * Files that cannot be read (e.g. deleted) or are detected as binary (contain
+ * a null byte) are silently skipped.
  */
 export function collectRawFiles(files, headSha) {
   const rawFiles = [];
@@ -46,6 +47,12 @@ export function collectRawFiles(files, headSha) {
       content = git('show', `${headSha}:${filepath}`);
     } catch {
       // Deleted files or other git errors — skip
+      continue;
+    }
+    // Binary files contain null bytes — skip them rather than sending garbage
+    // to the AI. This mirrors the heuristic git itself uses.
+    if (content.includes('\0')) {
+      core.debug(`Skipping binary file: ${filepath}`);
       continue;
     }
     rawFiles.push({ filepath, content });

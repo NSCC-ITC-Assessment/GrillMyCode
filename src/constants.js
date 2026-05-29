@@ -48,8 +48,6 @@ export const DEFAULT_EXCLUDE_PATTERNS = [
   '.tox/**',
 
   // Java / JVM
-  '**/*.class',
-  '**/*.jar',
   'target/**',
   '.gradle/**',
 
@@ -62,37 +60,17 @@ export const DEFAULT_EXCLUDE_PATTERNS = [
   // .NET
   'obj/**',
 
-  // C / C++
-  '**/*.o',
-  '**/*.a',
-  '**/*.so',
-
   // Version control
   '.git/**',
   '.gitignore',
 
-  // Images
-  '**/*.png',
-  '**/*.jpg',
-  '**/*.jpeg',
-  '**/*.gif',
-  '**/*.ico',
+  // Text assets (SVG is XML, source maps and logs are plain text)
   '**/*.svg',
-
-  // Fonts
-  '**/*.woff',
-  '**/*.woff2',
-  '**/*.ttf',
-  '**/*.eot',
-
-  // Documents / archives
-  '**/*.md',
-  '**/*.pdf',
-  '**/*.zip',
-  '**/*.tar.gz',
-  // Source maps and logs
   '**/*.map',
   '**/*.log',
+
+  // Documents
+  '**/*.md',
 
   // GrillMyCode assessment internals
   '.assessment/**',

@@ -1,97 +1,6 @@
 import React from 'react';
 import styles from '../styles.module.css';
 
-// Kept in sync with DEFAULT_EXCLUDE_PATTERNS in src/constants.js
-const DEFAULT_EXCLUDE_PATTERNS = [
-  // JavaScript / Node.js
-  'node_modules/**',
-  '**/*.lock',
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  '**/*.min.js',
-  '**/*.min.css',
-  
-  // Common build output
-  'dist/**',
-  'build/**',
-  'out/**',
-  'coverage/**',
-  '.nyc_output/**',
-  
-  // Next.js / Nuxt
-  '.next/**',
-  '.nuxt/**',
-  '.output/**',
-  
-  // SvelteKit / Astro / Expo / Parcel / Turborepo
-  '.svelte-kit/**',
-  '.astro/**',
-  '.expo/**',
-  '.parcel-cache/**',
-  '.turbo/**',
-  
-  // Python
-  '__pycache__/**',
-  '**/*.pyc',
-  '.venv/**',
-  'venv/**',
-  '.pytest_cache/**',
-  '**/*.egg-info/**',
-  '.tox/**',
-  
-  // Java / JVM
-  '**/*.class',
-  '**/*.jar',
-  'target/**',
-  '.gradle/**',
-  
-  // Ruby
-  '.bundle/**',
-  
-  // PHP / Go / Ruby vendor
-  'vendor/**',
-  
-  // .NET
-  'obj/**',
-  
-  // C / C++
-  '**/*.o',
-  '**/*.a',
-  '**/*.so',
-  
-  // Version control
-  '.git/**',
-  '.gitignore',
-  
-  // Images
-  '**/*.png',
-  '**/*.jpg',
-  '**/*.jpeg',
-  '**/*.gif',
-  '**/*.ico',
-  '**/*.svg',
-  
-  // Fonts
-  '**/*.woff',
-  '**/*.woff2',
-  '**/*.ttf',
-  '**/*.eot',
-  
-  // Documents / archives
-  '**/*.md',
-  '**/*.pdf',
-  '**/*.zip',
-  '**/*.tar.gz',
-  
-  // Source maps and logs
-  '**/*.map',
-  '**/*.log',
-  
-  // GrillMyCode assessment internals
-  '.assessment/**',
-].join(', ');
-
 const DEFAULT_PATTERN_GROUPS = [
   {
     heading: 'JavaScript / Frontend',
@@ -110,20 +19,17 @@ const DEFAULT_PATTERN_GROUPS = [
     ],
   },
   {
-    heading: 'Java · Ruby · PHP · .NET · C/C++',
+    heading: 'Java · Ruby · PHP · .NET',
     patterns: [
-      '**/*.class', '**/*.jar', 'target/**', '.gradle/**',
+      'target/**', '.gradle/**',
       '.bundle/**', 'vendor/**', 'obj/**',
-      '**/*.o', '**/*.a', '**/*.so',
     ],
   },
   {
-    heading: 'Assets & Misc',
+    heading: 'Text assets & Misc',
     patterns: [
       '.git/**', '.gitignore',
-      '**/*.png', '**/*.jpg', '**/*.jpeg', '**/*.gif', '**/*.ico', '**/*.svg',
-      '**/*.woff', '**/*.woff2', '**/*.ttf', '**/*.eot',
-      '**/*.md', '**/*.pdf', '**/*.zip', '**/*.tar.gz',
+      '**/*.svg', '**/*.md',
       '**/*.map', '**/*.log', '.assessment/**',
     ],
   },
@@ -132,12 +38,17 @@ const DEFAULT_PATTERN_GROUPS = [
 export default function StepFiles({ cfg, onChange }) {
   return (
     <div>
+      <div className={styles.notice}>
+        <strong>Binary files are never assessed</strong> regardless of include/exclude settings.
+        Any file whose content contains a null byte is automatically skipped before being sent to
+        the AI. Only text-based source files are eligible.
+      </div>
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Exclude patterns <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
-          Comma-separated glob patterns for <strong>additional</strong> files to exclude. These are
-          merged with the built-in default list shown below — the defaults are always applied.
-          Only add patterns for files specific to your assignment.
+          Glob patterns for <strong>additional</strong> files to exclude — merged with the built-in
+          defaults above, which are always applied. Enter one pattern per line, comma-separated, or
+          a mix of both. Only add patterns for files specific to your assignment.
         </span>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', marginBottom: '0.6rem', tableLayout: 'fixed' }}>
@@ -163,22 +74,14 @@ export default function StepFiles({ cfg, onChange }) {
             </tbody>
           </table>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
+        <div>
           <textarea
             className={styles.input}
-            style={{ flex: 1, resize: 'vertical', minHeight: '4rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
+            style={{ resize: 'vertical', minHeight: '4rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
             value={cfg.excludePatterns}
             onChange={(e) => onChange({ excludePatterns: e.target.value })}
             placeholder="Leave empty to use only the built-in defaults above"
           />
-          <button
-            type="button"
-            className={styles.secondaryBtn}
-            title="Show the built-in default exclude patterns for reference"
-            onClick={() => onChange({ excludePatterns: DEFAULT_EXCLUDE_PATTERNS })}
-          >
-            View defaults
-          </button>
         </div>
       </div>
 

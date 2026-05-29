@@ -6,6 +6,12 @@ sidebar_position: 2
 
 The `exclude_patterns` input controls which files are excluded from the assessed diff.
 
+:::info Binary files are never assessed
+
+Regardless of any include or exclude settings, **binary files are always skipped** before being sent to the AI. Any file whose content contains a null byte is automatically filtered out. Only text-based source files are eligible for assessment.
+
+:::
+
 ## Default behaviour
 
 When no `exclude_patterns` value is provided, a built-in list of common non-code files is used automatically. This list covers:
@@ -13,7 +19,7 @@ When no `exclude_patterns` value is provided, a built-in list of common non-code
 - Package lock files (`**/*.lock`, `**/pnpm-lock.yaml`, etc.)
 - Dependency directories (`node_modules/**`)
 - Build outputs and minified assets (`dist/**`, `build/**`, `**/*.min.js`)
-- Images and binary files (`**/*.png`, `**/*.jpg`, `**/*.pdf`, etc.)
+- Images and binary files (`**/*.png`, `**/*.jpg`, `**/*.pdf`, etc.) — though these are also caught automatically by the binary file check
 - Markdown files (`**/*.md`) — excluded from the assessed diff by default, since they typically describe the assignment rather than the student's solution. They can still be passed to the AI via [`assignment_context`](../reference/inputs-outputs.md)
 
 ## Custom patterns
