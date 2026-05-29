@@ -18,6 +18,34 @@ Previous major versions enter **maintenance mode** when a new major is released 
 
 ---
 
+## Build environments
+
+Every push to the repository triggers one of three build pipelines, depending on where the code lives. Together these form a DEV → STAGING → PROD lifecycle.
+
+| Environment | Trigger | Image tag produced | Purpose |
+|---|---|---|---|
+| **DEV** | Push to any feature / fix branch | `:branch-name` (sanitized) | Validate the build compiles and passes checks before review |
+| **STAGING** | Merge to `main` | `:latest` | Integration point — code that has been reviewed and merged but not yet versioned |
+| **PROD** | Push of a `v*` tag | `:v1.x.x`, `:v1.x`, `:v1`, `:latest` | Stable, versioned releases consumed by instructors |
+
+### DEV — branch builds
+
+When you push source-code changes to any branch other than `main`, `branch-build.yml` fires. It builds the Docker image and pushes it to `ghcr.io` under a sanitized form of the branch name (e.g. `feat/add-provider` → `:feat-add-provider`). This tag exists solely for internal validation and is not intended for use in production workflow files.
+
+### STAGING — `main` after merge
+
+Once a PR is merged to `main`, `build-and-push.yml` fires and pushes the image under `:latest`. At this point the code is complete and reviewed but has not been assigned a version number. The `:latest` tag at this stage represents "what would ship next" — it is useful for integration testing but should not be pinned in instructor workflow files because it is a moving target.
+
+### PROD — versioned releases
+
+Pushing a `v*` tag (e.g. `v1.2.0`) triggers `release.yml`, which produces four immutable-or-rolling tags (see the [tag strategy](#tag-strategy) section below) and creates a GitHub Release. Only at this point should instructor workflows be updated to reference a new version — and most never need to, because they pin to a major tag like `@v1` that is updated automatically.
+
+:::note
+The `build-and-push.yml` workflow is named **"Build and Push Docker Image (Dev)"** in the Actions tab — this is a historical naming artefact. Its trigger is `main` merges and it represents the **staging** tier, not the dev tier.
+:::
+
+---
+
 ## Tag strategy
 
 When you push a tag like `v2.1.3`, the release workflow produces four image tags on `ghcr.io`:
