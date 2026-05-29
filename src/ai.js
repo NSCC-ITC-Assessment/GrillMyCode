@@ -2,8 +2,7 @@
  * AI Client
  *
  * Calls the configured AI provider's chat completions endpoint and returns
- * the model's response text. Supports github-models, openai, openrouter,
- * and azure-openai.
+ * the model's response text. Supports github-models and openrouter.
  *
  * Transient failures (429, 500, 502, 503, 504, network errors) are retried
  * automatically using exponential backoff with full jitter. 429 responses
@@ -17,7 +16,6 @@ import {
   AI_RETRY_BASE_DELAY_MS,
   AI_RETRY_MAX_DELAY_MS,
   AI_RETRYABLE_STATUS_CODES,
-  AZURE_OPENAI_API_VERSION,
 } from './constants.js';
 
 /** Resolves after `ms` milliseconds. */
@@ -66,30 +64,16 @@ function parseRetryAfterMs(response) {
  * @param {string} opts.provider       - AI provider key
  * @param {string} opts.model          - Model identifier
  * @param {string} opts.apiKey         - Provider API key
- * @param {string} opts.endpoint       - Azure endpoint URL (azure-openai only)
  * @param {Array}  opts.messages       - Chat messages array
  * @param {number} opts.retryMaxAttempts - Total attempts (initial + retries)
  */
-export async function callAI({
-  provider,
-  model,
-  apiKey,
-  endpoint,
-  messages,
-  retryMaxAttempts,
-  temperature,
-}) {
+export async function callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature }) {
   let url;
   const headers = { 'Content-Type': 'application/json' };
 
   switch (provider) {
     case 'github-models':
       url = 'https://models.inference.ai.azure.com/chat/completions';
-      headers['Authorization'] = `Bearer ${apiKey}`;
-      break;
-
-    case 'openai':
-      url = 'https://api.openai.com/v1/chat/completions';
       headers['Authorization'] = `Bearer ${apiKey}`;
       break;
 
@@ -100,22 +84,9 @@ export async function callAI({
       headers['X-Title'] = 'GrillMyCode';
       break;
 
-    case 'azure-openai':
-      if (!endpoint) {
-        throw new Error(
-          'The azure_endpoint input is required when using the azure-openai provider.\n' +
-            'Expected format: https://<resource>.openai.azure.com/openai/deployments/<deployment>',
-        );
-      }
-      url = endpoint.endsWith('/chat/completions')
-        ? endpoint
-        : `${endpoint.replace(/\/$/, '')}/chat/completions?api-version=${AZURE_OPENAI_API_VERSION}`;
-      headers['api-key'] = apiKey;
-      break;
-
     default:
       throw new Error(
-        `Unknown ai_provider: "${provider}". Valid values: github-models | openai | openrouter | azure-openai`,
+        `Unknown ai_provider: "${provider}". Valid values: github-models | openrouter`,
       );
   }
 

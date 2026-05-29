@@ -26,10 +26,9 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   prTypes: ['opened', 'synchronize'],    // pull_request only
   pushBranches: ['main'],                // push only
 
-  aiProvider: 'github-models' | 'openai' | 'openrouter' | 'azure-openai',
+  aiProvider: 'github-models' | 'openrouter',
   aiModel: 'gpt-4o',
-  apiKeySecret: 'OPENAI_API_KEY',        // non-github-models
-  azureEndpointSecret: 'AZURE_OPENAI_ENDPOINT', // azure-openai only
+  apiKeySecret: 'OPENROUTER_API_KEY',        // openrouter only
 
   numQuestions: 5,
   includeAnswers: false,
@@ -71,7 +70,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   - `issues: write` — if postIssue
   - `discussions: write` — if postDiscussion
 - `on:` block varies by triggerEvent
-- `api_key` and `azure_endpoint` only emitted for non-github-models providers
+- `api_key` only emitted for non-github-models providers
 - `discussion_category` only emitted if postDiscussion
 - `instructor_repo_token` only emitted if instructorRepoEnabled
 - Include inline YAML comments on non-obvious inputs
@@ -105,8 +104,8 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 2. Navigate to `/workflow-wizard` — wizard renders with correct step 1
 3. Step through all 7 steps — Back/Next navigation works, progress bar updates
 4. Select each trigger type — `on:` YAML block changes correctly
-5. Select github-models — no api_key/azure_endpoint in output
-6. Select openai — api_key appears; select azure-openai — both api_key and azure_endpoint appear
+5. Select github-models — no api_key in output
+6. Select openrouter — api_key appears
 7. Enable discussion — discussion_category appears; enable instructor repo — instructor_repo_token appears
 8. Advanced step — defaults pre-filled; changing values reflects in YAML
 9. Review step — copy button writes YAML to clipboard
@@ -118,5 +117,5 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 - No new npm dependencies — uses only React, Docusaurus Layout, CSS Modules, and `navigator.clipboard`
 - Edge-case inputs (temperature, retries, SHA overrides, context max chars) are in the Advanced step with defaults pre-filled and explanatory text; only appear in YAML output if changed from default
-- Secret names are free-text inputs (e.g. "OPENAI_API_KEY") that get wrapped in `${{ secrets.NAME }}` — users enter just the secret name, not the full expression
+- Secret names are free-text inputs (e.g. "OPENROUTER_KEY") that get wrapped in `${{ secrets.NAME }}` — users enter just the secret name, not the full expression
 - Wizard is stateful but NOT persisted (no localStorage) — keeping scope minimal

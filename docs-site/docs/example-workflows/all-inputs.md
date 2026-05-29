@@ -39,13 +39,11 @@ jobs:
           # ── AI Provider ───────────────────────────────────────────────────
 
           # Provider to use for question generation.
-          # Supported values: github-models | openai | openrouter | azure-openai
+          # Supported values: github-models | openrouter
           ai_provider: "github-models"
 
           # Model identifier for the chosen provider.
           # GitHub Models: gpt-4.1
-          # OpenAI:        gpt-4o, gpt-4-turbo
-          # Azure OpenAI:  your deployment name
           # OpenRouter:    provider/model-name format (e.g. anthropic/claude-3-5-sonnet)
           ai_model: "gpt-4.1"
 
@@ -62,11 +60,8 @@ jobs:
           # ai_temperature: "0.5"
 
           # API key for the provider. Leave empty when using github-models with
-          # the built-in GITHUB_TOKEN. Required for openai, openrouter, azure-openai.
-          # api_key: ${{ secrets.OPENAI_API_KEY }}
-
-          # Azure OpenAI only: full endpoint URL including deployment path.
-          # azure_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          # the built-in GITHUB_TOKEN. Required for openrouter.
+          # api_key: ${{ secrets.OPENROUTER_API_KEY }}
 
           # ── Question generation ───────────────────────────────────────────
 

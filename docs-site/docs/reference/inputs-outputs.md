@@ -13,12 +13,11 @@ The [Workflow Wizard](/workflow-wizard) lets you configure these inputs visually
 | Input | Required | Default | Description |
 |---|---|---|---|
 | `github_token` | Yes | `${{ github.token }}` | GitHub token for API access and GitHub Models credential |
-| `ai_provider` | No | `github-models` | AI provider: `github-models`, `openai`, `openrouter`, or `azure-openai` |
+| `ai_provider` | No | `github-models` | AI provider: `github-models` or `openrouter` |
 | `ai_model` | No | `gpt-4.1` | Model identifier for the chosen provider |
 | `ai_retry_max_attempts` | No | `5` | Total number of attempts (initial + retries) when calling the AI provider. Retries are triggered by transient errors: 429 (rate limit), 500, 502, 503, 504, and network-level failures. Values below 1 are clamped to 1 |
 | `ai_temperature` | No | `0.5` | Controls the randomness of the AI's output (0.0 = fully deterministic, 1.0 = most random). Lower values produce more consistent questions; higher values produce more varied output |
 | `api_key` | No | | API key for the provider. For `github-models`, leave empty to use `github_token`, or supply an instructor PAT to override it |
-| `azure_endpoint` | No | | Azure OpenAI endpoint URL (required for `azure-openai`) |
 | `num_questions` | No | `20` | Number of questions to generate (minimum 1, maximum 50). Values above 50 are automatically capped |
 | `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting |
 | `include_patterns` | No | | Comma-separated globs for files to include |

@@ -4,16 +4,14 @@ sidebar_position: 6
 
 # AI Providers
 
-GrillMyCode supports four AI providers via the `ai_provider` input. All providers use the same OpenAI-compatible chat completions API shape internally — swapping providers requires only a change to a small number of inputs.
+GrillMyCode supports two AI providers via the `ai_provider` input. Both providers use the same OpenAI-compatible chat completions API shape internally — swapping providers requires only a change to a small number of inputs.
 
 ## Quick comparison
 
-| Provider | `ai_provider` value | Requires `api_key` | Requires `azure_endpoint` | Default |
-|---|---|---|---|---|
-| GitHub Models | `github-models` | No (uses `github_token`) | No | ✓ |
-| OpenAI | `openai` | Yes | No | |
-| OpenRouter | `openrouter` | Yes | No | |
-| Azure OpenAI | `azure-openai` | Yes | Yes | |
+| Provider | `ai_provider` value | Requires `api_key` | Default |
+|---|---|---|---|
+| GitHub Models | `github-models` | No (uses `github_token`) | ✓ |
+| OpenRouter | `openrouter` | Yes | |
 
 ---
 
@@ -92,46 +90,11 @@ Supplying an instructor's Personal Access Token via `api_key` changes whose acco
 
 ---
 
-## OpenAI
-
-Uses the [OpenAI](https://platform.openai.com/) API directly.
-
-**When to use:** When you need access to the full OpenAI model catalogue, higher rate limits, or a specific model not available on GitHub Models.
-
-### Required secrets
-
-Create the following secret in **Settings → Secrets and variables → Actions**:
-
-| Secret name | Description |
-|---|---|
-| `OPENAI_API_KEY` | Your OpenAI API key |
-
-### Inputs
-
-| Input | Value |
-|---|---|
-| `ai_provider` | `openai` |
-| `api_key` | `${{ secrets.OPENAI_API_KEY }}` |
-| `ai_model` | Any valid OpenAI model identifier. Examples: `gpt-4o`, `gpt-4-turbo`, `gpt-4o-mini` |
-
-### Example
-
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    ai_provider: 'openai'
-    ai_model: 'gpt-4o'
-    api_key: ${{ secrets.OPENAI_API_KEY }}
-```
-
----
-
 ## OpenRouter
 
 Uses the [OpenRouter](https://openrouter.ai/) unified inference API, which provides access to models from many different providers through a single key.
 
-**When to use:** When you want to use a model from a provider other than OpenAI or Azure (e.g. Anthropic Claude, Google Gemini, Meta Llama) without setting up a separate account for each.
+**When to use:** When you want to use a model from a provider other than GitHub Models.
 
 ### Required secrets
 
@@ -156,40 +119,4 @@ Uses the [OpenRouter](https://openrouter.ai/) unified inference API, which provi
     ai_provider: 'openrouter'
     ai_model: 'anthropic/claude-3-5-sonnet'
     api_key: ${{ secrets.OPENROUTER_API_KEY }}
-```
-
----
-
-## Azure OpenAI
-
-Uses a model deployed in your own [Azure OpenAI](https://azure.microsoft.com/en-us/products/ai-services/openai-service) resource.
-
-**When to use:** When institutional policy requires data to stay within an Azure tenant, or when a specific Azure deployment is already provisioned.
-
-### Required secrets
-
-| Secret name | Description |
-|---|---|
-| `AZURE_OPENAI_API_KEY` | API key for your Azure OpenAI resource |
-| `AZURE_OPENAI_ENDPOINT` | Full endpoint URL for your deployment, e.g. `https://my-resource.openai.azure.com/openai/deployments/my-deployment` |
-
-### Inputs
-
-| Input | Value |
-|---|---|
-| `ai_provider` | `azure-openai` |
-| `api_key` | `${{ secrets.AZURE_OPENAI_API_KEY }}` |
-| `azure_endpoint` | `${{ secrets.AZURE_OPENAI_ENDPOINT }}` |
-| `ai_model` | Your Azure deployment name (not the underlying model name — use whatever you named the deployment) |
-
-### Example
-
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    ai_provider: 'azure-openai'
-    ai_model: 'my-gpt4o-deployment'
-    api_key: ${{ secrets.AZURE_OPENAI_API_KEY }}
-    azure_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
 ```

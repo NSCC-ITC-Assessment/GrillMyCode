@@ -15,7 +15,7 @@ Include as much of the following as possible:
 
 ## Scope
 
-This action handles sensitive values including `GITHUB_TOKEN` and third-party AI provider API keys (OpenAI, Azure OpenAI, OpenRouter). Issues related to credential exposure, prompt injection, or unintended access to repository contents are considered in scope.
+This action handles sensitive values including `GITHUB_TOKEN` and third-party AI provider API keys (Ex. OpenRouter). Issues related to credential exposure, prompt injection, or unintended access to repository contents are considered in scope.
 
 ## Response
 

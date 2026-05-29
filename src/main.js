@@ -216,7 +216,6 @@ async function run() {
         provider: inputs.aiProvider,
         model: inputs.aiModel,
         apiKey: effectiveApiKey,
-        endpoint: inputs.azureEndpoint,
         messages,
         retryMaxAttempts: inputs.aiRetryMaxAttempts,
         temperature: inputs.aiTemperature,

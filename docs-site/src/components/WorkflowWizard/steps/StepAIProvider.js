@@ -9,34 +9,18 @@ const PROVIDERS = [
       'Uses the built-in GITHUB_TOKEN — no API key needed. Ideal for GitHub Classroom. Requires a "models: read" permission.',
   },
   {
-    value: 'openai',
-    label: 'OpenAI',
-    description: 'Calls the OpenAI API directly. Requires an OPENAI_API_KEY secret.',
-    comingSoon: true,
-  },
-  {
     value: 'openrouter',
     label: 'OpenRouter',
     description:
       'Routes to any model via OpenRouter (e.g. anthropic/claude-3-5-sonnet). Requires an OPENROUTER_KEY secret.',
   },
-  {
-    value: 'azure-openai',
-    label: 'Azure OpenAI',
-    description:
-      'Calls an Azure OpenAI deployment. Requires both an API key secret and an endpoint secret.',
-    comingSoon: true,
-  },
 ];
 
 const PROVIDER_DEFAULT_SECRETS = {
-  openai: 'OPENAI_API_KEY',
   openrouter: 'OPENROUTER_KEY',
-  'azure-openai': 'AZURE_OPENAI_API_KEY',
 };
 
 const GITHUB_MODELS = ['gpt-4.1'];
-const OPENAI_MODELS = ['gpt-4o', 'gpt-4-turbo', 'gpt-4o-mini'];
 const OPENROUTER_MODELS = [
   { label: 'Deepseek V4 Flash', value: 'deepseek/deepseek-v4-flash' },
   { label: 'Minimax 2.7', value: 'minimax/minimax-m2.7' },
@@ -46,15 +30,12 @@ const OPENROUTER_MODELS = [
 
 export default function StepAIProvider({ cfg, onChange }) {
   const isNonGitHub = cfg.aiProvider !== 'github-models';
-  const isAzure = cfg.aiProvider === 'azure-openai';
 
   const isOpenRouter = cfg.aiProvider === 'openrouter';
   const modelSuggestions =
     cfg.aiProvider === 'github-models'
       ? GITHUB_MODELS
-      : cfg.aiProvider === 'openai'
-        ? OPENAI_MODELS
-        : [];
+      : [];
 
   return (
     <div>
@@ -81,7 +62,6 @@ export default function StepAIProvider({ cfg, onChange }) {
                     aiProvider: p.value,
                     aiModel: p.value === 'openrouter' ? OPENROUTER_MODELS[0].value : 'gpt-4.1',
                     apiKeySecret: PROVIDER_DEFAULT_SECRETS[p.value] ?? '',
-                    azureEndpointSecret: p.value === 'azure-openai' ? 'AZURE_OPENAI_ENDPOINT' : '',
                   })
                 }
               />
@@ -117,10 +97,8 @@ export default function StepAIProvider({ cfg, onChange }) {
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Model</label>
         <span className={styles.hint}>
-          {cfg.aiProvider === 'openai' && 'Enter the OpenAI model ID (e.g. gpt-4o, gpt-4-turbo).'}
           {cfg.aiProvider === 'openrouter' &&
             'Select a pre-defined model or choose "Own Choice" to enter any OpenRouter model ID.'}
-          {cfg.aiProvider === 'azure-openai' && 'Enter your Azure OpenAI deployment name.'}
         </span>
         {isOpenRouter ? (
           <>
@@ -221,11 +199,7 @@ export default function StepAIProvider({ cfg, onChange }) {
             className={styles.input}
             value={cfg.aiModel}
             onChange={(e) => onChange({ aiModel: e.target.value })}
-            placeholder={
-              cfg.aiProvider === 'azure-openai'
-                ? 'my-deployment-name'
-                : 'gpt-4.1'
-            }
+            placeholder="gpt-4.1"
           />
         )}
       </div>
@@ -238,7 +212,7 @@ export default function StepAIProvider({ cfg, onChange }) {
               The name of the GitHub Actions secret that holds your API key. Enter just the secret
               name (e.g.{' '}
               <code>
-                {cfg.aiProvider === 'openrouter' ? 'OPENROUTER_KEY' : 'OPENAI_API_KEY'}
+                {cfg.aiProvider === 'openrouter' ? 'OPENROUTER_KEY' : 'OPENROUTER_KEY'}
               </code>
               ) — the workflow will reference it as{' '}
               <code>{'${{ secrets.YOUR_SECRET }}'}</code>.
@@ -248,29 +222,9 @@ export default function StepAIProvider({ cfg, onChange }) {
               className={styles.input}
               value={cfg.apiKeySecret || ''}
               onChange={(e) => onChange({ apiKeySecret: e.target.value })}
-              placeholder={
-                cfg.aiProvider === 'openrouter' ? 'OPENROUTER_KEY' : 'OPENAI_API_KEY'
-              }
+              placeholder="OPENROUTER_KEY"
             />
           </div>
-
-          {isAzure && (
-            <div className={styles.fieldGroup}>
-              <label className={styles.label}>Azure endpoint secret name</label>
-              <span className={styles.hint}>
-                The name of the secret holding your Azure OpenAI endpoint URL (e.g.{' '}
-                <code>AZURE_OPENAI_ENDPOINT</code>). The URL should look like{' '}
-                <code>https://my-resource.openai.azure.com/openai/deployments/my-deployment</code>.
-              </span>
-              <input
-                type="text"
-                className={styles.input}
-                value={cfg.azureEndpointSecret || ''}
-                onChange={(e) => onChange({ azureEndpointSecret: e.target.value })}
-                placeholder="AZURE_OPENAI_ENDPOINT"
-              />
-            </div>
-          )}
         </div>
       )}
     </div>

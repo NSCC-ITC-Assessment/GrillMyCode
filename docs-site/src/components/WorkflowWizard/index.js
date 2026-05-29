@@ -30,7 +30,6 @@ const INITIAL_CONFIG = {
   aiProvider: 'github-models',
   aiModel: 'gpt-4.1',
   apiKeySecret: '',
-  azureEndpointSecret: '',
 
   numQuestions: 20,
   includeAnswers: false,

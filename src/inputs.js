@@ -58,7 +58,6 @@ export function readInputs() {
       Math.max(0, parseFloat(core.getInput('ai_temperature') || String(DEFAULT_AI_TEMPERATURE))),
     ),
     apiKey: core.getInput('api_key') || '',
-    azureEndpoint: core.getInput('azure_endpoint') || '',
     numQuestions,
     includePatterns: includeStr
       ? includeStr

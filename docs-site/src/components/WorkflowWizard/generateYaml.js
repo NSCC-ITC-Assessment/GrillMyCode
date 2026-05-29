@@ -114,12 +114,8 @@ export function generateYaml(cfg) {
     lines.push(`          ai_model: ${yamlStr(cfg.aiModel)}`);
   }
   if (cfg.aiProvider !== 'github-models') {
-    const secretName = cfg.apiKeySecret || 'OPENAI_API_KEY';
+    const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
     lines.push(`          api_key: ${secretRef(secretName)}`);
-  }
-  if (cfg.aiProvider === 'azure-openai') {
-    const endpointSecret = cfg.azureEndpointSecret || 'AZURE_OPENAI_ENDPOINT';
-    lines.push(`          azure_endpoint: ${secretRef(endpointSecret)}`);
   }
   if (differ(cfg, 'aiRetryMaxAttempts')) {
     lines.push(`          ai_retry_max_attempts: ${yamlStr(cfg.aiRetryMaxAttempts)}`);

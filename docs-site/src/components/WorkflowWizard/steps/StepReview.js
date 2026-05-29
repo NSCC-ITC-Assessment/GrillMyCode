@@ -17,18 +17,9 @@ function buildChecklist(cfg) {
       text: 'GitHub Models is selected — no API key needed. The built-in GITHUB_TOKEN is used automatically.',
     });
   } else {
-    const secretName = cfg.apiKeySecret || 'OPENAI_API_KEY';
+    const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
     items.push({
       text: `Add the secret "${secretName}" to the repository (or organisation) via Settings → Secrets and variables → Actions.`,
-      linkHref: '/docs/ai-providers',
-      linkLabel: 'AI Providers docs',
-    });
-  }
-
-  if (cfg.aiProvider === 'azure-openai') {
-    const endpointSecret = cfg.azureEndpointSecret || 'AZURE_OPENAI_ENDPOINT';
-    items.push({
-      text: `Add the Azure endpoint secret "${endpointSecret}" with the full deployment URL.`,
       linkHref: '/docs/ai-providers',
       linkLabel: 'AI Providers docs',
     });

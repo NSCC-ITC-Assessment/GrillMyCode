@@ -179,12 +179,6 @@ export const INSTRUCTOR_REPO_SUFFIX = '-grillmycode-instructor';
 export const DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS = 20000;
 
 /**
- * Azure OpenAI REST API version sent as the api-version query parameter.
- * Update this when Microsoft releases a newer stable GA version.
- */
-export const AZURE_OPENAI_API_VERSION = '2024-02-01';
-
-/**
  * GitHub REST API version sent in the X-GitHub-Api-Version header on every
  * Octokit request. Update when adopting a newer stable GitHub API version.
  */

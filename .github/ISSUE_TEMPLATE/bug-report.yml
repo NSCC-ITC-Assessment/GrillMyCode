@@ -42,8 +42,6 @@ body:
       description: Which `ai_provider` value is set in your workflow?
       options:
         - github-models (default)
-        - openai
-        - azure-openai
         - openrouter
         - Not applicable / unsure
     validations:

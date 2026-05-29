@@ -22,7 +22,7 @@ inputs:
   ai_provider:
     description: >
       AI provider to use for question generation.
-      Supported values: github-models | openai | openrouter | azure-openai
+      Supported values: github-models | openrouter
     required: false
     default: "github-models"
 
@@ -30,8 +30,7 @@ inputs:
     description: >
       Model identifier for the chosen provider.
       GitHub Models : gpt-4.1
-      OpenAI examples        : gpt-4o, gpt-4-turbo
-      Azure OpenAI           : your deployment name
+      OpenRouter    : provider/model-name format (e.g. anthropic/claude-3-5-sonnet)
     required: false
     default: "gpt-4.1"
 
@@ -60,13 +59,6 @@ inputs:
       For github-models, leave empty to use github_token automatically, or supply a
       Personal Access Token (e.g. an instructor token with an alternative license)
       to use that instead.
-    required: false
-    default: ""
-
-  azure_endpoint:
-    description: >
-      Full Azure OpenAI endpoint URL, required only when ai_provider is azure-openai.
-      Example: https://my-resource.openai.azure.com/openai/deployments/my-deployment
     required: false
     default: ""
 
@@ -279,7 +271,6 @@ runs:
     INPUT_AI_RETRY_MAX_ATTEMPTS: ${{ inputs.ai_retry_max_attempts }}
     INPUT_AI_TEMPERATURE: ${{ inputs.ai_temperature }}
     INPUT_API_KEY: ${{ inputs.api_key }}
-    INPUT_AZURE_ENDPOINT: ${{ inputs.azure_endpoint }}
     INPUT_NUM_QUESTIONS: ${{ inputs.num_questions }}
     INPUT_INCLUDE_PATTERNS: ${{ inputs.include_patterns }}
     INPUT_EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
