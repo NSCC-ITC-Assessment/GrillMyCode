@@ -51,7 +51,7 @@ repos.getCommit(headSha)
     │
 getChangedFiles() → filterFiles()
     │  Runs `git diff --name-only baseSha headSha`
-    │  Applies include_patterns and exclude_patterns via minimatch
+    │  Applies exclude_patterns and exclude_pattern_overrides via minimatch
     │
 getDiff()
     │  Runs `git diff baseSha headSha -- <files>`

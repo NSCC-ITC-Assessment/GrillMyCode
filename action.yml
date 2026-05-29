@@ -78,22 +78,23 @@ inputs:
     required: false
     default: "false"
 
-  include_patterns:
+  exclude_pattern_overrides:
     description: >
-      Comma-separated glob patterns for files to include in the assessment.
-      Leave empty to include all non-excluded files.
-      Example: "*.py,*.js,src/**"
+      Comma-separated entries that allow specific files through the default
+      exclude list. Each entry can be either an exact pattern from the default
+      list (e.g. **/*.md — re-includes all Markdown files) or a specific file
+      path that would be excluded by a default pattern (e.g. README.md — only
+      that file is re-included while **/*.md still excludes everything else).
     required: false
     default: ""
 
   exclude_patterns:
     description: >
-      Comma-separated glob patterns for files to exclude from the assessment.
-      Defaults to common non-code files (lock files, images, build artefacts,
-      Markdown files, etc.). WARNING: providing a value here completely replaces
-      the default list — it does not extend it. You are responsible for
-      re-including any patterns you still want excluded (e.g. node_modules/**,
-      **/*.md, **/*.png).
+      Comma-separated glob patterns for additional files to exclude from the
+      assessment. These are merged with the built-in default list (lock files,
+      images, build artefacts, Markdown files, etc.) — the defaults are always
+      applied. Supply extra patterns here to exclude additional files on top of
+      the defaults.
     required: false
     default: ""
 

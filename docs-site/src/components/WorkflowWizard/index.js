@@ -46,7 +46,7 @@ const INITIAL_CONFIG = {
   instructorRepoEnabled: true,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
-  includePatterns: '',
+  excludePatternOverrides: '',
   excludePatterns: '',
   excludeWorkflowFiles: true,
   keepComments: false,

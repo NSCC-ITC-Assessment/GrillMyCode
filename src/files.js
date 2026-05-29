@@ -18,21 +18,20 @@ import { COMMENT_REMOVER_BIN, COMMENT_STRIP_TIMEOUT_MS } from './constants.js';
 import { git } from './git.js';
 
 /**
- * Filters a list of file paths against include and exclude glob patterns.
+ * Filters a list of file paths against exclude glob patterns.
+ * Any file that would be excluded but matches an override pattern is re-included.
+ * Overrides accept either an exact pattern from the exclude list (e.g. **\/*.md)
+ * or a specific file path that would otherwise be excluded (e.g. README.md).
  */
-export function filterFiles(files, includePatterns, excludePatterns) {
+export function filterFiles(files, excludePatterns, overridePatterns = []) {
   const opts = { dot: true, matchBase: true };
-  let result = files;
 
-  if (includePatterns.length > 0) {
-    result = result.filter((f) => includePatterns.some((p) => minimatch(f, p, opts)));
-  }
-
-  if (excludePatterns.length > 0) {
-    result = result.filter((f) => !excludePatterns.some((p) => minimatch(f, p, opts)));
-  }
-
-  return result;
+  return files.filter((f) => {
+    const excluded = excludePatterns.some((p) => minimatch(f, p, opts));
+    if (!excluded) return true;
+    if (overridePatterns.length === 0) return false;
+    return overridePatterns.some((p) => minimatch(f, p, opts));
+  });
 }
 
 /**

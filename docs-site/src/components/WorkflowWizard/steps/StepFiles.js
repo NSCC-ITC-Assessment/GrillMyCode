@@ -135,10 +135,9 @@ export default function StepFiles({ cfg, onChange }) {
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Exclude patterns <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
-          Comma-separated glob patterns for files to <strong>exclude</strong>. The action has a
-          sensible built-in default list (node_modules, lock files, build artefacts, images, etc.).{' '}
-          <strong>Warning:</strong> providing a value here <em>replaces</em> the default list
-          entirely — repeat the defaults alongside your additions if you want both.
+          Comma-separated glob patterns for <strong>additional</strong> files to exclude. These are
+          merged with the built-in default list shown below — the defaults are always applied.
+          Only add patterns for files specific to your assignment.
         </span>
         <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', marginBottom: '0.6rem', tableLayout: 'fixed' }}>
@@ -170,34 +169,34 @@ export default function StepFiles({ cfg, onChange }) {
             style={{ flex: 1, resize: 'vertical', minHeight: '4rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
             value={cfg.excludePatterns}
             onChange={(e) => onChange({ excludePatterns: e.target.value })}
-            placeholder="Leave empty to use built-in defaults"
+            placeholder="Leave empty to use only the built-in defaults above"
           />
           <button
             type="button"
             className={styles.secondaryBtn}
-            title="Populate with the built-in default exclude patterns so you can add to or modify them"
+            title="Show the built-in default exclude patterns for reference"
             onClick={() => onChange({ excludePatterns: DEFAULT_EXCLUDE_PATTERNS })}
           >
-            Load defaults
+            View defaults
           </button>
         </div>
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Include patterns <span className={styles.optionalBadge}>optional</span></label>
+        <label className={styles.label}>Exclude pattern overrides <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
-          Comma-separated glob patterns for files to <strong>include</strong> in the assessment. Leave
-          empty to include all files not matched by the exclude list. Most instructors can leave this
-          blank.{' '}
-          <em>Example: </em>
-          <code>src/**/*.py</code>
+          Comma-separated entries to allow specific files through the default exclude list. Each
+          entry can be an <strong>exact default pattern</strong> (e.g. <code>**/*.md</code> —
+          re-includes all Markdown files) or a <strong>specific file path</strong> (e.g.{' '}
+          <code>README.md</code> — only that file passes through while <code>**/*.md</code> still
+          excludes everything else).
         </span>
         <input
           type="text"
           className={styles.input}
-          value={cfg.includePatterns}
-          onChange={(e) => onChange({ includePatterns: e.target.value })}
-          placeholder="Leave empty to include all non-excluded files"
+          value={cfg.excludePatternOverrides}
+          onChange={(e) => onChange({ excludePatternOverrides: e.target.value })}
+          placeholder="e.g. **/*.md, vendor/**"
         />
       </div>
 

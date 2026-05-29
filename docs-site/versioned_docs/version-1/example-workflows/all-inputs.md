@@ -102,14 +102,16 @@ jobs:
 
           # ── File filtering ────────────────────────────────────────────────
 
-          # Comma-separated glob patterns for files to include.
-          # Leave empty to include all files not matched by exclude_patterns.
-          # include_patterns: 'src/**/*.py'
+          # Allow specific files through the default exclude list.
+          # Use an exact default pattern (e.g. **/*.md) to re-include all files
+          # of that type, or a specific path (e.g. README.md) to allow only
+          # that file while the pattern still excludes everything else.
+          # exclude_pattern_overrides: 'README.md'
 
-          # Comma-separated glob patterns for files to exclude.
-          # WARNING: providing a value here REPLACES the default list entirely.
-          # Repeat the defaults alongside your additions if you want both.
-          # exclude_patterns: 'node_modules/**,**/*.lock,dist/**'
+          # Comma-separated glob patterns for additional files to exclude.
+          # These are merged with the built-in default list — the defaults are
+          # always applied. Supply extra patterns to exclude files on top of them.
+          # exclude_patterns: 'tests/**,docs/**'
 
           # Whether to exclude .github/workflows/** from the assessed diff.
           # Set to "false" to include workflow files in comprehension questions.

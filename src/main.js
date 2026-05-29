@@ -140,7 +140,7 @@ async function run() {
 
     // ── Collect changed files and apply filters ─────────────────────────────
     const allFiles = getChangedFiles(baseSha, headSha);
-    const files = filterFiles(allFiles, inputs.includePatterns, inputs.excludePatterns);
+    const files = filterFiles(allFiles, inputs.excludePatterns, inputs.excludePatternOverrides);
 
     if (files.length === 0) {
       core.warning('No assessable files found after applying include/exclude filters. Skipping.');

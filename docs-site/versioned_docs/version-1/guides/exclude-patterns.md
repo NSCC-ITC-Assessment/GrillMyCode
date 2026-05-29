@@ -18,30 +18,33 @@ When no `exclude_patterns` value is provided, a built-in list of common non-code
 
 ## Custom patterns
 
-:::warning Replacement, not extension
-
-Providing a custom `exclude_patterns` value **completely replaces** the default list — it does not extend it. You are responsible for manually re-including every pattern you still want excluded (lock files, images, Markdown files, etc.). If you omit a default pattern, those files will be included in the assessed diff.
-
-:::
+The default list is **always applied**. Any patterns supplied via `exclude_patterns` are merged with the defaults — they extend it, not replace it. Use this to exclude additional files specific to your assignment:
 
 ```yaml
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
-    # Extend the defaults by repeating them alongside your additions
-    exclude_patterns: 'node_modules/**,**/*.lock,dist/**,tests/**'
+    # These are added on top of the built-in defaults
+    exclude_patterns: 'tests/**,docs/**,data/**'
 ```
 
-## Include patterns
+## Override exclude patterns
 
-Use `include_patterns` to restrict the assessed files to a specific subset. Only files matching at least one include pattern are assessed. If left empty, all files not matching the exclude patterns are included.
+If a file is excluded by default but you want it included in the assessed diff, use `exclude_pattern_overrides`. Each entry can be:
+
+- An **exact pattern from the default list** — re-includes everything matched by that pattern:
+  ```yaml
+  exclude_pattern_overrides: '**/*.md'   # re-includes all Markdown files
+  ```
+- A **specific file path** — only that one file passes through while the default pattern still excludes everything else:
+  ```yaml
+  exclude_pattern_overrides: 'README.md' # only README.md; other .md files stay excluded
+  ```
+
+Both forms can be combined:
 
 ```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    # Only assess Python source files
-    include_patterns: 'src/**/*.py'
+exclude_pattern_overrides: 'README.md, docs/brief.md'
 ```
 
 ## Workflow files

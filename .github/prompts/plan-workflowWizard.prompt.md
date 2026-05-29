@@ -42,7 +42,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   instructorRepoEnabled: false,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
-  includePatterns: '',
+  excludePatternOverrides: '',
   excludePatterns: '',
   excludeWorkflowFiles: true,
   keepComments: false,
