@@ -3,6 +3,6 @@
   "position": 5,
   "link": {
     "type": "generated-index",
-    "description": "Ready-to-use workflow files. Copy the relevant file to .github/workflows/grill-my-code.yml in the student repository."
+    "description": "Ready-to-use workflow files. Copy the relevant file to .github/workflows/grill-my-code.yml in the student repository. Or use the [Workflow Wizard](/workflow-wizard) to build a custom workflow interactively."
   }
 }

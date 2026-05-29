@@ -61,7 +61,7 @@ See [architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/develo
 
 ## Example workflows
 
-Ready-to-use workflows for each configuration are available in the [example workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) section of the docs site. Copy the relevant YAML into `.github/workflows/` in your repository.
+Ready-to-use workflows for each configuration are available in the [example workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) section of the docs site. To generate a tailored workflow interactively, use the [Workflow Wizard](https://nscc-itc-assessment.github.io/GrillMyCode/workflow-wizard). Copy the relevant YAML into `.github/workflows/` in your repository.
 
 ### Pull request
 
