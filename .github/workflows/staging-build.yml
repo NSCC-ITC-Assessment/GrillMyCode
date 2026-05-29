@@ -4,6 +4,21 @@ on:
   push:
     branches:
       - main
+    paths-ignore:
+      - "docs-site/**"
+      - "README.md"
+      - "_prompt-archive/**"
+      - "action.yml"
+      - ".github/**"
+      - ".devcontainer/**"
+      - ".vscode/**"
+      - ".husky/**"
+      - "commitlint.config.cjs"
+      - "eslint.config.js"
+      - ".prettierrc.json"
+      - ".prettierignore"
+      - ".gitignore"
+      - ".npmrc"
 
 jobs:
   build:
