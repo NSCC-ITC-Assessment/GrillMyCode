@@ -100,6 +100,7 @@ const config = {
             type: 'docsVersionDropdown',
             position: 'right',
             dropdownActiveClassDisabled: true,
+            versions: ['1', 'current'],
           },
           {
             href: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode',
