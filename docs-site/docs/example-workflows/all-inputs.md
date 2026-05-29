@@ -121,7 +121,8 @@ jobs:
           # components are ignored). Always written under .assessment/.
           output_file: "grill-my-code.md"
 
-          # Post the assessment as a pull request comment.
+          # Post the assessment as a pull request comment (default: "false").
+          # Set to "true" to enable. Requires pull-requests: write permission.
           post_pr_comment: "true"
 
           # Create a GitHub Issue with the assessment.

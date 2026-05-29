@@ -118,9 +118,9 @@ inputs:
     description: >
       Post the assessment as a comment on the pull request when the workflow is
       triggered by a pull_request or issue_comment event.
-      Set to "false" to disable.
+      Set to "true" to enable.
     required: false
-    default: "true"
+    default: "false"
 
   post_issue:
     description: >

@@ -20,7 +20,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write       # required to commit the output file back to the repo
-      pull-requests: write  # required if post_pr_comment is left at its default (true)
       models: read          # required to call GitHub Models API
     steps:
       - uses: actions/checkout@v6

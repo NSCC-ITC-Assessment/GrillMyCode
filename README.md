@@ -35,7 +35,7 @@ See [architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/develo
 | `include_patterns`             | No       |                                             | Comma-separated globs for files to include                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `exclude_patterns`             | No       | _(common non-code files)_                   | Comma-separated globs for files to exclude. **Providing a value completely replaces the default list** — you are responsible for re-including any defaults you still want (e.g. `node_modules/**`, `**/*.md`, `**/*.png`).                                                                                                                                                                                                                                                                                                                                   |
 | `output_file`                  | No       | `grill-my-code.md`                          | Path for the output Markdown file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
-| `post_pr_comment`              | No       | `true`                                      | Post assessment as a PR comment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| `post_pr_comment`              | No       | `false`                                     | Post assessment as a PR comment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `post_issue`                   | No       | `false`                                     | Create a GitHub Issue with the assessment. The issue is automatically assigned to the student who authored the head commit.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `post_discussion`              | No       | `false`                                     | Create a GitHub Discussion with the assessment. If Discussions are not enabled on the repository, the action enables them automatically.                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `discussion_category`          | No       | `Assessments`                               | Discussion category name                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
@@ -87,6 +87,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          post_pr_comment: 'true'
           num_questions: '20'
           additional_context: 'Assignment 3 — Python list comprehensions'
 ```
@@ -106,7 +107,6 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write # required to write the output file to the repo
-      pull-requests: write
     steps:
       - uses: actions/checkout@v6
         with:
@@ -188,7 +188,7 @@ jobs:
 | `contents: read`        | Always — needed to check out the repo and read the git history                    |
 | `contents: write`       | When writing the output file back to the repository                               |
 | `models: read`          | When using the `github-models` provider (the default)                             |
-| `pull-requests: write`  | When `post_pr_comment: 'true'` (the default)                                      |
+| `pull-requests: write`  | When `post_pr_comment: 'true'`                                                    |
 | `issues: write`         | When `post_issue: 'true'`                                                         |
 | `discussions: write`    | When `post_discussion: 'true'`                                                    |
 | `administration: write` | When `post_discussion: 'true'` and Discussions may not yet be enabled on the repo |

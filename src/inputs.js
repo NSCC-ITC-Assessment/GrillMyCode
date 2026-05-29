@@ -68,7 +68,7 @@ export function readInputs() {
       : [],
     excludePatterns,
     outputFile: core.getInput('output_file') || 'grill-my-code.md',
-    postPrComment: core.getInput('post_pr_comment') !== 'false',
+    postPrComment: core.getInput('post_pr_comment') === 'true',
     postIssue: core.getInput('post_issue') === 'true',
     postDiscussion: core.getInput('post_discussion') === 'true',
     discussionCategory: core.getInput('discussion_category') || 'Assessments',

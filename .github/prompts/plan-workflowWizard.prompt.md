@@ -36,7 +36,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   additionalContext: '',
   assignmentContext: '',
 
-  postPrComment: true,
+  postPrComment: false,
   postIssue: false,
   postDiscussion: false,
   discussionCategory: 'Assessments',

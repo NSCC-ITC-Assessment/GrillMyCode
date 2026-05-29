@@ -20,7 +20,7 @@ sidebar_position: 1
 | `include_patterns` | No | | Comma-separated globs for files to include |
 | `exclude_patterns` | No | *(common non-code files)* | Comma-separated globs for files to exclude |
 | `output_file` | No | `grill-my-code.md` | Basename for the output Markdown file. Always written under the `.assessment/` folder (e.g. `grill-my-code.md` → `.assessment/grill-my-code.md`) |
-| `post_pr_comment` | No | `true` | Post assessment as a PR comment |
+| `post_pr_comment` | No | `false` | Post assessment as a PR comment |
 | `post_issue` | No | `false` | Create a GitHub Issue with the assessment. Automatically assigned to the student who authored the head commit |
 | `post_discussion` | No | `false` | Create a GitHub Discussion with the assessment. Discussions are enabled automatically if not already on |
 | `discussion_category` | No | `Assessments` | Discussion category name |

@@ -11,7 +11,7 @@ The action only requests the permissions it needs for the chosen delivery method
 | `contents: read` | Always — needed to check out the repo and read the git history |
 | `contents: write` | When writing the output file back to the repository |
 | `models: read` | When using the `github-models` provider (the default) |
-| `pull-requests: write` | When `post_pr_comment: 'true'` (the default) |
+| `pull-requests: write` | When `post_pr_comment: 'true'` |
 | `issues: write` | When `post_issue: 'true'` |
 | `discussions: write` | When `post_discussion: 'true'` |
 | `administration: write` | When `post_discussion: 'true'` and Discussions may not yet be enabled on the repo |

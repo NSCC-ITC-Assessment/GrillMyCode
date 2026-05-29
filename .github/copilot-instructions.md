@@ -6,18 +6,20 @@ Any change to the action's functionality — including new inputs, changed defau
 
 1. **Documentation updates** — Update all affected files under `docs-site/docs/` and the inputs/outputs tables in `README.md` to reflect the change accurately.
 2. **Example workflow updates** — Update any affected example workflows under `docs-site/docs/example-workflows/`, and add a new example if the change introduces a capability not covered by an existing one.
+3. **Workflow Wizard updates** — Update the Workflow Wizard (`docs-site/src/components/WorkflowWizard/`) so the generated YAML and UI stay consistent with the change. This includes the `DEFAULTS` object in `generateYaml.js`, any relevant step component under `steps/`, and the planning prompt at `.github/prompts/plan-workflowWizard.prompt.md`.
 
 Do not implement a functional change in isolation. Documentation and example workflows are part of the same deliverable.
 
 ## New Inputs
 
-New inputs must be added consistently across **all five locations**:
+New inputs must be added consistently across **all six locations**:
 
 1. `action.yml` — input declaration, description, and default
 2. `src/inputs.js` — parsing and normalization
 3. `src/constants.js` — any associated defaults, limits, or threshold values
 4. `README.md` — inputs table row
 5. `docs-site/docs/example-workflows/all-inputs.md` — active or commented-out entry with an inline explanatory comment
+6. `docs-site/src/components/WorkflowWizard/` — add the input to the `DEFAULTS` object in `generateYaml.js`, wire up the UI control in the appropriate step component under `steps/`, and update `.github/prompts/plan-workflowWizard.prompt.md`
 
 ## New AI Providers
 

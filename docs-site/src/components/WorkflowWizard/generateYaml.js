@@ -20,7 +20,7 @@ const DEFAULTS = {
   skipInitialCommit: true,
   skipCommitters: 'github-classroom[bot],github-actions[bot]',
   outputFile: 'grill-my-code.md',
-  postPrComment: true,
+  postPrComment: false,
   postIssue: false,
   postDiscussion: false,
   discussionCategory: 'Assessments',
