@@ -178,33 +178,6 @@ This updates `v1` without affecting `v2` or `latest`.
 
 ---
 
-## Docs versioning
-
-The documentation site uses Docusaurus versioning to mirror the action's release lifecycle. A version dropdown in the navbar lets readers toggle between **stable** docs (the latest release) and **Next (unreleased)** docs (whatever is currently on `main`).
-
-### How it works
-
-| Docs URL | Content | Updated when |
-|---|---|---|
-| `/docs/` | Stable — latest snapshotted version | A new version is snapshotted at release time |
-| `/docs/next/` | Unreleased — live `docs/` on `main` | Every merge to `main` that touches `docs-site/` |
-
-The `Next (unreleased)` version shows an automatic banner warning readers they are viewing pre-release documentation.
-
-### Snapshotting docs at release time
-
-When you release a new version of the action, also snapshot the docs so that stable readers continue to see documentation that matches the version they are running:
-
-```bash
-# Run from the docs-site/ directory, before tagging the release
-cd docs-site
-pnpm docusaurus docs:version X.Y.Z
-```
-
-This copies the current `docs/` into `versioned_docs/version-X.Y.Z/` and registers it as the new stable version. Commit the result alongside your other release-day changes before pushing the `v*` tag.
-
----
-
 ## What counts as a patch, minor, or major?
 
 ### Patch — bug fix, no behaviour change for consumers

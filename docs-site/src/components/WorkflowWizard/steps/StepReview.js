@@ -104,6 +104,15 @@ export default function StepReview({ cfg }) {
           </li>
         ))}
       </ul>
+
+      <p style={{ marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--ifm-color-emphasis-700)' }}>
+        The generated workflow is a starting point — you are free to make any changes or additions
+        directly in the file, as long as it stays consistent with the{' '}
+        <a href="/docs/reference/inputs-outputs" target="_blank" rel="noopener noreferrer">
+          inputs &amp; outputs reference
+        </a>
+        .
+      </p>
     </div>
   );
 }

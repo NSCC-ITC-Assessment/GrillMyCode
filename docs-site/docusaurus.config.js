@@ -48,9 +48,19 @@ const config = {
       ({
         docs: {
           sidebarPath: './sidebars.js',
-          // Please change this to your repo.
-          // Remove this to remove the "edit this page" links.
           editUrl: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode/tree/main/docs-site/',
+          versions: {
+            current: {
+              label: 'Next (unreleased)',
+              path: 'next',
+              banner: 'unreleased',
+            },
+            '1': {
+              label: 'v1',
+              path: '',
+              banner: 'none',
+            },
+          },
         },
         blog: false,
         theme: {
@@ -85,6 +95,11 @@ const config = {
             to: '/workflow-wizard',
             position: 'left',
             label: 'Workflow Wizard',
+          },
+          {
+            type: 'docsVersionDropdown',
+            position: 'right',
+            dropdownActiveClassDisabled: true,
           },
           {
             href: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode',

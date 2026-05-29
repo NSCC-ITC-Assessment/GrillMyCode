@@ -6,6 +6,88 @@ on:
       - "v*"
 
 jobs:
+  snapshot-docs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: main
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract major version
+        id: version
+        run: |
+          TAG="${GITHUB_REF#refs/tags/}"
+          MAJOR=$(echo "${TAG#v}" | cut -d. -f1)
+          echo "major=$MAJOR" >> "$GITHUB_OUTPUT"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: 24
+          cache: pnpm
+          cache-dependency-path: docs-site/pnpm-lock.yaml
+
+      - name: Install docs dependencies
+        run: pnpm install --frozen-lockfile
+        working-directory: docs-site
+
+      - name: Update or create major version snapshot
+        run: |
+          MAJOR=${{ steps.version.outputs.major }}
+          if [[ -d "versioned_docs/version-${MAJOR}" ]]; then
+            echo "Updating existing v${MAJOR} snapshot"
+            # Preserve release notes accumulated so far before overwriting
+            cp "versioned_docs/version-${MAJOR}/release-notes.md" /tmp/release-notes.md 2>/dev/null || true
+            rm -rf "versioned_docs/version-${MAJOR}"
+            cp -r docs "versioned_docs/version-${MAJOR}"
+            cp sidebars.js "versioned_sidebars/version-${MAJOR}-sidebars.json"
+            # Restore preserved release notes (new entry will be prepended below)
+            [[ -f /tmp/release-notes.md ]] && mv /tmp/release-notes.md "versioned_docs/version-${MAJOR}/release-notes.md"
+          else
+            echo "Creating new v${MAJOR} snapshot"
+            pnpm docusaurus docs:version "${MAJOR}"
+          fi
+        working-directory: docs-site
+
+      - name: Prepend release notes entry
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TAG: ${{ steps.version.outputs.tag }}
+          MAJOR: ${{ steps.version.outputs.major }}
+        run: |
+          gh release view "${TAG}" --json body --jq '.body // ""' > /tmp/release-body.txt
+          node << 'EOF'
+          const fs = require('fs');
+          const tag = process.env.TAG;
+          const major = process.env.MAJOR;
+          const date = new Date().toISOString().split('T')[0];
+          const body = fs.readFileSync('/tmp/release-body.txt', 'utf8').trim();
+          const notesFile = `docs-site/versioned_docs/version-${major}/release-notes.md`;
+          const newEntry = `\n## ${tag} — ${date}\n\n${body}\n`;
+          if (fs.existsSync(notesFile)) {
+            const content = fs.readFileSync(notesFile, 'utf8');
+            const updated = content.replace(/^(# .+)$/m, `$1${newEntry}`);
+            fs.writeFileSync(notesFile, updated);
+          } else {
+            const header = `---\nsidebar_label: Release Notes\nsidebar_position: 99\n---\n\n# Release Notes\n`;
+            fs.writeFileSync(notesFile, header + newEntry);
+          }
+          EOF
+
+      - name: Commit and push snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs-site/versioned_docs docs-site/versioned_sidebars docs-site/versions.json
+          git commit -m "docs: update v${{ steps.version.outputs.major }} snapshot"
+          git push origin main
+
   release:
     runs-on: ubuntu-latest
     permissions:
