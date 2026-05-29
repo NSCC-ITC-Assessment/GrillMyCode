@@ -96,7 +96,7 @@ export function generateYaml(cfg) {
   }
 
   lines.push('    steps:');
-  lines.push('      - uses: actions/checkout@v4');
+  lines.push('      - uses: actions/checkout@v6');
   lines.push('        with:');
   lines.push('          fetch-depth: 0    # full history required for diff resolution');
   lines.push('');

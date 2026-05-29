@@ -57,7 +57,7 @@ The [Workflow Wizard](/workflow-wizard) lets you configure these inputs visually
     github_token: ${{ secrets.GITHUB_TOKEN }}
 
 - name: Upload assessment
-  uses: actions/upload-artifact@v4
+  uses: actions/upload-artifact@v7
   with:
     name: assessment
     path: ${{ steps.assess.outputs.output_file }}

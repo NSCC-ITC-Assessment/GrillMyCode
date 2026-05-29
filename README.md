@@ -228,7 +228,7 @@ The action exposes two outputs for use in later steps:
     github_token: ${{ secrets.GITHUB_TOKEN }}
 
 - name: Upload assessment
-  uses: actions/upload-artifact@v6
+  uses: actions/upload-artifact@v7
   with:
     name: assessment
     path: ${{ steps.assess.outputs.output_file }}
