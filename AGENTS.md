@@ -36,7 +36,11 @@ Numeric limits, default values, threshold values, and external API version strin
 
 ### DEFAULT_EXCLUDE_PATTERNS sync
 
-`src/constants.js` exports `DEFAULT_EXCLUDE_PATTERNS`. This list is **duplicated** in `docs-site/src/components/WorkflowWizard/steps/StepFiles.js` to power the "Load defaults" button. If `DEFAULT_EXCLUDE_PATTERNS` is ever changed, the copy in `StepFiles.js` **must** be updated to match. A comment in that file marks the duplication.
+`src/constants.js` exports `DEFAULT_EXCLUDE_PATTERNS`. If this list is ever changed, the following locations **must** be updated to match:
+
+1. `docs-site/src/components/WorkflowWizard/steps/StepFiles.js` — the `DEFAULT_PATTERN_GROUPS` array that renders the reference table in the wizard (grouped by category).
+2. `docs-site/docs/guides/exclude-patterns.md` — the "Default patterns" reference table under the "Default behaviour" section.
+3. `docs-site/versioned_docs/version-1/guides/exclude-patterns.md` — the same table in the versioned docs.
 
 ## No Shell Interpolation
 

@@ -22,6 +22,31 @@ When no `exclude_patterns` value is provided, a built-in list of common non-code
 - Images and binary files (`**/*.png`, `**/*.jpg`, `**/*.pdf`, etc.) — though these are also caught automatically by the binary file check
 - Markdown files (`**/*.md`) — excluded from the assessed diff by default, since they typically describe the assignment rather than the student's solution. They can still be passed to the AI via [`assignment_context`](../reference/inputs-outputs.md)
 
+### Default patterns
+
+| JavaScript / Frontend | Python | Java · Ruby · PHP · .NET | Text assets & Misc |
+|---|---|---|---|
+| `node_modules/**` | `__pycache__/**` | `target/**` | `.git/**` |
+| `**/*.lock` | `**/*.pyc` | `.gradle/**` | `.gitignore` |
+| `package-lock.json` | `.venv/**` | `.bundle/**` | `**/*.svg` |
+| `yarn.lock` | `venv/**` | `vendor/**` | `**/*.md` |
+| `pnpm-lock.yaml` | `.pytest_cache/**` | `obj/**` | `**/*.map` |
+| `**/*.min.js` | `**/*.egg-info/**` | | `**/*.log` |
+| `**/*.min.css` | `.tox/**` | | `.assessment/**` |
+| `dist/**` | | | |
+| `build/**` | | | |
+| `out/**` | | | |
+| `coverage/**` | | | |
+| `.nyc_output/**` | | | |
+| `.next/**` | | | |
+| `.nuxt/**` | | | |
+| `.output/**` | | | |
+| `.svelte-kit/**` | | | |
+| `.astro/**` | | | |
+| `.expo/**` | | | |
+| `.parcel-cache/**` | | | |
+| `.turbo/**` | | | |
+
 ## Custom patterns
 
 The default list is **always applied**. Any patterns supplied via `exclude_patterns` are merged with the defaults — they extend it, not replace it. Use this to exclude additional files specific to your assignment:
