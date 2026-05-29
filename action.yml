@@ -267,10 +267,11 @@ outputs:
 
 runs:
   using: "docker"
-  # This tag is a dev placeholder — the release workflow replaces it with an
-  # immutable patch tag (e.g. :v1.0.3) each time a version tag is pushed.
-  # Consumers pinning to GrillMyCode@v1 always resolve to the released image.
-  image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:latest"
+  # action.yml always references the major tag (e.g. :v1). The release workflow
+  # never modifies this file — the major tag on ghcr.io is updated atomically
+  # as part of each release push. Only a major-version bump (breaking change)
+  # should change this value.
+  image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:v1"
   env:
     INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
     INPUT_AI_PROVIDER: ${{ inputs.ai_provider }}

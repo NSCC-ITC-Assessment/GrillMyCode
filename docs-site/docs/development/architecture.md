@@ -201,3 +201,21 @@ Stage 2 — final image (node:26-slim)
 ```
 
 `rmcm` (the comment-stripping binary from [NSCC-ITC-Assessment/comment-remover](https://github.com/NSCC-ITC-Assessment/comment-remover)) is compiled from source at image-build time. The Rust build stage is discarded after compilation, so the final image contains only the compiled binary alongside the Node runtime.
+
+---
+
+## CI/CD workflows
+
+Three workflows build and publish Docker images. They are mutually exclusive by trigger.
+
+| Workflow | Trigger | Image tag(s) produced | Intended for |
+|---|---|---|---|
+| `branch-build.yml` | Push to any non-`main` branch (code changes only); `workflow_dispatch` | `branch-<sanitized-branch-name>` | **Contributors** — ephemeral dev image for testing a feature or fix branch before it is merged |
+| `build-and-push.yml` | Push to `main` (code changes only); `workflow_dispatch` | `latest` | **Maintainers** — bleeding-edge integration build; reflects the current state of `main` but is not recommended for consumers |
+| `release.yml` | Push of a `v*` tag | `vX.Y.Z`, `vX.Y`, `vX`, `latest` | **Consumers** — stable, versioned release; consumers pin to the major tag (e.g. `:v1`) |
+
+All three workflows ignore documentation-only changes (`docs-site/**`, `README.md`, etc.) to avoid unnecessary image rebuilds.
+
+The canonical tag in `action.yml` is the major tag (e.g. `:v1`). The `action-image-tag` PR check enforces this and will fail if the tag has been changed manually on a branch.
+
+See [Versioning & Releases](versioning) for the full release process.

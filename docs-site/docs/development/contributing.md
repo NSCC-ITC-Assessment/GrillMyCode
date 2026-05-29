@@ -37,12 +37,9 @@ These prerequisites apply only if you are **not** using the dev container.
 git clone https://github.com/NSCC-ITC-Assessment/GrillMyCode.git
 cd GrillMyCode
 pnpm install
-git config merge.ours.driver true
 ```
 
 `pnpm install` installs all dependencies **and** sets up the Husky pre-commit hooks automatically via the `prepare` script.
-
-`git config merge.ours.driver true` registers the merge driver that prevents the branch-image reference in `action.yml` from overwriting the `main` reference when a branch is merged. This is configured automatically inside the dev container and Codespaces — it only needs to be run manually for a plain local clone. The command is scoped to this repository only (it writes to `.git/config`) and has no effect on any other projects.
 
 ---
 
@@ -151,8 +148,8 @@ The action relies on `git` and a GitHub API token to resolve commit SHAs and pos
    git checkout -b feat/my-new-feature
    ```
 2. Make your changes, commit following the conventions above
-3. Push and open a PR against `main`
-4. The `build-and-push.yml` workflow will build and push a `:latest` dev image automatically once merged
+3. Push your branch — `branch-build.yml` triggers automatically, builds a dev Docker image, and pushes it to `ghcr.io` tagged `branch-<sanitized-branch-name>`. The workflow can also be triggered manually from the GitHub Actions UI via `workflow_dispatch`.
+4. Open a PR against `main` and merge when ready
 
 ---
 
