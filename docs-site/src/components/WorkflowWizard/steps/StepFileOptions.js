@@ -35,7 +35,7 @@ export default function StepFileOptions({ cfg, onChange }) {
             <div className={styles.radioDescription}>
               When disabled (default), the diff base is pinned to the repository's first commit,
               excluding template or starter code provided by the instructor. Only the student's own
-              additions are assessed. Enable to include the initial commit's files in the diff.
+              additions are assessed. Enable to include the initial commit's eligible files in the diff.
             </div>
           </span>
         </label>

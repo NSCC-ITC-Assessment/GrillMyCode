@@ -43,7 +43,7 @@ The defaults (`include_initial_commit: 'false'` and `skip_committers: 'github-cl
 
 ## Including the initial commit
 
-Set `include_initial_commit: 'true'` to include the initial commit's files in the diff — the base is pinned to the empty tree regardless of event type, so all files from the very beginning of history are eligible to be assessed.
+Set `include_initial_commit: 'true'` to include the initial commit's eligible files in the diff — the base is pinned to the empty tree regardless of event type, so all files from the very beginning of history are eligible to be assessed.
 
 To include truly everything (including bot-committed starter files), also set `skip_committers: ''` to prevent the base from being advanced past those initial bot commits:
 

@@ -78,7 +78,7 @@ export async function resolveSHAs(ctx, octokit, inputs) {
     baseSha = initialCommit;
   } else {
     core.info(
-      `include_initial_commit is enabled: using empty tree as base so the initial commit's files are included in the diff.`,
+      `include_initial_commit is enabled: using empty tree as base so the initial commit's eligible files are included in the diff.`,
     );
     baseSha = GIT_EMPTY_TREE_SHA;
   }

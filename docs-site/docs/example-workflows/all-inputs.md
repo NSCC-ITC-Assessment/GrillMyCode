@@ -152,7 +152,7 @@ jobs:
 
           # Include the initial commit's eligible files in the diff (default: false).
           # Set to "true" to use the empty tree as the base instead,
-          # which includes the initial commit's files in the diff.
+          # which includes the initial commit's eligible files in the diff.
           # include_initial_commit: "false"
 
           # Comma-separated list of author names or email substrings.

@@ -190,7 +190,7 @@ inputs:
       When false (the default), the diff base is pinned to the repository's very
       first commit so that starter/template files are excluded from assessment.
       When true, the base is set to the empty tree regardless of the event type,
-      so the initial commit's files are included in the assessed diff.
+      so the initial commit's eligible files are included in the assessed diff.
     required: false
     default: "false"
 

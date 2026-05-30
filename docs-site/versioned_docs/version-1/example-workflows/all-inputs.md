@@ -161,7 +161,7 @@ jobs:
 
           # Pin the diff base to the repository's first commit (default: true).
           # Set to "false" to use the empty tree as the base instead,
-          # which includes the initial commit's files in the diff.
+          # which includes the initial commit's eligible files in the diff.
           skip_initial_commit: "true"
 
           # Comma-separated list of author names or email substrings.
