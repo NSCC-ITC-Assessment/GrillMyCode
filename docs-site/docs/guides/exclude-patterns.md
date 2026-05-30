@@ -14,7 +14,7 @@ Regardless of any include or exclude settings, **binary files are always skipped
 
 ## Default behaviour
 
-When no `exclude_patterns` value is provided, a built-in list of common non-code files is used automatically. This list covers:
+When no `exclude_patterns` value is provided, a [built-in list of common non-code files](#default-patterns) is used automatically. This list covers:
 
 - Package lock files (`**/*.lock`, `**/pnpm-lock.yaml`, etc.)
 - Dependency directories (`node_modules/**`)
@@ -24,32 +24,13 @@ When no `exclude_patterns` value is provided, a built-in list of common non-code
 
 ### Default patterns
 
-| JavaScript / Frontend | Python | Java · Ruby · PHP · .NET | Text assets & Misc |
+| JavaScript / Frontend | Python | Java · Ruby · PHP · .NET · C/C++ | Text assets & Misc |
 |---|---|---|---|
-| `node_modules/**` | `__pycache__/**` | `target/**` | `.git/**` |
-| `**/*.lock` | `**/*.pyc` | `.gradle/**` | `.gitignore` |
-| `package-lock.json` | `.venv/**` | `.bundle/**` | `**/*.svg` |
-| `yarn.lock` | `venv/**` | `vendor/**` | `**/*.md` |
-| `pnpm-lock.yaml` | `.pytest_cache/**` | `obj/**` | `**/*.map` |
-| `**/*.min.js` | `**/*.egg-info/**` | | `**/*.log` |
-| `**/*.min.css` | `.tox/**` | | `.assessment/**` |
-| `dist/**` | | | |
-| `build/**` | | | |
-| `out/**` | | | |
-| `coverage/**` | | | |
-| `.nyc_output/**` | | | |
-| `.next/**` | | | |
-| `.nuxt/**` | | | |
-| `.output/**` | | | |
-| `.svelte-kit/**` | | | |
-| `.astro/**` | | | |
-| `.expo/**` | | | |
-| `.parcel-cache/**` | | | |
-| `.turbo/**` | | | |
+| `node_modules/**`<br/>`**/*.lock`<br/>`package-lock.json`<br/>`yarn.lock`<br/>`pnpm-lock.yaml`<br/>`**/*.min.js`<br/>`**/*.min.css`<br/>`dist/**`<br/>`build/**`<br/>`out/**`<br/>`coverage/**`<br/>`.nyc_output/**`<br/>`.next/**`<br/>`.nuxt/**`<br/>`.output/**`<br/>`.svelte-kit/**`<br/>`.astro/**`<br/>`.expo/**`<br/>`.parcel-cache/**`<br/>`.turbo/**` | `__pycache__/**`<br/>`**/*.pyc`<br/>`.venv/**`<br/>`venv/**`<br/>`.pytest_cache/**`<br/>`**/*.egg-info/**`<br/>`.tox/**` | **Java**<br/>`target/**`<br/>`.gradle/**`<br/><br/>**Ruby**<br/>`.bundle/**`<br/><br/>**PHP / Go**<br/>`vendor/**`<br/><br/>**.NET**<br/>`obj/**`<br/><br/>**C / C++**<br/>`CMakeFiles/**`<br/>`cmake-build-*/**`<br/>`CMakeCache.txt` | `.git/**`<br/>`.gitignore`<br/>`**/*.svg`<br/>`**/*.md`<br/>`**/*.map`<br/>`**/*.log`<br/>`.assessment/**` |
 
 ## Custom patterns
 
-The default list is **always applied**. Any patterns supplied via `exclude_patterns` are merged with the defaults — they extend it, not replace it. Use this to exclude additional files specific to your assignment:
+[The default list](#default-patterns) is **always applied**. Any patterns supplied via `exclude_patterns` are merged with the defaults — they extend it, not replace it. Use this to exclude additional files specific to your assignment:
 
 ```yaml
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
@@ -63,7 +44,7 @@ The default list is **always applied**. Any patterns supplied via `exclude_patte
 
 If a file is excluded by default but you want it included in the assessed diff, use `exclude_pattern_overrides`. Each entry can be:
 
-- An **exact pattern from the default list** — re-includes everything matched by that pattern:
+- An **exact pattern from the [default list](#default-patterns)** — re-includes everything matched by that pattern:
   ```yaml
   exclude_pattern_overrides: '**/*.md'   # re-includes all Markdown files
   ```

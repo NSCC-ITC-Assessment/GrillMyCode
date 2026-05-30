@@ -60,6 +60,12 @@ export const DEFAULT_EXCLUDE_PATTERNS = [
   // .NET
   'obj/**',
 
+  // C / C++
+  'CMakeFiles/**',
+  'cmake-build-*/**',
+  'CMakeCache.txt',
+  'CMakeCache.txt.dir/**',
+
   // Version control
   '.git/**',
   '.gitignore',

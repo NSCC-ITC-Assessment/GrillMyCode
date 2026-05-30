@@ -19,11 +19,16 @@ const DEFAULT_PATTERN_GROUPS = [
     ],
   },
   {
-    heading: 'Java · Ruby · PHP · .NET',
-    patterns: [
-      'target/**', '.gradle/**',
-      '.bundle/**', 'vendor/**', 'obj/**',
-    ],
+    heading: 'Java',
+    patterns: ['target/**', '.gradle/**'],
+  },
+  {
+    heading: 'Ruby · PHP / Go · .NET',
+    patterns: ['.bundle/**', 'vendor/**', 'obj/**'],
+  },
+  {
+    heading: 'C / C++',
+    patterns: ['CMakeFiles/**', 'cmake-build-*/**', 'CMakeCache.txt'],
   },
   {
     heading: 'Text assets & Misc',
@@ -50,29 +55,15 @@ export default function StepFiles({ cfg, onChange }) {
           defaults above, which are always applied. Enter one pattern per line, comma-separated, or
           a mix of both. Only add patterns for files specific to your assignment.
         </span>
-        <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'flex-start' }}>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.72rem', marginBottom: '0.6rem', tableLayout: 'fixed' }}>
-            <thead>
-              <tr>
-                {DEFAULT_PATTERN_GROUPS.map(g => (
-                  <th key={g.heading} style={{ padding: '0.3rem 0.5rem', background: 'var(--ifm-color-emphasis-100)', border: '1px solid var(--ifm-color-emphasis-300)', textAlign: 'left', fontWeight: 600, width: '25%' }}>
-                    {g.heading}
-                  </th>
-                ))}
-              </tr>
-            </thead>
-            <tbody>
-              <tr>
-                {DEFAULT_PATTERN_GROUPS.map(g => (
-                  <td key={g.heading} style={{ padding: '0.4rem 0.5rem', border: '1px solid var(--ifm-color-emphasis-200)', verticalAlign: 'top' }}>
-                    {g.patterns.map(p => (
-                      <div key={p}><code style={{ fontSize: '0.68rem' }}>{p}</code></div>
-                    ))}
-                  </td>
-                ))}
-              </tr>
-            </tbody>
-          </table>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.75rem', marginBottom: '0.6rem' }}>
+          {DEFAULT_PATTERN_GROUPS.map(g => (
+            <div key={g.heading} style={{ flex: '1 1 28%', minWidth: '140px', fontSize: '0.72rem' }}>
+              <strong style={{ display: 'block', marginBottom: '0.25rem', fontSize: '0.72rem' }}>{g.heading}</strong>
+              {g.patterns.map(p => (
+                <span key={p}><code style={{ fontSize: '0.68rem' }}>{p}</code>{' '}</span>
+              ))}
+            </div>
+          ))}
         </div>
         <div>
           <textarea
