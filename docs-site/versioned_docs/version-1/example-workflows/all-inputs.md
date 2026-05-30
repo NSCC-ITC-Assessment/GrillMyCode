@@ -39,13 +39,11 @@ jobs:
           # ── AI Provider ───────────────────────────────────────────────────
 
           # Provider to use for question generation.
-          # Supported values: github-models | openai | openrouter | azure-openai
+          # Supported values: github-models | openrouter
           ai_provider: "github-models"
 
           # Model identifier for the chosen provider.
           # GitHub Models: gpt-4.1
-          # OpenAI:        gpt-4o, gpt-4-turbo
-          # Azure OpenAI:  your deployment name
           # OpenRouter:    provider/model-name format (e.g. anthropic/claude-3-5-sonnet)
           ai_model: "gpt-4.1"
 
@@ -62,11 +60,8 @@ jobs:
           # ai_temperature: "0.5"
 
           # API key for the provider. Leave empty when using github-models with
-          # the built-in GITHUB_TOKEN. Required for openai, openrouter, azure-openai.
-          # api_key: ${{ secrets.OPENAI_API_KEY }}
-
-          # Azure OpenAI only: full endpoint URL including deployment path.
-          # azure_endpoint: ${{ secrets.AZURE_OPENAI_ENDPOINT }}
+          # the built-in GITHUB_TOKEN. Required for openrouter.
+          # api_key: ${{ secrets.OPENROUTER_API_KEY }}
 
           # ── Question generation ───────────────────────────────────────────
 
@@ -108,14 +103,10 @@ jobs:
           # that file while the pattern still excludes everything else.
           # exclude_pattern_overrides: 'README.md'
 
-          # Comma-separated glob patterns for additional files to exclude.
-          # These are merged with the built-in default list — the defaults are
-          # always applied. Supply extra patterns to exclude files on top of them.
-          # exclude_patterns: 'tests/**,docs/**'
-
-          # Whether to exclude .github/workflows/** from the assessed diff.
-          # Set to "false" to include workflow files in comprehension questions.
-          exclude_workflow_files: "true"
+          # Comma-separated glob patterns for extra files to exclude on top of
+          # the auto-detected stack patterns (lock files, build artefacts, etc.
+          # for your language/framework are excluded automatically).
+          # additional_exclude_patterns: 'tests/**,docs/**'
 
           # ── Output & delivery ─────────────────────────────────────────────
 
@@ -159,10 +150,10 @@ jobs:
 
           # ── Diff resolution ───────────────────────────────────────────────
 
-          # Pin the diff base to the repository's first commit (default: true).
-          # Set to "false" to use the empty tree as the base instead,
+          # Include the initial commit's eligible files in the diff (default: false).
+          # Set to "true" to use the empty tree as the base instead,
           # which includes the initial commit's eligible files in the diff.
-          skip_initial_commit: "true"
+          # include_initial_commit: "false"
 
           # Comma-separated list of author names or email substrings.
           # A leading run of commits whose author matches any entry is skipped.

@@ -2,9 +2,9 @@
 sidebar_position: 5
 ---
 
-# Third-Party AI Provider (OpenAI / OpenRouter)
+# OpenRouter Provider
 
-Uses an external AI provider instead of GitHub Models. Useful when a higher question count, a specific model, or a different provider is required.
+Uses [OpenRouter](https://openrouter.ai/) to route requests to any model from a wide range of providers (Anthropic, Google, Meta, Mistral, and more) through a single API key. Useful when you want to use a model not available on GitHub Models, or want to compare outputs across different models.
 
 Store the API key as a secret in **Settings → Secrets and variables → Actions** on the student repository.
 
@@ -31,22 +31,16 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          ai_provider: "openai"
-          ai_model: "gpt-4o"
-          api_key: ${{ secrets.OPENAI_API_KEY }}
+          ai_provider: "openrouter"
+          ai_model: "anthropic/claude-3-5-sonnet"
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
           num_questions: "8"
           additional_context: "Web Development — REST API design with Express.js"
 ```
 
-## Using OpenRouter instead
+See the [OpenRouter model list](https://openrouter.ai/models) for available models and pricing. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`).
 
-Replace `ai_provider` and `api_key` to switch to OpenRouter:
-
-```yaml
-ai_provider: "openrouter"
-ai_model: "anthropic/claude-3-5-sonnet"
-api_key: ${{ secrets.OPENROUTER_API_KEY }}
-```
+For full provider documentation see [AI Providers](../ai-providers).
 
 OpenRouter gives access to models from many providers through a single API key. See the [OpenRouter model list](https://openrouter.ai/models) for available models.
 

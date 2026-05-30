@@ -40,7 +40,7 @@ readInputs()
 resolveSHAs()
     │  Determines baseSha and headSha from the event context
     │  Handles: pull_request, push, issue_comment, workflow_dispatch
-    │  Applies skip_initial_commit override when enabled
+    │  Applies include_initial_commit override when enabled
     │
 resolveBranch()
     │  Extracts the branch name from the event payload or GITHUB_REF
@@ -51,7 +51,7 @@ repos.getCommit(headSha)
     │
 getChangedFiles() → filterFiles()
     │  Runs `git diff --name-only baseSha headSha`
-    │  Applies exclude_patterns and exclude_pattern_overrides via minimatch
+    │  Applies auto-detected stack patterns, additional_exclude_patterns, and exclude_pattern_overrides via minimatch
     │
 getDiff()
     │  Runs `git diff baseSha headSha -- <files>`
@@ -112,7 +112,7 @@ postPrComment  postIssue  postDiscussion
 Reads and normalises every `INPUT_*` environment variable. Responsible for:
 
 - Parsing comma-separated glob lists into arrays
-- Applying defaults (`DEFAULT_EXCLUDE_PATTERNS` when no `exclude_patterns` is supplied)
+- Parsing `additional_exclude_patterns` into an array (stack-based patterns are resolved separately in `stack-detection.js` at runtime)
 - Clamping `num_questions` to a minimum of 1 and a maximum of 50; a workflow warning is emitted if the supplied value exceeds 50
 - Splitting `assignment_context` into a `assignmentContextGlobs` array for later file resolution
 
@@ -127,7 +127,7 @@ The most event-aware function in the codebase. Handles four distinct event types
 | `issue_comment` | PR base branch SHA (fetched via REST) | PR head SHA | from payload |
 | everything else | first commit | `ctx.sha` | — |
 
-After event-specific resolution, `skip_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for GitHub Classroom to exclude starter template files.
+After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for GitHub Classroom to exclude starter template files.
 
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
 
@@ -139,16 +139,14 @@ Validates that a SHA is 4–64 hex characters before passing it to a `git` comma
 
 Always writes output under the `.assessment/` folder. Uses `path.basename()` to extract only the filename — any directory component of `output_file` is discarded. On `main`/`master` (or when the branch is unknown) the basename is kept as-is; on any other branch the sanitised branch name is inserted before the extension so each branch produces a distinct file without collisions.
 
-### `callAI({ provider, model, apiKey, endpoint, messages, retryMaxAttempts })`
+### `callAI({ provider, model, apiKey, messages, retryMaxAttempts })`
 
 A thin provider abstraction over the OpenAI-compatible chat completions API. Each provider maps to a different base URL and authentication header:
 
 | Provider | URL | Auth header |
 |---|---|---|
 | `github-models` | `models.inference.ai.azure.com/chat/completions` | `Authorization: Bearer <github_token>` |
-| `openai` | `api.openai.com/v1/chat/completions` | `Authorization: Bearer <api_key>` |
 | `openrouter` | `openrouter.ai/api/v1/chat/completions` | `Authorization: Bearer <api_key>` |
-| `azure-openai` | caller-supplied endpoint | `api-key: <api_key>` |
 
 All providers use the same request body shape (`model`, `messages`, `temperature`, `max_tokens`, `top_p`).
 
