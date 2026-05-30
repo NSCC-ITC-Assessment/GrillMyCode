@@ -240,7 +240,7 @@ export const GITHUB_API_VERSION = '2022-11-28';
 /**
  * SHA of git's well-known empty tree object. Used as the diff base when the
  * full repository history — including the initial commit — should be included
- * in the assessed diff (i.e. when skip_initial_commit is false).
+ * in the assessed diff (i.e. when include_initial_commit is true).
  * This value is a fixed constant in git and never changes.
  */
 export const GIT_EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';

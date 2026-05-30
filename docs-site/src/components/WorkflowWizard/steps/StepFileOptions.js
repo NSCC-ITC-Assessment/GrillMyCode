@@ -27,15 +27,15 @@ export default function StepFileOptions({ cfg, onChange }) {
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
-            checked={cfg.skipInitialCommit}
-            onChange={(e) => onChange({ skipInitialCommit: e.target.checked })}
+            checked={cfg.includeInitialCommit}
+            onChange={(e) => onChange({ includeInitialCommit: e.target.checked })}
           />
           <span>
-            <strong>Skip initial (template) commit</strong>
+            <strong>Include initial (template) commit</strong>
             <div className={styles.radioDescription}>
-              When enabled (default), the diff base is pinned to the repository's first commit,
+              When disabled (default), the diff base is pinned to the repository's first commit,
               excluding template or starter code provided by the instructor. Only the student's own
-              additions are assessed. Disable to include the initial commit's files in the diff.
+              additions are assessed. Enable to include the initial commit's files in the diff.
             </div>
           </span>
         </label>

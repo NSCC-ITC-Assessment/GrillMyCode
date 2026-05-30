@@ -49,7 +49,7 @@ const INITIAL_CONFIG = {
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
   keepComments: false,
-  skipInitialCommit: true,
+  includeInitialCommit: false,
   skipCommitters: 'github-classroom[bot],github-actions[bot]',
 
   outputFile: 'grill-my-code.md',

@@ -185,14 +185,14 @@ inputs:
     required: false
     default: ""
 
-  skip_initial_commit:
+  include_initial_commit:
     description: >
-      When true (the default), the diff base is pinned to the repository's very
+      When false (the default), the diff base is pinned to the repository's very
       first commit so that starter/template files are excluded from assessment.
-      When false, the base is set to the empty tree regardless of the event type,
+      When true, the base is set to the empty tree regardless of the event type,
       so the initial commit's files are included in the assessed diff.
     required: false
-    default: "true"
+    default: "false"
 
   keep_comments:
     description: >
@@ -224,7 +224,7 @@ inputs:
   base_sha:
     description: >-
       Override the base commit SHA for the diff. When provided this takes
-      precedence over skip_initial_commit. Auto-detected when not provided.
+      precedence over include_initial_commit. Auto-detected when not provided.
     required: false
     default: ""
 
@@ -276,7 +276,7 @@ runs:
     INPUT_ASSIGNMENT_CONTEXT: ${{ inputs.assignment_context }}
     INPUT_ASSIGNMENT_CONTEXT_MAX_CHARS: ${{ inputs.assignment_context_max_chars }}
     INPUT_ADDITIONAL_CONTEXT: ${{ inputs.additional_context }}
-    INPUT_SKIP_INITIAL_COMMIT: ${{ inputs.skip_initial_commit }}
+    INPUT_INCLUDE_INITIAL_COMMIT: ${{ inputs.include_initial_commit }}
     INPUT_KEEP_COMMENTS: ${{ inputs.keep_comments }}
     INPUT_SKIP_COMMITTERS: ${{ inputs.skip_committers }}
     INPUT_BASE_SHA: ${{ inputs.base_sha }}

@@ -150,10 +150,10 @@ jobs:
 
           # ── Diff resolution ───────────────────────────────────────────────
 
-          # Pin the diff base to the repository's first commit (default: true).
-          # Set to "false" to use the empty tree as the base instead,
+          # Include the initial commit's eligible files in the diff (default: false).
+          # Set to "true" to use the empty tree as the base instead,
           # which includes the initial commit's files in the diff.
-          skip_initial_commit: "true"
+          # include_initial_commit: "false"
 
           # Comma-separated list of author names or email substrings.
           # A leading run of commits whose author matches any entry is skipped.

@@ -84,7 +84,7 @@ export function readInputs() {
     ),
     keepComments: core.getInput('keep_comments') === 'true',
     includeAnswers: core.getInput('include_answers') === 'true',
-    skipInitialCommit: core.getInput('skip_initial_commit') !== 'false',
+    includeInitialCommit: core.getInput('include_initial_commit') === 'true',
     // Three-way logic for skip_committers:
     //   • Input not provided (empty string from Actions default) → use the
     //     built-in default list of known Classroom/Actions bot accounts.

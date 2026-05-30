@@ -40,7 +40,7 @@ readInputs()
 resolveSHAs()
     │  Determines baseSha and headSha from the event context
     │  Handles: pull_request, push, issue_comment, workflow_dispatch
-    │  Applies skip_initial_commit override when enabled
+    │  Applies include_initial_commit override when enabled
     │
 resolveBranch()
     │  Extracts the branch name from the event payload or GITHUB_REF
@@ -127,7 +127,7 @@ The most event-aware function in the codebase. Handles four distinct event types
 | `issue_comment` | PR base branch SHA (fetched via REST) | PR head SHA | from payload |
 | everything else | first commit | `ctx.sha` | — |
 
-After event-specific resolution, `skip_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for GitHub Classroom to exclude starter template files.
+After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for GitHub Classroom to exclude starter template files.
 
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
 

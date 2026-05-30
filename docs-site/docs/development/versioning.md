@@ -213,7 +213,7 @@ This copies the current `docs/` into `versioned_docs/version-X.Y.Z/` and registe
 - The diff truncation cuts mid-line and produces malformed Markdown
 - `sanitiseSha` rejects a valid short SHA format that GitHub legitimately produces
 - `resolveOutputFile` generates an invalid filename for an edge-case branch name
-- `skip_initial_commit` logic incorrectly identifies the initial commit on a shallow clone
+- `include_initial_commit` logic incorrectly identifies the initial commit on a shallow clone
 - Whitespace or encoding issue in the generated Markdown output
 
 ### Minor — new backwards-compatible functionality

@@ -32,7 +32,7 @@ The [Workflow Wizard](/workflow-wizard) lets you configure these inputs visually
 | `assignment_context` | No | | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `additional_context`. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"README.md, docs/brief.pdf, rubric.docx"` |
 | `assignment_context_max_chars` | No | `20000` | Maximum total characters read from all `assignment_context` files combined. Prevents large files from flooding the prompt. Values below 1 are clamped to 1 |
 | `keep_comments` | No | `false` | When `false` (default), inline and block comments are stripped before sending code to the AI. Set to `"true"` to preserve comments |
-| `skip_initial_commit` | No | `true` | When `true` (default), pins the diff base to the first commit so starter/template files are excluded. When `false`, uses the empty tree as the base |
+| `include_initial_commit` | No | `false` | When `false` (default), pins the diff base to the first commit so starter/template files are excluded. When `true`, uses the empty tree as the base so the initial commit's files are included in the diff |
 | `skip_committers` | No | `github-classroom[bot],github-actions[bot]` | Comma-separated list of commit author names or email substrings. Leading bot commits after the base SHA are excluded from the diff. Set to `''` to disable |
 | `base_sha` | No | | Override the base commit SHA |
 | `head_sha` | No | | Override the head commit SHA |

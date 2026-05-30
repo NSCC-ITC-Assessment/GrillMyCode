@@ -29,7 +29,7 @@ const DEFAULTS = {
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
   keepComments: false,
-  skipInitialCommit: true,
+  includeInitialCommit: false,
   skipCommitters: 'github-classroom[bot],github-actions[bot]',
   outputFile: 'grill-my-code.md',
   postPrComment: false,
@@ -166,8 +166,8 @@ export function generateYaml(cfg) {
   if (differ(cfg, 'keepComments')) {
     lines.push(`          keep_comments: ${yamlStr(cfg.keepComments)}`);
   }
-  if (differ(cfg, 'skipInitialCommit')) {
-    lines.push(`          skip_initial_commit: ${yamlStr(cfg.skipInitialCommit)}`);
+  if (differ(cfg, 'includeInitialCommit')) {
+    lines.push(`          include_initial_commit: ${yamlStr(cfg.includeInitialCommit)}`);
   }
   if (differ(cfg, 'skipCommitters')) {
     lines.push(`          skip_committers: ${yamlStr(cfg.skipCommitters)}`);
