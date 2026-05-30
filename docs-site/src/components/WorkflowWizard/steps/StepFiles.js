@@ -34,8 +34,8 @@ export default function StepFiles({ cfg, onChange }) {
         <textarea
           className={styles.input}
           style={{ resize: 'vertical', minHeight: '4rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
-          value={cfg.excludePatterns}
-          onChange={(e) => onChange({ excludePatterns: e.target.value })}
+          value={cfg.additionalExcludePatterns}
+          onChange={(e) => onChange({ additionalExcludePatterns: e.target.value })}
           placeholder="e.g. data/**, tests/fixtures/**, provided_starter/**"
         />
       </div>
