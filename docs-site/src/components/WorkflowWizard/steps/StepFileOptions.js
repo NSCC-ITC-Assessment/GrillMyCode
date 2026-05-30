@@ -8,24 +8,6 @@ export default function StepFileOptions({ cfg, onChange }) {
         <label className={styles.checkboxLabel}>
           <input
             type="checkbox"
-            checked={cfg.excludeWorkflowFiles}
-            onChange={(e) => onChange({ excludeWorkflowFiles: e.target.checked })}
-          />
-          <span>
-            <strong>Exclude workflow files</strong>
-            <div className={styles.radioDescription}>
-              When enabled (default), <code>.github/workflows/**</code> files are excluded from the
-              assessed diff. This prevents questions being generated about the GrillMyCode workflow
-              file itself. Disable only if you specifically want workflow files assessed.
-            </div>
-          </span>
-        </label>
-      </div>
-
-      <div className={styles.fieldGroup}>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
             checked={cfg.keepComments}
             onChange={(e) => onChange({ keepComments: e.target.checked })}
           />

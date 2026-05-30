@@ -150,7 +150,7 @@ async function run() {
       ...new Set([
         ...detectedPatterns,
         ...inputs.additionalExcludePatterns,
-        ...(inputs.excludeWorkflowFiles ? ['.github/workflows/**'] : []),
+        '.github/workflows/**',
       ]),
     ];
     if (inputs.additionalExcludePatterns.length > 0) {

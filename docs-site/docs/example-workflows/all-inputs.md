@@ -108,10 +108,6 @@ jobs:
           # for your language/framework are excluded automatically).
           # additional_exclude_patterns: 'tests/**,docs/**'
 
-          # Whether to exclude .github/workflows/** from the assessed diff.
-          # Set to "false" to include workflow files in comprehension questions.
-          exclude_workflow_files: "true"
-
           # ── Output & delivery ─────────────────────────────────────────────
 
           # Filename for the written assessment file (basename only — directory

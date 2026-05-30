@@ -28,7 +28,6 @@ const DEFAULTS = {
   assignmentContextMaxChars: 20000,
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
-  excludeWorkflowFiles: true,
   keepComments: false,
   skipInitialCommit: true,
   skipCommitters: 'github-classroom[bot],github-actions[bot]',
@@ -163,9 +162,6 @@ export function generateYaml(cfg) {
   }
   if (cfg.additionalExcludePatterns && differ(cfg, 'additionalExcludePatterns')) {
     lines.push(`          additional_exclude_patterns: ${yamlStr(normalizePatterns(cfg.additionalExcludePatterns))}`);
-  }
-  if (differ(cfg, 'excludeWorkflowFiles')) {
-    lines.push(`          exclude_workflow_files: ${yamlStr(cfg.excludeWorkflowFiles)}`);
   }
   if (differ(cfg, 'keepComments')) {
     lines.push(`          keep_comments: ${yamlStr(cfg.keepComments)}`);

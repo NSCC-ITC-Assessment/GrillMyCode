@@ -31,8 +31,6 @@ export function readInputs() {
     );
   }
 
-  const excludeWorkflowFiles = core.getInput('exclude_workflow_files') !== 'false';
-
   const additionalExcludePatterns = excludeStr
     ? excludeStr
         .split(',')
@@ -62,7 +60,6 @@ export function readInputs() {
     apiKey: core.getInput('api_key') || '',
     numQuestions,
     additionalExcludePatterns,
-    excludeWorkflowFiles,
     excludePatternOverrides: overridePatterns,
     outputFile: core.getInput('output_file') || 'grill-my-code.md',
     postPrComment: core.getInput('post_pr_comment') === 'true',

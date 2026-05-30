@@ -48,7 +48,6 @@ const INITIAL_CONFIG = {
 
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
-  excludeWorkflowFiles: true,
   keepComments: false,
   skipInitialCommit: true,
   skipCommitters: 'github-classroom[bot],github-actions[bot]',
