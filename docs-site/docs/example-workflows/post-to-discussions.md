@@ -47,7 +47,7 @@ jobs:
 1. Create a Discussion category named `Assessments` (or whatever you pass as `discussion_category`) in **Settings → Discussions** on the repository before the first run
 2. Add `administration: write` to the permissions block the first time, so the action can enable Discussions if they are not already on. You can remove it once Discussions are confirmed enabled
 
-:::note GraphQL API
+:::note[GraphQL API]
 
 The Discussions API uses GraphQL, not REST. The action handles this transparently — no additional configuration is needed.
 

@@ -6,7 +6,7 @@ sidebar_position: 2
 
 GrillMyCode automatically detects your repository's language and framework stack and applies the appropriate exclude patterns at runtime — no manual configuration required in most cases.
 
-:::info Binary files are never assessed
+:::info[Binary files are never assessed]
 
 Regardless of any include or exclude settings, **binary files are always skipped** before being sent to the AI. Any file whose content contains a null byte is automatically filtered out. Only text-based source files are eligible for assessment.
 
@@ -132,7 +132,7 @@ Both forms can be combined:
 exclude_pattern_overrides: 'README.md, SOLUTION.md'
 ```
 
-:::tip When to use overrides vs additional patterns
+:::tip[When to use overrides vs additional patterns]
 
 Use `additional_exclude_patterns` to narrow what gets assessed (exclude more).
 Use `exclude_pattern_overrides` to widen what gets assessed (re-include something excluded by default).
