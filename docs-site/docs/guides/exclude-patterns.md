@@ -38,8 +38,9 @@ The final exclude list is the **union** of all three. `exclude_pattern_overrides
 When the action runs it performs up to three lookups using the already-available `github_token`:
 
 1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` to identify all languages present in the repository (the same data shown on the repo's language bar).
-2. **Repository root inspection** — checks for well-known config files (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
-3. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
+2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
+3. **Root filename suffix scan** — detects frameworks whose project file includes a variable component by checking whether any root entry ends with a known suffix: `.xcodeproj` / `.xcworkspace` → Xcode, `.uproject` → Unreal Engine, `.pro` → Qt, `.ipynb` → Jupyter Notebooks.
+4. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, `@tauri-apps/api`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
 
 Each detected signal is mapped to one or more [github/gitignore](https://github.com/github/gitignore) templates, or to a set of known artifact paths for frameworks that have no upstream template (e.g. SvelteKit's `.svelte-kit/`, Nuxt's `.nuxt/` and `.output/`). The action ships with all 300+ templates bundled in the Docker image (refreshed on every image build).
 
@@ -49,7 +50,11 @@ Each detected signal is mapped to one or more [github/gitignore](https://github.
 - A **Next.js** repo → `Node` + `Nextjs` templates: adds `.next/**` on top of the Node exclusions.
 - A **SvelteKit** repo → `Node` template + `.svelte-kit/**` (no upstream template exists for Svelte).
 - A **Angular** repo → `Node` + `Angular` templates: adds `.angular/**`.
+- A **Laravel** repo → `PHP` template + `Laravel` template: `vendor/**`, storage cache dirs, etc.
+- A **Unity** repo → `Dotnet` template + `Unity` template: `Library/**`, `Temp/**`, `obj/**`, etc.
+- A **Godot** repo → `Godot` template: `.godot/**`, `*.import`, export presets, etc.
 - A **Python** repo → `Python` template: `__pycache__/**`, `*.pyc`, `.venv/**`, `*.egg-info/**`, etc.
+- A **Jupyter Notebooks** repo (any `.ipynb` in root) → `Python` + `community/Python/JupyterNotebooks` templates.
 - A **Java** repo with a `pom.xml` → `Java` + `Maven` templates: `target/**`, `.gradle/**`, `*.class`, etc.
 - A **mixed JS + Python** repo → gets the union of all matched template sets.
 
@@ -93,6 +98,24 @@ Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with t
 - Patterns with no `/` in them match on filename only — `*.log` matches `logs/server.log`, not just `server.log` at the root.
 - Patterns with a `/` are matched against the full path — `src/*.js` only matches JS files directly in `src/`, not `src/utils/helper.js`.
 - `**` matches across directory separators — `tests/**` matches `tests/unit/foo.test.js`.
+
+**Worked examples:**
+
+| File path | Pattern | Match? | Why |
+|---|---|---|---|
+| `src/index.js` | `src/**` | ✅ | `**` covers all descendants |
+| `src/utils/helper.js` | `src/**` | ✅ | nested path, still under `src/` |
+| `src/utils/helper.js` | `src/*.js` | ❌ | `*` doesn't cross `/` — only direct children of `src/` |
+| `tests/unit/auth.test.js` | `**/*.test.js` | ✅ | `**` matches any prefix path |
+| `tests/fixtures/users.json` | `tests/fixtures/**` | ✅ | anchored subfolder glob |
+| `e2e/fixtures/users.json` | `tests/fixtures/**` | ❌ | anchored — wrong top-level dir |
+| `config.json` | `config.json` | ✅ | matchBase — no slash, matches filename anywhere |
+| `src/config.json` | `config.json` | ✅ | matchBase applies at any depth |
+| `src/config.json` | `src/config.json` | ✅ | anchored exact path |
+| `lib/config.json` | `src/config.json` | ❌ | anchored — path doesn't match |
+| `provided_code/solution.py` | `provided_code/**` | ✅ | everything under the dir |
+| `src/provided_code/solution.py` | `provided_code/**` | ❌ | anchored — not at root level |
+| `src/provided_code/solution.py` | `**/provided_code/**` | ✅ | leading `**` matches any prefix |
 
 ## Additional patterns
 

@@ -75,6 +75,7 @@ const LANGUAGE_TO_TEMPLATES = {
 // Maps known root-level config file/directory names to template keys.
 // Supplements language detection with framework and IDE signals.
 const CONFIG_TO_TEMPLATES = {
+  // Language package managers / build tools
   'package.json': ['Node'],
   'requirements.txt': ['Python'],
   'pyproject.toml': ['Python'],
@@ -99,6 +100,8 @@ const CONFIG_TO_TEMPLATES = {
   'Package.swift': ['Swift'],
   'CMakeLists.txt': ['CMake'],
   Makefile: ['C', 'C++'],
+  'configure.ac': ['Autotools'],
+  'configure.in': ['Autotools'],
   // JS frameworks with unambiguous config files
   'angular.json': ['Angular'],
   'nest-cli.json': ['Nestjs'],
@@ -110,10 +113,30 @@ const CONFIG_TO_TEMPLATES = {
   'deno.jsonc': ['Deno'],
   'bun.lockb': ['bun'],
   'bun.lock': ['bun'],
-  // Infrastructure
+  // PHP frameworks
+  artisan: ['Laravel'],
+  'wp-config.php': ['WordPress'],
+  'symfony.lock': ['Symfony'],
+  // Mobile / game engines
+  'local.properties': ['Android'],
+  'project.godot': ['Godot'],
+  ProjectSettings: ['Unity'],
+  'src-tauri': ['community/Tauri'],
+  // Static sites
+  '_config.yml': ['Jekyll'],
+  'hugo.toml': ['community/Golang/Hugo'],
+  'hugo.yaml': ['community/Golang/Hugo'],
+  'hugo.json': ['community/Golang/Hugo'],
+  // Infrastructure / cloud
   'cdk.json': ['community/AWS/CDK'],
+  'samconfig.toml': ['community/AWS/SAM'],
   'terraform.tfvars': ['Terraform'],
   '.terraform': ['Terraform'],
+  // Nix
+  'flake.nix': ['Nix'],
+  'default.nix': ['Nix'],
+  // Firebase
+  'firebase.json': ['Firebase'],
   // IDEs
   '.vscode': ['Global/VisualStudioCode'],
   '.idea': ['Global/JetBrains'],
@@ -129,6 +152,16 @@ const CONFIG_TO_PATTERNS = {
   'nuxt.config.ts': ['.nuxt/**', '.output/**'],
 };
 
+// Maps root-level filename suffixes to template keys, for frameworks where the
+// project file includes a variable component (e.g. MyApp.xcodeproj).
+const ROOT_SUFFIX_TO_TEMPLATES = {
+  '.xcodeproj': ['Global/Xcode'],
+  '.xcworkspace': ['Global/Xcode'],
+  '.uproject': ['UnrealEngine'],
+  '.pro': ['Qt'],
+  '.ipynb': ['community/Python/JupyterNotebooks'],
+};
+
 // Maps package.json dependency/devDependency names to gitignore template keys.
 // This catches frameworks reliably regardless of which config filename they use,
 // and requires no maintenance as new config filename conventions emerge.
@@ -138,6 +171,8 @@ const PACKAGE_DEP_TO_TEMPLATES = {
   '@nestjs/core': ['Nestjs'],
   vue: ['community/JavaScript/Vue'],
   expo: ['community/JavaScript/Expo'],
+  '@tauri-apps/api': ['community/Tauri'],
+  '@strapi/strapi': ['community/Strapi'],
 };
 
 // Maps package.json dependency names to exclude patterns for frameworks with
@@ -179,6 +214,12 @@ function resolveStack(detectedLanguages, rootNames, packageDeps, allTemplates) {
   for (const [name, patterns] of Object.entries(CONFIG_TO_PATTERNS)) {
     if (rootNames.has(name)) {
       patterns.forEach((p) => extraPatterns.add(p));
+    }
+  }
+
+  for (const [suffix, templates] of Object.entries(ROOT_SUFFIX_TO_TEMPLATES)) {
+    if ([...rootNames].some((name) => name.endsWith(suffix))) {
+      templates.forEach((k) => keys.add(k));
     }
   }
 
