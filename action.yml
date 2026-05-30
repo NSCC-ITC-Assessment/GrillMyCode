@@ -88,13 +88,13 @@ inputs:
     required: false
     default: ""
 
-  exclude_patterns:
+  additional_exclude_patterns:
     description: >
-      Comma-separated glob patterns for additional files to exclude from the
-      assessment. These are merged with the built-in default list (lock files,
-      images, build artefacts, Markdown files, etc.) — the defaults are always
-      applied. Supply extra patterns here to exclude additional files on top of
-      the defaults.
+      Comma-separated glob patterns for extra files to exclude from the
+      assessment, on top of the patterns auto-detected from the repository's
+      language and framework stack. Use this to exclude files specific to your
+      assignment (e.g. provided starter files, test fixtures, data files) that
+      would not normally be excluded by the auto-detected patterns.
     required: false
     default: ""
 
@@ -274,7 +274,8 @@ runs:
     INPUT_API_KEY: ${{ inputs.api_key }}
     INPUT_NUM_QUESTIONS: ${{ inputs.num_questions }}
     INPUT_INCLUDE_PATTERNS: ${{ inputs.include_patterns }}
-    INPUT_EXCLUDE_PATTERNS: ${{ inputs.exclude_patterns }}
+    INPUT_ADDITIONAL_EXCLUDE_PATTERNS: ${{ inputs.additional_exclude_patterns }}
+    INPUT_EXCLUDE_PATTERN_OVERRIDES: ${{ inputs.exclude_pattern_overrides }}
     INPUT_EXCLUDE_WORKFLOW_FILES: ${{ inputs.exclude_workflow_files }}
     INPUT_OUTPUT_FILE: ${{ inputs.output_file }}
     INPUT_POST_PR_COMMENT: ${{ inputs.post_pr_comment }}

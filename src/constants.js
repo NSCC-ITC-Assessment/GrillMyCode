@@ -7,10 +7,11 @@
  */
 
 /**
- * Default glob patterns for files that should never be assessed.
- * Applied when the user has not supplied a custom exclude_patterns input.
+ * Fallback glob patterns used when automatic stack detection fails or returns
+ * no results. Covers the most common languages and build artefacts so that
+ * assessments still work if the GitHub API is unreachable.
  */
-export const DEFAULT_EXCLUDE_PATTERNS = [
+export const FALLBACK_EXCLUDE_PATTERNS = [
   // JavaScript / Node.js
   'node_modules/**',
   '**/*.lock',
@@ -69,6 +70,19 @@ export const DEFAULT_EXCLUDE_PATTERNS = [
   // Version control
   '.git/**',
   '.gitignore',
+
+  // Environment files — may contain secrets
+  '.env',
+  '.env.*',
+  '**/.env',
+  '**/.env.*',
+
+  // Minified assets
+  '**/*.tsbuildinfo',
+
+  // OS noise
+  '.DS_Store',
+  'Thumbs.db',
 
   // Text assets (SVG is XML, source maps and logs are plain text)
   '**/*.svg',

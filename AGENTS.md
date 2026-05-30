@@ -10,6 +10,12 @@ Any change to the action's functionality — including new inputs, changed defau
 
 Do not implement a functional change in isolation. Documentation and example workflows are part of the same deliverable.
 
+## Versioned Docs Are Auto-Generated — Do Not Edit Manually
+
+**Never edit files under `docs-site/versioned_docs/` directly.** On every tag push the release workflow snapshots the current `docs-site/docs/` tree into the appropriate `versioned_docs/version-{MAJOR}/` directory, overwriting it completely. Any manual changes to versioned docs will be silently lost on the next release.
+
+All documentation work must target `docs-site/docs/` (the "Next / unreleased" version). The versioned snapshot is produced automatically.
+
 ## New Inputs
 
 New inputs must be added consistently across **all six locations**:
@@ -34,13 +40,11 @@ Adding a new `ai_provider` value requires changes in all of the following places
 
 Numeric limits, default values, threshold values, and external API version strings must be defined as named, documented exports in `src/constants.js`. Do not hard-code them inline in other modules.
 
-### DEFAULT_EXCLUDE_PATTERNS sync
+### Exclude pattern templates
 
-`src/constants.js` exports `DEFAULT_EXCLUDE_PATTERNS`. If this list is ever changed, the following locations **must** be updated to match:
+`src/constants.js` exports `FALLBACK_EXCLUDE_PATTERNS` — a broad list used only when the GitHub Languages API is unreachable at runtime. Prefer adding coverage to `scripts/fetch-gitignore-templates.js` (language/template mappings) or `src/stack-detection.js` (detection logic) over editing the fallback list directly.
 
-1. `docs-site/src/components/WorkflowWizard/steps/StepFiles.js` — the `DEFAULT_PATTERN_GROUPS` array that renders the reference table in the wizard (grouped by category).
-2. `docs-site/docs/guides/exclude-patterns.md` — the "Default patterns" reference table under the "Default behaviour" section.
-3. `docs-site/versioned_docs/version-1/guides/exclude-patterns.md` — the same table in the versioned docs.
+The bundled template data lives in `src/data/gitignore-templates.json` (generated — do not edit by hand). Run `node scripts/fetch-gitignore-templates.js` to refresh it.
 
 ## No Shell Interpolation
 

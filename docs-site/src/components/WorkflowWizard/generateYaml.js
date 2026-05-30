@@ -162,7 +162,7 @@ export function generateYaml(cfg) {
     lines.push(`          exclude_pattern_overrides: ${yamlStr(normalizePatterns(cfg.excludePatternOverrides))}`);
   }
   if (cfg.excludePatterns && differ(cfg, 'excludePatterns')) {
-    lines.push(`          exclude_patterns: ${yamlStr(normalizePatterns(cfg.excludePatterns))}`);
+    lines.push(`          additional_exclude_patterns: ${yamlStr(normalizePatterns(cfg.excludePatterns))}`);
   }
   if (differ(cfg, 'excludeWorkflowFiles')) {
     lines.push(`          exclude_workflow_files: ${yamlStr(cfg.excludeWorkflowFiles)}`);
