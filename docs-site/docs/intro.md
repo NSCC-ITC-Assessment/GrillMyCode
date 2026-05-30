@@ -53,6 +53,6 @@ No secrets need to be created — the default provider (GitHub Models) authentic
 
 ## Designed for GitHub Classroom
 
-GrillMyCode is built for use with [GitHub Classroom](https://classroom.github.com/). The default configuration excludes template/starter code and bot-committed setup files, so only code written by the student after accepting the assignment is assessed.
+GrillMyCode is built for use with [GitHub Classroom](https://classroom.github.com/). The default configuration excludes template/starter code and bot-committed setup files, so only code written by the student after accepting the assignment is eligible for assessment.
 
 See the [GitHub Classroom guide](/docs/guides/github-classroom) for details.

@@ -19,8 +19,8 @@ For each file in the changed diff, the action applies this logic in order:
 ```
 1. Is it a binary file (contains a null byte)?        → always skip, regardless of everything else
 2. Does it match any exclude pattern?                 → skip, UNLESS step 3 applies
-3. Does it match an exclude_pattern_overrides entry?  → include it (overrides win)
-4. None of the above                                  → include it for assessment
+3. Does it match an exclude_pattern_overrides entry?  → eligible for assessment (overrides win)
+4. None of the above                                  → eligible for assessment
 ```
 
 The exclude patterns themselves come from three sources, merged in this order:

@@ -4,7 +4,7 @@ sidebar_position: 1
 
 # GitHub Classroom
 
-GrillMyCode is designed to work with [GitHub Classroom](https://classroom.github.com/). The default configuration automatically excludes template/starter code and bot-committed setup files, so only code written by the student after accepting the assignment is assessed.
+GrillMyCode is designed to work with [GitHub Classroom](https://classroom.github.com/). The default configuration automatically excludes template/starter code and bot-committed setup files, so only code written by the student after accepting the assignment is eligible for assessment.
 
 ## How it works
 

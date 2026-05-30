@@ -195,7 +195,7 @@ jobs:
 
 ## GitHub Classroom
 
-This action is designed to work with GitHub Classroom. By default (`include_initial_commit: 'false'`), the diff base is pinned to the repository's very first commit — the template/starter code committed by Classroom. This means only code written by the student after accepting the assignment is assessed, and template boilerplate is never included in the diff unless configured as such (`include_initial_commit: 'true'`).
+This action is designed to work with GitHub Classroom. By default (`include_initial_commit: 'false'`), the diff base is pinned to the repository's very first commit — the template/starter code committed by Classroom. This means only code written by the student after accepting the assignment is eligible for assessment, and template boilerplate is never included in the diff unless configured as such (`include_initial_commit: 'true'`).
 
 In addition, the `skip_committers` input (defaulting to `github-classroom[bot],github-actions[bot]`) automatically advances the base past any consecutive bot commits that appear immediately after that first commit — for example, the feedback pull request or autograder setup commits that Classroom applies when a student accepts an assignment.
 
