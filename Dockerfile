@@ -39,7 +39,8 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 # This re-fetches every template from github/gitignore to ensure the image
 # ships with up-to-date patterns, even if the committed JSON is stale.
 COPY scripts/ ./scripts/
-RUN node scripts/fetch-gitignore-templates.js
+RUN --mount=type=secret,id=GITHUB_TOKEN,env=GITHUB_TOKEN \
+    node scripts/fetch-gitignore-templates.js
 
 # Copy source code
 COPY src/ ./src/

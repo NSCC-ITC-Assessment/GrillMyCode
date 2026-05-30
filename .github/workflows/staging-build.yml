@@ -7,18 +7,22 @@ on:
     paths-ignore:
       - "docs-site/**"
       - "README.md"
+      - "AGENTS.md"
       - "_prompt-archive/**"
       - "action.yml"
       - ".github/**"
       - ".devcontainer/**"
       - ".vscode/**"
       - ".husky/**"
+      - ".claude/**"
       - "commitlint.config.cjs"
       - "eslint.config.js"
       - ".prettierrc.json"
       - ".prettierignore"
       - ".gitignore"
+      - ".gitattributes"
       - ".npmrc"
+      - "src/data/gitignore-templates.json"
 
 jobs:
   build:
@@ -50,3 +54,5 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ steps.repo.outputs.name }}:next
+          secrets: |
+            GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
