@@ -54,7 +54,7 @@ jobs:
             cp "versioned_docs/version-${MAJOR}/release-notes.md" /tmp/release-notes.md 2>/dev/null || true
             rm -rf "versioned_docs/version-${MAJOR}"
             cp -r docs "versioned_docs/version-${MAJOR}"
-            cp sidebars.js "versioned_sidebars/version-${MAJOR}-sidebars.json"
+            MAJOR="${MAJOR}" node -e "(async()=>{const{default:s}=await import('./sidebars.js');require('fs').writeFileSync('versioned_sidebars/version-'+process.env.MAJOR+'-sidebars.json',JSON.stringify(s,null,2)+'\n');})()"
             # Restore preserved release notes (new entry will be prepended below)
             [[ -f /tmp/release-notes.md ]] && mv /tmp/release-notes.md "versioned_docs/version-${MAJOR}/release-notes.md"
           else
