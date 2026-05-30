@@ -27,7 +27,7 @@ const DEFAULTS = {
   assignmentContext: '',
   assignmentContextMaxChars: 20000,
   excludePatternOverrides: '',
-  excludePatterns: '',
+  additionalExcludePatterns: '',
   excludeWorkflowFiles: true,
   keepComments: false,
   skipInitialCommit: true,
@@ -161,8 +161,8 @@ export function generateYaml(cfg) {
   if (cfg.excludePatternOverrides && differ(cfg, 'excludePatternOverrides')) {
     lines.push(`          exclude_pattern_overrides: ${yamlStr(normalizePatterns(cfg.excludePatternOverrides))}`);
   }
-  if (cfg.excludePatterns && differ(cfg, 'excludePatterns')) {
-    lines.push(`          exclude_patterns: ${yamlStr(normalizePatterns(cfg.excludePatterns))}`);
+  if (cfg.additionalExcludePatterns && differ(cfg, 'additionalExcludePatterns')) {
+    lines.push(`          additional_exclude_patterns: ${yamlStr(normalizePatterns(cfg.additionalExcludePatterns))}`);
   }
   if (differ(cfg, 'excludeWorkflowFiles')) {
     lines.push(`          exclude_workflow_files: ${yamlStr(cfg.excludeWorkflowFiles)}`);

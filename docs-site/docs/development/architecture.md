@@ -51,7 +51,7 @@ repos.getCommit(headSha)
     │
 getChangedFiles() → filterFiles()
     │  Runs `git diff --name-only baseSha headSha`
-    │  Applies exclude_patterns and exclude_pattern_overrides via minimatch
+    │  Applies auto-detected stack patterns, additional_exclude_patterns, and exclude_pattern_overrides via minimatch
     │
 getDiff()
     │  Runs `git diff baseSha headSha -- <files>`
@@ -112,7 +112,7 @@ postPrComment  postIssue  postDiscussion
 Reads and normalises every `INPUT_*` environment variable. Responsible for:
 
 - Parsing comma-separated glob lists into arrays
-- Applying defaults (`DEFAULT_EXCLUDE_PATTERNS` when no `exclude_patterns` is supplied)
+- Parsing `additional_exclude_patterns` into an array (stack-based patterns are resolved separately in `stack-detection.js` at runtime)
 - Clamping `num_questions` to a minimum of 1 and a maximum of 50; a workflow warning is emitted if the supplied value exceeds 50
 - Splitting `assignment_context` into a `assignmentContextGlobs` array for later file resolution
 

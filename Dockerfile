@@ -35,6 +35,13 @@ WORKDIR /action
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
+# Fetch and bundle gitignore templates so stack-detection has them at runtime.
+# This re-fetches every template from github/gitignore to ensure the image
+# ships with up-to-date patterns, even if the committed JSON is stale.
+COPY scripts/ ./scripts/
+RUN --mount=type=secret,id=GITHUB_TOKEN,env=GITHUB_TOKEN \
+    node scripts/fetch-gitignore-templates.js
+
 # Copy source code
 COPY src/ ./src/
 COPY entrypoint.sh /entrypoint.sh

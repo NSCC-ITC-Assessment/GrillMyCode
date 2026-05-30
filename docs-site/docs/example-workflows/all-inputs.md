@@ -103,10 +103,10 @@ jobs:
           # that file while the pattern still excludes everything else.
           # exclude_pattern_overrides: 'README.md'
 
-          # Comma-separated glob patterns for additional files to exclude.
-          # These are merged with the built-in default list — the defaults are
-          # always applied. Supply extra patterns to exclude files on top of them.
-          # exclude_patterns: 'tests/**,docs/**'
+          # Comma-separated glob patterns for extra files to exclude on top of
+          # the auto-detected stack patterns (lock files, build artefacts, etc.
+          # for your language/framework are excluded automatically).
+          # additional_exclude_patterns: 'tests/**,docs/**'
 
           # Whether to exclude .github/workflows/** from the assessed diff.
           # Set to "false" to include workflow files in comprehension questions.

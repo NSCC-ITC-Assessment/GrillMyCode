@@ -8,7 +8,6 @@
 
 import * as core from '@actions/core';
 import {
-  DEFAULT_EXCLUDE_PATTERNS,
   MAX_QUESTIONS,
   MIN_QUESTIONS,
   DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS,
@@ -18,7 +17,7 @@ import {
 } from './constants.js';
 
 export function readInputs() {
-  const excludeStr = core.getInput('exclude_patterns');
+  const excludeStr = core.getInput('additional_exclude_patterns');
   const overrideStr = core.getInput('exclude_pattern_overrides');
 
   const rawNumQuestions = Math.max(
@@ -34,7 +33,7 @@ export function readInputs() {
 
   const excludeWorkflowFiles = core.getInput('exclude_workflow_files') !== 'false';
 
-  const extraExclude = excludeStr
+  const additionalExcludePatterns = excludeStr
     ? excludeStr
         .split(',')
         .map((p) => p.trim())
@@ -47,12 +46,6 @@ export function readInputs() {
         .map((p) => p.trim())
         .filter(Boolean)
     : [];
-
-  const baseExcludePatterns = [...DEFAULT_EXCLUDE_PATTERNS, ...extraExclude];
-
-  const excludePatterns = excludeWorkflowFiles
-    ? [...new Set([...baseExcludePatterns, '.github/workflows/**'])]
-    : [...new Set(baseExcludePatterns)];
 
   return {
     githubToken: core.getInput('github_token', { required: true }),
@@ -68,7 +61,8 @@ export function readInputs() {
     ),
     apiKey: core.getInput('api_key') || '',
     numQuestions,
-    excludePatterns,
+    additionalExcludePatterns,
+    excludeWorkflowFiles,
     excludePatternOverrides: overridePatterns,
     outputFile: core.getInput('output_file') || 'grill-my-code.md',
     postPrComment: core.getInput('post_pr_comment') === 'true',

@@ -30,6 +30,7 @@ import {
   buildCodeContent,
   readAssignmentContextFiles,
 } from './files.js';
+import { detectExcludePatterns } from './stack-detection.js';
 import { buildPrompt } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport } from './report.js';
@@ -140,7 +141,32 @@ async function run() {
 
     // ── Collect changed files and apply filters ─────────────────────────────
     const allFiles = getChangedFiles(baseSha, headSha);
-    const files = filterFiles(allFiles, inputs.excludePatterns, inputs.excludePatternOverrides);
+    const detectedPatterns = await detectExcludePatterns(
+      inputs.githubToken,
+      ctx.repo.owner,
+      ctx.repo.repo,
+    );
+    const excludePatterns = [
+      ...new Set([
+        ...detectedPatterns,
+        ...inputs.additionalExcludePatterns,
+        ...(inputs.excludeWorkflowFiles ? ['.github/workflows/**'] : []),
+      ]),
+    ];
+    if (inputs.additionalExcludePatterns.length > 0) {
+      core.info(
+        `Additional exclude patterns (from input): ${inputs.additionalExcludePatterns.join(', ')}`,
+      );
+    }
+    if (inputs.excludePatternOverrides.length > 0) {
+      core.info(
+        `Exclude pattern overrides (re-included): ${inputs.excludePatternOverrides.join(', ')}`,
+      );
+    }
+    core.info(
+      `Exclude patterns applied (${excludePatterns.length}):\n${excludePatterns.map((p) => `  ${p}`).join('\n')}`,
+    );
+    const files = filterFiles(allFiles, excludePatterns, inputs.excludePatternOverrides);
 
     if (files.length === 0) {
       core.warning('No assessable files found after applying include/exclude filters. Skipping.');

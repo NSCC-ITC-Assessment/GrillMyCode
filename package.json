@@ -32,7 +32,8 @@
       "eslint --fix --no-warn-ignored",
       "prettier --write"
     ],
-    "!(docs-site)/**/*.{json,yml,yaml,md}": "prettier --write"
+    "!(docs-site)/**/*.{json,yml,yaml,md}": "prettier --write",
+    "*.{json,yml,yaml,md}": "prettier --write"
   },
   "devDependencies": {
     "@commitlint/cli": "^21.0.1",
