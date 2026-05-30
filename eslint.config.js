@@ -12,6 +12,7 @@ export default [
         // Node.js globals
         process: 'readonly',
         fetch: 'readonly',
+        atob: 'readonly',
         console: 'readonly',
         setTimeout: 'readonly',
       },

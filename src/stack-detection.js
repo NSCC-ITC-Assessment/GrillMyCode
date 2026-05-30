@@ -62,14 +62,14 @@ const LANGUAGE_TO_TEMPLATES = {
   Scala: ['Java', 'Scala'],
   Groovy: ['Java'],
   Clojure: ['Java'],
-  'C#': ['CSharp'],
+  'C#': ['Dotnet'],
   'Visual Basic .NET': ['VisualStudio'],
   'F#': ['VisualStudio'],
   'Objective-C': ['Objective-C'],
   'Objective-C++': ['Objective-C'],
-  Shell: ['Linux'],
-  Bash: ['Linux'],
-  Zsh: ['Linux'],
+  Shell: ['Global/Linux'],
+  Bash: ['Global/Linux'],
+  Zsh: ['Global/Linux'],
 };
 
 // Maps known root-level config file/directory names to template keys.
@@ -83,6 +83,7 @@ const CONFIG_TO_TEMPLATES = {
   'setup.py': ['Python'],
   'setup.cfg': ['Python'],
   Gemfile: ['Ruby'],
+  Rakefile: ['Rails'],
   'pom.xml': ['Java', 'Maven'],
   'build.gradle': ['Java', 'Gradle'],
   'build.gradle.kts': ['Java', 'Gradle'],
@@ -98,9 +99,53 @@ const CONFIG_TO_TEMPLATES = {
   'Package.swift': ['Swift'],
   'CMakeLists.txt': ['CMake'],
   Makefile: ['C', 'C++'],
+  // JS frameworks with unambiguous config files
+  'angular.json': ['Angular'],
+  'nest-cli.json': ['Nestjs'],
+  'next.config.js': ['Nextjs'],
+  'next.config.ts': ['Nextjs'],
+  'next.config.mjs': ['Nextjs'],
+  // Deno and Bun have their own lockfile/config conventions
+  'deno.json': ['Deno'],
+  'deno.jsonc': ['Deno'],
+  'bun.lockb': ['bun'],
+  'bun.lock': ['bun'],
+  // Infrastructure
+  'cdk.json': ['community/AWS/CDK'],
+  'terraform.tfvars': ['Terraform'],
+  '.terraform': ['Terraform'],
+  // IDEs
   '.vscode': ['Global/VisualStudioCode'],
   '.idea': ['Global/JetBrains'],
   '.vs': ['VisualStudio'],
+};
+
+// Maps root-level config files to exclude patterns directly, for frameworks
+// that have no upstream gitignore template.
+const CONFIG_TO_PATTERNS = {
+  'svelte.config.js': ['.svelte-kit/**'],
+  'svelte.config.ts': ['.svelte-kit/**'],
+  'nuxt.config.js': ['.nuxt/**', '.output/**'],
+  'nuxt.config.ts': ['.nuxt/**', '.output/**'],
+};
+
+// Maps package.json dependency/devDependency names to gitignore template keys.
+// This catches frameworks reliably regardless of which config filename they use,
+// and requires no maintenance as new config filename conventions emerge.
+const PACKAGE_DEP_TO_TEMPLATES = {
+  next: ['Nextjs'],
+  '@angular/core': ['Angular'],
+  '@nestjs/core': ['Nestjs'],
+  vue: ['community/JavaScript/Vue'],
+  expo: ['community/JavaScript/Expo'],
+};
+
+// Maps package.json dependency names to exclude patterns for frameworks with
+// no upstream gitignore template.
+const PACKAGE_DEP_TO_PATTERNS = {
+  svelte: ['.svelte-kit/**'],
+  nuxt: ['.nuxt/**', '.output/**'],
+  '@nuxt/kit': ['.nuxt/**', '.output/**'],
 };
 
 function loadTemplates() {
@@ -112,15 +157,15 @@ function loadTemplates() {
   }
 }
 
-function resolveTemplateKeys(detectedLanguages, rootNames, allTemplates) {
+function resolveStack(detectedLanguages, rootNames, packageDeps, allTemplates) {
   const keys = new Set();
+  const extraPatterns = new Set();
 
   for (const lang of detectedLanguages) {
     const mapped = LANGUAGE_TO_TEMPLATES[lang];
     if (mapped) {
       mapped.forEach((k) => keys.add(k));
     } else if (allTemplates[lang]) {
-      // Language name matches a template key directly (e.g. "Python", "Go")
       keys.add(lang);
     }
   }
@@ -131,13 +176,41 @@ function resolveTemplateKeys(detectedLanguages, rootNames, allTemplates) {
     }
   }
 
-  return keys;
+  for (const [name, patterns] of Object.entries(CONFIG_TO_PATTERNS)) {
+    if (rootNames.has(name)) {
+      patterns.forEach((p) => extraPatterns.add(p));
+    }
+  }
+
+  for (const dep of packageDeps) {
+    const templates = PACKAGE_DEP_TO_TEMPLATES[dep];
+    if (templates) templates.forEach((k) => keys.add(k));
+
+    const patterns = PACKAGE_DEP_TO_PATTERNS[dep];
+    if (patterns) patterns.forEach((p) => extraPatterns.add(p));
+  }
+
+  return { keys, extraPatterns };
 }
 
 async function fetchJson(url, headers) {
   const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
   return res.json();
+}
+
+async function fetchPackageDeps(owner, repo, headers) {
+  try {
+    const data = await fetchJson(
+      `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
+      headers,
+    );
+    const text = atob(data.content.replace(/\n/g, ''));
+    const pkg = JSON.parse(text);
+    return Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
+  } catch {
+    return [];
+  }
 }
 
 export async function detectExcludePatterns(token, owner, repo) {
@@ -176,9 +249,22 @@ export async function detectExcludePatterns(token, owner, repo) {
     core.warning(`Could not fetch root contents for ${owner}/${repo}: ${err.message}`);
   }
 
-  const templateKeys = resolveTemplateKeys(detectedLanguages, rootNames, allTemplates);
+  let packageDeps = [];
+  if (rootNames.has('package.json')) {
+    packageDeps = await fetchPackageDeps(owner, repo, headers);
+    if (packageDeps.length > 0) {
+      core.info(`Scanned package.json — ${packageDeps.length} deps`);
+    }
+  }
 
-  if (templateKeys.size === 0) {
+  const { keys: templateKeys, extraPatterns } = resolveStack(
+    detectedLanguages,
+    rootNames,
+    packageDeps,
+    allTemplates,
+  );
+
+  if (templateKeys.size === 0 && extraPatterns.size === 0) {
     core.info('No matching stack templates found — using fallback exclude patterns.');
     return FALLBACK_EXCLUDE_PATTERNS;
   }
@@ -192,6 +278,7 @@ export async function detectExcludePatterns(token, owner, repo) {
       for (const p of tplPatterns) patterns.add(p);
     }
   }
+  for (const p of extraPatterns) patterns.add(p);
 
   return [...patterns];
 }

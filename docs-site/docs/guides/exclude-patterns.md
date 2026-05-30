@@ -35,19 +35,23 @@ The final exclude list is the **union** of all three. `exclude_pattern_overrides
 
 ## How auto-detection works
 
-When the action runs it performs two lookups using the already-available `github_token`:
+When the action runs it performs up to three lookups using the already-available `github_token`:
 
 1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` to identify all languages present in the repository (the same data shown on the repo's language bar).
-2. **Repository root inspection** — checks for well-known config files (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
+2. **Repository root inspection** — checks for well-known config files (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
+3. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
 
-Each detected signal is mapped to one or more [github/gitignore](https://github.com/github/gitignore) templates. The action ships with all 300+ templates bundled in the Docker image (refreshed on every image build), so it covers any language the gitignore project supports.
+Each detected signal is mapped to one or more [github/gitignore](https://github.com/github/gitignore) templates, or to a set of known artifact paths for frameworks that have no upstream template (e.g. SvelteKit's `.svelte-kit/`, Nuxt's `.nuxt/` and `.output/`). The action ships with all 300+ templates bundled in the Docker image (refreshed on every image build).
 
 **Examples:**
 
-- A **JavaScript/TypeScript** repo → applies the `Node` template: `node_modules/**`, `.next/**`, `dist/**`, `coverage/**`, etc.
-- A **Python** repo → applies the `Python` template: `__pycache__/**`, `*.pyc`, `.venv/**`, `*.egg-info/**`, etc.
-- A **Java** repo with a `pom.xml` → applies the `Java` and `Maven` templates: `target/**`, `.gradle/**`, `*.class`, etc.
-- A **mixed JS + Python** repo → gets the union of both template sets.
+- A **plain Node** repo → `Node` template: `node_modules/**`, `dist/**`, `coverage/**`, etc.
+- A **Next.js** repo → `Node` + `Nextjs` templates: adds `.next/**` on top of the Node exclusions.
+- A **SvelteKit** repo → `Node` template + `.svelte-kit/**` (no upstream template exists for Svelte).
+- A **Angular** repo → `Node` + `Angular` templates: adds `.angular/**`.
+- A **Python** repo → `Python` template: `__pycache__/**`, `*.pyc`, `.venv/**`, `*.egg-info/**`, etc.
+- A **Java** repo with a `pom.xml` → `Java` + `Maven` templates: `target/**`, `.gradle/**`, `*.class`, etc.
+- A **mixed JS + Python** repo → gets the union of all matched template sets.
 
 If detection fails (e.g. the GitHub API is unreachable) the action falls back to a broad built-in list covering the most common languages.
 
@@ -153,7 +157,8 @@ The action logs the full exclude list on every run. Look for these lines in the 
 
 ```
 Detected languages: JavaScript, TypeScript
-Using gitignore templates: Node, Global/VisualStudioCode
+Scanned package.json — 42 deps
+Using gitignore templates: Node, Nextjs, Global/VisualStudioCode
 Additional exclude patterns (from input): data/**, tests/fixtures/**
 Exclude pattern overrides (re-included): README.md
 Exclude patterns applied (94):
