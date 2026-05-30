@@ -4,7 +4,7 @@
 
 Any change to the action's functionality — including new inputs, changed defaults, modified behaviors, or removed features — **must** be accompanied by:
 
-1. **Documentation updates** — Update all affected files under `docs-site/docs/` and the inputs/outputs tables in `README.md` to reflect the change accurately.
+1. **Documentation updates** — Update all affected files under `docs-site/docs/` **and** `README.md` to reflect the change accurately. Both must stay in sync — `README.md` is the first thing users see on GitHub and must not lag behind the docs site.
 2. **Example workflow updates** — Update any affected example workflows under `docs-site/docs/example-workflows/`, and add a new example if the change introduces a capability not covered by an existing one.
 3. **Workflow Wizard updates** — Update the Workflow Wizard (`docs-site/src/components/WorkflowWizard/`) so the generated YAML and UI stay consistent with the change. This includes the `DEFAULTS` object in `generateYaml.js`, any relevant step component under `steps/`, and the planning prompt at `.github/prompts/plan-workflowWizard.prompt.md`.
 

@@ -16,6 +16,10 @@ const ALWAYS_EXCLUDE = [
   // VCS / GrillMyCode internals
   '.git/**',
   '.gitignore',
+  '.gitattributes',
+  '.gitmodules',
+  '.mailmap',
+  '.git-blame-ignore-revs',
   '.assessment/**',
 
   // Lock files — always machine-generated, often enormous

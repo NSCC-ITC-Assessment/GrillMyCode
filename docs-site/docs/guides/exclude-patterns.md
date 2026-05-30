@@ -67,7 +67,7 @@ The following are excluded from every run regardless of detected stack:
 | Pattern | Reason |
 |---|---|
 | `.git/**` | Git internals |
-| `.gitignore` | VCS config, not student code |
+| `.gitignore`, `.gitattributes`, `.gitmodules`, `.mailmap`, `.git-blame-ignore-revs` | VCS config, not student code |
 | `.assessment/**` | GrillMyCode's own output files |
 | `**/*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Pipfile.lock`, `poetry.lock` | Lock files — machine-generated, often enormous |
 | `**/*.min.js`, `**/*.min.css` | Minified assets — unreadable by design |
