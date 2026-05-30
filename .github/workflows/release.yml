@@ -33,34 +33,49 @@ jobs:
           echo "major=$MAJOR" >> "$GITHUB_OUTPUT"
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
 
+      - name: Detect if new major version
+        id: detect
+        run: |
+          MAJOR=${{ steps.version.outputs.major }}
+          if [[ -d "docs-site/versioned_docs/version-${MAJOR}" ]]; then
+            echo "new_major=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "new_major=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: pnpm/action-setup@v6
+        if: steps.detect.outputs.new_major == 'true'
 
       - uses: actions/setup-node@v6
+        if: steps.detect.outputs.new_major == 'true'
         with:
           node-version: 24
           cache: pnpm
           cache-dependency-path: docs-site/pnpm-lock.yaml
 
       - name: Install docs dependencies
+        if: steps.detect.outputs.new_major == 'true'
         run: pnpm install --frozen-lockfile
         working-directory: docs-site
 
-      - name: Update or create major version snapshot
+      - name: Update existing major version snapshot
+        if: steps.detect.outputs.new_major == 'false'
         run: |
           MAJOR=${{ steps.version.outputs.major }}
-          if [[ -d "versioned_docs/version-${MAJOR}" ]]; then
-            echo "Updating existing v${MAJOR} snapshot"
-            # Preserve release notes accumulated so far before overwriting
-            cp "versioned_docs/version-${MAJOR}/release-notes.md" /tmp/release-notes.md 2>/dev/null || true
-            rm -rf "versioned_docs/version-${MAJOR}"
-            cp -r docs "versioned_docs/version-${MAJOR}"
-            MAJOR="${MAJOR}" node -e "(async()=>{const{default:s}=await import('./sidebars.js');require('fs').writeFileSync('versioned_sidebars/version-'+process.env.MAJOR+'-sidebars.json',JSON.stringify(s,null,2)+'\n');})()"
-            # Restore preserved release notes (new entry will be prepended below)
-            [[ -f /tmp/release-notes.md ]] && mv /tmp/release-notes.md "versioned_docs/version-${MAJOR}/release-notes.md"
-          else
-            echo "Creating new v${MAJOR} snapshot"
-            pnpm docusaurus docs:version "${MAJOR}"
-          fi
+          echo "Updating existing v${MAJOR} snapshot"
+          cp "versioned_docs/version-${MAJOR}/release-notes.md" /tmp/release-notes.md 2>/dev/null || true
+          rm -rf "versioned_docs/version-${MAJOR}"
+          cp -r docs "versioned_docs/version-${MAJOR}"
+          MAJOR="${MAJOR}" node -e "(async()=>{const{default:s}=await import('./sidebars.js');require('fs').writeFileSync('versioned_sidebars/version-'+process.env.MAJOR+'-sidebars.json',JSON.stringify(s,null,2)+'\n');})()"
+          [[ -f /tmp/release-notes.md ]] && mv /tmp/release-notes.md "versioned_docs/version-${MAJOR}/release-notes.md"
+        working-directory: docs-site
+
+      - name: Create new major version snapshot
+        if: steps.detect.outputs.new_major == 'true'
+        run: |
+          MAJOR=${{ steps.version.outputs.major }}
+          echo "Creating new v${MAJOR} snapshot"
+          pnpm docusaurus docs:version "${MAJOR}"
         working-directory: docs-site
 
       - name: Prepend release notes entry
