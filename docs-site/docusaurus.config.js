@@ -145,12 +145,6 @@ const config = {
         },
         items: [
           {
-            type: 'docSidebar',
-            sidebarId: 'tutorialSidebar',
-            position: 'left',
-            label: 'Docs',
-          },
-          {
             // Version-aware: links to the wizard in whatever docs version the
             // reader is currently browsing (v1, an older major, or next),
             // mirroring how the docs sidebar/version dropdown behave.
