@@ -54,7 +54,7 @@ function secretRef(name) {
   return `\${{ secrets.${name} }}`;
 }
 
-export function generateYaml(cfg) {
+export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   const lines = [];
 
   // ── name ───────────────────────────────────────────────────────────────────
@@ -112,7 +112,7 @@ export function generateYaml(cfg) {
   lines.push('        with:');
   lines.push('          fetch-depth: 0    # full history required for diff resolution');
   lines.push('');
-  lines.push('      - uses: NSCC-ITC-Assessment/GrillMyCode@v1');
+  lines.push(`      - uses: NSCC-ITC-Assessment/GrillMyCode@${actionRef}`);
   lines.push('        with:');
 
   // ── Authentication ─────────────────────────────────────────────────────────

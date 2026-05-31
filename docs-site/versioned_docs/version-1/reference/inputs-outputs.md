@@ -5,7 +5,7 @@ sidebar_position: 1
 # Inputs & Outputs
 
 :::tip
-The [Workflow Wizard](/workflow-wizard) lets you configure these inputs visually and generates the complete workflow YAML for you.
+The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs visually and generates the complete workflow YAML for you.
 :::
 
 ## Inputs
