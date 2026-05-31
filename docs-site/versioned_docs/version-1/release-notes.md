@@ -4,6 +4,22 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.6 — 2026-05-31
+
+## What's Changed
+
+### Features
+
+- update README template to include workflow URL for generating Brightspace quizzes
+
+### Documentation
+
+- update v1 snapshot
+
+### Refactoring
+
+- replace student questions workflow with generate Brightspace quizzes workflow and update README
+
 ## v1.0.5 — 2026-05-31
 
 ## What's Changed
