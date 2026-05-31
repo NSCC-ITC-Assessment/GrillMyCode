@@ -37,7 +37,6 @@ import { callAI } from './ai.js';
 import { formatReport } from './report.js';
 import { commitAssessmentFile } from './delivery/commit.js';
 import { postIssue } from './delivery/issue.js';
-import { postDiscussion } from './delivery/discussion.js';
 import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -339,18 +338,6 @@ async function run() {
     // ── Create GitHub Issue ──────────────────────────────────────────────────
     if (inputs.postIssue) {
       await postIssue({ octokit, ctx, report, branchName, headSha, studentLogin });
-    }
-
-    // ── Create GitHub Discussion ─────────────────────────────────────────────
-    if (inputs.postDiscussion) {
-      await postDiscussion({
-        octokit,
-        ctx,
-        report,
-        branchName,
-        headSha,
-        categoryName: inputs.discussionCategory,
-      });
     }
 
     // ── Write to instructor repository ──────────────────────────────────────

@@ -34,14 +34,6 @@ function buildChecklist(cfg, docsBase) {
     });
   }
 
-  if (cfg.postDiscussion) {
-    items.push({
-      text: `Ensure the Discussion category "${cfg.discussionCategory || 'GrillMyCode'}" exists in the repository's Discussion settings.`,
-      linkHref: `${docsBase}/example-workflows/post-to-discussions`,
-      linkLabel: 'Post to Discussions example',
-    });
-  }
-
   return items;
 }
 

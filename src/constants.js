@@ -234,16 +234,6 @@ export const STUDENT_RESOLUTION_SKIP_COMMITTERS = ['github-actions[bot]', 'githu
 export const ISSUES_PER_PAGE = 100;
 
 /**
- * Maximum number of discussion categories to fetch via GraphQL.
- */
-export const DISCUSSION_CATEGORIES_FETCH_LIMIT = 25;
-
-/**
- * Maximum number of recent discussions to fetch when searching for predecessors.
- */
-export const DISCUSSIONS_FETCH_LIMIT = 50;
-
-/**
  * Path to the comment-remover binary (rmcm) installed in the Docker image.
  */
 export const COMMENT_REMOVER_BIN = '/usr/local/bin/rmcm';

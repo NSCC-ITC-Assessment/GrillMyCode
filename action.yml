@@ -124,23 +124,6 @@ inputs:
     required: false
     default: "false"
 
-  post_discussion:
-    description: >
-      Create a GitHub Discussion in the repository containing the assessment
-      questions. If Discussions are not enabled on the repository, the action
-      enables them automatically.
-      Set to "true" to enable.
-    required: false
-    default: "false"
-
-  discussion_category:
-    description: >
-      The name of the Discussion category to post into.
-      The category must already exist in the repository's Discussions settings.
-      Example: "GrillMyCode"
-    required: false
-    default: "GrillMyCode"
-
   instructor_repo_token:
     description: >
       Personal Access Token (PAT) with repo scope and permission to create
@@ -271,8 +254,6 @@ runs:
     INPUT_OUTPUT_FILE: ${{ inputs.output_file }}
     INPUT_POST_PR_COMMENT: ${{ inputs.post_pr_comment }}
     INPUT_POST_ISSUE: ${{ inputs.post_issue }}
-    INPUT_POST_DISCUSSION: ${{ inputs.post_discussion }}
-    INPUT_DISCUSSION_CATEGORY: ${{ inputs.discussion_category }}
     INPUT_ASSIGNMENT_CONTEXT: ${{ inputs.assignment_context }}
     INPUT_ASSIGNMENT_CONTEXT_MAX_CHARS: ${{ inputs.assignment_context_max_chars }}
     INPUT_ADDITIONAL_CONTEXT: ${{ inputs.additional_context }}

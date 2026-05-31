@@ -122,13 +122,6 @@ jobs:
           # Requires issues: write permission.
           post_issue: "false"
 
-          # Create a GitHub Discussion with the assessment.
-          # Requires discussions: write (and administration: write if not yet enabled).
-          post_discussion: "false"
-
-          # Discussion category name (must already exist in repository settings).
-          discussion_category: "GrillMyCode"
-
           # ── Instructor repository ─────────────────────────────────────────
 
           # PAT with repo scope and permission to create repositories in the
