@@ -13,8 +13,6 @@ The action only requests the permissions it needs for the chosen delivery method
 | `models: read` | When using the `github-models` provider (the default) |
 | `pull-requests: write` | When `post_pr_comment: 'true'` |
 | `issues: write` | When `post_issue: 'true'` |
-| `discussions: write` | When `post_discussion: 'true'` |
-| `administration: write` | When `post_discussion: 'true'` and Discussions may not yet be enabled on the repo |
 
 ## Minimal permissions example (PR comment only)
 
@@ -42,7 +40,5 @@ permissions:
   contents: write
   pull-requests: write
   issues: write
-  discussions: write
-  administration: write  # only if Discussions may not be enabled yet
   models: read
 ```
