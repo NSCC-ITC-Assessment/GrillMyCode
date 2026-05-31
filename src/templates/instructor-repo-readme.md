@@ -5,6 +5,12 @@ This is a **private** repository created and managed by [GrillMyCode](https://gi
 > [!WARNING]
 > This repository contains **correct answers**. Keep it private and never share access with students.
 
+## Generate Brightspace Quizzes
+
+[![Generate Brightspace Quizzes]({{WORKFLOW_URL}}/badge.svg)]({{WORKFLOW_URL}})
+
+[▶ Run the Generate Brightspace Quizzes workflow]({{WORKFLOW_URL}}) to create or refresh `future_brightspace_quiz.txt` for every student in this repository.
+
 ## Repository Structure
 
 One folder is created per student, named after their GitHub login, and populated automatically each time a student pushes code.
@@ -30,13 +36,13 @@ This file is created or updated automatically each time GrillMyCode runs against
 
 ### `{studentLogin}/future_brightspace_quiz.txt`
 
-A Brightspace-compatible quiz export generated automatically from `questions.md` by the [Student Questions Added](.github/workflows/student-questions-added.yml) workflow. It is committed to the same student folder immediately after each `questions.md` update and can be used for import into Brightspace or reviewed directly.
+A Brightspace-compatible quiz export generated from `questions.md` by the [Generate Brightspace Quizzes](.github/workflows/generate-brightspace-quizzes.yml) workflow. Run the workflow manually to regenerate all quiz files at once. Each file can be imported into Brightspace or reviewed directly.
 
 ## Workflows
 
-### Student Questions Added (`.github/workflows/student-questions-added.yml`)
+### Generate Brightspace Quizzes (`.github/workflows/generate-brightspace-quizzes.yml`)
 
-Triggers on every push that touches a `*/questions.md` file. It parses the updated assessment file, extracts questions, answers, and code snippets (with syntax highlighting), and writes the result to `{studentLogin}/future_brightspace_quiz.txt` in the same folder.
+Run manually from the Actions tab to regenerate quizzes for every student in the repository at once. It scans for all `*/questions.md` files, extracts questions, answers, and code snippets (with syntax highlighting), and writes or overwrites `{studentLogin}/future_brightspace_quiz.txt` in each student folder. Re-running the workflow picks up any changes to question content.
 
 ## How This Repository Is Populated
 
@@ -44,7 +50,7 @@ Triggers on every push that touches a `*/questions.md` file. It parses the updat
 2. The GrillMyCode GitHub Action runs in that repository, analyses the changed files, and calls an AI model to generate comprehension questions.
 3. The action writes a student-facing assessment (without answers, unless configured so) into the student's own repository.
 4. The action also writes this instructor copy — with answers — to this repository under `{studentLogin}/questions.md`.
-5. The Student Questions Added workflow triggers and produces `future_brightspace_quiz.txt`.
+5. Run the Generate Brightspace Quizzes workflow manually from the Actions tab to produce `future_brightspace_quiz.txt` for all students.
 
 This repository is created automatically on the first assessment run and requires no manual setup beyond configuring the `instructor_repo_token` input on the GrillMyCode action.
 

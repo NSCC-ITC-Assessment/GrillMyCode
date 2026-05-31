@@ -28,7 +28,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STUDENT_QUESTIONS_WORKFLOW = readFileSync(
-  join(__dirname, '../workflows/student-questions-added.yml'),
+  join(__dirname, '../workflows/generate-brightspace-quizzes.yml'),
   'utf-8',
 );
 const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
@@ -36,7 +36,7 @@ const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
   'utf-8',
 );
 
-const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/student-questions-added.yml';
+const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/generate-brightspace-quizzes.yml';
 
 /**
  * Ensures the instructor repository exists, creating it (private) if not.
@@ -90,16 +90,18 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
     owner,
     repo: instructorRepoName,
     path: STUDENT_QUESTIONS_WORKFLOW_PATH,
-    message: 'chore: add student-questions-added workflow [skip ci]',
+    message: 'chore: add generate-brightspace-quizzes workflow [skip ci]',
     content: Buffer.from(STUDENT_QUESTIONS_WORKFLOW, 'utf-8').toString('base64'),
   });
 
   // Replace the auto_init placeholder README with a descriptive one.
   const assignmentName = instructorRepoName.replace(INSTRUCTOR_REPO_SUFFIX, '');
+  const workflowFilename = STUDENT_QUESTIONS_WORKFLOW_PATH.split('/').at(-1);
+  const workflowUrl = `https://github.com/${owner}/${instructorRepoName}/actions/workflows/${workflowFilename}`;
   const readmeContent = INSTRUCTOR_REPO_README_TEMPLATE.replace(
     /\{\{ASSIGNMENT_NAME\}\}/g,
     assignmentName,
-  );
+  ).replace(/\{\{WORKFLOW_URL\}\}/g, workflowUrl);
   let readmeSha;
   try {
     const { data } = await octokit.rest.repos.getContent({
@@ -175,7 +177,4 @@ export async function deliverToInstructorRepo({
   });
 
   core.info(`Instructor assessment written to ${owner}/${instructorRepoName}/${filePath}`);
-  // Note: [skip ci] is intentionally absent from this commit message.
-  // The student-questions-added workflow in the instructor repository is
-  // triggered by this push and must not be suppressed.
 }
