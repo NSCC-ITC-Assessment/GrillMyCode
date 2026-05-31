@@ -26,6 +26,7 @@ const OPENROUTER_MODELS = [
   { label: 'Minimax 2.7', value: 'minimax/minimax-m2.7' },
   { label: 'Step 3.5 Flash', value: 'stepfun/step-3.5-flash' },
   { label: 'Tencent Hy3 Preview', value: 'tencent/hy3-preview' },
+  { label: 'Xiaomi Mimo V2.5 Pro', value: 'xiaomi/mimo-v2.5-pro' }
 ];
 
 export default function StepAIProvider({ cfg, onChange }) {
