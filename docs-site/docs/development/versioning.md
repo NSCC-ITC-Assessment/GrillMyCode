@@ -186,22 +186,27 @@ The documentation site uses Docusaurus versioning to mirror the action's release
 
 | Docs URL | Content | Updated when |
 |---|---|---|
-| `/docs/` | Stable — latest snapshotted version | A new version is snapshotted at release time |
+| `/docs/` | Redirects to the current stable major (`/docs/vN`) | Automatically — follows the newest released major |
+| `/docs/vN/` | Stable — snapshot of major version `N` | That major is snapshotted at release time |
 | `/docs/next/` | Unreleased — live `docs/` on `main` | Every merge to `main` that touches `docs-site/` |
 
-The `Next (unreleased)` version shows an automatic banner warning readers they are viewing pre-release documentation.
+The `Next (unreleased)` version shows an automatic banner warning readers they are viewing pre-release documentation. Older majors (any `vN` that is no longer the latest) show a banner pointing readers to the current version.
+
+`versions.json` is the single source of truth for which majors exist. `docusaurus.config.js` derives every version's path (`/docs/vN`), its label (`vN`), the default version (`lastVersion`), and the unversioned-link redirects from that file — so cutting a new major requires **no config changes**. No version is ever pinned to the bare `/docs/` root, which would otherwise collide with the next major's root route and break the build.
+
+Because the latest major lives at `/docs/vN` (not the bare root), bare/unversioned URLs like `/docs` and `/docs/getting-started` are redirected to the current version (`/docs/vN/...`) by `@docusaurus/plugin-client-redirects`. These redirects exist only to keep external links and bookmarks working — internal links never rely on them: in-content links are written relative (so they resolve within their own version), and navbar/footer/homepage links are derived from the current version path in `docusaurus.config.js`. Because nothing internal points at an unversioned `/docs/*` path, `onBrokenLinks` stays at `throw` for full build-time link safety.
 
 ### Snapshotting docs at release time
 
-When you release a new version of the action, also snapshot the docs so that stable readers continue to see documentation that matches the version they are running:
+The release workflow snapshots the docs automatically when a **new major** is tagged (see the `snapshot-docs` job in `.github/workflows/release.yml`). To snapshot manually — for example, to preview the result locally before tagging — run:
 
 ```bash
-# Run from the docs-site/ directory, before tagging the release
+# Run from the docs-site/ directory. N is the MAJOR version only, e.g. 2
 cd docs-site
-pnpm docusaurus docs:version X.Y.Z
+pnpm docusaurus docs:version N
 ```
 
-This copies the current `docs/` into `versioned_docs/version-X.Y.Z/` and registers it as the new stable version. Commit the result alongside your other release-day changes before pushing the `v*` tag.
+This copies the current `docs/` into `versioned_docs/version-N/`, appends `N` to `versions.json`, and registers it as the new stable major. Patch and minor releases reuse the existing major snapshot rather than creating a new one.
 
 ---
 
