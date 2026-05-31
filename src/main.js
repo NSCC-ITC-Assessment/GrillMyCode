@@ -250,9 +250,18 @@ async function run() {
       inputs.numQuestions,
     );
 
+    // Extract the AI-generated context summary (only present when additionalContext was set).
+    const contextSummaryMatch = rawQuestions.match(
+      /<!--\s*CONTEXT_SUMMARY\s*-->\n?([\s\S]*?)\n?<!--\s*\/CONTEXT_SUMMARY\s*-->/,
+    );
+    const contextSummary = contextSummaryMatch ? contextSummaryMatch[1].trim() : '';
+    const cleanedQuestions = rawQuestions
+      .replace(/<!--\s*CONTEXT_SUMMARY\s*-->[\s\S]*?<!--\s*\/CONTEXT_SUMMARY\s*-->\n*/g, '')
+      .trim();
+
     // Always strip incorrect options for quiz; also strip the correct answer when
-    // include_answers is false. rawQuestions is the unmodified AI output.
-    const questions = stripAnswers(rawQuestions, { keepAnswers: inputs.includeAnswers });
+    // include_answers is false. cleanedQuestions retains answers for the instructor copy.
+    const questions = stripAnswers(cleanedQuestions, { keepAnswers: inputs.includeAnswers });
 
     // ── Write output ────────────────────────────────────────────────────────
     const report = formatReport({
@@ -265,6 +274,7 @@ async function run() {
       model: inputs.aiModel,
       branchName,
       assignmentContextFiles,
+      contextSummary,
     });
     const effectiveOutputFile = resolveOutputFile(inputs.outputFile, branchName);
     const outPath = path.resolve(
@@ -353,7 +363,7 @@ async function run() {
       const assignmentName = await resolveAssignmentName(ctx, octokit, studentLogin);
       const instructorRepoName = assignmentName + INSTRUCTOR_REPO_SUFFIX;
       const instructorReport = formatReport({
-        questions: rawQuestions,
+        questions: cleanedQuestions,
         files,
         baseSha,
         headSha,
@@ -362,6 +372,7 @@ async function run() {
         model: inputs.aiModel,
         branchName,
         assignmentContextFiles,
+        contextSummary,
         studentLogin,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
       });

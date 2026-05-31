@@ -28,6 +28,7 @@ export function formatReport({
   model,
   branchName,
   assignmentContextFiles,
+  contextSummary,
   studentLogin,
   sourceRepo,
   allChangedFiles,
@@ -49,6 +50,8 @@ export function formatReport({
       ? `> **Assignment Context:** ${assignmentContextFiles.map((f) => `\`${f}\``).join(', ')}\n`
       : '';
 
+  const instructorContextNote = contextSummary ? `> **Instructor Note:** ${contextSummary}\n` : '';
+
   const studentNote = studentLogin ? `\n> **Student:** \`${studentLogin}\`\n` : '';
   const sourceRepoNote = sourceRepo ? `> **Repository:** \`${sourceRepo}\`\n` : '';
 
@@ -62,6 +65,7 @@ export function formatReport({
     branchNote,
     `> **Code Files Assessed:** ${fileList}`,
     contextNote,
+    instructorContextNote,
     truncNote,
     '---',
     '',

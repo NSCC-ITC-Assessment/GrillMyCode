@@ -9,7 +9,7 @@ GrillMyCode exposes four outputs that can be consumed by subsequent steps in the
 | Output | Description |
 |---|---|
 | `output_file` | Path to the generated assessment Markdown file |
-| `questions` | The raw generated questions as a string |
+| `questions` | The generated questions as a string (internal AI markers stripped; does not include the instructor note) |
 | `code_before_strip` | Full code content of all assessed files before comment stripping |
 | `code_after_strip` | Full code content of all assessed files after comment stripping |
 
