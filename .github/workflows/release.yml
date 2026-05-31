@@ -222,3 +222,14 @@ jobs:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
           body_path: /tmp/release-body.txt
+
+      - name: Update floating version tags
+        run: |
+          MAJOR=${{ steps.version.outputs.major }}
+          MINOR=${{ steps.version.outputs.minor }}
+          SHA=$(git rev-list -n1 "${{ steps.version.outputs.tag }}")
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -f "${MAJOR}" "${SHA}"
+          git tag -f "${MINOR}" "${SHA}"
+          git push origin "${MAJOR}" "${MINOR}" --force
