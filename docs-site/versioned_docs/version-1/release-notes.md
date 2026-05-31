@@ -4,6 +4,25 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.3 — 2026-05-31
+
+## What's Changed
+
+### Bug Fixes
+
+- **prompt:** enforce mandatory question structure with filename headers and code snippets
+- **ci:** add update floating version tags step to release workflow
+
+### Documentation
+
+- **exclude-patterns:** update description of Docker image template management
+- **wizard:** add Xiaomi Mimo V2.5 Pro to OpenRouter model options
+- update v1 snapshot
+
+### Refactoring
+
+- **stack-detection:** streamline template loading and error handling
+
 ## v1.0 — 2026-05-31
 
 ## What's Changed
