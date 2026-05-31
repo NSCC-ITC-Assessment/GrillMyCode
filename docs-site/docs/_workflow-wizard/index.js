@@ -83,7 +83,7 @@ function getStepError(stepIndex, cfg) {
   return null;
 }
 
-export default function WorkflowWizard() {
+export default function WorkflowWizard({ actionRef = 'v1', docsBase = '/docs' }) {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [cfg, setCfg] = useState(INITIAL_CONFIG);
@@ -178,7 +178,7 @@ export default function WorkflowWizard() {
       <div className={styles.panel}>
         <div className={styles.stepTitle}>{title}</div>
         <div className={styles.stepSubtitle}>{subtitle}</div>
-        <Component cfg={cfg} onChange={handleChange} />
+        <Component cfg={cfg} onChange={handleChange} actionRef={actionRef} docsBase={docsBase} />
       </div>
 
       {/* Navigation */}

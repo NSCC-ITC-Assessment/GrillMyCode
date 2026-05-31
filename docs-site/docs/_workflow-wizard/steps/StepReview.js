@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import styles from '../styles.module.css';
 import { generateYaml } from '../generateYaml';
 
-function buildChecklist(cfg) {
+function buildChecklist(cfg, docsBase) {
   const items = [
     {
       text: 'Copy the workflow above to `.github/workflows/grill-my-code.yml` in the student (or template) repository.',
@@ -20,7 +20,7 @@ function buildChecklist(cfg) {
     const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
     items.push({
       text: `Add the secret "${secretName}" to the repository (or organisation) via Settings → Secrets and variables → Actions.`,
-      linkHref: '/docs/ai-providers',
+      linkHref: `${docsBase}/ai-providers`,
       linkLabel: 'AI Providers docs',
     });
   }
@@ -29,7 +29,7 @@ function buildChecklist(cfg) {
     const tokenSecret = cfg.instructorRepoTokenSecret || 'INSTRUCTOR_REPO_TOKEN';
     items.push({
       text: `Create a Personal Access Token with "repo" and "workflow" scopes and add it as an org-level secret named "${tokenSecret}".`,
-      linkHref: '/docs/guides/instructor-setup',
+      linkHref: `${docsBase}/guides/instructor-setup`,
       linkLabel: 'Instructor Setup guide',
     });
   }
@@ -37,7 +37,7 @@ function buildChecklist(cfg) {
   if (cfg.postDiscussion) {
     items.push({
       text: `Ensure the Discussion category "${cfg.discussionCategory || 'Assessments'}" exists in the repository's Discussion settings.`,
-      linkHref: '/docs/example-workflows/post-to-discussions',
+      linkHref: `${docsBase}/example-workflows/post-to-discussions`,
       linkLabel: 'Post to Discussions example',
     });
   }
@@ -45,8 +45,8 @@ function buildChecklist(cfg) {
   return items;
 }
 
-export default function StepReview({ cfg }) {
-  const yaml = generateYaml(cfg);
+export default function StepReview({ cfg, actionRef = 'v1', docsBase = '/docs' }) {
+  const yaml = generateYaml(cfg, { actionRef });
   const [copied, setCopied] = useState(false);
 
   function handleCopy() {
@@ -56,7 +56,7 @@ export default function StepReview({ cfg }) {
     });
   }
 
-  const checklist = buildChecklist(cfg);
+  const checklist = buildChecklist(cfg, docsBase);
 
   return (
     <div>
@@ -99,7 +99,7 @@ export default function StepReview({ cfg }) {
       <p style={{ marginTop: '1.25rem', fontSize: '0.875rem', color: 'var(--ifm-color-emphasis-700)' }}>
         The generated workflow is a starting point — you are free to make any changes or additions
         directly in the file, as long as it stays consistent with the{' '}
-        <a href="/docs/reference/inputs-outputs" target="_blank" rel="noopener noreferrer">
+        <a href={`${docsBase}/reference/inputs-outputs`} target="_blank" rel="noopener noreferrer">
           inputs &amp; outputs reference
         </a>
         .

@@ -1,0 +1,33 @@
+---
+title: Workflow Wizard
+sidebar_label: Workflow Wizard
+sidebar_position: 99
+hide_table_of_contents: true
+hide_title: true
+description: Generate a GitHub Actions workflow YAML for GrillMyCode by answering a few questions about your setup.
+---
+
+import { useActiveDocContext } from '@docusaurus/plugin-content-docs/client';
+import useDocusaurusContext from '@docusaurus/useDocusaurusContext';
+import WorkflowWizard from './_workflow-wizard';
+
+export function VersionedWizard() {
+  // This page is snapshotted into each versioned_docs/version-N, so it is
+  // rendered once per major version (and once for the unreleased "next" docs).
+  // Derive the action ref and docs base path from *this* page's own version so
+  // the generated YAML pins the right tag and help links stay in-version:
+  //   - released vN      → @vN,            links → /docs/vN/...
+  //   - next (current)   → @v<latestMajor>, links → /docs/next/...
+  const { siteConfig } = useDocusaurusContext();
+  const { activeVersion } = useActiveDocContext('default');
+  const versionName = activeVersion?.name ?? 'current';
+  const major =
+    versionName === 'current'
+      ? siteConfig.customFields.currentMajor
+      : versionName;
+  const actionRef = `v${major}`;
+  const docsBase = activeVersion?.path ?? '/docs';
+  return <WorkflowWizard actionRef={actionRef} docsBase={docsBase} />;
+}
+
+<VersionedWizard />

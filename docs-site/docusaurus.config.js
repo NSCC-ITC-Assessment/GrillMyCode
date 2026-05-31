@@ -30,7 +30,7 @@ const docsVersions = {
   current: { label: 'Next (unreleased)', path: 'next', banner: 'unreleased' },
 };
 for (const v of releasedVersions) {
-  docsVersions[v] = { label: `v${v}`, path: `v${v}` };
+  docsVersions[v] = { label: v === latestVersion ? `v${v} (current)` : `v${v}`, path: `v${v}` };
 }
 
 /** @type {import('@docusaurus/types').Config} */
@@ -56,12 +56,20 @@ const config = {
   deploymentBranch: 'gh-pages',
   trailingSlash: false,
 
+  clientModules: [
+    path.join(docsSiteDir, 'src/clientModules/hideCopyButtonOnWizard.js'),
+  ],
+
   onBrokenLinks: 'throw',
 
   // Exposes the current version's docs path (e.g. /docs/v1) to React pages so
   // they can link to "the current docs" without hardcoding a version.
   customFields: {
     latestDocsPath: latestVersionPath,
+    // Major of the latest released version (e.g. "1"). The Workflow Wizard's
+    // "next" (unreleased) copy uses this to pin the action to the current
+    // stable major; released copies derive their own major from their version.
+    currentMajor: latestVersion,
   },
 
   // Even if you don't use internationalization, you can use this field to set
@@ -96,6 +104,14 @@ const config = {
     [
       '@docusaurus/plugin-client-redirects',
       {
+        // Preserve the wizard's former top-level URL (/workflow-wizard), which
+        // is now a versioned doc page. Points at the current released major.
+        redirects: [
+          {
+            from: '/workflow-wizard',
+            to: `${latestVersionPath}/workflow-wizard`,
+          },
+        ],
         // Redirect bare /docs and every unversioned /docs/* path to the current
         // released version. Target is derived from latestVersion, so it follows
         // the latest major automatically when a new version is cut.
@@ -135,7 +151,11 @@ const config = {
             label: 'Docs',
           },
           {
-            to: '/workflow-wizard',
+            // Version-aware: links to the wizard in whatever docs version the
+            // reader is currently browsing (v1, an older major, or next),
+            // mirroring how the docs sidebar/version dropdown behave.
+            type: 'doc',
+            docId: 'workflow-wizard',
             position: 'left',
             label: 'Workflow Wizard',
           },

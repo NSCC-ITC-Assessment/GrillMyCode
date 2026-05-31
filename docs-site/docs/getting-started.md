@@ -9,7 +9,7 @@ sidebar_position: 3
 GrillMyCode is a GitHub Action — there is nothing to install. Add a workflow file to the student or assessment repository to get started.
 
 :::tip
-Not sure which inputs to use? The [Workflow Wizard](/workflow-wizard) walks you through each option and generates the YAML for you.
+Not sure which inputs to use? The [Workflow Wizard](./workflow-wizard.mdx) walks you through each option and generates the YAML for you.
 :::
 
 ## Minimal workflow
@@ -67,7 +67,7 @@ The default provider is **GitHub Models** — no setup required. To use OpenRout
 
 ## Next steps
 
-- Generate a custom workflow with the [Workflow Wizard](/workflow-wizard)
+- Generate a custom workflow with the [Workflow Wizard](./workflow-wizard.mdx)
 - Review all available [inputs and outputs](reference/inputs-outputs)
 - Set up [GitHub Classroom](./guides/github-classroom.md) integration
 - Browse [example workflows](./example-workflows/pull-request.md) for ready-to-use configurations
