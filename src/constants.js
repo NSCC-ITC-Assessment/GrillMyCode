@@ -165,6 +165,47 @@ export const INSTRUCTOR_REPO_INIT_RETRIES = 10;
 export const INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS = 1000;
 
 /**
+ * Number of attempts (initial + retries) when writing an assessment file to the
+ * instructor repository via the Contents API.
+ *
+ * Many student repositories commit to the same branch of the shared instructor
+ * repository concurrently. GitHub returns a 409 Conflict when two commits race
+ * on the same ref — even for different files — so each write is retried after
+ * re-fetching the file's current blob SHA. Five attempts comfortably absorbs a
+ * deadline-time pile-up for typical class sizes.
+ */
+export const INSTRUCTOR_WRITE_MAX_ATTEMPTS = 5;
+
+/**
+ * Base delay in milliseconds for the instructor-repository write backoff.
+ * Each retry waits a random value in [0, min(maxDelay, base * 2^attempt)]
+ * (full-jitter), matching the AI client's strategy.
+ */
+export const INSTRUCTOR_WRITE_BASE_DELAY_MS = 500;
+
+/**
+ * Maximum delay cap in milliseconds for the instructor-repository write backoff.
+ */
+export const INSTRUCTOR_WRITE_MAX_DELAY_MS = 8_000;
+
+/**
+ * Delay in milliseconds to wait before retrying a rate-limited instructor write
+ * when the response carries no usable Retry-After / X-RateLimit-Reset header.
+ * GitHub's guidance for secondary rate limits with no Retry-After is to wait at
+ * least one minute before retrying.
+ */
+export const INSTRUCTOR_RATE_LIMIT_FALLBACK_MS = 60_000;
+
+/**
+ * Upper bound in milliseconds on any single rate-limit wait. A primary
+ * rate-limit reset can be many minutes away; rather than stall the Action that
+ * long we cap the wait, retry, and let the attempt budget run out if the limit
+ * has not cleared — the delivery then fails non-fatally and self-heals on the
+ * student's next push.
+ */
+export const INSTRUCTOR_RATE_LIMIT_MAX_WAIT_MS = 60_000;
+
+/**
  * AI nucleus-sampling probability mass cutoff.
  * Keeps the model focused while still allowing varied phrasing.
  */
