@@ -36,7 +36,7 @@ export function buildPrompt({
   codeContent,
   files,
   numQuestions,
-  context: extraContext,
+  context: additionalContext,
   assignmentContext,
   truncated,
 }) {
@@ -44,8 +44,12 @@ export function buildPrompt({
     ? `\n\n---\n\nASSIGNMENT CONTEXT — HIGH PRIORITY\nThe following files describe the assignment requirements. They take precedence over the general guidelines above. Use them to focus your questions on the specific learning objectives and requirements of this assignment. Instructor instructions below take precedence over this section if there is any conflict.\n\n${assignmentContext}`
     : '';
 
-  const contextSection = extraContext
-    ? `\n\n---\n\nINSTRUCTOR INSTRUCTIONS — HIGHEST PRIORITY\nThe following instructions are specific to this assignment and override all other guidance above, including the assignment context. Follow them exactly.\n\n${extraContext}`
+  const contextSection = additionalContext
+    ? `\n\n---\n\nINSTRUCTOR INSTRUCTIONS — HIGHEST PRIORITY\nThe following instructions are specific to this assignment and override all other guidance above, including the assignment context. Follow them exactly.\n\n${additionalContext}`
+    : '';
+
+  const contextSummaryInstruction = additionalContext
+    ? `\n\nCONTEXT SUMMARY — APPEND AFTER FINAL QUESTION:\nAfter writing question ${numQuestions} in full (including its answer block and --- separator), append a single sentence completing the following stem based on the questions you just generated and the instructor instructions: "These questions are focused towards". The completed sentence must be 30 words or fewer in total. This is the only exception to the "emit no further content" rule above. Wrap it in these exact markers, each on its own line:\n<!-- CONTEXT_SUMMARY -->\nThese questions are focused towards [your completion here].\n<!-- /CONTEXT_SUMMARY -->\nDo not place these markers anywhere else in your response.`
     : '';
 
   const system = `
@@ -203,7 +207,7 @@ Do NOT generate more than ${numQuestions} questions. After writing question ${nu
 SHORT-ANSWER TRACKER:
 Track your count of short-answer questions as you write. A short-answer question is one whose correct answer is ${SHORT_ANSWER_MAX_CHARS} characters or fewer (e.g. \`42\`, \`null\`, \`True\`, a single keyword, or a short identifier). You MUST have exactly floor(${numQuestions} / 3) short-answer questions — no more, no fewer. After writing each question, pause and verify: if your short-answer count is less than floor(N/3) at question N, the next question should be short-answer; if it is already met, the next question must NOT be short-answer. Stop and revise any question that breaks this ratio.
 
-Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, summaries, or closing remarks.${assignmentContextSection}${contextSection}`;
+Respond only with the generated Markdown question content (questions and their answers). Do not include explanations, introductions, summaries, or closing remarks.${assignmentContextSection}${contextSection}${contextSummaryInstruction}`;
 
   const truncatedNote = truncated
     ? '\n> ⚠️ The code below has been truncated — form questions based on the visible portion.\n'
