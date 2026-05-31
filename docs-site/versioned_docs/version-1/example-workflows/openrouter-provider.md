@@ -11,7 +11,7 @@ Store the API key as a secret in **Settings → Secrets and variables → Action
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 
 on:
   pull_request:

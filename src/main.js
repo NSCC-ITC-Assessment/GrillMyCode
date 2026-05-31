@@ -308,7 +308,7 @@ async function run() {
         issue_number: prNumber,
         per_page: ISSUES_PER_PAGE,
       });
-      const predecessor = existingComments.data.find((c) => c.body?.startsWith('## Grill My Code'));
+      const predecessor = existingComments.data.find((c) => c.body?.startsWith('## GrillMyCode'));
 
       if (predecessor) {
         await octokit.rest.issues.updateComment({

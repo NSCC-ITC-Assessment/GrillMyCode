@@ -25,7 +25,7 @@
 ## A sample workflow
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 on:
   pull_request:
     types: [opened, synchronize]

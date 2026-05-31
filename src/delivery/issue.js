@@ -11,11 +11,11 @@ import { GIT_SHA_SHORT_LENGTH, ISSUES_PER_PAGE } from '../constants.js';
 export async function postIssue({ octokit, ctx, report, branchName, headSha, studentLogin }) {
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const branchPart = branchName ? ` (${branchName})` : '';
-  const title = `Grill My Code${branchPart} — ${shortHead}`;
+  const title = `GrillMyCode Questions${branchPart}`;
   const { owner, repo } = ctx.repo;
 
   // ── Find any existing open assessment issues for this branch ──────────────
-  const searchStr = branchName ? `Grill My Code (${branchName})` : 'Grill My Code';
+  const searchStr = branchName ? `GrillMyCode Questions (${branchName})` : 'GrillMyCode';
 
   const existing = await octokit.rest.issues.listForRepo({
     owner,
@@ -44,7 +44,7 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
       owner,
       repo,
       issue_number: updated.number,
-      body: `> [!NOTE]\n> The assessment questions in this issue were regenerated at commit \`${shortHead}\` and the issue body has been updated. Any previous questions have been replaced.`,
+      body: `> [!NOTE]\n> The assessment questions in this issue were regenerated at commit \`${shortHead}\` and the questions have been updated. Any previous questions have been replaced.`,
     });
 
     for (const extra of extras) {

@@ -9,7 +9,7 @@ A fully annotated workflow showing every available input. Inputs that don't appl
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository and remove or adjust inputs as needed.
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 
 on:
   pull_request:

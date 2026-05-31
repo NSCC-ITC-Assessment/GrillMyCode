@@ -56,7 +56,7 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   const lines = [];
 
   // ── name ───────────────────────────────────────────────────────────────────
-  lines.push('name: Grill My Code');
+  lines.push('name: GrillMyCode');
   lines.push('');
 
   // ── on ────────────────────────────────────────────────────────────────────

@@ -32,7 +32,7 @@ In short:
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 
 on:
   pull_request:

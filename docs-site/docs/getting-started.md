@@ -15,7 +15,7 @@ Not sure which inputs to use? The [Workflow Wizard](./workflow-wizard.mdx) walks
 ## Minimal workflow
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 on:
   pull_request:
     types: [opened, synchronize]

@@ -1,5 +1,5 @@
 {
-  "name": "Grill My Code",
+  "name": "GrillMyCode",
   "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
