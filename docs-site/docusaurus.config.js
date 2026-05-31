@@ -154,7 +154,10 @@ const config = {
             label: 'Workflow Wizard',
           },
           {
-            to: `${latestVersionPath}/faq`,
+            // Version-aware (like Workflow Wizard above): links to the FAQ in
+            // whatever docs version the reader is currently browsing.
+            type: 'doc',
+            docId: 'faq',
             position: 'left',
             label: 'FAQ',
           },
