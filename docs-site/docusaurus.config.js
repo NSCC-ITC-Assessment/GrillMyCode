@@ -160,6 +160,11 @@ const config = {
             label: 'Workflow Wizard',
           },
           {
+            to: `${latestVersionPath}/faq`,
+            position: 'left',
+            label: 'FAQ',
+          },
+          {
             type: 'docsVersionDropdown',
             position: 'right',
             dropdownActiveClassDisabled: true,
