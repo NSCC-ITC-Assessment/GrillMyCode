@@ -47,10 +47,6 @@ export default function StepTrigger({ cfg, onChange }) {
   return (
     <div>
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>What triggers the workflow?</label>
-        <span className={styles.hint}>
-          Choose the GitHub event that should start the code assessment.
-        </span>
         <div className={styles.radioGroup}>
           {TRIGGERS.map((t) => (
             <label key={t.value} className={styles.radioLabel}>

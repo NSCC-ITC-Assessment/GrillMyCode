@@ -31,7 +31,7 @@ export default function StepInstructorRepo({ cfg, onChange }) {
               Instructor repo token secret name
             </label>
             <span className={styles.hint}>
-              The name of the GitHub Actions secret holding your instructor PAT. Add it as an
+              The name of the org-level GitHub Actions secret holding your instructor PAT. Add it as an
               org-level secret so all student repos inherit it automatically. See the{' '}
               <a href="/docs/guides/instructor-setup" target="_blank" rel="noopener noreferrer">
                 Instructor Setup guide

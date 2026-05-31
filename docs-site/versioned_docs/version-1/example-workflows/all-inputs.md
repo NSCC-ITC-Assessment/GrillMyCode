@@ -44,7 +44,7 @@ jobs:
 
           # Model identifier for the chosen provider.
           # GitHub Models: gpt-4.1
-          # OpenRouter:    provider/model-name format (e.g. anthropic/claude-3-5-sonnet)
+          # OpenRouter:    provider/model-name format (e.g. deepseek/deepseek-v4-flash)
           ai_model: "gpt-4.1"
 
           # Total number of attempts (initial + retries) when calling the AI provider.
@@ -88,7 +88,7 @@ jobs:
           # coding style guides. Leave empty (default) to disable.
           # Supported file types: plain text / source files (UTF-8), PDF (.pdf,
           # text layer only), and Microsoft Word (.doc/.docx, text content only).
-          # assignment_context: "README.md, assignment.pdf, rubric.docx"
+          # assignment_context: "README.md, assignment.pdf, marking/rubric.docx"
 
           # Maximum total characters read from all assignment_context files
           # combined. Increase if your assignment brief is large; decrease to

@@ -12,7 +12,7 @@ const PROVIDERS = [
     value: 'openrouter',
     label: 'OpenRouter',
     description:
-      'Routes to any model via OpenRouter (e.g. anthropic/claude-3-5-sonnet). Requires an OPENROUTER_KEY secret.',
+      'Routes to any available model via OpenRouter. Requires an OpenRouter account and an OpenRouter API key.',
   },
 ];
 
@@ -44,8 +44,8 @@ export default function StepAIProvider({ cfg, onChange }) {
       <div className={styles.fieldGroup}>
         <label className={styles.label}>AI provider</label>
         <span className={styles.hint}>
-          Choose which AI service generates the comprehension questions. GitHub Models is the easiest
-          to set up — it uses the built-in token and requires no external accounts.
+          GitHub Models is the easiest to set up — it uses the built-in token and requires no external accounts.
+          Openrouter provides more powerful model options but requires an account and may incur a small cost.
         </span>
         <div className={styles.radioGroup}>
           {PROVIDERS.map((p) => (
@@ -128,7 +128,7 @@ export default function StepAIProvider({ cfg, onChange }) {
                     style={{ flex: 2, borderColor: (cfg.aiModel && cfg.aiModel.trim() && !/^[^/]+\/[^/]+$/.test(cfg.aiModel.trim())) || (!cfg.aiModel || !cfg.aiModel.trim()) ? 'var(--ifm-color-danger)' : undefined }}
                     value={cfg.aiModel}
                     onChange={(e) => onChange({ aiModel: e.target.value })}
-                    placeholder="e.g. anthropic/claude-3-5-sonnet"
+                    placeholder="e.g. deepseek/deepseek-v4-flash"
                   />
                   <a
                     href="https://openrouter.ai/models"
@@ -211,7 +211,7 @@ export default function StepAIProvider({ cfg, onChange }) {
           <div className={styles.fieldGroup}>
             <label className={styles.label}>API key secret name</label>
             <span className={styles.hint}>
-              The name of the GitHub Actions secret that holds your API key. Enter just the secret
+              The name of the org-level GitHub Actions secret that holds your API key. Enter just the secret
               name (e.g.{' '}
               <code>
                 {cfg.aiProvider === 'openrouter' ? 'OPENROUTER_KEY' : 'OPENROUTER_KEY'}

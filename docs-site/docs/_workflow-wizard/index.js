@@ -13,9 +13,9 @@ import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
 
 const STEPS = [
-  { label: 'Trigger',    title: 'When should the assessment run?',     subtitle: 'Choose the GitHub event that starts the workflow.',                                              Component: StepTrigger },
-  { label: 'AI',         title: 'Which AI provider?',                   subtitle: 'Select the model that generates the comprehension questions.',                              Component: StepAIProvider },
-  { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions are generated and what context the AI receives.',             Component: StepQuestions },
+  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
+  { label: 'AI',         title: 'Which AI provider and model should GrillMyCode use?',                   subtitle: 'Select the model that will generate the comprehension questions.',                              Component: StepAIProvider },
+  { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions GrillMyCode should generate and what context the chosen AI receives.',             Component: StepQuestions },
   { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Choose one or more destinations for the generated questions.',                             Component: StepDelivery },
   { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository.',          Component: StepInstructorRepo },
   { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff sent to the AI.',                    Component: StepFiles },
@@ -68,7 +68,7 @@ function getStepError(stepIndex, cfg) {
         return 'Please enter a model ID for OpenRouter before continuing.';
       }
       if (!/^[^/]+\/[^/]+$/.test(cfg.aiModel.trim())) {
-        return 'Model ID must be in provider/model format (e.g. anthropic/claude-3-5-sonnet).';
+        return 'Model ID must be in provider/model format (e.g. deepseek/deepseek-v4-flash).';
       }
     }
     if (cfg.aiProvider === 'github-models' && (!cfg.aiModel || !cfg.aiModel.trim())) {

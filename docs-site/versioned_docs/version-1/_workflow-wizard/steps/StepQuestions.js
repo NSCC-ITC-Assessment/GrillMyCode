@@ -7,7 +7,7 @@ export default function StepQuestions({ cfg, onChange }) {
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Number of questions</label>
         <span className={styles.hint}>
-          How many comprehension questions the AI should generate per assessment. Minimum 1, maximum
+          How many comprehension questions GrillMyCode should generate per run. Minimum 1, maximum
           50.
         </span>
         <input
@@ -34,8 +34,8 @@ export default function StepQuestions({ cfg, onChange }) {
             <div className={styles.radioDescription}>
               When enabled, answers are shown to the student immediately after each
               question (labelled "Answer:"). In almost all cases you should leave
-              this <strong>off</strong> — the entire point of the assessment is for
-              the student to determine the answers themselves. The instructor
+              this <strong>unchecked</strong> — the entire point of the assessment is for
+              the student to research and determine the answers themselves. The instructor
               repository delivery always includes answers regardless of this setting.
             </div>
           </span>
@@ -57,7 +57,7 @@ export default function StepQuestions({ cfg, onChange }) {
           className={styles.input}
           value={cfg.assignmentContext}
           onChange={(e) => onChange({ assignmentContext: e.target.value })}
-          placeholder="README.md, assignment.pdf, rubric.docx"
+          placeholder="README.md, assignment.pdf, marking/rubric.docx"
         />
       </div>
 

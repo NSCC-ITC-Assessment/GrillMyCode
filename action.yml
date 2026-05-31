@@ -30,7 +30,7 @@ inputs:
     description: >
       Model identifier for the chosen provider.
       GitHub Models : gpt-4.1
-      OpenRouter    : provider/model-name format (e.g. anthropic/claude-3-5-sonnet)
+      OpenRouter    : provider/model-name format (e.g. deepseek/deepseek-v4-flash)
     required: false
     default: "gpt-4.1"
 
@@ -72,7 +72,7 @@ inputs:
       When true, each question is immediately followed by its answer, labelled
       "Answer:", in the student-facing report. This means the student sees the
       answers — defeating the purpose of the assessment, which is for the
-      student to determine the answers themselves. Leave this false in almost
+      student to research and determine the answers themselves. Leave this false in almost
       all cases. The instructor repository (when instructor_repo_token is
       configured) always includes answers regardless of this setting.
     required: false
