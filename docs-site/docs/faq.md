@@ -64,7 +64,7 @@ The Wizard covers every major option in nine steps:
 1. **Trigger** — when the assessment runs (push, pull request, manual dispatch, or any combination)
 2. **AI provider** — GitHub Models or OpenRouter, plus the model to use
 3. **Questions** — number of questions, assignment context, and custom instructions
-4. **Delivery** — PR comment, GitHub Issue, GitHub Discussion
+4. **Delivery** — PR comment, GitHub Issue
 5. **Instructor repository** — optional private Q+A copy for the instructor
 6. **Files** — which student files are included or excluded from the diff
 7. **File options** — comment stripping, commit inclusion rules, committer skip list
@@ -112,7 +112,7 @@ Questions are written to a Markdown file committed back to the student repositor
 
 ### Can the questions also be posted as a PR comment or GitHub Issue?
 
-Yes. Use the `post_pr_comment`, `post_issue`, and `post_discussion` inputs to enable each delivery method. They are all opt-in and can be combined. The [Workflow Wizard](workflow-wizard.mdx) has a dedicated Delivery step that configures all three options for you.
+Yes. Use the `post_pr_comment` and `post_issue` inputs to enable each delivery method. They are both opt-in and can be combined. The [Workflow Wizard](workflow-wizard.mdx) has a dedicated Delivery step that configures these options for you.
 
 ### Can students see the answers?
 

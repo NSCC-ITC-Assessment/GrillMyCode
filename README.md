@@ -7,7 +7,7 @@ A GitHub Action that analyses code changes and uses AI to generate targeted comp
 1. Detects the commit range from the triggering event (push, pull request, etc.)
 2. Collects the git diff of changed files, applying include/exclude filters
 3. Sends the diff to an AI provider to generate comprehension questions
-4. Writes the assessment to a Markdown file, and optionally posts it as a PR comment, GitHub Issue, or GitHub Discussion
+4. Writes the assessment to a Markdown file, and optionally posts it as a PR comment or GitHub Issue
 
 See [architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/architecture) for a detailed breakdown of how the action is structured and executed.
 
@@ -36,8 +36,6 @@ See [architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/develo
 | `output_file`                  | No       | `grill-my-code.md`                          | Path for the output Markdown file                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `post_pr_comment`              | No       | `false`                                     | Post assessment as a PR comment                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
 | `post_issue`                   | No       | `false`                                     | Create a GitHub Issue with the assessment. The issue is automatically assigned to the student who authored the head commit.                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `post_discussion`              | No       | `false`                                     | Create a GitHub Discussion with the assessment. If Discussions are not enabled on the repository, the action enables them automatically.                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `discussion_category`          | No       | `GrillMyCode`                               | Discussion category name                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
 | `instructor_repo_token`        | No       |                                             | PAT with `repo` and `workflow` scopes and permission to create repositories in the same organisation. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode-instructor` in the same organisation. The repository is created automatically on first run. The assignment name is resolved from the student repo's `template_repository` (GitHub Classroom), falling back to the source repo name. Leave empty to disable instructor repository delivery. |
 | `additional_context`           | No       |                                             | Instructor-specific instructions for this assignment. Injected at the end of the system prompt and takes precedence over any conflicting default behaviour. Supports multi-line, detailed instructions.                                                                                                                                                                                                                                                                                                                                                      |
 | `assignment_context`           | No       |                                             | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `additional_context`. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"README.md, docs/brief.pdf, rubric.docx"`.                                                                                                                                                     |
@@ -140,30 +138,6 @@ jobs:
           post_pr_comment: 'false'
 ```
 
-### Post to GitHub Discussions
-
-Creates a Discussion instead of (or as well as) a PR comment. If Discussions are not yet enabled on the repository, the action enables them automatically. The named category must already exist.
-
-```yaml
-jobs:
-  generate-questions:
-    runs-on: ubuntu-latest
-    permissions:
-      contents: read
-      discussions: write
-      administration: write # required only if Discussions may not yet be enabled
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0
-
-      - uses: NSCC-ITC-Assessment/GrillMyCode@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          post_discussion: 'true'
-          discussion_category: 'GrillMyCode'
-```
-
 ### Using OpenRouter
 
 ```yaml
@@ -181,15 +155,13 @@ jobs:
 
 ## Permissions
 
-| Permission              | When required                                                                     |
-| ----------------------- | --------------------------------------------------------------------------------- |
-| `contents: read`        | Always — needed to check out the repo and read the git history                    |
-| `contents: write`       | When writing the output file back to the repository                               |
-| `models: read`          | When using the `github-models` provider (the default)                             |
-| `pull-requests: write`  | When `post_pr_comment: 'true'`                                                    |
-| `issues: write`         | When `post_issue: 'true'`                                                         |
-| `discussions: write`    | When `post_discussion: 'true'`                                                    |
-| `administration: write` | When `post_discussion: 'true'` and Discussions may not yet be enabled on the repo |
+| Permission             | When required                                                  |
+| ---------------------- | -------------------------------------------------------------- |
+| `contents: read`       | Always — needed to check out the repo and read the git history |
+| `contents: write`      | When writing the output file back to the repository            |
+| `models: read`         | When using the `github-models` provider (the default)          |
+| `pull-requests: write` | When `post_pr_comment: 'true'`                                 |
+| `issues: write`        | When `post_issue: 'true'`                                      |
 
 ---
 

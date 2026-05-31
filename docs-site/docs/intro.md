@@ -13,7 +13,7 @@ slug: /
 2. Collects the git diff of changed files, applying include/exclude filters
 3. Strips inline and block comments from the code before sending it to the AI
 4. Sends the code to an AI provider to generate comprehension questions
-5. Writes the assessment to a Markdown file, and optionally posts it as a PR comment, GitHub Issue, or GitHub Discussion
+5. Writes the assessment to a Markdown file, and optionally posts it as a PR comment or GitHub Issue
 
 ## Quick start
 
@@ -49,7 +49,6 @@ No secrets need to be created — the default provider (GitHub Models) authentic
 - **Comprehension questions** written to a Markdown file committed back to the repository under `.assessment/`
 - **PR comment** (default on) with the questions posted inline on the pull request
 - **GitHub Issue** (optional) — one per branch, updated in place on re-runs
-- **GitHub Discussion** (optional) — forum-style record of each assessment
 
 ## Designed for GitHub Classroom
 

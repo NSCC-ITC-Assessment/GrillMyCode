@@ -97,10 +97,10 @@ formatReport()          resolveOutputFile()
         sets action outputs
         (output_file, questions, code_before_strip, code_after_strip)
                │
-     ┌─────────┼─────────┐
-     ▼         ▼         ▼
-postPrComment  postIssue  postDiscussion
-  (REST)       (REST)      (GraphQL)
+     ┌─────────┴─────────┐
+     ▼                   ▼
+postPrComment         postIssue
+  (REST)               (REST)
 ```
 
 ---
@@ -152,21 +152,13 @@ All providers use the same request body shape (`model`, `messages`, `temperature
 
 Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
 
-### `postIssue()` / `postDiscussion()`
+### `postIssue()`
 
-**`postIssue`** uses an update-first strategy:
+Uses an update-first strategy:
 
 1. List open assessment issues for the same branch
 2. If one exists, update its title and body in-place (preserving issue number, URL, and comment history). Extra duplicates are deleted.
 3. If none exists, create a fresh issue.
-
-**`postDiscussion`** follows a supersession pattern:
-
-1. List open assessment discussions for the same branch
-2. Delete each superseded discussion
-3. Create a fresh discussion with the latest report
-
-`postDiscussion` uses the **GraphQL API** (not REST) because GitHub's REST API does not support creating Discussions.
 
 ---
 

@@ -34,8 +34,6 @@ const DEFAULTS = {
   outputFile: 'grill-my-code.md',
   postPrComment: false,
   postIssue: false,
-  postDiscussion: false,
-  discussionCategory: 'GrillMyCode',
   instructorRepoEnabled: false,
   baseSha: '',
   headSha: '',
@@ -103,10 +101,6 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   if (cfg.postIssue) {
     lines.push('      issues: write         # required to create issues');
   }
-  if (cfg.postDiscussion) {
-    lines.push('      discussions: write    # required to create discussions');
-  }
-
   lines.push('    steps:');
   lines.push('      - uses: actions/checkout@v6');
   lines.push('        with:');
@@ -182,12 +176,6 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   }
   if (differ(cfg, 'postIssue')) {
     lines.push(`          post_issue: ${yamlStr(cfg.postIssue)}`);
-  }
-  if (differ(cfg, 'postDiscussion')) {
-    lines.push(`          post_discussion: ${yamlStr(cfg.postDiscussion)}`);
-  }
-  if (cfg.postDiscussion && differ(cfg, 'discussionCategory')) {
-    lines.push(`          discussion_category: ${yamlStr(cfg.discussionCategory)}`);
   }
   if (cfg.instructorRepoEnabled) {
     const tokenSecret = cfg.instructorRepoTokenSecret || 'INSTRUCTOR_REPO_TOKEN';
