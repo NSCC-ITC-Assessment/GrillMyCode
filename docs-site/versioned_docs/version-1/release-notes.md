@@ -4,6 +4,18 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.7 — 2026-05-31
+
+## What's Changed
+
+### Features
+
+- implement retry logic for writing assessment files to instructor repository for concurrency purposes
+
+### Documentation
+
+- update v1 snapshot
+
 ## v1.0.6 — 2026-05-31
 
 ## What's Changed
