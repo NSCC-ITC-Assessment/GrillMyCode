@@ -5,8 +5,33 @@
 // See: https://docusaurus.io/docs/api/docusaurus-config
 
 import { themes as prismThemes } from 'prism-react-renderer';
+import fs from 'node:fs';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
+
+// ── Versioning (auto-derived from versions.json) ─────────────────────────────
+// versions.json is the single source of truth (newest-first, e.g. ["2","1"]).
+// Each released major vN is served at /docs/vN; the unreleased `current` docs
+// live at /docs/next. The newest released version is the default (`lastVersion`)
+// and unversioned /docs/* links redirect to it (see plugin-client-redirects).
+// Cutting a new major (`docusaurus docs:version N`) only updates versions.json —
+// this config and the redirects adapt automatically, and no version is ever
+// pinned to the bare /docs root (which collides with the next major on release).
+const docsSiteDir = path.dirname(fileURLToPath(import.meta.url));
+const releasedVersions = JSON.parse(
+  fs.readFileSync(path.join(docsSiteDir, 'versions.json'), 'utf8'),
+);
+const latestVersion = releasedVersions[0];
+const latestVersionPath = `/docs/v${latestVersion}`;
+
+const docsVersions = {
+  current: { label: 'Next (unreleased)', path: 'next', banner: 'unreleased' },
+};
+for (const v of releasedVersions) {
+  docsVersions[v] = { label: `v${v}`, path: `v${v}` };
+}
 
 /** @type {import('@docusaurus/types').Config} */
 const config = {
@@ -33,6 +58,12 @@ const config = {
 
   onBrokenLinks: 'throw',
 
+  // Exposes the current version's docs path (e.g. /docs/v1) to React pages so
+  // they can link to "the current docs" without hardcoding a version.
+  customFields: {
+    latestDocsPath: latestVersionPath,
+  },
+
   // Even if you don't use internationalization, you can use this field to set
   // useful metadata like html lang. For example, if your site is Chinese, you
   // may want to replace "en" with "zh-Hans".
@@ -49,18 +80,8 @@ const config = {
         docs: {
           sidebarPath: './sidebars.js',
           editUrl: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode/tree/main/docs-site/',
-          versions: {
-            current: {
-              label: 'Next (unreleased)',
-              path: 'next',
-              banner: 'unreleased',
-            },
-            '1': {
-              label: 'v1',
-              path: '',
-              banner: 'none',
-            },
-          },
+          lastVersion: latestVersion,
+          versions: docsVersions,
         },
         blog: false,
         theme: {
@@ -70,7 +91,27 @@ const config = {
     ],
   ],
 
-  plugins: ['docusaurus-plugin-copy-page-button'],
+  plugins: [
+    'docusaurus-plugin-copy-page-button',
+    [
+      '@docusaurus/plugin-client-redirects',
+      {
+        // Redirect bare /docs and every unversioned /docs/* path to the current
+        // released version. Target is derived from latestVersion, so it follows
+        // the latest major automatically when a new version is cut.
+        /** @param {string} existingPath */
+        createRedirects(existingPath) {
+          if (
+            existingPath === latestVersionPath ||
+            existingPath.startsWith(`${latestVersionPath}/`)
+          ) {
+            return [existingPath.replace(latestVersionPath, '/docs')];
+          }
+          return undefined;
+        },
+      },
+    ],
+  ],
 
   themeConfig:
     /** @type {import('@docusaurus/preset-classic').ThemeConfig} */
@@ -102,7 +143,7 @@ const config = {
             type: 'docsVersionDropdown',
             position: 'right',
             dropdownActiveClassDisabled: true,
-            versions: ['1', 'current'],
+            versions: [...releasedVersions, 'current'],
           },
           {
             href: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode',
@@ -119,15 +160,15 @@ const config = {
             items: [
               {
                 label: 'Getting Started',
-                to: '/docs/getting-started',
+                to: `${latestVersionPath}/getting-started`,
               },
               {
                 label: 'AI Providers',
-                to: '/docs/ai-providers',
+                to: `${latestVersionPath}/ai-providers`,
               },
               {
                 label: 'Inputs & Outputs',
-                to: '/docs/reference/inputs-outputs',
+                to: `${latestVersionPath}/reference/inputs-outputs`,
               },
             ],
           },
@@ -136,15 +177,15 @@ const config = {
             items: [
               {
                 label: 'GitHub Classroom',
-                to: '/docs/guides/github-classroom',
+                to: `${latestVersionPath}/guides/github-classroom`,
               },
               {
                 label: 'Example Workflows',
-                to: '/docs/example-workflows/pull-request',
+                to: `${latestVersionPath}/example-workflows/pull-request`,
               },
               {
                 label: 'Architecture',
-                to: '/docs/development/architecture',
+                to: `${latestVersionPath}/development/architecture`,
               },
             ],
           },
