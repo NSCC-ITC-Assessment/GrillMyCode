@@ -1,4 +1,4 @@
-# Grill My Code
+# GrillMyCode
 
 A GitHub Action that analyses code changes and uses AI to generate targeted comprehension questions for conversational or written assessments.
 
@@ -64,7 +64,7 @@ Ready-to-use workflows for each configuration are available in the [example work
 Generates questions whenever a student opens or updates a PR, and posts them as a PR comment.
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 on:
   pull_request:
     types: [opened, synchronize]
@@ -93,7 +93,7 @@ jobs:
 Generates questions on every push. Useful when students work directly on a branch without opening a PR.
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 on:
   push:
     branches-ignore: [main, master]

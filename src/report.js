@@ -56,7 +56,7 @@ export function formatReport({
   const sourceRepoNote = sourceRepo ? `> **Repository:** \`${sourceRepo}\`\n` : '';
 
   return [
-    '## Grill My Code',
+    '## GrillMyCode',
     '',
     `> **Generated:** ${date}`,
     studentNote,

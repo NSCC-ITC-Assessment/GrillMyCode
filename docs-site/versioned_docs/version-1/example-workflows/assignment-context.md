@@ -9,7 +9,7 @@ Automatically injects assignment files (README, brief, rubric, style guide, etc.
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
 ```yaml
-name: Grill My Code
+name: GrillMyCode
 
 on:
   push:

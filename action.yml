@@ -1,4 +1,4 @@
-name: "Grill My Code"
+name: "GrillMyCode"
 description: >
   Analyses code changes submitted via GitHub and uses AI to generate targeted
   comprehension questions for spoken or written assessments. Created to promote 
