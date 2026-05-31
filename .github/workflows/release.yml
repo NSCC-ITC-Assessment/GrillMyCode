@@ -119,6 +119,8 @@ jobs:
 
     steps:
       - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Extract version from tag
         id: version
@@ -154,9 +156,69 @@ jobs:
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
 
+      - name: Generate categorized release notes
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+        run: |
+          node << 'EOF'
+          const { execSync } = require('child_process');
+          const fs = require('fs');
+          const tag = process.env.TAG;
+
+          let prevTag = '';
+          try {
+            prevTag = execSync(`git describe --tags --abbrev=0 "${tag}^"`, { encoding: 'utf8' }).trim();
+          } catch {}
+
+          const range = prevTag ? `${prevTag}..${tag}` : tag;
+          const log = execSync(`git log ${range} --pretty=format:%s --no-merges`, { encoding: 'utf8' }).trim();
+
+          if (!log) {
+            fs.writeFileSync('/tmp/release-body.txt', '');
+            process.exit(0);
+          }
+
+          const order = ['feat', 'fix', 'docs', 'perf', 'refactor', 'test', 'chore'];
+          const labels = {
+            feat: 'Features',
+            fix: 'Bug Fixes',
+            docs: 'Documentation',
+            perf: 'Performance',
+            refactor: 'Refactoring',
+            test: 'Tests',
+            chore: 'Chores & Maintenance',
+          };
+          const buckets = Object.fromEntries(order.map(k => [k, []]));
+          const other = [];
+
+          const re = /^(\w+)(\([\w\-./ ]+\))?: (.+)$/;
+          for (const line of log.split('\n')) {
+            const m = line.match(re);
+            if (m) {
+              const [, type, scope, desc] = m;
+              const prefix = scope ? `**${scope.slice(1, -1)}:** ` : '';
+              const entry = `- ${prefix}${desc}`;
+              const key = ['build', 'ci'].includes(type) ? 'chore' : type;
+              (buckets[key] ?? other).push(entry);
+            } else {
+              other.push(`- ${line}`);
+            }
+          }
+
+          const sections = [];
+          for (const key of order) {
+            if (buckets[key].length > 0)
+              sections.push(`### ${labels[key]}\n\n${buckets[key].join('\n')}`);
+          }
+          if (other.length > 0)
+            sections.push(`### Other\n\n${other.join('\n')}`);
+
+          fs.writeFileSync('/tmp/release-body.txt', `## What's Changed\n\n${sections.join('\n\n')}\n`);
+          EOF
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ steps.version.outputs.tag }}
           name: ${{ steps.version.outputs.tag }}
-          generate_release_notes: true
+          body_path: /tmp/release-body.txt
