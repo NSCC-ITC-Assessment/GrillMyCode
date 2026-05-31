@@ -40,6 +40,13 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
     });
     core.info(`Updated assessment Issue #${updated.number}: ${updated.html_url}`);
 
+    await octokit.rest.issues.createComment({
+      owner,
+      repo,
+      issue_number: updated.number,
+      body: `> [!NOTE]\n> The assessment questions in this issue were regenerated at commit \`${shortHead}\` and the issue body has been updated. Any previous questions have been replaced.`,
+    });
+
     for (const extra of extras) {
       await octokit.graphql(
         `mutation($issueId: ID!) {

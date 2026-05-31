@@ -18,6 +18,7 @@ import {
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
+  ISSUES_PER_PAGE,
   STUDENT_RESOLUTION_SKIP_COMMITTERS,
 } from './constants.js';
 import { readInputs } from './inputs.js';
@@ -291,13 +292,38 @@ async function run() {
 
     // ── Post PR comment ─────────────────────────────────────────────────────
     if (inputs.postPrComment && prNumber) {
-      await octokit.rest.issues.createComment({
+      const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
+      const existingComments = await octokit.rest.issues.listComments({
         owner: ctx.repo.owner,
         repo: ctx.repo.repo,
         issue_number: prNumber,
-        body: report,
+        per_page: ISSUES_PER_PAGE,
       });
-      core.info(`Assessment posted as a comment on PR #${prNumber}`);
+      const predecessor = existingComments.data.find((c) => c.body?.startsWith('## Grill My Code'));
+
+      if (predecessor) {
+        await octokit.rest.issues.updateComment({
+          owner: ctx.repo.owner,
+          repo: ctx.repo.repo,
+          comment_id: predecessor.id,
+          body: report,
+        });
+        core.info(`Updated assessment comment on PR #${prNumber}`);
+        await octokit.rest.issues.createComment({
+          owner: ctx.repo.owner,
+          repo: ctx.repo.repo,
+          issue_number: prNumber,
+          body: `> [!NOTE]\n> The assessment questions in this comment were regenerated at commit \`${shortHead}\` and the comment body has been updated. Any previous questions have been replaced.`,
+        });
+      } else {
+        await octokit.rest.issues.createComment({
+          owner: ctx.repo.owner,
+          repo: ctx.repo.repo,
+          issue_number: prNumber,
+          body: report,
+        });
+        core.info(`Assessment posted as a comment on PR #${prNumber}`);
+      }
     }
 
     // ── Create GitHub Issue ──────────────────────────────────────────────────
