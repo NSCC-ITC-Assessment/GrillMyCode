@@ -4,6 +4,17 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.1 — 2026-05-31
+
+## What's Changed
+* chore: remove dependabot configuration and add renovate workflow with… by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/51
+* chore(deps-dev): bump eslint from 10.4.0 to 10.4.1 by @dependabot[bot] in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/50
+* fix(docs): version routing under /docs/vN, auto-derived from versions… by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/52
+* feat: introduce versioning of Workflow Wizard for generating GitHub A… by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/53
+
+
+**Full Changelog**: https://github.com/NSCC-ITC-Assessment/GrillMyCode/compare/v1.0.0...v1.0.1
+
 ## v1.0.0 — 2026-05-30
 
 ## What's Changed
