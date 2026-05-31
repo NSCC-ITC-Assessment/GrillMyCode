@@ -110,7 +110,8 @@ QUESTION CONSTRAINTS:
 - Each question must have exactly one unambiguously correct answer
 - Each question must ask exactly ONE thing. Do not combine sub-questions with "and", "or", commas, or semicolons (e.g. "What does X do, and what does it return?"). If a concept has multiple facets, pick the single most testable one.
 - Questions must be comprehension-focused — never ask the student to improve, critique, optimize, or refactor
-- Reference specific named code elements; embed a short inline backtick snippet in the question sentence
+- Every question MUST be preceded by a bold filename header (**filename.ext**) and a fenced code block showing the exact relevant portion of the student's code. This is a hard requirement.
+- The question sentence must also embed a short inline backtick snippet referencing a specific code element (e.g. a function name, variable, or expression) from the snippet
 - Code snippets must be syntactically complete — use \`// ...\` or the language equivalent for omitted sections, and close all blocks where needed
 - Only ask about code present in the visible snippet — not truncated content
 - If answering the question requires knowing the value of a parameter, variable, or data structure defined elsewhere in the code, include that definition in the snippet. Use a second fenced code block if needed (e.g. show where the array is defined, then show the function that uses it). Never ask a question whose answer depends on a value not visible in the snippet.
@@ -155,19 +156,28 @@ If your distractors lack embedded reasoning while the correct answer has it — 
 - After each question, if possible include: \`<!-- Lengths: C=XX | D1=XX | D2=XX | D3=XX -->\` (word counts)
 
 MANDATORY BULLET STRUCTURE — this is a rejection-level rule, not a formatting preference:
-Every question MUST follow this exact bullet anatomy:
+Every question MUST follow this exact anatomy:
 
 \`\`\`
-**Answer:**
-- &lt;one bullet — the correct answer, as a complete sentence&gt;
+**filename.ext**
 
-**Incorrect Options for Quiz:**
-- &lt;one bullet — distractor 1&gt;
-- &lt;one bullet — distractor 2&gt;
-- &lt;one bullet — distractor 3&gt;
+\`\`\`language
+// relevant code snippet here
+\`\`\`
+
+1. Question text here?
+
+   **Answer:**
+   - <one bullet — the correct answer, as a complete sentence>
+
+   **Incorrect Options for Quiz:**
+   - <one bullet — distractor 1>
+   - <one bullet — distractor 2>
+   - <one bullet — distractor 3>
 \`\`\`
 
 Violations that will cause output rejection:
+- Missing the filename header or the fenced code block for any question
 - Writing \`**Answer:** &lt;plain text with no bullet&gt;\` — the correct answer MUST be a bullet, not bare inline text
 - Merging the **Answer:** and **Incorrect Options for Quiz:** sections into a single flat list
 - Placing the correct answer directly after the \`**Answer:**\` heading on the same line without a newline
@@ -199,7 +209,13 @@ Respond only with the generated Markdown question content (questions and their a
     ? '\n> ⚠️ The code below has been truncated — form questions based on the visible portion.\n'
     : '';
 
-  const user = `Analyze the submitted student code and generate exactly ${numQuestions} targeted questions requiring genuine understanding of what was written. Write every question in full — do not skip, abbreviate, or replace any with placeholder summaries. Stop IMMEDIATELY after question ${numQuestions} — do not produce question ${numQuestions + 1} or beyond.
+  const user = `Analyze the submitted student code and generate exactly ${numQuestions} targeted questions requiring genuine understanding of what was written. 
+For every question, you MUST include:
+1. The filename in bold.
+2. A fenced code block showing the relevant code portion.
+3. The question text, correct answer bullet, and three incorrect option bullets exactly as specified.
+
+Write every question in full — do not skip, abbreviate, or replace any with placeholder summaries. Stop IMMEDIATELY after question ${numQuestions} — do not produce question ${numQuestions + 1} or beyond.
 
 **Changed files:** ${files.join(', ')}${truncatedNote}
 ${codeContent}`;
