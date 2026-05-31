@@ -102,9 +102,9 @@ When the first student opens a pull request:
 
 1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.
-3. If it does not exist yet, the action **creates it automatically as a private repository** and commits a `student-questions-added.yml` GitHub Actions workflow into it.
+3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `student-questions-added.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents.
 4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
-5. The push of `questions.md` triggers the `student-questions-added` workflow inside the instructor repository, which writes a `{student-login}/future_brightspace_quiz.txt` placeholder file. This is a temporary stub — it will be replaced with real Brightspace quiz generation in a future release.
+5. The push of `questions.md` triggers the `student-questions-added` workflow inside the instructor repository, which parses the assessment file and writes a Brightspace-compatible multiple-choice quiz export to `{student-login}/future_brightspace_quiz.txt`.
 
 For subsequent students the repo already exists — the action just adds or updates their individual file.
 
@@ -121,13 +121,17 @@ https://github.com/{your-org}/{assignment-name}-grillmycode-instructor
 Each student's assessment is stored in a dedicated folder:
 
 ```
-{student-login}/questions.md
+README.md
+{student-login}/
+  questions.md
+  future_brightspace_quiz.txt
 ```
 
 For example, if your org is `my-school`, your assignment is `lab-3`, and a student's login is `jsmith`:
 
 - Instructor repo: `https://github.com/my-school/lab-3-grillmycode-instructor`
 - Student file: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/questions.md`
+- Brightspace export: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/future_brightspace_quiz.txt`
 
 Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student.
 

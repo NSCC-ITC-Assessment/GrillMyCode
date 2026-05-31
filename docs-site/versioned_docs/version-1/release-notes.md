@@ -4,6 +4,19 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.5 — 2026-05-31
+
+## What's Changed
+
+### Features
+
+- add README template for generated instructor repo with detailed structure and usage instructions
+
+### Documentation
+
+- update instructor repository setup and delivery process with README and quiz export details
+- update v1 snapshot
+
 ## v1.0.4 — 2026-05-31
 
 ## What's Changed
