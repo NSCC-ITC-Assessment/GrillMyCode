@@ -5,6 +5,12 @@ This is a **private** repository created and managed by [GrillMyCode](https://gi
 > [!WARNING]
 > This repository contains **correct answers**. Keep it private and never share access with students.
 
+## Generate Brightspace Quizzes
+
+[![Generate Brightspace Quizzes]({{WORKFLOW_URL}}/badge.svg)]({{WORKFLOW_URL}})
+
+[▶ Run the Generate Brightspace Quizzes workflow]({{WORKFLOW_URL}}) to create or refresh `future_brightspace_quiz.txt` for every student in this repository.
+
 ## Repository Structure
 
 One folder is created per student, named after their GitHub login, and populated automatically each time a student pushes code.

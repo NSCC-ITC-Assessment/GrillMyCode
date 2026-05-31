@@ -96,10 +96,12 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
 
   // Replace the auto_init placeholder README with a descriptive one.
   const assignmentName = instructorRepoName.replace(INSTRUCTOR_REPO_SUFFIX, '');
+  const workflowFilename = STUDENT_QUESTIONS_WORKFLOW_PATH.split('/').at(-1);
+  const workflowUrl = `https://github.com/${owner}/${instructorRepoName}/actions/workflows/${workflowFilename}`;
   const readmeContent = INSTRUCTOR_REPO_README_TEMPLATE.replace(
     /\{\{ASSIGNMENT_NAME\}\}/g,
     assignmentName,
-  );
+  ).replace(/\{\{WORKFLOW_URL\}\}/g, workflowUrl);
   let readmeSha;
   try {
     const { data } = await octokit.rest.repos.getContent({
