@@ -4,6 +4,21 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.8 — 2026-05-31
+
+## What's Changed
+
+### Documentation
+
+- **wizard:** reorder workflow steps and update step index references for clarity
+- update AI provider and model descriptions, enhance workflow wizard labels, and clarify context file examples
+- add vetted models for OpenRouter to enhance user guidance
+- update v1 snapshot
+
+### Refactoring
+
+- update default discussion category from 'Assessments' to 'GrillMyCode'
+
 ## v1.0.7 — 2026-05-31
 
 ## What's Changed

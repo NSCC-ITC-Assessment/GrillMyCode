@@ -13,13 +13,13 @@ import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
 
 const STEPS = [
-  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
   { label: 'AI',         title: 'Which AI provider and model should GrillMyCode use?',                   subtitle: 'Select the model that will generate the comprehension questions.',                              Component: StepAIProvider },
   { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions GrillMyCode should generate and what context the chosen AI receives.',             Component: StepQuestions },
-  { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Choose one or more destinations for the generated questions.',                             Component: StepDelivery },
-  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository.',          Component: StepInstructorRepo },
   { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff that\'s sent to the AI.',                    Component: StepFiles },
   { label: 'File opts',  title: 'File handling options',                 subtitle: 'Configure how the diff is built — what to skip, how comments are handled, and which commits count.', Component: StepFileOptions },
+  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
+  { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Choose one or more destinations for the generated questions.',                             Component: StepDelivery },
+  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository.',          Component: StepInstructorRepo },
   { label: 'Advanced',   title: 'Advanced settings',                    subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
   { label: 'Review',     title: 'Your workflow is ready',               subtitle: 'Copy the generated YAML into your assignment repository.',                                Component: StepReview },
 ];
@@ -62,7 +62,7 @@ const INITIAL_CONFIG = {
 const OPENROUTER_MODEL_VALUES = ['deepseek/deepseek-v4-flash', 'google/gemini-3.1-flash-lite', 'minimax/minimax-m2.7', 'stepfun/step-3.5-flash', 'tencent/hy3-preview', 'xiaomi/mimo-v2.5-pro'];
 
 function getStepError(stepIndex, cfg) {
-  if (stepIndex === 1) {
+  if (stepIndex === 0) {
     if (cfg.aiProvider === 'openrouter' && !OPENROUTER_MODEL_VALUES.includes(cfg.aiModel)) {
       if (!cfg.aiModel || !cfg.aiModel.trim()) {
         return 'Please enter a model ID for OpenRouter before continuing.';
@@ -75,7 +75,7 @@ function getStepError(stepIndex, cfg) {
       return 'Please enter a model ID before continuing.';
     }
   }
-  if (stepIndex === 4) {
+  if (stepIndex === 6) {
     if (cfg.instructorRepoEnabled && (!cfg.instructorRepoTokenSecret || !cfg.instructorRepoTokenSecret.trim())) {
       return 'Please enter a secret name for the instructor repo token before continuing.';
     }

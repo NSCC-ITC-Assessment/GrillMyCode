@@ -110,6 +110,21 @@ Uses the [OpenRouter](https://openrouter.ai/) unified inference API, which provi
 | `api_key` | `${{ secrets.OPENROUTER_API_KEY }}` |
 | `ai_model` | Any model identifier supported by OpenRouter, in `provider/model-name` format. See the [OpenRouter model list](https://openrouter.ai/models). Examples: `openai/gpt-4o`, `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct` |
 
+### Recommended models
+
+The following models have been tested with GrillMyCode and are all usually under **1 cent per API call** at typical classroom scale. They are the options pre-loaded in the [workflow wizard](./workflow-wizard).
+
+| Model | `ai_model` value | Notes |
+|---|---|---|
+| DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | Extremely low cost; strong instruction-following for structured JSON output. A reliable first choice. |
+| Google Gemini 3.1 Flash Lite | `google/gemini-3.1-flash-lite` | Google's entry-level flash tier; fast, cheap, and consistent for short-form generation tasks. |
+| Minimax M2.7 | `minimax/minimax-m2.7` | Very inexpensive; performs well on question generation with minimal prompt tuning. |
+| StepFun Step 3.5 Flash | `stepfun/step-3.5-flash` | Competitive quality-per-token ratio; tested to produce well-formed assessment questions. |
+| Tencent Hy3 Preview | `tencent/hy3-preview` | Preview-tier model from Tencent; cheap and functional, though output style may vary. |
+| Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` | Reasoning-optimised model from Xiaomi; good at following structured output constraints. |
+
+All six are in the "free-or-near-free" tier on OpenRouter, making them suitable for deployments where many students submit simultaneously. If you want higher output quality and are willing to pay more, you can use any other OpenRouter model via the **Own Choice** option — just verify pricing at [openrouter.ai/models](https://openrouter.ai/models) first.
+
 ### Example
 
 ```yaml
@@ -117,6 +132,6 @@ Uses the [OpenRouter](https://openrouter.ai/) unified inference API, which provi
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     ai_provider: 'openrouter'
-    ai_model: 'anthropic/claude-3-5-sonnet'
+    ai_model: 'deepseek/deepseek-v4-flash'
     api_key: ${{ secrets.OPENROUTER_API_KEY }}
 ```
