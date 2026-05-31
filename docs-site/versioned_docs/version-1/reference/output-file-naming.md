@@ -26,4 +26,4 @@ Each branch getting its own file means:
 
 ## Skip writing the file
 
-If you do not want the action to commit a file to the repository, omit `contents: write` from the permissions block. The action will still generate questions and post them via the configured delivery method (PR comment, issue, or discussion) but will skip the file commit with a warning.
+If you do not want the action to commit a file to the repository, omit `contents: write` from the permissions block. The action will still generate questions and post them via the configured delivery method (PR comment or issue) but will skip the file commit with a warning.

@@ -4,6 +4,18 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.9 — 2026-05-31
+
+## What's Changed
+
+### Documentation
+
+- update v1 snapshot
+
+### Refactoring
+
+- remove GitHub Discussions delivery option and related configurations
+
 ## v1.0.8 — 2026-05-31
 
 ## What's Changed
