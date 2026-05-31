@@ -65,7 +65,7 @@ export function readInputs() {
     postPrComment: core.getInput('post_pr_comment') === 'true',
     postIssue: core.getInput('post_issue') === 'true',
     postDiscussion: core.getInput('post_discussion') === 'true',
-    discussionCategory: core.getInput('discussion_category') || 'Assessments',
+    discussionCategory: core.getInput('discussion_category') || 'GrillMyCode',
     additionalContext: core.getInput('additional_context') || '',
     assignmentContextGlobs: (() => {
       const raw = core.getInput('assignment_context') || '';

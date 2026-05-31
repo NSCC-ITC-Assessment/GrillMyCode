@@ -69,7 +69,7 @@ export default function StepDelivery({ cfg, onChange }) {
               <label className={styles.label}>Discussion category <span className={styles.optionalBadge}>optional</span></label>
               <span className={styles.hint}>
                 The category name to post under. This category must already exist in the repository's
-                Discussion settings. The default <code>Assessments</code> category will be used if
+                Discussion settings. The default <code>GrillMyCode</code> category will be used if
                 you leave this as-is, but you can rename it to any existing category.
               </span>
               <input
@@ -77,7 +77,7 @@ export default function StepDelivery({ cfg, onChange }) {
                 className={styles.input}
                 value={cfg.discussionCategory}
                 onChange={(e) => onChange({ discussionCategory: e.target.value })}
-                placeholder="Assessments"
+                placeholder="GrillMyCode"
               />
             </div>
           </div>

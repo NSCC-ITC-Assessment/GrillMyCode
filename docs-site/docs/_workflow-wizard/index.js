@@ -42,7 +42,7 @@ const INITIAL_CONFIG = {
   postPrComment: false,
   postIssue: false,
   postDiscussion: false,
-  discussionCategory: 'Assessments',
+  discussionCategory: 'GrillMyCode',
   instructorRepoEnabled: true,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 

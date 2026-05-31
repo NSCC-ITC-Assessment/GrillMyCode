@@ -137,9 +137,9 @@ inputs:
     description: >
       The name of the Discussion category to post into.
       The category must already exist in the repository's Discussions settings.
-      Example: "Assessments"
+      Example: "GrillMyCode"
     required: false
-    default: "Assessments"
+    default: "GrillMyCode"
 
   instructor_repo_token:
     description: >

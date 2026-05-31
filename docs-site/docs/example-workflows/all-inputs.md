@@ -127,7 +127,7 @@ jobs:
           post_discussion: "false"
 
           # Discussion category name (must already exist in repository settings).
-          discussion_category: "Assessments"
+          discussion_category: "GrillMyCode"
 
           # ── Instructor repository ─────────────────────────────────────────
 

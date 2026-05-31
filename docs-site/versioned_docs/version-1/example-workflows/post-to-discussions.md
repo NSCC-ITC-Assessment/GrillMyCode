@@ -6,7 +6,7 @@ sidebar_position: 4
 
 Creates a GitHub Discussion for each assessment run. Useful for class-wide visibility or when instructors prefer a forum-style record of assessments.
 
-If Discussions are not enabled on the repository when the action runs, they are **enabled automatically**. The named category (e.g. `Assessments`) must already exist in the repository's Discussions settings before the first run, or the action will fail.
+If Discussions are not enabled on the repository when the action runs, they are **enabled automatically**. The named category (e.g. `GrillMyCode`) must already exist in the repository's Discussions settings before the first run, or the action will fail.
 
 Each run supersedes the previous: existing open assessment discussions for the same branch are commented (noting the superseding run) and **locked** before a new one is created.
 
@@ -36,7 +36,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           post_discussion: "true"
-          discussion_category: "Assessments"
+          discussion_category: "GrillMyCode"
           post_pr_comment: "false"
           num_questions: "20"
           additional_context: "Assignment 4 — Database design and SQL queries"
@@ -44,7 +44,7 @@ jobs:
 
 ## Prerequisites
 
-1. Create a Discussion category named `Assessments` (or whatever you pass as `discussion_category`) in **Settings → Discussions** on the repository before the first run
+1. Create a Discussion category named `GrillMyCode` (or whatever you pass as `discussion_category`) in **Settings → Discussions** on the repository before the first run
 2. Add `administration: write` to the permissions block the first time, so the action can enable Discussions if they are not already on. You can remove it once Discussions are confirmed enabled
 
 :::note[GraphQL API]

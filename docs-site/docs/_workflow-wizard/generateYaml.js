@@ -35,7 +35,7 @@ const DEFAULTS = {
   postPrComment: false,
   postIssue: false,
   postDiscussion: false,
-  discussionCategory: 'Assessments',
+  discussionCategory: 'GrillMyCode',
   instructorRepoEnabled: false,
   baseSha: '',
   headSha: '',
