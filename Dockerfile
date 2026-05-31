@@ -10,8 +10,9 @@
 #                      (strips comments from source files before AI review).
 #   3. Dependencies  — Production-only Node dependencies installed via pnpm
 #                      with a frozen lockfile so the image is fully reproducible.
-#   4. Source code   — The action's src/ directory and the entrypoint shell
-#                      script are copied in and made executable.
+#   4. Source code   — The action's src/ directory (including the committed
+#                      gitignore-templates.json) and the entrypoint shell script
+#                      are copied in and made executable.
 #
 # The container is invoked by GitHub Actions via the ENTRYPOINT defined in
 # action.yml, which calls /entrypoint.sh → node src/main.js.
@@ -34,13 +35,6 @@ RUN apt-get update \
 WORKDIR /action
 COPY package.json pnpm-lock.yaml ./
 RUN pnpm install --frozen-lockfile --prod --ignore-scripts
-
-# Fetch and bundle gitignore templates so stack-detection has them at runtime.
-# This re-fetches every template from github/gitignore to ensure the image
-# ships with up-to-date patterns, even if the committed JSON is stale.
-COPY scripts/ ./scripts/
-RUN --mount=type=secret,id=GITHUB_TOKEN,env=GITHUB_TOKEN \
-    node scripts/fetch-gitignore-templates.js
 
 # Copy source code
 COPY src/ ./src/

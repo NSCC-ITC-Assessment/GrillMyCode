@@ -187,15 +187,6 @@ const PACKAGE_DEP_TO_PATTERNS = {
   '@nuxt/kit': ['.nuxt/**', '.output/**'],
 };
 
-function loadTemplates() {
-  try {
-    return JSON.parse(readFileSync(TEMPLATES_PATH, 'utf-8'));
-  } catch {
-    core.warning('Could not load bundled gitignore templates — using fallback exclude patterns.');
-    return null;
-  }
-}
-
 function resolveStack(detectedLanguages, rootNames, packageDeps, allTemplates) {
   const keys = new Set();
   const extraPatterns = new Set();
@@ -259,8 +250,13 @@ async function fetchPackageDeps(owner, repo, headers) {
 }
 
 export async function detectExcludePatterns(token, owner, repo) {
-  const allTemplates = loadTemplates();
-  if (!allTemplates) return FALLBACK_EXCLUDE_PATTERNS;
+  let allTemplates;
+  try {
+    allTemplates = JSON.parse(readFileSync(TEMPLATES_PATH, 'utf-8'));
+  } catch {
+    core.warning('Could not load bundled gitignore templates — using fallback exclude patterns.');
+    return FALLBACK_EXCLUDE_PATTERNS;
+  }
 
   const headers = {
     Authorization: `Bearer ${token}`,
