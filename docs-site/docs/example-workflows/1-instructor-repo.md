@@ -12,9 +12,9 @@ When `instructor_repo_token` is provided the action:
 
 1. Resolves the assignment name from the student repo's `template_repository` field (set automatically by GitHub Classroom). For non-Classroom repos it falls back to the source repository name.
 2. Derives the instructor repository name as `{assignment-name}-grillmycode-instructor` in the same organisation.
-3. Creates the repository as **private** on first run if it does not already exist, and commits a `student-questions-added.yml` GitHub Actions workflow into it.
+3. Creates the repository as **private** on first run if it does not already exist, commits a `student-questions-added.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents.
 4. Creates a folder named `{student-login}/` in the instructor repository and writes the full assessment (questions and answers) to `{student-login}/questions.md`, overwriting any previous run for the same student. The folder is created automatically if it does not already exist.
-5. Each push of a `questions.md` file triggers the `student-questions-added` workflow inside the instructor repository, which currently writes a `{student-login}/future_brightspace_quiz.txt` placeholder. This file is a temporary stub — it will be replaced with real Brightspace quiz generation in a future release.
+5. Each push of a `questions.md` file triggers the `student-questions-added` workflow inside the instructor repository, which parses the assessment file and writes a Brightspace-compatible multiple-choice quiz export to `{student-login}/future_brightspace_quiz.txt`.
 
 The student-facing report is unaffected — whether it includes answers is still controlled by the existing `include_answers` input.
 
@@ -65,7 +65,7 @@ For a Classroom assignment named `assignment-1`:
 
 - Student repos: `your-org/assignment-1-student-login`
 - Instructor repo (auto-created): `your-org/assignment-1-grillmycode-instructor`
-- File written per student: `student-login/questions.md`
+- Files written per student: `student-login/questions.md`, `student-login/future_brightspace_quiz.txt`
 
 The assignment name is resolved automatically from the `template_repository` that GitHub Classroom sets on every student repo — no configuration is needed beyond the token.
 
@@ -74,7 +74,7 @@ The assignment name is resolved automatically from the `template_repository` tha
 For a generic repository named `my-project`:
 
 - Instructor repo (auto-created): `your-org/my-project-grillmycode-instructor`
-- File written per student: `student-login/questions.md` (resolved from the most recent non-bot git commit author)
+- Files written per student: `student-login/questions.md`, `student-login/future_brightspace_quiz.txt` (student resolved from the most recent non-bot git commit author)
 
 ## Instructor report contents
 
