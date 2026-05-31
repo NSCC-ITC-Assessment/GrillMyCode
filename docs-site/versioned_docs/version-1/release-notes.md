@@ -4,6 +4,21 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0.4 — 2026-05-31
+
+## What's Changed
+
+### Features
+
+- enhance question generation with context summary and improved prompt instructions
+
+### Documentation
+
+- clarify output descriptions for generated questions in using-outputs and inputs-outputs guides
+- **wizard:** add Google Gemini 3.1 Flash Lite model to list of options
+- **rationale:** update wording for clarity on code submission sources
+- update v1 snapshot
+
 ## v1.0.3 — 2026-05-31
 
 ## What's Changed
