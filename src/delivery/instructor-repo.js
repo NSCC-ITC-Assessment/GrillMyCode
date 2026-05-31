@@ -23,11 +23,16 @@ import {
   INSTRUCTOR_REPO_DEFAULT_BRANCH,
   INSTRUCTOR_REPO_INIT_RETRIES,
   INSTRUCTOR_REPO_INIT_RETRY_DELAY_MS,
+  INSTRUCTOR_REPO_SUFFIX,
 } from '../constants.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STUDENT_QUESTIONS_WORKFLOW = readFileSync(
   join(__dirname, '../workflows/student-questions-added.yml'),
+  'utf-8',
+);
+const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
+  join(__dirname, '../templates/instructor-repo-readme.md'),
   'utf-8',
 );
 
@@ -89,8 +94,34 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
     content: Buffer.from(STUDENT_QUESTIONS_WORKFLOW, 'utf-8').toString('base64'),
   });
 
+  // Replace the auto_init placeholder README with a descriptive one.
+  const assignmentName = instructorRepoName.replace(INSTRUCTOR_REPO_SUFFIX, '');
+  const readmeContent = INSTRUCTOR_REPO_README_TEMPLATE.replace(
+    /\{\{ASSIGNMENT_NAME\}\}/g,
+    assignmentName,
+  );
+  let readmeSha;
+  try {
+    const { data } = await octokit.rest.repos.getContent({
+      owner,
+      repo: instructorRepoName,
+      path: 'README.md',
+    });
+    readmeSha = data.sha;
+  } catch {
+    // README doesn't exist yet — will be created fresh.
+  }
+  await octokit.rest.repos.createOrUpdateFileContents({
+    owner,
+    repo: instructorRepoName,
+    path: 'README.md',
+    message: 'docs: add instructor repository README [skip ci]',
+    content: Buffer.from(readmeContent, 'utf-8').toString('base64'),
+    sha: readmeSha,
+  });
+
   core.info(
-    `Instructor repository ${owner}/${instructorRepoName} created (private) with student-questions workflow.`,
+    `Instructor repository ${owner}/${instructorRepoName} created (private) with student-questions workflow and README.`,
   );
 }
 
