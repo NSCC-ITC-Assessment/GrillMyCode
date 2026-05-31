@@ -4,6 +4,63 @@ sidebar_position: 99
 ---
 
 # Release Notes
+## v1.0 — 2026-05-31
+
+## What's Changed
+
+### Features
+
+- **ci:** add categorized release notes generation to release workflow
+- enhance issue and PR comment updates with regeneration notes
+- add FAQ section to documentation and update navigation
+
+### Bug Fixes
+
+- **docs:** update FAQ link to be version-aware in Docusaurus config
+
+### Documentation
+
+- remove unused sidebar entry from Docusaurus config
+- update release notes for version 1.0.1
+
+## v1 — 2026-05-31
+
+## What's Changed
+
+### Features
+
+- **ci:** add categorized release notes generation to release workflow
+- enhance issue and PR comment updates with regeneration notes
+- add FAQ section to documentation and update navigation
+
+### Bug Fixes
+
+- **docs:** update FAQ link to be version-aware in Docusaurus config
+
+### Documentation
+
+- remove unused sidebar entry from Docusaurus config
+- update release notes for version 1.0.1
+
+## v1.0.2 — 2026-05-31
+
+## What's Changed
+
+### Features
+
+- **ci:** add categorized release notes generation to release workflow
+- enhance issue and PR comment updates with regeneration notes
+- add FAQ section to documentation and update navigation
+
+### Bug Fixes
+
+- **docs:** update FAQ link to be version-aware in Docusaurus config
+
+### Documentation
+
+- remove unused sidebar entry from Docusaurus config
+- update release notes for version 1.0.1
+
 ## v1.0.1 — 2026-05-31
 
 ## What's Changed

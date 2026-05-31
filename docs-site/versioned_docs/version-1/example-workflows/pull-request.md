@@ -35,6 +35,10 @@ jobs:
           additional_context: "Assignment 3 — Python list comprehensions"
 ```
 
+## Update vs recreate
+
+On re-runs (e.g. when a student pushes another commit), the existing assessment comment is updated in place rather than a new one being added. A follow-up note comment is posted to the PR indicating when the questions were regenerated and at which commit SHA, so the timeline shows when each run occurred.
+
 ## Why pull requests?
 
 The pull request trigger works well when:

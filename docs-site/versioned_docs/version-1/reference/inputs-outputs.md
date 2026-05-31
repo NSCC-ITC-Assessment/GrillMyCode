@@ -23,7 +23,7 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 | `exclude_pattern_overrides` | No | | Comma-separated entries to re-include files excluded by auto-detection or `additional_exclude_patterns`. Each entry can be an exact pattern (e.g. `**/*.md`) to re-include all files of that type, or a specific file path (e.g. `README.md`) to allow only that file through. Note: binary files are **always** skipped regardless of overrides |
 | `additional_exclude_patterns` | No | | Comma-separated globs for **extra** files to exclude on top of the [auto-detected stack patterns](../guides/exclude-patterns.md). Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover |
 | `output_file` | No | `grill-my-code.md` | Basename for the output Markdown file. Always written under the `.assessment/` folder (e.g. `grill-my-code.md` → `.assessment/grill-my-code.md`) |
-| `post_pr_comment` | No | `false` | Post assessment as a PR comment |
+| `post_pr_comment` | No | `false` | Post assessment as a PR comment. On re-runs, the existing comment is updated in place and a note is added indicating the questions were regenerated |
 | `post_issue` | No | `false` | Create a GitHub Issue with the assessment. Automatically assigned to the student who authored the head commit |
 | `post_discussion` | No | `false` | Create a GitHub Discussion with the assessment. Discussions are enabled automatically if not already on |
 | `discussion_category` | No | `Assessments` | Discussion category name |
