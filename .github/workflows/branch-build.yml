@@ -17,6 +17,7 @@ on:
       - ".vscode/**"
       - ".husky/**"
       - ".claude/**"
+      - ".mcp.json"
       - "commitlint.config.cjs"
       - "eslint.config.js"
       - ".prettierrc.json"
@@ -25,6 +26,7 @@ on:
       - ".gitattributes"
       - ".npmrc"
       - "src/data/gitignore-templates.json"
+      - "renovate.json"
   workflow_dispatch:
 
 concurrency:

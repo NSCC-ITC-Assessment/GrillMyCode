@@ -1,0 +1,38 @@
+name: Refresh gitignore templates
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "26"
+
+      - name: Fetch latest templates
+        run: node scripts/fetch-gitignore-templates.js
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Open PR if templates changed
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: chore/refresh-gitignore-templates
+          title: "chore: refresh gitignore templates"
+          body: |
+            Automated refresh of `src/data/gitignore-templates.json` from [github/gitignore](https://github.com/github/gitignore).
+
+            No changes to the file means this PR will not be created.
+          commit-message: "chore: refresh gitignore templates"
+          labels: dependencies

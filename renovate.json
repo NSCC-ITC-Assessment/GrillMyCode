@@ -1,0 +1,14 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended"],
+  "schedule": ["every weekend"],
+  "minimumReleaseAge": "2 days",
+  "packageRules": [
+    {
+      "description": "Self-managed image pinned by release workflow — do not auto-update",
+      "matchManagers": ["dockerfile"],
+      "matchPackageNames": ["ghcr.io/nscc-itc-assessment/grillmycode"],
+      "enabled": false
+    }
+  ]
+}
