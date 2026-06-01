@@ -4,10 +4,15 @@ on:
   schedule:
     - cron: "0 6 * * 1"
   workflow_dispatch:
+  issues:
+    types: [edited]
 
 jobs:
   renovate:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
 
     steps:
       - name: Generate app token
