@@ -93,6 +93,10 @@ export default function StepAIProvider({ cfg, onChange }) {
           very cheap — typically <strong>less than 1 cent per API call</strong> — and have been
           tested to work well with GrillMyCode. If you choose your own model, be sure to verify
           its pricing first.
+          <br /><br />
+          <a href="/docs/ai-providers#openrouter" target="_blank" rel="noopener noreferrer">
+            Read more about OpenRouter setup here →
+          </a>
         </div>
       )}
 
