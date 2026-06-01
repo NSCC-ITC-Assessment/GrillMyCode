@@ -90,9 +90,7 @@ async function deleteExistingAsset({ octokit, owner, repo, releaseId, filename }
 }
 
 async function uploadAsset({ octokit, uploadUrl, pdfBuffer, filename }) {
-  // Use the upload_url from the release directly — more reliable than constructing
-  // from release_id, as Octokit's uploadReleaseAsset has known issues with
-  // content-length when the URL is built indirectly.
+  core.info(`PDF upload: filename=${filename}, bytes=${pdfBuffer.length}, upload_url=${uploadUrl}`);
   const { data } = await octokit.request(`POST ${uploadUrl}`, {
     name: filename,
     data: pdfBuffer,

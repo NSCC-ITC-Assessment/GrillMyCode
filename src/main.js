@@ -281,18 +281,25 @@ async function run() {
     const safe = safeBranchName(branchName);
     const pdfFilename = safe ? `grill-my-code-${safe}.pdf` : 'grill-my-code.pdf';
     let pdfUrl = null;
+    let pdfBuffer = null;
     try {
-      const pdfBuffer = await generatePdf(baseReport);
-      pdfUrl = await uploadPdfAsset({
-        octokit,
-        owner: ctx.repo.owner,
-        repo: ctx.repo.repo,
-        pdfBuffer,
-        filename: pdfFilename,
-      });
-      core.info(`Assessment PDF uploaded: ${pdfUrl}`);
+      pdfBuffer = await generatePdf(baseReport);
     } catch (err) {
       core.warning(`PDF generation failed: ${err.message} — issue will post without a PDF link.`);
+    }
+    if (pdfBuffer) {
+      try {
+        pdfUrl = await uploadPdfAsset({
+          octokit,
+          owner: ctx.repo.owner,
+          repo: ctx.repo.repo,
+          pdfBuffer,
+          filename: pdfFilename,
+        });
+        core.info(`Assessment PDF uploaded: ${pdfUrl}`);
+      } catch (err) {
+        core.warning(`PDF upload failed: ${err.message} — issue will post without a PDF link.`);
+      }
     }
     core.setOutput('pdf_url', pdfUrl || '');
 
