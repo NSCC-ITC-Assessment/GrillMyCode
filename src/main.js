@@ -264,6 +264,8 @@ async function run() {
     const questions = stripAnswers(cleanedQuestions, { keepAnswers: inputs.includeAnswers });
 
     // ── Build base report (PDF source — no self-referencing link) ───────────
+    const sourceRepo = `${ctx.repo.owner}/${ctx.repo.repo}`;
+
     const baseReport = formatReport({
       questions,
       files,
@@ -275,6 +277,7 @@ async function run() {
       branchName,
       assignmentContextFiles,
       contextSummary,
+      sourceRepo,
     });
 
     // ── Generate PDF and upload to rolling release ───────────────────────────
@@ -316,6 +319,7 @@ async function run() {
       branchName,
       assignmentContextFiles,
       contextSummary,
+      sourceRepo,
       pdfUrl,
     });
 
