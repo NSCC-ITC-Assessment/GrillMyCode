@@ -13,7 +13,16 @@ jobs:
       pull-requests: write
 
     steps:
+      - name: Generate app token
+        id: app-token
+        uses: actions/create-github-app-token@v3
+        with:
+          client-id: ${{ secrets.GRILLMYCODE_APP_ID }}
+          private-key: ${{ secrets.GRILLMYCODE_APP_PRIVATE_KEY }}
+
       - uses: actions/checkout@v6
+        with:
+          token: ${{ steps.app-token.outputs.token }}
 
       - uses: actions/setup-node@v4
         with:
@@ -22,12 +31,12 @@ jobs:
       - name: Fetch latest templates
         run: node scripts/fetch-gitignore-templates.js
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
 
       - name: Open PR if templates changed
         uses: peter-evans/create-pull-request@v7
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          token: ${{ steps.app-token.outputs.token }}
           branch: chore/refresh-gitignore-templates
           title: "chore: refresh gitignore templates"
           body: |

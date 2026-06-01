@@ -8,7 +8,7 @@ sidebar_position: 4
 
 The **GrillMyCode GitHub App** is an installation-level bot identity registered in the `nscc-itc-assessment` organization. It exists because `GITHUB_TOKEN` — the default token available inside GitHub Actions — is intentionally limited: it cannot push to protected branches, and commits made with it do not trigger subsequent workflow runs (to prevent recursive loops).
 
-The app provides a token with elevated, narrowly-scoped permissions that two workflows depend on.
+The app provides a token with elevated, narrowly-scoped permissions that three workflows depend on.
 
 ---
 
@@ -19,6 +19,10 @@ The app provides a token with elevated, narrowly-scoped permissions that two wor
 The `snapshot-docs` job checks out `main` and pushes a documentation snapshot commit back to `main` immediately after every release tag. Because `main` is protected, the push requires a token belonging to an identity that has been granted bypass on the branch protection rule — the app satisfies this where `GITHUB_TOKEN` cannot.
 
 The app token is also used to read the GitHub Release body via the `gh` CLI when building the release notes entry.
+
+### Refresh gitignore templates workflow (`refresh-gitignore-templates.yml`)
+
+This workflow runs weekly and opens a PR when the `.gitignore` templates bundled in `src/data/gitignore-templates.json` have changed upstream. GitHub Actions is blocked from creating PRs by default (a repository-level setting), so the app token is used instead to bypass that restriction.
 
 ### Renovate workflow (`renovate.yml`)
 
