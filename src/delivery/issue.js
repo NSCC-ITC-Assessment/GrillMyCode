@@ -71,6 +71,20 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
     });
     core.info(`Assessment created as Issue #${created.number}: ${created.html_url}`);
 
+    try {
+      await octokit.graphql(
+        `mutation($issueId: ID!) {
+          pinIssue(input: { issueId: $issueId }) {
+            issue { title }
+          }
+        }`,
+        { issueId: created.node_id },
+      );
+      core.info(`Pinned assessment Issue #${created.number}`);
+    } catch (err) {
+      core.warning(`Could not pin Issue #${created.number}: ${err.message}`);
+    }
+
     return { number: created.number, url: created.html_url };
   }
 }
