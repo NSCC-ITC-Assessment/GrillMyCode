@@ -24,14 +24,22 @@ jobs:
         with:
           token: ${{ steps.app-token.outputs.token }}
 
+      - uses: pnpm/action-setup@v6
+
       - uses: actions/setup-node@v4
         with:
           node-version: "26"
+          cache: pnpm
+
+      - run: pnpm install --frozen-lockfile
 
       - name: Fetch latest templates
         run: node scripts/fetch-gitignore-templates.js
         env:
           GITHUB_TOKEN: ${{ steps.app-token.outputs.token }}
+
+      - name: Format output file
+        run: pnpm prettier --write src/data/gitignore-templates.json
 
       - name: Open PR if templates changed
         uses: peter-evans/create-pull-request@v7
