@@ -26,6 +26,16 @@ export async function generatePdf(markdownContent) {
         ],
       },
       highlight_style: 'github',
+      pdf_options: {
+        margin: { top: '1.5cm', right: '2cm', bottom: '2cm', left: '2cm' },
+        printBackground: true,
+        displayHeaderFooter: true,
+        headerTemplate: '<span></span>',
+        footerTemplate:
+          '<div style="font-size:9px;width:100%;text-align:center;color:#aaa;font-family:sans-serif">' +
+          '<span class="pageNumber"></span> / <span class="totalPages"></span>' +
+          '</div>',
+      },
     },
   );
 
