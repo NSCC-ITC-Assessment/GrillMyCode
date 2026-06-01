@@ -9,7 +9,6 @@
  * workflows in one repo) with get-after-create and delete-before-upload guards.
  */
 
-import { Buffer } from 'node:buffer';
 import * as core from '@actions/core';
 
 const RELEASE_TAG = 'gmc-assessments';
@@ -27,7 +26,7 @@ export async function uploadPdfAsset({ octokit, owner, repo, pdfBuffer, filename
 
   await deleteExistingAsset({ octokit, owner, repo, releaseId: release.id, filename });
 
-  return uploadAsset({ octokit, owner, repo, releaseId: release.id, pdfBuffer, filename });
+  return uploadAsset({ octokit, uploadUrl: release.upload_url, pdfBuffer, filename });
 }
 
 async function getOrCreateRelease({ octokit, owner, repo }) {
@@ -90,30 +89,17 @@ async function deleteExistingAsset({ octokit, owner, repo, releaseId, filename }
   }
 }
 
-async function uploadAsset({ octokit, owner, repo, releaseId, pdfBuffer, filename }) {
-  const contentLength = Buffer.byteLength(pdfBuffer);
-  const uploadParams = {
-    owner,
-    repo,
-    release_id: releaseId,
+async function uploadAsset({ octokit, uploadUrl, pdfBuffer, filename }) {
+  // Use the upload_url from the release directly — more reliable than constructing
+  // from release_id, as Octokit's uploadReleaseAsset has known issues with
+  // content-length when the URL is built indirectly.
+  const { data } = await octokit.request(`POST ${uploadUrl}`, {
     name: filename,
     data: pdfBuffer,
     headers: {
       'content-type': 'application/pdf',
-      'content-length': contentLength,
+      'content-length': pdfBuffer.length,
     },
-  };
-
-  try {
-    const { data } = await octokit.rest.repos.uploadReleaseAsset(uploadParams);
-    return data.browser_download_url;
-  } catch (err) {
-    if (err.status !== 422) throw err;
-
-    // 422 already_exists — a concurrent run uploaded first.
-    // Delete the conflicting asset and retry once.
-    await deleteExistingAsset({ octokit, owner, repo, releaseId, filename });
-    const { data } = await octokit.rest.repos.uploadReleaseAsset(uploadParams);
-    return data.browser_download_url;
-  }
+  });
+  return data.browser_download_url;
 }
