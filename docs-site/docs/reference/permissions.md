@@ -4,41 +4,23 @@ sidebar_position: 4
 
 # Permissions
 
-The action only requests the permissions it needs for the chosen delivery method.
+GrillMyCode always creates a GitHub Issue and generates a PDF — these are the fixed delivery surfaces. The required permissions are therefore the same for every configuration.
 
-| Permission | When required |
+| Permission | Why |
 |---|---|
-| `contents: read` | Always — needed to check out the repo and read the git history |
-| `contents: write` | When writing the output file back to the repository |
-| `models: read` | When using the `github-models` provider (the default) |
-| `pull-requests: write` | When `post_pr_comment: 'true'` |
-| `issues: write` | When `post_issue: 'true'` |
+| `contents: write` | Create and update the `gmc-assessments` release and its PDF asset |
+| `issues: write` | Create and update the assessment issue |
+| `pull-requests: write` | Post the link comment on the PR (only used when triggered by a pull request) |
+| `models: read` | Call the GitHub Models API (when using the `github-models` provider) |
 
-## Minimal permissions example (PR comment only)
-
-```yaml
-permissions:
-  contents: read
-  pull-requests: write
-  models: read
-```
-
-## Writing output file to the repository
-
-When using a `push` trigger (or any other event where no PR exists), you need `contents: write` to commit the assessment file back:
+## Required permissions block
 
 ```yaml
 permissions:
-  contents: write
-  models: read
+  contents: write        # gmc-assessments release + PDF asset
+  issues: write          # assessment issue
+  pull-requests: write   # PR link comment (harmless when not triggered by a PR)
+  models: read           # GitHub Models API (remove if using openrouter)
 ```
 
-## All delivery methods enabled
-
-```yaml
-permissions:
-  contents: write
-  pull-requests: write
-  issues: write
-  models: read
-```
+Add this block to the `generate-questions` job in your workflow. The Workflow Wizard generates it automatically.

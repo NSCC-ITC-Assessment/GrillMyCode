@@ -21,7 +21,7 @@ FROM node:26-slim
 
 # Install git, corepack, pnpm, and the rmcm binary.
 RUN apt-get update \
-    && apt-get install -y --no-install-recommends git curl ca-certificates \
+    && apt-get install -y --no-install-recommends git curl ca-certificates chromium \
     && rm -rf /var/lib/apt/lists/* \
     && curl -fsSL \
         "https://github.com/NSCC-ITC-Assessment/comment-remover/releases/download/grill-my-code/rmcm-linux-x86_64" \
@@ -30,6 +30,12 @@ RUN apt-get update \
     && npm install -g corepack \
     && corepack enable \
     && corepack prepare pnpm@latest --activate
+
+# Use the system Chromium binary; the existing --ignore-scripts flag on pnpm
+# install already prevents Puppeteer's postinstall download, but this is
+# belt-and-braces and must be set before the install layer.
+ENV PUPPETEER_SKIP_DOWNLOAD=true
+ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
 
 # Copy package files and install production dependencies
 WORKDIR /action

@@ -30,16 +30,17 @@ If you want to use [OpenRouter](./ai-providers/openrouter) or supply an [instruc
 
 ### What permissions does the workflow need?
 
-The minimum permissions for the default workflow are:
+The required permissions are the same for every configuration:
 
 ```yaml
 permissions:
-  contents: write        # commit the output file back to the repository
-  pull-requests: write   # post the assessment as a PR comment
-  models: read           # call the GitHub Models API
+  contents: write        # gmc-assessments release + PDF asset
+  issues: write          # assessment issue
+  pull-requests: write   # PR link comment
+  models: read           # GitHub Models API (remove if using openrouter)
 ```
 
-The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` block automatically based on your chosen delivery options. See [Inputs & Outputs](reference/inputs-outputs.md) for the full list of inputs that affect which permissions are required.
+The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` block automatically. See [Permissions](reference/permissions.md) for details.
 
 ### How do I set up the instructor repository feature?
 
@@ -90,11 +91,11 @@ By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits
 
 ### Where are the generated questions stored?
 
-Questions are written to a Markdown file committed back to the student repository under `.assessment/` (e.g. `.assessment/grill-my-code.md`). The filename is configurable via the `output_file` input.
+Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created (or updated in place) on every run and assigned to the student. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
 
-### Can the questions also be posted as a PR comment or GitHub Issue?
+### What happens when GrillMyCode is triggered by a pull request?
 
-Yes. Use the `post_pr_comment` and `post_issue` inputs to enable each delivery method. They are both opt-in and can be combined. The [Workflow Wizard](workflow-wizard.mdx) has a dedicated Delivery step that configures these options for you.
+The assessment issue is created as normal. In addition, a short link comment is posted on the pull request pointing to the issue — keeping the PR timeline clean without duplicating the full question set.
 
 ### Can students see the answers?
 
