@@ -25,7 +25,10 @@
     "*.ipa",
     "*.apk"
   ],
-  "Ada": ["*.o", "*.ali"],
+  "Ada": [
+    "*.o",
+    "*.ali"
+  ],
   "AdventureGameStudio": [
     "_Debug/**",
     "Compiled/**",
@@ -48,7 +51,10 @@
     "warnings.log",
     "warnings.log/**"
   ],
-  "Agda": ["*.agdai", "**/MAlonzo/**"],
+  "Agda": [
+    "*.agdai",
+    "**/MAlonzo/**"
+  ],
   "Android": [
     ".gradle/**",
     "build/**",
@@ -99,8 +105,14 @@
     "yarn-debug.log*",
     "yarn-error.log*"
   ],
-  "AppEngine": ["appengine-generated/**"],
-  "AppceleratorTitanium": ["build/**", "build.log", "build.log/**"],
+  "AppEngine": [
+    "appengine-generated/**"
+  ],
+  "AppceleratorTitanium": [
+    "build/**",
+    "build.log",
+    "build.log/**"
+  ],
   "ArchLinuxPackages": [
     "*.tar",
     "*.tar.*",
@@ -310,7 +322,14 @@
     "CMakeUserPresets.json",
     "CMakeUserPresets.json/**"
   ],
-  "CUDA": ["*.i", "*.ii", "*.gpu", "*.ptx", "*.cubin", "*.fatbin"],
+  "CUDA": [
+    "*.i",
+    "*.ii",
+    "*.gpu",
+    "*.ptx",
+    "*.cubin",
+    "*.fatbin"
+  ],
   "CakePHP": [
     "vendor/*",
     "config/app.php",
@@ -336,7 +355,10 @@
     ".kitchen.local.yml",
     ".kitchen.local.yml/**"
   ],
-  "Clojure": ["Leiningen.gitignore", "Leiningen.gitignore/**"],
+  "Clojure": [
+    "Leiningen.gitignore",
+    "Leiningen.gitignore/**"
+  ],
   "CodeIgniter": [
     "*/config/development",
     "*/logs/log-*.php",
@@ -367,7 +389,11 @@
     "*.wx64fsl",
     "*.wx32fsl"
   ],
-  "Composer": ["composer.phar", "composer.phar/**", "vendor/**"],
+  "Composer": [
+    "composer.phar",
+    "composer.phar/**",
+    "vendor/**"
+  ],
   "Concrete5": [
     "error_log",
     "error_log/**",
@@ -441,7 +467,9 @@
     "time-of-build-pretty.log",
     "time-of-build-pretty.log/**"
   ],
-  "CraftCMS": ["craft/storage/*"],
+  "CraftCMS": [
+    "craft/storage/*"
+  ],
   "D": [
     "*.o",
     "*.obj",
@@ -460,7 +488,13 @@
     "docs/**",
     "*.lst"
   ],
-  "DM": ["*.dmb", "*.rsc", "*.int", "*.lk", "*.zip"],
+  "DM": [
+    "*.dmb",
+    "*.rsc",
+    "*.int",
+    "*.lk",
+    "*.zip"
+  ],
   "Dart": [
     ".dart_tool/**",
     ".packages",
@@ -514,7 +548,11 @@
     "*.stat",
     "modules/**"
   ],
-  "Deno": [".deno/**", "coverage/**", "*.lcov"],
+  "Deno": [
+    ".deno/**",
+    "coverage/**",
+    "*.lcov"
+  ],
   "Dotnet": [
     "[Dd]ebug/**",
     "[Dd]ebugPublic/**",
@@ -612,7 +650,9 @@
     "drupal",
     "drupal/**"
   ],
-  "EPiServer": ["*License.config"],
+  "EPiServer": [
+    "*License.config"
+  ],
   "Eagle": [
     "*.s#?",
     "*.b#?",
@@ -676,7 +716,11 @@
     "config/*.secret.exs",
     ".elixir_ls/**"
   ],
-  "Elm": ["elm-stuff", "elm-stuff/**", "repl-temp-*"],
+  "Elm": [
+    "elm-stuff",
+    "elm-stuff/**",
+    "repl-temp-*"
+  ],
   "Erlang": [
     ".eunit",
     ".eunit/**",
@@ -739,7 +783,10 @@
     ".arch-internal-preview.css",
     ".arch-internal-preview.css/**"
   ],
-  "Fancy": ["*.rbc", "*.fyc"],
+  "Fancy": [
+    "*.rbc",
+    "*.fyc"
+  ],
   "Finale": [
     "*.bak",
     "*.db",
@@ -923,7 +970,10 @@
     "Referenced Packages",
     "Referenced Packages/**"
   ],
-  "Fortran": ["C++.gitignore", "C++.gitignore/**"],
+  "Fortran": [
+    "C++.gitignore",
+    "C++.gitignore/**"
+  ],
   "FuelPHP": [
     "fuel/vendor",
     "docs/**",
@@ -944,7 +994,11 @@
     "www-test/**",
     ".gwt-tmp/**"
   ],
-  "Gcov": ["*.gcno", "*.gcda", "*.gcov"],
+  "Gcov": [
+    "*.gcno",
+    "*.gcda",
+    "*.gcov"
+  ],
   "GitBook": [
     ".grunt",
     ".grunt/**",
@@ -967,8 +1021,21 @@
     "Gemfile.lock",
     "Gemfile.lock/**"
   ],
-  "Gleam": ["*.beam", "*.ez", "build", "build/**", "erl_crash.dump", "erl_crash.dump/**"],
-  "Global/AL": [".vscode/*", "*.code-workspace", ".history/**", "*.app", ".snapshots/*"],
+  "Gleam": [
+    "*.beam",
+    "*.ez",
+    "build",
+    "build/**",
+    "erl_crash.dump",
+    "erl_crash.dump/**"
+  ],
+  "Global/AL": [
+    ".vscode/*",
+    "*.code-workspace",
+    ".history/**",
+    "*.app",
+    ".snapshots/*"
+  ],
   "Global/Agents": [
     ".aider.input.history",
     ".aider.input.history/**",
@@ -985,8 +1052,15 @@
     "gemini-debug.log/**",
     ".gemini-clipboard/**"
   ],
-  "Global/Anjuta": [".anjuta/**", ".anjuta_sym_db.db", ".anjuta_sym_db.db/**"],
-  "Global/Ansible": [".ansible/**", "*.retry"],
+  "Global/Anjuta": [
+    ".anjuta/**",
+    ".anjuta_sym_db.db",
+    ".anjuta_sym_db.db/**"
+  ],
+  "Global/Ansible": [
+    ".ansible/**",
+    "*.retry"
+  ],
   "Global/Archives": [
     "*.7z",
     "*.jar",
@@ -1029,9 +1103,22 @@
     "*.temp",
     "*.temporary"
   ],
-  "Global/Bazaar": [".bzr/**", ".bzrignore", ".bzrignore/**"],
-  "Global/BricxCC": ["*.bak", "*.sym"],
-  "Global/CVS": ["CVS/*", "**/CVS/*", ".cvsignore", ".cvsignore/**", "*/.cvsignore"],
+  "Global/Bazaar": [
+    ".bzr/**",
+    ".bzrignore",
+    ".bzrignore/**"
+  ],
+  "Global/BricxCC": [
+    "*.bak",
+    "*.sym"
+  ],
+  "Global/CVS": [
+    "CVS/*",
+    "**/CVS/*",
+    ".cvsignore",
+    ".cvsignore/**",
+    "*/.cvsignore"
+  ],
   "Global/Calabash": [
     "rerun/**",
     "reports/**",
@@ -1043,7 +1130,12 @@
     "vendor",
     "vendor/**"
   ],
-  "Global/Cloud9": [".c9revisions", ".c9revisions/**", ".c9", ".c9/**"],
+  "Global/Cloud9": [
+    ".c9revisions",
+    ".c9revisions/**",
+    ".c9",
+    ".c9/**"
+  ],
   "Global/CodeKit": [
     "config.codekit",
     "config.codekit/**",
@@ -1058,8 +1150,16 @@
     ".cursorindexingignore",
     ".cursorindexingignore/**"
   ],
-  "Global/DartEditor": [".project", ".project/**", ".buildlog", ".buildlog/**"],
-  "Global/Diff": ["*.patch", "*.diff"],
+  "Global/DartEditor": [
+    ".project",
+    ".project/**",
+    ".buildlog",
+    ".buildlog/**"
+  ],
+  "Global/Diff": [
+    "*.patch",
+    "*.diff"
+  ],
   "Global/Dreamweaver": [
     "_notes",
     "_notes/**",
@@ -1125,7 +1225,10 @@
     ".worksheet",
     ".worksheet/**"
   ],
-  "Global/EiffelStudio": ["EIFGENs", "EIFGENs/**"],
+  "Global/EiffelStudio": [
+    "EIFGENs",
+    "EIFGENs/**"
+  ],
   "Global/Emacs": [
     "*~",
     "\\#*\\#",
@@ -1160,10 +1263,23 @@
     "network-security.data/**",
     "*.~undo-tree~"
   ],
-  "Global/Ensime": [".ensime", ".ensime/**", ".ensime_cache/**", ".ensime_lucene/**"],
-  "Global/Espresso": ["*.esproj"],
-  "Global/FlexBuilder": ["bin/**", "bin-debug/**", "bin-release/**"],
-  "Global/GPG": ["secring.*"],
+  "Global/Ensime": [
+    ".ensime",
+    ".ensime/**",
+    ".ensime_cache/**",
+    ".ensime_lucene/**"
+  ],
+  "Global/Espresso": [
+    "*.esproj"
+  ],
+  "Global/FlexBuilder": [
+    "bin/**",
+    "bin-debug/**",
+    "bin-release/**"
+  ],
+  "Global/GPG": [
+    "secring.*"
+  ],
   "Global/Images": [
     "*.jpg",
     "*.jpeg",
@@ -1207,7 +1323,12 @@
     "cwallet.sso.lck",
     "cwallet.sso.lck/**"
   ],
-  "Global/JEnv": [".java-version", ".java-version/**", ".jenv-version", ".jenv-version/**"],
+  "Global/JEnv": [
+    ".java-version",
+    ".java-version/**",
+    ".jenv-version",
+    ".jenv-version/**"
+  ],
   "Global/JetBrains": [
     ".idea/**/workspace.xml",
     ".idea/**/tasks.xml",
@@ -1251,8 +1372,14 @@
     ".idea/ApifoxUploaderProjectSetting.xml",
     ".idea/**/copilot.data.migration.*.xml"
   ],
-  "Global/KDevelop4": ["*.kdev4", ".kdev4/**"],
-  "Global/Kate": [".*.kate-swp", ".swp.*"],
+  "Global/KDevelop4": [
+    "*.kdev4",
+    ".kdev4/**"
+  ],
+  "Global/Kate": [
+    ".*.kate-swp",
+    ".swp.*"
+  ],
   "Global/Lazarus": [
     "*.exe",
     "*.dll",
@@ -1298,7 +1425,9 @@
     ".config/lefthook-local.yml",
     ".lefthook-local/**"
   ],
-  "Global/LibreOffice": [".~lock.*#"],
+  "Global/LibreOffice": [
+    ".~lock.*#"
+  ],
   "Global/Linux": [
     "*~",
     ".fuse_hidden*",
@@ -1309,7 +1438,10 @@
     "nohup.out",
     "nohup.out/**"
   ],
-  "Global/LyX": ["*.lyx~", "*.lyx#"],
+  "Global/LyX": [
+    "*.lyx~",
+    "*.lyx#"
+  ],
   "Global/MATLAB": [
     "*.asv",
     "*.m~",
@@ -1343,7 +1475,13 @@
     ".hgtags",
     ".hgtags/**"
   ],
-  "Global/Metals": [".metals/**", ".bloop/**", ".ammonite/**", "metals.sbt", "metals.sbt/**"],
+  "Global/Metals": [
+    ".metals/**",
+    ".bloop/**",
+    ".ammonite/**",
+    "metals.sbt",
+    "metals.sbt/**"
+  ],
   "Global/MicrosoftOffice": [
     "*.tmp",
     "~$*.doc*",
@@ -1354,8 +1492,20 @@
     "~$*.ppt*",
     "*.~vsd*"
   ],
-  "Global/Momentics": ["x86/**", "arm/**", "arm-p/**", "translations/*.qm", ".settings/**"],
-  "Global/MonoDevelop": ["*.userprefs", "*.usertasks", "*.pidb", "*.resources", "test-results/**"],
+  "Global/Momentics": [
+    "x86/**",
+    "arm/**",
+    "arm-p/**",
+    "translations/*.qm",
+    ".settings/**"
+  ],
+  "Global/MonoDevelop": [
+    "*.userprefs",
+    "*.usertasks",
+    "*.pidb",
+    "*.resources",
+    "test-results/**"
+  ],
   "Global/NetBeans": [
     "**/nbproject/private/**",
     "**/nbproject/Makefile-*.mk",
@@ -1366,11 +1516,25 @@
     "nbdist/**",
     ".nb-gradle/**"
   ],
-  "Global/Ninja": [".ninja_deps", ".ninja_deps/**", ".ninja_log", ".ninja_log/**"],
-  "Global/NotepadPP": ["*.bak"],
-  "Global/Octave": ["MATLAB.gitignore", "MATLAB.gitignore/**"],
-  "Global/OhMyOpenAgent": [".sisyphus/*"],
-  "Global/Otto": [".otto/**"],
+  "Global/Ninja": [
+    ".ninja_deps",
+    ".ninja_deps/**",
+    ".ninja_log",
+    ".ninja_log/**"
+  ],
+  "Global/NotepadPP": [
+    "*.bak"
+  ],
+  "Global/Octave": [
+    "MATLAB.gitignore",
+    "MATLAB.gitignore/**"
+  ],
+  "Global/OhMyOpenAgent": [
+    ".sisyphus/*"
+  ],
+  "Global/Otto": [
+    ".otto/**"
+  ],
   "Global/PSoCCreator": [
     "*.cywrk.*",
     "*.cyprj.*",
@@ -1388,7 +1552,10 @@
     "*.log",
     "*.zip"
   ],
-  "Global/Patch": ["*.orig", "*.rej"],
+  "Global/Patch": [
+    "*.orig",
+    "*.rej"
+  ],
   "Global/PlatformIO": [
     ".pio",
     ".pio/**",
@@ -1400,9 +1567,16 @@
     ".vscode/c_cpp_properties.json",
     ".vscode/launch.json"
   ],
-  "Global/PuTTY": ["*.ppk"],
-  "Global/Redcar": [".redcar", ".redcar/**"],
-  "Global/Redis": ["*.rdb"],
+  "Global/PuTTY": [
+    "*.ppk"
+  ],
+  "Global/Redcar": [
+    ".redcar",
+    ".redcar/**"
+  ],
+  "Global/Redis": [
+    "*.rdb"
+  ],
   "Global/SBT": [
     "dist/*",
     "target/**",
@@ -1437,9 +1611,25 @@
     "TouchGFX/simulator/msvs/.vs",
     "*.bak"
   ],
-  "Global/SVN": [".svn/**"],
-  "Global/SlickEdit": ["*.vpw", "*.vpj", "*.vpwhistu", "*.vpwhist", "*.vtg"],
-  "Global/Stata": ["*.dta", "*.gph", "*.log", "*.smcl", "*.stpr", "*.stsem", "~*.stswp"],
+  "Global/SVN": [
+    ".svn/**"
+  ],
+  "Global/SlickEdit": [
+    "*.vpw",
+    "*.vpj",
+    "*.vpwhistu",
+    "*.vpwhist",
+    "*.vtg"
+  ],
+  "Global/Stata": [
+    "*.dta",
+    "*.gph",
+    "*.log",
+    "*.smcl",
+    "*.stpr",
+    "*.stsem",
+    "~*.stswp"
+  ],
   "Global/SublimeText": [
     "*.tmlanguage.cache",
     "*.tmPreferences.cache",
@@ -1469,7 +1659,10 @@
     "GitHub.sublime-settings",
     "GitHub.sublime-settings/**"
   ],
-  "Global/Syncthing": [".stversions", ".stversions/**"],
+  "Global/Syncthing": [
+    ".stversions",
+    ".stversions/**"
+  ],
   "Global/SynopsysVCS": [
     "*.vcd",
     "*.vpd",
@@ -1517,9 +1710,19 @@
     "cscope.po.out",
     "cscope.po.out/**"
   ],
-  "Global/TextMate": ["*.tmproj", "*.tmproject", "tmtags", "tmtags/**"],
-  "Global/TortoiseGit": [".tgitconfig", ".tgitconfig/**"],
-  "Global/Vagrant": [".vagrant/**"],
+  "Global/TextMate": [
+    "*.tmproj",
+    "*.tmproject",
+    "tmtags",
+    "tmtags/**"
+  ],
+  "Global/TortoiseGit": [
+    ".tgitconfig",
+    ".tgitconfig/**"
+  ],
+  "Global/Vagrant": [
+    ".vagrant/**"
+  ],
   "Global/Vim": [
     "[._]*.s[a-v][a-z]",
     "[._]*.sw[a-p]",
@@ -1564,7 +1767,10 @@
     "abstract.log*",
     "abstract.record*"
   ],
-  "Global/VisualStudioCode": [".vscode/*", "*.vsix"],
+  "Global/VisualStudioCode": [
+    ".vscode/*",
+    "*.vsix"
+  ],
   "Global/WebMethods": [
     "**/IntegrationServer/datastore/**",
     "**/IntegrationServer/db/**",
@@ -1600,7 +1806,9 @@
     "*.msp",
     "*.lnk"
   ],
-  "Global/Xcode": ["xcuserdata/**"],
+  "Global/Xcode": [
+    "xcuserdata/**"
+  ],
   "Global/XilinxISE": [
     "*.bgn",
     "*.bit",
@@ -1671,7 +1879,9 @@
     "_ngo/**",
     "_xmsgs/**"
   ],
-  "Global/Zed": [".zed/*"],
+  "Global/Zed": [
+    ".zed/*"
+  ],
   "Global/macOS": [
     ".DS_Store",
     ".DS_Store/**",
@@ -1909,7 +2119,11 @@
     ".HTF/**",
     ".ghc.environment.*"
   ],
-  "Haxe": [".haxelib/**", ".haxelsp/recording/**", "dump/**"],
+  "Haxe": [
+    ".haxelib/**",
+    ".haxelsp/recording/**",
+    "dump/**"
+  ],
   "IAR": [
     "*.o",
     "*.bin",
@@ -1941,8 +2155,18 @@
     "Backup*",
     "*.dep"
   ],
-  "IGORPro": ["*.pxp", "*.pxt", "*.uxp", "*.uxt"],
-  "Idris": ["*.ttc", "*.ttm", "*.ibc", "*.o"],
+  "IGORPro": [
+    "*.pxp",
+    "*.pxt",
+    "*.uxp",
+    "*.uxt"
+  ],
+  "Idris": [
+    "*.ttc",
+    "*.ttm",
+    "*.ibc",
+    "*.o"
+  ],
   "JBoss": [
     "jboss/server/all/deploy/project.ext",
     "jboss/server/default/deploy/project.ext",
@@ -2792,7 +3016,10 @@
     ".history/**",
     "*.kicad_prl"
   ],
-  "Kohana": ["application/cache/*", "application/logs/*"],
+  "Kohana": [
+    "application/cache/*",
+    "application/logs/*"
+  ],
   "Kotlin": [
     "*.class",
     "*.log",
@@ -2821,7 +3048,9 @@
     "*.lvlps",
     ".cache/**"
   ],
-  "LangChain": [".langgraph_api/**"],
+  "LangChain": [
+    ".langgraph_api/**"
+  ],
   "Laravel": [
     "vendor/**",
     "node_modules/**",
@@ -2884,7 +3113,9 @@
     "**/MaeExp.txt",
     "**/MaeExp.xml"
   ],
-  "Lean": [".lake/**"],
+  "Lean": [
+    ".lake/**"
+  ],
   "Leiningen": [
     "pom.xml",
     "pom.xml/**",
@@ -2931,8 +3162,18 @@
     "modules/system/*",
     "modules/users/*"
   ],
-  "Lilypond": ["*.pdf", "*.ps", "*.midi", "*.mid", "*.log", "*~"],
-  "Lithium": ["libraries/*", "resources/tmp/*"],
+  "Lilypond": [
+    "*.pdf",
+    "*.ps",
+    "*.midi",
+    "*.mid",
+    "*.log",
+    "*~"
+  ],
+  "Lithium": [
+    "libraries/*",
+    "resources/tmp/*"
+  ],
   "Lua": [
     "luac.out",
     "luac.out/**",
@@ -3128,7 +3369,12 @@
     "*.exe",
     "*.dSYM/**"
   ],
-  "Nanoc": ["output/**", "tmp/nanoc/**", "crash.log", "crash.log/**"],
+  "Nanoc": [
+    "output/**",
+    "tmp/nanoc/**",
+    "crash.log",
+    "crash.log/**"
+  ],
   "Nestjs": [
     "dist",
     "dist/**",
@@ -3187,8 +3433,19 @@
     "next-env.d.ts",
     "next-env.d.ts/**"
   ],
-  "Nim": ["nimcache/**", "nimblecache/**", "htmldocs/**"],
-  "Nix": ["result", "result/**", "result-*", ".direnv", ".direnv/**", "**/.nixos-test-history"],
+  "Nim": [
+    "nimcache/**",
+    "nimblecache/**",
+    "htmldocs/**"
+  ],
+  "Nix": [
+    "result",
+    "result/**",
+    "result-*",
+    ".direnv",
+    ".direnv/**",
+    "**/.nixos-test-history"
+  ],
   "Node": [
     "logs",
     "logs/**",
@@ -3343,8 +3600,18 @@
     "vqmod/checked.cache",
     "vqmod/mods.cache"
   ],
-  "OracleForms": ["*.fmx", "*.mmx", "*.plx"],
-  "Packer": ["packer_cache/**", "crash.log", "crash.log/**", "*.pkrvars.hcl", "*.box"],
+  "OracleForms": [
+    "*.fmx",
+    "*.mmx",
+    "*.plx"
+  ],
+  "Packer": [
+    "packer_cache/**",
+    "crash.log",
+    "crash.log/**",
+    "*.pkrvars.hcl",
+    "*.box"
+  ],
   "Perl": [
     ".last_cover_stats",
     ".last_cover_stats/**",
@@ -3381,7 +3648,10 @@
     "local/**",
     ".carmel/**"
   ],
-  "Phalcon": ["cache/**", "config/development/**"],
+  "Phalcon": [
+    "cache/**",
+    "config/development/**"
+  ],
   "PlayFramework": [
     "bin/**",
     "db",
@@ -3785,7 +4055,16 @@
     "CATKIN_IGNORE",
     "CATKIN_IGNORE/**"
   ],
-  "Racket": [".DS_Store", ".DS_Store/**", "compiled/**", "doc/**", "*~", "*.bak", "\\#*", ".\\#*"],
+  "Racket": [
+    ".DS_Store",
+    ".DS_Store/**",
+    "compiled/**",
+    "doc/**",
+    "*~",
+    "*.bak",
+    "\\#*",
+    ".\\#*"
+  ],
   "Rails": [
     "*.rbc",
     "capybara-*.html",
@@ -3833,8 +4112,17 @@
     "storage/*",
     "public/uploads"
   ],
-  "Raku": [".precomp", ".precomp/**", "lib/.precomp"],
-  "ReScript": ["node_modules/**", "lib/**", ".bsb.lock", ".bsb.lock/**"],
+  "Raku": [
+    ".precomp",
+    ".precomp/**",
+    "lib/.precomp"
+  ],
+  "ReScript": [
+    "node_modules/**",
+    "lib/**",
+    ".bsb.lock",
+    ".bsb.lock/**"
+  ],
   "RhodesRhomobile": [
     "rholog-*",
     "sim-*",
@@ -3943,9 +4231,26 @@
     ".env",
     ".env/**"
   ],
-  "Sass": [".sass-cache/**", "*.css.map", "*.sass.map", "*.scss.map"],
-  "Scala": ["*.class", "*.tasty", "*.log", "hs_err_pid*"],
-  "Scheme": ["*.ss~", "*.ss#*", ".#*.ss", "*.scm~", "*.scm#*", ".#*.scm"],
+  "Sass": [
+    ".sass-cache/**",
+    "*.css.map",
+    "*.sass.map",
+    "*.scss.map"
+  ],
+  "Scala": [
+    "*.class",
+    "*.tasty",
+    "*.log",
+    "hs_err_pid*"
+  ],
+  "Scheme": [
+    "*.ss~",
+    "*.ss#*",
+    ".#*.ss",
+    "*.scm~",
+    "*.scm#*",
+    ".#*.scm"
+  ],
   "Scrivener": [
     "*/Files/binder.autosave",
     "*/Files/binder.backup",
@@ -3956,7 +4261,15 @@
     "*/QuickLook/**",
     "*/Settings/ui.plist"
   ],
-  "Sdcc": ["*.lnk", "*.lst", "*.map", "*.mem", "*.rel", "*.rst", "*.sym"],
+  "Sdcc": [
+    "*.lnk",
+    "*.lst",
+    "*.map",
+    "*.mem",
+    "*.rel",
+    "*.rst",
+    "*.sym"
+  ],
   "SeamGen": [
     "bootstrap/data",
     "bootstrap/tmp",
@@ -3970,7 +4283,9 @@
     "temp-testng-customsuite.xml",
     "temp-testng-customsuite.xml/**"
   ],
-  "SketchUp": ["*.skb"],
+  "SketchUp": [
+    "*.skb"
+  ],
   "Smalltalk": [
     "*.changes",
     "*.chg",
@@ -4018,7 +4333,14 @@
     ".env.local",
     ".env.local/**"
   ],
-  "Stella": ["obj/**", "a.out", "a.out/**", "*.bin", "*.a26", "*.a78"],
+  "Stella": [
+    "obj/**",
+    "a.out",
+    "a.out/**",
+    "*.bin",
+    "*.a26",
+    "*.a78"
+  ],
   "SugarCRM": [
     ".htaccess",
     ".htaccess/**",
@@ -4286,7 +4608,13 @@
     "terraform.rc",
     "terraform.rc/**"
   ],
-  "TestComplete": ["*.tcCFGExtender", "*.tcLS", "*.tlb", "*.tcLogs", "*.bak"],
+  "TestComplete": [
+    "*.tcCFGExtender",
+    "*.tcLS",
+    "*.tlb",
+    "*.tcLogs",
+    "*.bak"
+  ],
   "Textpattern": [
     ".htaccess",
     ".htaccess/**",
@@ -4492,8 +4820,15 @@
     "Plugins/**/Intermediate/*",
     "DerivedDataCache/*"
   ],
-  "VBA": ["~$*", "*.[lL][aA][cC][cC][dD][bB]", "*.[lL][dD][bB]"],
-  "VVVV": ["*~.xml", "bin/**"],
+  "VBA": [
+    "~$*",
+    "*.[lL][aA][cC][cC][dD][bB]",
+    "*.[lL][dD][bB]"
+  ],
+  "VVVV": [
+    "*~.xml",
+    "bin/**"
+  ],
   "VisualStudio": [
     "*.rsuser",
     "*.suo",
@@ -4736,7 +5071,13 @@
     "*.msm",
     "*.msp"
   ],
-  "Waf": [".waf-*-*/**", ".waf3-*-*/**", "waf-*-*/**", "waf3-*-*/**", ".lock-waf_*_build"],
+  "Waf": [
+    ".waf-*-*/**",
+    ".waf3-*-*/**",
+    "waf-*-*/**",
+    "waf3-*-*/**",
+    ".lock-waf_*_build"
+  ],
   "WordPress": [
     "wp-admin/**",
     "wp-content/index.php",
@@ -4773,8 +5114,19 @@
     "*.xojo_uistate",
     "*.obsolete*"
   ],
-  "Yeoman": ["node_modules/**", "bower_components/**", "*.log", "build/**", "dist/**"],
-  "Yii": ["assets/*", "protected/runtime/*", "protected/data/*.db", "themes/classic/views/**"],
+  "Yeoman": [
+    "node_modules/**",
+    "bower_components/**",
+    "*.log",
+    "build/**",
+    "dist/**"
+  ],
+  "Yii": [
+    "assets/*",
+    "protected/runtime/*",
+    "protected/data/*.db",
+    "themes/classic/views/**"
+  ],
   "ZendFramework": [
     "composer.phar",
     "composer.phar/**",
@@ -4813,7 +5165,11 @@
     "ext/.deps",
     "ext/libtool"
   ],
-  "Zig": [".zig-cache/**", "zig-out/**", "*.o"],
+  "Zig": [
+    ".zig-cache/**",
+    "zig-out/**",
+    "*.o"
+  ],
   "bun": [
     "logs",
     "logs/**",
@@ -4884,8 +5240,13 @@
     ".tern-port",
     ".tern-port/**"
   ],
-  "community/AWS/CDK": [".cdk.staging/**", "cdk.out/**"],
-  "community/AWS/SAM": [".aws-sam/**"],
+  "community/AWS/CDK": [
+    ".cdk.staging/**",
+    "cdk.out/**"
+  ],
+  "community/AWS/SAM": [
+    ".aws-sam/**"
+  ],
   "community/Alteryx": [
     "*.yxdb",
     "*.cydb",
@@ -4925,7 +5286,11 @@
     "*.PcbDocPreview",
     ".~lock.*"
   ],
-  "community/AutoIt": ["*.a3x", "Backup/*", "*_stripped.au3"],
+  "community/AutoIt": [
+    "*.a3x",
+    "Backup/*",
+    "*_stripped.au3"
+  ],
   "community/AutomationStudio": [
     "Binaries/**",
     "Diagnosis/**",
@@ -4944,9 +5309,23 @@
     "*.set",
     "*RevInfo.var"
   ],
-  "community/B4X": ["**/Objects", "**/AutoBackups", "*.meta"],
-  "community/Bazel": ["bazel-*", ".ijwb/**", ".aswb/**", ".clwb/**"],
-  "community/Beef": ["build/**", "recovery/**", "BeefSpace_User.toml", "BeefSpace_User.toml/**"],
+  "community/B4X": [
+    "**/Objects",
+    "**/AutoBackups",
+    "*.meta"
+  ],
+  "community/Bazel": [
+    "bazel-*",
+    ".ijwb/**",
+    ".aswb/**",
+    ".clwb/**"
+  ],
+  "community/Beef": [
+    "build/**",
+    "recovery/**",
+    "BeefSpace_User.toml",
+    "BeefSpace_User.toml/**"
+  ],
   "community/BoxLang/ColdBox": [
     "WEB-INF",
     "WEB-INF/**",
@@ -5082,7 +5461,11 @@
     "msbuild.wrn/**",
     ".vs/**"
   ],
-  "community/Dotter": [".dotter/local.toml", ".dotter/cache.toml", ".dotter/cache"],
+  "community/Dotter": [
+    ".dotter/local.toml",
+    ".dotter/cache.toml",
+    ".dotter/cache"
+  ],
   "community/Elixir/Phoenix": [
     "tmp",
     "tmp/**",
@@ -5095,10 +5478,22 @@
     "installer/doc",
     "installer/deps"
   ],
-  "community/Exercism": [".exercism", ".exercism/**"],
-  "community/FreeCAD": ["*.FC.lock", "*.bak", "*.FCBak", "*.tmp"],
-  "community/GNOME/GNOMEShellExtension": ["*.zip"],
-  "community/Golang/Go.AllowList": ["*"],
+  "community/Exercism": [
+    ".exercism",
+    ".exercism/**"
+  ],
+  "community/FreeCAD": [
+    "*.FC.lock",
+    "*.bak",
+    "*.FCBak",
+    "*.tmp"
+  ],
+  "community/GNOME/GNOMEShellExtension": [
+    "*.zip"
+  ],
+  "community/Golang/Go.AllowList": [
+    "*"
+  ],
   "community/Golang/Hugo": [
     "public/**",
     "resources/_gen/**",
@@ -5114,7 +5509,12 @@
     ".hugo_build.lock",
     ".hugo_build.lock/**"
   ],
-  "community/Gretl": ["session.inp", "session.inp/**", "string_table.txt", "string_table.txt/**"],
+  "community/Gretl": [
+    "session.inp",
+    "session.inp/**",
+    "string_table.txt",
+    "string_table.txt/**"
+  ],
   "community/HOL": [
     "*Script",
     "*Theory.sig",
@@ -5126,7 +5526,14 @@
     ".HOLMK",
     ".HOLMK/**"
   ],
-  "community/Hexo": ["public/**", "tmp/**", ".tmp*", "db.json", "db.json/**", ".deploy*/**"],
+  "community/Hexo": [
+    "public/**",
+    "tmp/**",
+    ".tmp*",
+    "db.json",
+    "db.json/**",
+    ".deploy*/**"
+  ],
   "community/Java/JBoss4": [
     "server/all/data",
     "server/all/log",
@@ -5171,7 +5578,10 @@
     "server/default/deploy/*.war.failed",
     "server/default/deploy/*.war.dodeploy"
   ],
-  "community/JavaScript/Cordova": ["platforms", "platforms/**"],
+  "community/JavaScript/Cordova": [
+    "platforms",
+    "platforms/**"
+  ],
   "community/JavaScript/Expo": [
     "node_modules/**",
     ".expo/**",
@@ -5242,7 +5652,10 @@
     "payload.exe",
     "payload.exe/**"
   ],
-  "community/JavaScript/Vue": ["docs/_book", "test/**"],
+  "community/JavaScript/Vue": [
+    "docs/_book",
+    "test/**"
+  ],
   "community/LensStudio": [
     ".DS_Store",
     ".DS_Store/**",
@@ -5309,7 +5722,10 @@
     "*.pyc",
     "*.pyd"
   ],
-  "community/Move": ["build/**", ".aptos/**"],
+  "community/Move": [
+    "build/**",
+    ".aptos/**"
+  ],
   "community/NasaSpecsIntact": [
     "*.se$",
     "*.RPT",
@@ -5339,7 +5755,9 @@
     ".obsidian/workspace-mobile.json",
     ".obsidian/plugins/*/**"
   ],
-  "community/Obsidian/NotesOnly": [".obsidian/**/*"],
+  "community/Obsidian/NotesOnly": [
+    ".obsidian/**/*"
+  ],
   "community/OpenSSL": [
     "*.ca",
     "*.crt",
@@ -5388,7 +5806,9 @@
     "bitrix/php_interface/dbconn.php",
     "upload/**"
   ],
-  "community/PHP/CodeSniffer": ["wpcs/*"],
+  "community/PHP/CodeSniffer": [
+    "wpcs/*"
+  ],
   "community/PHP/Drupal7": [
     "sites/*/*settings*.php",
     "sites/example.sites.php",
@@ -5444,7 +5864,9 @@
     "themes",
     "themes/**"
   ],
-  "community/PHP/Jigsaw": ["build_*"],
+  "community/PHP/Jigsaw": [
+    "build_*"
+  ],
   "community/PHP/Magento1": [
     "PATCH_*.sh",
     "app/etc/local.xml",
@@ -5529,7 +5951,10 @@
     "website/var/versions/object/*",
     "website/var/user-image/*"
   ],
-  "community/PHP/ThinkPHP": ["Application/Runtime/**", "Application/Common/Conf/config.php"],
+  "community/PHP/ThinkPHP": [
+    "Application/Runtime/**",
+    "Application/Common/Conf/config.php"
+  ],
   "community/Puppet": [
     "pkg/*",
     "Gemfile.lock",
@@ -5548,7 +5973,13 @@
     "ipython_config.py/**",
     ".virtual_documents/**"
   ],
-  "community/Python/Nikola": [".doit.db", ".doit.db/**", "*.py[cod]", "cache/**", "output/**"],
+  "community/Python/Nikola": [
+    ".doit.db",
+    ".doit.db/**",
+    "*.py[cod]",
+    "cache/**",
+    "output/**"
+  ],
   "community/ROS2": [
     "install/**",
     "log/**",
@@ -5626,7 +6057,12 @@
     "*.resx.ts",
     "*.scss.ts"
   ],
-  "community/Splunk": ["local.meta", "local.meta/**", "local", "local/**"],
+  "community/Splunk": [
+    "local.meta",
+    "local.meta/**",
+    "local",
+    "local/**"
+  ],
   "community/Strapi": [
     ".DS_Store",
     ".DS_Store/**",
@@ -5721,9 +6157,19 @@
     "front-workspace.code-workspace",
     "front-workspace.code-workspace/**"
   ],
-  "community/Tauri": ["target/**", "WixTools/**"],
-  "community/Terragrunt": [".terragrunt-cache", ".terragrunt-cache/**"],
-  "community/Toit": [".packages", ".packages/**", "*_pb.toit"],
+  "community/Tauri": [
+    "target/**",
+    "WixTools/**"
+  ],
+  "community/Terragrunt": [
+    ".terragrunt-cache",
+    ".terragrunt-cache/**"
+  ],
+  "community/Toit": [
+    ".packages",
+    ".packages/**",
+    "*_pb.toit"
+  ],
   "community/UTAU": [
     "*.pkf",
     "*.ctspec",
