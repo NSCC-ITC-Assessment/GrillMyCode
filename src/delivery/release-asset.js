@@ -9,6 +9,7 @@
  * workflows in one repo) with get-after-create and delete-before-upload guards.
  */
 
+import { Buffer } from 'node:buffer';
 import * as core from '@actions/core';
 
 const RELEASE_TAG = 'gmc-assessments';
@@ -90,18 +91,21 @@ async function deleteExistingAsset({ octokit, owner, repo, releaseId, filename }
 }
 
 async function uploadAsset({ octokit, owner, repo, releaseId, pdfBuffer, filename }) {
+  const contentLength = Buffer.byteLength(pdfBuffer);
+  const uploadParams = {
+    owner,
+    repo,
+    release_id: releaseId,
+    name: filename,
+    data: pdfBuffer,
+    headers: {
+      'content-type': 'application/pdf',
+      'content-length': contentLength,
+    },
+  };
+
   try {
-    const { data } = await octokit.rest.repos.uploadReleaseAsset({
-      owner,
-      repo,
-      release_id: releaseId,
-      name: filename,
-      data: pdfBuffer,
-      headers: {
-        'content-type': 'application/pdf',
-        'content-length': pdfBuffer.length,
-      },
-    });
+    const { data } = await octokit.rest.repos.uploadReleaseAsset(uploadParams);
     return data.browser_download_url;
   } catch (err) {
     if (err.status !== 422) throw err;
@@ -109,17 +113,7 @@ async function uploadAsset({ octokit, owner, repo, releaseId, pdfBuffer, filenam
     // 422 already_exists — a concurrent run uploaded first.
     // Delete the conflicting asset and retry once.
     await deleteExistingAsset({ octokit, owner, repo, releaseId, filename });
-    const { data } = await octokit.rest.repos.uploadReleaseAsset({
-      owner,
-      repo,
-      release_id: releaseId,
-      name: filename,
-      data: pdfBuffer,
-      headers: {
-        'content-type': 'application/pdf',
-        'content-length': pdfBuffer.length,
-      },
-    });
+    const { data } = await octokit.rest.repos.uploadReleaseAsset(uploadParams);
     return data.browser_download_url;
   }
 }

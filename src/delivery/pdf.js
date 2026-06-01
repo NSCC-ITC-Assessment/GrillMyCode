@@ -5,6 +5,7 @@
  * Requires the system Chromium binary set via PUPPETEER_EXECUTABLE_PATH.
  */
 
+import { Buffer } from 'node:buffer';
 import { mdToPdf } from 'md-to-pdf';
 
 export async function generatePdf(markdownContent) {
@@ -15,5 +16,8 @@ export async function generatePdf(markdownContent) {
       highlight_style: 'github',
     },
   );
-  return result.content; // Buffer
+  if (!result?.content?.length) {
+    throw new Error('md-to-pdf returned empty content — Chromium may have failed to launch');
+  }
+  return Buffer.isBuffer(result.content) ? result.content : Buffer.from(result.content);
 }
