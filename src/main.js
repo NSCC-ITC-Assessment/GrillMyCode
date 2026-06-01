@@ -295,6 +295,7 @@ async function run() {
           repo: ctx.repo.repo,
           pdfBuffer,
           filename: pdfFilename,
+          token: inputs.githubToken,
         });
         core.info(`Assessment PDF uploaded: ${pdfUrl}`);
       } catch (err) {

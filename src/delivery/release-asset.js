@@ -21,12 +21,12 @@ const RELEASE_BODY = 'Auto-managed by GrillMyCode.';
  *
  * Returns the stable `browser_download_url` for the uploaded asset.
  */
-export async function uploadPdfAsset({ octokit, owner, repo, pdfBuffer, filename }) {
+export async function uploadPdfAsset({ octokit, owner, repo, pdfBuffer, filename, token }) {
   const release = await getOrCreateRelease({ octokit, owner, repo });
 
   await deleteExistingAsset({ octokit, owner, repo, releaseId: release.id, filename });
 
-  return uploadAsset({ octokit, uploadUrl: release.upload_url, pdfBuffer, filename });
+  return uploadAsset({ uploadUrl: release.upload_url, pdfBuffer, filename, token });
 }
 
 async function getOrCreateRelease({ octokit, owner, repo }) {
@@ -89,15 +89,27 @@ async function deleteExistingAsset({ octokit, owner, repo, releaseId, filename }
   }
 }
 
-async function uploadAsset({ octokit, uploadUrl, pdfBuffer, filename }) {
-  core.info(`PDF upload: filename=${filename}, bytes=${pdfBuffer.length}, upload_url=${uploadUrl}`);
-  const { data } = await octokit.request(`POST ${uploadUrl}`, {
-    name: filename,
-    data: pdfBuffer,
+async function uploadAsset({ uploadUrl, pdfBuffer, filename, token }) {
+  // Octokit serialises Buffer bodies as JSON, corrupting binary data.
+  // Use global fetch (Node 18+) so the Buffer is sent as raw bytes.
+  const url = uploadUrl.replace('{?name,label}', `?name=${encodeURIComponent(filename)}`);
+  core.info(`PDF upload: filename=${filename}, bytes=${pdfBuffer.length}, url=${url}`);
+
+  const response = await fetch(url, {
+    method: 'POST',
     headers: {
-      'content-type': 'application/pdf',
-      'content-length': pdfBuffer.length,
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/pdf',
+      'X-GitHub-Api-Version': '2022-11-28',
     },
+    body: pdfBuffer,
   });
+
+  if (!response.ok) {
+    const text = await response.text().catch(() => response.statusText);
+    throw new Error(`HTTP ${response.status}: ${text}`);
+  }
+
+  const data = await response.json();
   return data.browser_download_url;
 }
