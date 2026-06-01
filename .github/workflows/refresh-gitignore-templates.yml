@@ -42,7 +42,7 @@ jobs:
         run: pnpm prettier --write src/data/gitignore-templates.json
 
       - name: Open PR if templates changed
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@v8
         with:
           token: ${{ steps.app-token.outputs.token }}
           branch: chore/refresh-gitignore-templates
