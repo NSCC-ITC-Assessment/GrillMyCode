@@ -6,10 +6,13 @@ sidebar_position: 5
 
 Uses [OpenRouter](https://openrouter.ai/) to route requests to any model from a wide range of providers (Anthropic, Google, Meta, Mistral, and more) through a single API key. Useful when you want to use a model not available on GitHub Models, or want to compare outputs across different models.
 
-Store the API key as a secret in **Settings → Secrets and variables → Actions** on the student repository.
+### Setup
 
-Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
+1. **Create an OpenRouter account** at [openrouter.ai](https://openrouter.ai/) and add a prepaid credit balance. Suggested start amount - $5
+2. **Generate an API key** at [openrouter.ai/keys](https://openrouter.ai/keys).
+3. **Store the key as an organisation-level GitHub secret** — Go to your GitHub organisation's **Settings → Secrets and variables → Actions** and create a secret named `OPENROUTER_API_KEY`. This makes the key available to all student repositories for that classroom automatically without any per-repo configuration.
 
+Then copy the workflow file below to `.github/workflows/grill-my-code.yml` in the student repository.
 ```yaml
 name: GrillMyCode
 

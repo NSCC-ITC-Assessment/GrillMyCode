@@ -35,7 +35,7 @@ Uses the [GitHub Models](https://github.com/marketplace/models) inference endpoi
 | `ai_model` | Defaults to `gpt-4.1`. The only currently supported model on GitHub Models is `gpt-4.1`. See the [GitHub Models marketplace](https://github.com/marketplace/models) for the full catalogue. |
 | `api_key` | Leave empty to use `github_token` automatically. Supply an instructor PAT here to authenticate calls under the instructor's account — see [Using an instructor token](#using-an-instructor-token) below |
 
-### Using an instructor token
+### Using an instructor token (optional)
 
 By default, the action authenticates GitHub Models API calls with the built-in `GITHUB_TOKEN`. Because `GITHUB_TOKEN` represents the **repository owner** — in a GitHub Classroom context, that is the **student's personal account** — the rate limit tier applied is the one attached to the student's GitHub plan (typically the free tier).
 
@@ -92,9 +92,23 @@ Supplying an instructor's Personal Access Token via `api_key` changes whose acco
 
 ## OpenRouter
 
-Uses the [OpenRouter](https://openrouter.ai/) unified inference API, which provides access to models from many different providers through a single key.
+[OpenRouter](https://openrouter.ai/) is a unified API gateway that gives you access to hundreds of AI models — from providers like Anthropic, Google, Meta, Mistral, DeepSeek, and more — through a single API key and a single billing account. Instead of signing up separately with each AI provider and managing multiple API keys, you create one OpenRouter account, fund it with a prepaid balance, and then specify which model you want to use at request time.
 
-**When to use:** When you want to use a model from a provider other than GitHub Models.
+**When to use:** When you want to use a model not available on GitHub Models, need to compare outputs across different providers, or want the flexibility to switch models without changing workflow secrets.
+
+### Instructor setup guide
+
+To use OpenRouter with GrillMyCode, an instructor needs to perform the following steps **once**:
+
+1. **Create an OpenRouter account** — Go to [openrouter.ai](https://openrouter.ai/) and sign up (Google, GitHub, or email).
+2. **Add credit** — Navigate to [openrouter.ai/credits](https://openrouter.ai/credits) and add a prepaid balance. Many of the recommended models below cost fractions of a cent per call, so $5–10 will last a large class for an entire semester.
+3. **Generate an API key** — Go to [openrouter.ai/keys](https://openrouter.ai/keys) and create a new key. Copy it immediately — you won't be able to view it again.
+4. **Store the key as an organisation-level GitHub secret** — Go to your GitHub organisation's **Settings → Secrets and variables → Actions** and create a new secret named `OPENROUTER_API_KEY` with the key from Step 3. This makes the key available to all student repositories for that classroom automatically without any per-repo configuration.
+5. **Configure the workflow** — Set `ai_provider: 'openrouter'` and choose a model via `ai_model` (see the tables below for recommended options).
+
+:::tip[Classroom tip]
+For a GitHub Classroom setup the secret should **always** be added at the organisation level. This ensures every student repo has access to the key from the moment it is created, with no extra setup required from students.
+:::
 
 ### Required secrets
 
