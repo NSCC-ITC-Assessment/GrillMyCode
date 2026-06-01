@@ -12,7 +12,14 @@ export async function generatePdf(markdownContent) {
   const result = await mdToPdf(
     { content: markdownContent },
     {
-      launch_options: { args: ['--no-sandbox', '--disable-setuid-sandbox'] },
+      launch_options: {
+        args: [
+          '--no-sandbox',
+          '--disable-setuid-sandbox',
+          '--disable-dev-shm-usage', // required in Docker — /dev/shm is only 64 MB by default
+          '--disable-gpu',
+        ],
+      },
       highlight_style: 'github',
     },
   );
