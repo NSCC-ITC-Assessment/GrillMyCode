@@ -63,7 +63,7 @@ Use `additional_context` to give the AI assignment-specific instructions:
 
 ## Choosing an AI provider
 
-The default provider is **GitHub Models** — no setup required. To use OpenRouter instead, see the [AI Providers](ai-providers) page.
+The default provider is **GitHub Models** — no setup required. To use OpenRouter instead, see the [AI Providers](./ai-providers/github-models) and [OpenRouter](./ai-providers/openrouter) pages.
 
 ## Next steps
 

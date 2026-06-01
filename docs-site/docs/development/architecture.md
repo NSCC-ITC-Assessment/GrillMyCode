@@ -172,25 +172,27 @@ Uses an update-first strategy:
 
 ## Docker image build
 
-The image uses a **multi-stage Dockerfile**:
+The image uses a **single-stage Dockerfile** based on `node:26-slim`:
 
 ```
-Stage 1 — rmcm-builder (rust:slim-bookworm)
+node:26-slim
       │
-      │  git clone --branch production
-      │  https://github.com/NSCC-ITC-Assessment/comment-remover
+      ├── apt-get install git curl ca-certificates
       │
-      │  cargo build --release  ──► /build/target/release/rmcm
+      ├── curl ──► download pre-built rmcm binary
+      │            from GitHub Releases → /usr/local/bin/rmcm
       │
-      ▼
-Stage 2 — final image (node:26-slim)
+      ├── npm install -g corepack
+      │   corepack enable
+      │   corepack prepare pnpm@latest --activate
       │
-      ├── COPY --from=rmcm-builder /build/target/release/rmcm /usr/local/bin/rmcm
-      ├── pnpm install --prod
+      ├── COPY package.json pnpm-lock.yaml
+      │   pnpm install --frozen-lockfile --prod --ignore-scripts
+      │
       └── COPY src/ entrypoint.sh
 ```
 
-`rmcm` (the comment-stripping binary from [NSCC-ITC-Assessment/comment-remover](https://github.com/NSCC-ITC-Assessment/comment-remover)) is compiled from source at image-build time. The Rust build stage is discarded after compilation, so the final image contains only the compiled binary alongside the Node runtime.
+`rmcm` (the comment-stripping binary from [NSCC-ITC-Assessment/comment-remover](https://github.com/NSCC-ITC-Assessment/comment-remover)) is downloaded as a pre-built Linux x86_64 binary from a pinned GitHub release. `pnpm` is bootstrapped via `corepack` rather than being installed as a fixed package version, keeping it aligned with whatever `corepack prepare` resolves at build time.
 
 ---
 
@@ -201,7 +203,7 @@ Three workflows build and publish Docker images. They are mutually exclusive by 
 | Workflow | Trigger | Image tag(s) produced | Intended for |
 |---|---|---|---|
 | `branch-build.yml` | Push to any non-`main` branch (code changes only); `workflow_dispatch` | `branch-<sanitized-branch-name>` | **Contributors** — ephemeral dev image for testing a feature or fix branch before it is merged |
-| `build-and-push.yml` | Push to `main` (code changes only); `workflow_dispatch` | `latest` | **Maintainers** — bleeding-edge integration build; reflects the current state of `main` but is not recommended for consumers |
+| `staging-build.yml` | Push to `main` (code changes only); `workflow_dispatch` | `next` | **Maintainers** — bleeding-edge integration build; reflects the current state of `main` but is not recommended for consumers |
 | `release.yml` | Push of a `v*` tag | `vX.Y.Z`, `vX.Y`, `vX`, `latest` | **Consumers** — stable, versioned release; consumers pin to the major tag (e.g. `:v1`) |
 
 All three workflows ignore documentation-only changes (`docs-site/**`, `README.md`, etc.) to avoid unnecessary image rebuilds.

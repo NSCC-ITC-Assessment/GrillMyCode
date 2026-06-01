@@ -59,7 +59,7 @@ To include truly everything (including bot-committed starter files), also set `s
 
 By default, API calls to GitHub Models are authenticated with the student's `GITHUB_TOKEN`, which uses the student's own rate limit quota. For large classes with many simultaneous submissions, you may want to use an instructor's Personal Access Token instead.
 
-See the [GitHub Models section of the AI Providers page](../ai-providers#using-an-instructor-token) for details.
+See the [GitHub Models provider](../ai-providers/github-models#using-an-instructor-token) for details.
 
 ## Assessment issue assignment
 

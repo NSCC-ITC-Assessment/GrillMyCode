@@ -98,7 +98,7 @@ jobs:
             const updated = content.replace(/^(# .+)$/m, `$1${newEntry}`);
             fs.writeFileSync(notesFile, updated);
           } else {
-            const header = `---\nsidebar_label: Release Notes\nsidebar_position: 99\n---\n\n# Release Notes\n`;
+            const header = `---\nsidebar_label: Release Notes\nsidebar_position: 99\ntoc_max_heading_level: 2\n---\n\n# Release Notes\n`;
             fs.writeFileSync(notesFile, header + newEntry);
           }
           EOF
@@ -213,7 +213,7 @@ jobs:
           if (other.length > 0)
             sections.push(`### Other\n\n${other.join('\n')}`);
 
-          fs.writeFileSync('/tmp/release-body.txt', `## What's Changed\n\n${sections.join('\n\n')}\n`);
+          fs.writeFileSync('/tmp/release-body.txt', `### What's Changed\n\n${sections.join('\n\n')}\n`);
           EOF
 
       - name: Create GitHub Release

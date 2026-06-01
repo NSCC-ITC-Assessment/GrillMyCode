@@ -21,7 +21,7 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 | `num_questions` | No | `20` | Number of questions to generate (minimum 1, maximum 50). Values above 50 are automatically capped |
 | `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting |
 | `exclude_pattern_overrides` | No | | Comma-separated entries to re-include files excluded by auto-detection or `additional_exclude_patterns`. Each entry can be an exact pattern (e.g. `**/*.md`) to re-include all files of that type, or a specific file path (e.g. `README.md`) to allow only that file through. Note: binary files are **always** skipped regardless of overrides |
-| `additional_exclude_patterns` | No | | Comma-separated globs for **extra** files to exclude on top of the [auto-detected stack patterns](../guides/exclude-patterns.md). Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover |
+| `additional_exclude_patterns` | No | | Comma-separated globs for **extra** files to exclude on top of the [auto-detected stack patterns](exclude-patterns.md). Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover |
 | `output_file` | No | `grill-my-code.md` | Basename for the output Markdown file. Always written under the `.assessment/` folder (e.g. `grill-my-code.md` → `.assessment/grill-my-code.md`) |
 | `post_pr_comment` | No | `false` | Post assessment as a PR comment. On re-runs, the existing comment is updated in place and a note is added indicating the questions were regenerated |
 | `post_issue` | No | `false` | Create a GitHub Issue with the assessment. Automatically assigned to the student who authored the head commit |
@@ -46,6 +46,8 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 
 ## Using outputs in subsequent steps
 
+Give the action step an `id`, then reference its outputs with `steps.<id>.outputs.<name>`:
+
 ```yaml
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   id: assess
@@ -60,4 +62,9 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 
 - name: Print questions
   run: echo "${{ steps.assess.outputs.questions }}"
+
+- name: Comment character count
+  run: |
+    echo "Code before stripping: $(echo "${{ steps.assess.outputs.code_before_strip }}" | wc -c) chars"
+    echo "Code after stripping:  $(echo "${{ steps.assess.outputs.code_after_strip }}" | wc -c) chars"
 ```

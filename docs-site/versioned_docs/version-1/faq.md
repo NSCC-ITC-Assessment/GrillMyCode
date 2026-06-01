@@ -51,25 +51,7 @@ The instructor repository feature stores a private copy of each student's questi
 
 ### What is the Workflow Wizard?
 
-The [Workflow Wizard](workflow-wizard.mdx) is an interactive, step-by-step tool that generates a ready-to-use GitHub Actions workflow YAML for GrillMyCode — no YAML writing required. It walks you through each setting one at a time and outputs a complete workflow file you can copy straight into your repository.
-
-### Do I have to use the Wizard?
-
-No. You can write the workflow YAML by hand using the examples in [Getting Started](getting-started.md) or [Example Workflows](example-workflows/pull-request.md). The Wizard is just the fastest way to get a correctly configured file, especially for more complex setups (instructor repository, custom file patterns, OpenRouter, etc.).
-
-### What does the Wizard configure?
-
-The Wizard covers every major option in nine steps:
-
-1. **Trigger** — when the assessment runs (push, pull request, manual dispatch, or any combination)
-2. **AI provider** — GitHub Models or OpenRouter, plus the model to use
-3. **Questions** — number of questions, assignment context, and custom instructions
-4. **Delivery** — PR comment, GitHub Issue
-5. **Instructor repository** — optional private Q+A copy for the instructor
-6. **Files** — which student files are included or excluded from the diff
-7. **File options** — comment stripping, commit inclusion rules, committer skip list
-8. **Advanced** — temperature, retry attempts, SHA overrides, output file name
-9. **Review** — copy the finished YAML
+The [Workflow Wizard](workflow-wizard.mdx) is an interactive, step-by-step tool that generates a ready-to-use GitHub Actions workflow YAML for GrillMyCode — no YAML writing required. It covers every major option (trigger, AI provider, question count, delivery, instructor repository, file patterns, and more) and outputs a complete workflow file you can copy straight into your repository. You can also write the workflow by hand using the examples in [Getting Started](getting-started.md) or [Example Workflows](example-workflows/pull-request.md).
 
 ### Can I edit the generated YAML after copying it?
 
@@ -117,6 +99,17 @@ Yes. Use the `post_pr_comment` and `post_issue` inputs to enable each delivery m
 ### Can students see the answers?
 
 By default, no. Set `include_answers: 'true'` to include answers in the student-facing report — but this defeats the purpose of the assessment. The instructor repository copy always includes answers regardless of this setting.
+
+### The AI doesn't seem to be reading my code comments. Why?
+
+By default, inline and block comments are stripped from the submitted code before it is sent to the AI. This is intentional — it focuses assessment on what the code does rather than what the student wrote as annotations. To preserve comments, set `keep_comments: 'true'`:
+
+```yaml
+- uses: NSCC-ITC-Assessment/GrillMyCode@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    keep_comments: 'true'
+```
 
 ### How do I customise the questions for a specific assignment?
 
@@ -187,6 +180,10 @@ The action emits a warning — `No assessable files found after applying include
 ### The action is failing with a permissions error.
 
 Make sure the workflow's `permissions` block includes all required scopes. At minimum: `contents: write`, `pull-requests: write` (if posting a PR comment), and `models: read` (for GitHub Models). Check the [Getting Started](getting-started.md) page for a reference workflow.
+
+### The output file was not committed on a pull request from a fork.
+
+This is expected. GitHub Actions workflows triggered by pull requests from forks run with read-only `GITHUB_TOKEN` — the action cannot push commits back to the fork owner's repository. The action logs a warning and continues. PR comments and GitHub Issues are not affected; only the file commit is skipped. If you need the file, ask the student to push directly to a branch on the upstream repository instead.
 
 ### How do I enable verbose logging to debug an issue?
 

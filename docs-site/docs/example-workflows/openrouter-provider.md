@@ -43,8 +43,8 @@ jobs:
 
 See the [OpenRouter model list](https://openrouter.ai/models) for available models and pricing. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`).
 
-For full provider documentation see [AI Providers](../ai-providers).
+For full provider documentation see [OpenRouter](../ai-providers/openrouter).
 
 OpenRouter gives access to models from many providers through a single API key. See the [OpenRouter model list](https://openrouter.ai/models) for available models.
 
-For full provider documentation see [AI Providers](../ai-providers).
+For full provider documentation see [OpenRouter](../ai-providers/openrouter).

@@ -30,7 +30,7 @@ const OPENROUTER_MODELS = [
   { label: 'Xiaomi Mimo V2.5 Pro', value: 'xiaomi/mimo-v2.5-pro' }
 ];
 
-export default function StepAIProvider({ cfg, onChange }) {
+export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
   const isNonGitHub = cfg.aiProvider !== 'github-models';
 
   const isOpenRouter = cfg.aiProvider === 'openrouter';
@@ -94,7 +94,7 @@ export default function StepAIProvider({ cfg, onChange }) {
           tested to work well with GrillMyCode. If you choose your own model, be sure to verify
           its pricing first.
           <br /><br />
-          <a href="/docs/ai-providers#openrouter" target="_blank" rel="noopener noreferrer">
+          <a href={`${docsBase}/ai-providers/openrouter`} target="_blank" rel="noopener noreferrer">
             Read more about OpenRouter setup here →
           </a>
         </div>

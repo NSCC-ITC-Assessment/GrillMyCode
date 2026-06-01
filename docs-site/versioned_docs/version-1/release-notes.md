@@ -1,12 +1,26 @@
 ---
 sidebar_label: Release Notes
 sidebar_position: 99
+toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.10 — 2026-06-01
+
+### What's Changed
+
+### Documentation
+
+- enhance OpenRouter setup instructions and add links for clarity
+- update v1 snapshot
+
+### Refactoring
+
+- standardize project name to 'GrillMyCode' across all files
+
 ## v1.0.9 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Documentation
 
@@ -18,7 +32,7 @@ sidebar_position: 99
 
 ## v1.0.8 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Documentation
 
@@ -33,7 +47,7 @@ sidebar_position: 99
 
 ## v1.0.7 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Features
 
@@ -45,7 +59,7 @@ sidebar_position: 99
 
 ## v1.0.6 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Features
 
@@ -61,7 +75,7 @@ sidebar_position: 99
 
 ## v1.0.5 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Features
 
@@ -74,7 +88,7 @@ sidebar_position: 99
 
 ## v1.0.4 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Features
 
@@ -89,7 +103,7 @@ sidebar_position: 99
 
 ## v1.0.3 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Bug Fixes
 
@@ -108,7 +122,7 @@ sidebar_position: 99
 
 ## v1.0 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Features
 
@@ -127,7 +141,7 @@ sidebar_position: 99
 
 ## v1 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Features
 
@@ -146,7 +160,7 @@ sidebar_position: 99
 
 ## v1.0.2 — 2026-05-31
 
-## What's Changed
+### What's Changed
 
 ### Features
 
@@ -165,7 +179,7 @@ sidebar_position: 99
 
 ## v1.0.1 — 2026-05-31
 
-## What's Changed
+### What's Changed
 * chore: remove dependabot configuration and add renovate workflow with… by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/51
 * chore(deps-dev): bump eslint from 10.4.0 to 10.4.1 by @dependabot[bot] in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/50
 * fix(docs): version routing under /docs/vN, auto-derived from versions… by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/52
@@ -176,7 +190,7 @@ sidebar_position: 99
 
 ## v1.0.0 — 2026-05-30
 
-## What's Changed
+### What's Changed
 * feat: add Docusaurus site for actions documentation by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/20
 * fix: remove version specification for pnpm action setup by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/22
 * docs: add comprehensive documentation for GrillMyCode GitHub Action by @w0244079 in https://github.com/NSCC-ITC-Assessment/GrillMyCode/pull/24

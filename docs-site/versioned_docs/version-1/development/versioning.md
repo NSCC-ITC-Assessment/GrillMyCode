@@ -198,15 +198,20 @@ Because the latest major lives at `/docs/vN` (not the bare root), bare/unversion
 
 ### Snapshotting docs at release time
 
-The release workflow snapshots the docs automatically when a **new major** is tagged (see the `snapshot-docs` job in `.github/workflows/release.yml`). To snapshot manually — for example, to preview the result locally before tagging — run:
+The `snapshot-docs` job in `.github/workflows/release.yml` runs on every `v*` tag:
+
+- **New major** — runs `pnpm docusaurus docs:version N`, which copies the current `docs/` into `versioned_docs/version-N/`, appends `N` to `versions.json`, and registers it as the new stable major.
+- **Patch or minor** — rebuilds the existing major snapshot in-place: deletes `versioned_docs/version-N/`, copies the current `docs/` back in (preserving `release-notes.md`), and prepends a new release notes entry.
+
+In both cases the job commits the result back to `main` automatically.
+
+To snapshot manually — for example, to preview the result locally before tagging a new major — run:
 
 ```bash
 # Run from the docs-site/ directory. N is the MAJOR version only, e.g. 2
 cd docs-site
 pnpm docusaurus docs:version N
 ```
-
-This copies the current `docs/` into `versioned_docs/version-N/`, appends `N` to `versions.json`, and registers it as the new stable major. Patch and minor releases reuse the existing major snapshot rather than creating a new one.
 
 ---
 
