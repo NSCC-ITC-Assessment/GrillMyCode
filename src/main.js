@@ -280,6 +280,7 @@ async function run() {
       branchName,
       assignmentContextFiles,
       contextSummary,
+      studentLogin,
       sourceRepo,
     });
 
@@ -321,6 +322,7 @@ async function run() {
       branchName,
       assignmentContextFiles,
       contextSummary,
+      studentLogin,
       sourceRepo,
       pdfUrl,
     });
