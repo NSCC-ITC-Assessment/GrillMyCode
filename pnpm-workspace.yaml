@@ -1,0 +1,8 @@
+# pnpm project settings (pnpm v11+)
+#
+# allowBuilds is an explicit decision map for dependency build scripts.
+# puppeteer (pulled in by md-to-pdf) has a postinstall that downloads
+# Chromium — we use the system binary instead, so its build is disallowed.
+# Setting this explicitly suppresses ERR_PNPM_IGNORED_BUILDS in CI.
+allowBuilds:
+  puppeteer: false

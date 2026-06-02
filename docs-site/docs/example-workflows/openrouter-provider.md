@@ -24,8 +24,9 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write  # required to post the PR comment
+      contents: write        # gmc-assessments release + PDF asset
+      issues: write          # assessment issue
+      pull-requests: write   # PR link comment
     steps:
       - uses: actions/checkout@v6
         with:

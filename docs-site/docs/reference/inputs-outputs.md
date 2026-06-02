@@ -22,9 +22,6 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 | `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting |
 | `exclude_pattern_overrides` | No | | Comma-separated entries to re-include files excluded by auto-detection or `additional_exclude_patterns`. Each entry can be an exact pattern (e.g. `**/*.md`) to re-include all files of that type, or a specific file path (e.g. `README.md`) to allow only that file through. Note: binary files are **always** skipped regardless of overrides |
 | `additional_exclude_patterns` | No | | Comma-separated globs for **extra** files to exclude on top of the [auto-detected stack patterns](exclude-patterns.md). Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover |
-| `output_file` | No | `grill-my-code.md` | Basename for the output Markdown file. Always written under the `.assessment/` folder (e.g. `grill-my-code.md` → `.assessment/grill-my-code.md`) |
-| `post_pr_comment` | No | `false` | Post assessment as a PR comment. On re-runs, the existing comment is updated in place and a note is added indicating the questions were regenerated |
-| `post_issue` | No | `false` | Create a GitHub Issue with the assessment. Automatically assigned to the student who authored the head commit |
 | `instructor_repo_token` | No | | PAT with `repo` and `workflow` scopes and permission to create repositories in the same organisation. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode-instructor` in the same organisation. The repository is created automatically on first run. The assignment name is resolved from the student repo's `template_repository` (GitHub Classroom), falling back to the source repo name. Leave empty to disable instructor repository delivery |
 | `additional_context` | No | | Instructor-specific instructions for this assignment. Injected into the system prompt and takes precedence over default behaviour. Supports multi-line instructions. When set, the AI also generates a one-sentence summary of the question focus, shown as an **Instructor Note** in the report header |
 | `assignment_context` | No | | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `additional_context`. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"README.md, docs/brief.pdf, rubric.docx"` |
@@ -39,7 +36,9 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 
 | Output | Description |
 |---|---|
-| `output_file` | Path to the generated assessment Markdown file |
+| `issue_url` | URL of the created or updated assessment issue |
+| `issue_number` | Number of the created or updated assessment issue |
+| `pdf_url` | Download URL of the assessment PDF release asset. Empty if PDF generation failed |
 | `questions` | The generated questions as a string (internal AI markers stripped; does not include the instructor note) |
 | `code_before_strip` | Full code content of all assessed files before comment stripping |
 | `code_after_strip` | Full code content of all assessed files after comment stripping |
@@ -54,11 +53,8 @@ Give the action step an `id`, then reference its outputs with `steps.<id>.output
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
 
-- name: Upload assessment
-  uses: actions/upload-artifact@v7
-  with:
-    name: assessment
-    path: ${{ steps.assess.outputs.output_file }}
+- name: Print issue link
+  run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"
 
 - name: Print questions
   run: echo "${{ steps.assess.outputs.questions }}"

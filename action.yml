@@ -98,32 +98,6 @@ inputs:
     required: false
     default: ""
 
-  output_file:
-    description: >
-      Basename for the assessment Markdown file. The file is always written
-      under the .assessment/ folder in the repository root (e.g.
-      grill-my-code.md → .assessment/grill-my-code.md) and committed back to
-      the repository via the GitHub Contents API.
-    required: false
-    default: "grill-my-code.md"
-
-  post_pr_comment:
-    description: >
-      Post the assessment as a comment on the pull request when the workflow is
-      triggered by a pull_request or issue_comment event.
-      Set to "true" to enable.
-    required: false
-    default: "false"
-
-  post_issue:
-    description: >
-      Create a GitHub Issue in the repository containing the assessment questions.
-      If an open issue for the same branch already exists, it is updated in place
-      (title, body) rather than replaced, preserving issue history and comments.
-      Set to "true" to enable.
-    required: false
-    default: "false"
-
   instructor_repo_token:
     description: >
       Personal Access Token (PAT) with repo scope and permission to create
@@ -222,14 +196,18 @@ inputs:
 # ─── Outputs ─────────────────────────────────────────────────────────────────
 
 outputs:
-  output_file:
-    description: "Workspace-relative path to the generated assessment Markdown file."
   questions:
     description: "The raw generated questions as a string."
   code_before_strip:
     description: "The full code content of all assessed files before comment stripping."
   code_after_strip:
     description: "The full code content of all assessed files after comment stripping."
+  issue_url:
+    description: "URL of the created or updated assessment issue."
+  issue_number:
+    description: "Number of the created or updated assessment issue."
+  pdf_url:
+    description: "Download URL of the assessment PDF release asset. Empty if PDF generation failed."
 
 # ─── Execution ────────────────────────────────────────────────────────────────
 
@@ -251,9 +229,6 @@ runs:
     INPUT_INCLUDE_PATTERNS: ${{ inputs.include_patterns }}
     INPUT_ADDITIONAL_EXCLUDE_PATTERNS: ${{ inputs.additional_exclude_patterns }}
     INPUT_EXCLUDE_PATTERN_OVERRIDES: ${{ inputs.exclude_pattern_overrides }}
-    INPUT_OUTPUT_FILE: ${{ inputs.output_file }}
-    INPUT_POST_PR_COMMENT: ${{ inputs.post_pr_comment }}
-    INPUT_POST_ISSUE: ${{ inputs.post_issue }}
     INPUT_ASSIGNMENT_CONTEXT: ${{ inputs.assignment_context }}
     INPUT_ASSIGNMENT_CONTEXT_MAX_CHARS: ${{ inputs.assignment_context_max_chars }}
     INPUT_ADDITIONAL_CONTEXT: ${{ inputs.additional_context }}

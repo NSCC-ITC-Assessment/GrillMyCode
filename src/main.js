@@ -6,14 +6,14 @@
  *   2. Resolve commit SHAs and branch name from the event context
  *   3. Collect changed files, filter them, strip comments, and build the prompt
  *   4. Call the configured AI provider to generate comprehension questions
- *   5. Write the report to a Markdown file and commit it to the repository
- *   6. Optionally post the report as a PR comment, GitHub Issue, or Discussion
+ *   5. Generate a PDF of the assessment and attach it to the gmc-assessments release
+ *   6. Create or update a GitHub Issue with the assessment questions and PDF link
+ *   7. Post a link comment on the PR (when triggered by a pull request)
+ *   8. Optionally write a full instructor copy (with answers) to a private instructor repo
  */
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import fs from 'fs';
-import path from 'path';
 import {
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
@@ -22,7 +22,7 @@ import {
   STUDENT_RESOLUTION_SKIP_COMMITTERS,
 } from './constants.js';
 import { readInputs } from './inputs.js';
-import { resolveSHAs, resolveBranch, resolveOutputFile, resolveAssignmentName } from './context.js';
+import { resolveSHAs, resolveBranch, safeBranchName, resolveAssignmentName } from './context.js';
 import { getChangedFiles, getDiff, findStudentCommitSha } from './git.js';
 import {
   filterFiles,
@@ -35,9 +35,10 @@ import { detectExcludePatterns } from './stack-detection.js';
 import { buildPrompt } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport } from './report.js';
-import { commitAssessmentFile } from './delivery/commit.js';
 import { postIssue } from './delivery/issue.js';
 import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
+import { generatePdf } from './delivery/pdf.js';
+import { uploadPdfAsset } from './delivery/release-asset.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -262,8 +263,10 @@ async function run() {
     // include_answers is false. cleanedQuestions retains answers for the instructor copy.
     const questions = stripAnswers(cleanedQuestions, { keepAnswers: inputs.includeAnswers });
 
-    // ── Write output ────────────────────────────────────────────────────────
-    const report = formatReport({
+    // ── Build base report (PDF source — no self-referencing link) ───────────
+    const sourceRepo = `${ctx.repo.owner}/${ctx.repo.repo}`;
+
+    const baseReport = formatReport({
       questions,
       files,
       baseSha,
@@ -274,70 +277,115 @@ async function run() {
       branchName,
       assignmentContextFiles,
       contextSummary,
+      sourceRepo,
     });
-    const effectiveOutputFile = resolveOutputFile(inputs.outputFile, branchName);
-    const outPath = path.resolve(
-      process.env.GITHUB_WORKSPACE || process.cwd(),
-      effectiveOutputFile,
-    );
-    fs.mkdirSync(path.dirname(outPath), { recursive: true });
-    fs.writeFileSync(outPath, report, 'utf-8');
-    core.info(`Assessment written to: ${effectiveOutputFile}`);
 
-    // ── Commit assessment file to repository ───────────────────────────────
-    await commitAssessmentFile({
-      octokit,
-      ctx,
-      filePath: effectiveOutputFile,
-      content: report,
-      branchName,
+    // ── Generate PDF and upload to rolling release ───────────────────────────
+    const safe = safeBranchName(branchName);
+    const pdfFilename = safe ? `grill-my-code-${safe}.pdf` : 'grill-my-code.pdf';
+    let pdfUrl = null;
+    let pdfBuffer = null;
+    try {
+      pdfBuffer = await generatePdf(baseReport);
+    } catch (err) {
+      core.warning(`PDF generation failed: ${err.message} — issue will post without a PDF link.`);
+    }
+    if (pdfBuffer) {
+      try {
+        pdfUrl = await uploadPdfAsset({
+          octokit,
+          owner: ctx.repo.owner,
+          repo: ctx.repo.repo,
+          pdfBuffer,
+          filename: pdfFilename,
+          token: inputs.githubToken,
+        });
+        core.info(`Assessment PDF uploaded: ${pdfUrl}`);
+      } catch (err) {
+        core.warning(`PDF upload failed: ${err.message} — issue will post without a PDF link.`);
+      }
+    }
+    core.setOutput('pdf_url', pdfUrl || '');
+
+    // ── Format issue body (base report + PDF download link) ─────────────────
+    const issueBody = formatReport({
+      questions,
+      files,
+      baseSha,
       headSha,
+      truncated,
+      provider: inputs.aiProvider,
+      model: inputs.aiModel,
+      branchName,
+      assignmentContextFiles,
+      contextSummary,
+      sourceRepo,
+      pdfUrl,
     });
 
-    core.setOutput('output_file', effectiveOutputFile);
     core.setOutput('questions', questions);
     core.setOutput('code_before_strip', rawContent);
     core.setOutput('code_after_strip', buildCodeContent(processedFiles));
 
-    // ── Post PR comment ─────────────────────────────────────────────────────
-    if (inputs.postPrComment && prNumber) {
-      const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
+    // ── Guard: GitHub issue bodies cap at 65 536 characters ──────────────────
+    const ISSUE_BODY_LIMIT = 65_000;
+    core.info(`Issue body: ${issueBody.length} characters`);
+    const safeIssueBody =
+      issueBody.length > ISSUE_BODY_LIMIT
+        ? issueBody.slice(0, ISSUE_BODY_LIMIT) +
+          '\n\n---\n\n> [!WARNING]\n> The assessment was too long to display in full here. ' +
+          (pdfUrl
+            ? `[Download the complete PDF](${pdfUrl}) for all questions.`
+            : 'Re-run with fewer questions to see the full output.')
+        : issueBody;
+
+    if (issueBody.length > ISSUE_BODY_LIMIT) {
+      core.warning(
+        `Issue body exceeded ${ISSUE_BODY_LIMIT} characters (${issueBody.length}) and was truncated. ` +
+          'Consider reducing num_questions or using a shorter additional_context.',
+      );
+    }
+
+    // ── Create / update GitHub Issue ─────────────────────────────────────────
+    const issueResult = await postIssue({
+      octokit,
+      ctx,
+      report: safeIssueBody,
+      branchName,
+      headSha,
+      studentLogin,
+    });
+    core.setOutput('issue_url', issueResult.url);
+    core.setOutput('issue_number', String(issueResult.number));
+
+    // ── Post PR link comment ─────────────────────────────────────────────────
+    if (prNumber) {
+      const marker = '<!-- gmc-pr-link -->';
+      const body = `${marker}\n> [!NOTE]\n> GrillMyCode has generated assessment questions for this pull request. [View questions →](${issueResult.url})`;
       const existingComments = await octokit.rest.issues.listComments({
         owner: ctx.repo.owner,
         repo: ctx.repo.repo,
         issue_number: prNumber,
         per_page: ISSUES_PER_PAGE,
       });
-      const predecessor = existingComments.data.find((c) => c.body?.startsWith('## GrillMyCode'));
-
-      if (predecessor) {
+      const prev = existingComments.data.find((c) => c.body?.includes(marker));
+      if (prev) {
         await octokit.rest.issues.updateComment({
           owner: ctx.repo.owner,
           repo: ctx.repo.repo,
-          comment_id: predecessor.id,
-          body: report,
+          comment_id: prev.id,
+          body,
         });
-        core.info(`Updated assessment comment on PR #${prNumber}`);
-        await octokit.rest.issues.createComment({
-          owner: ctx.repo.owner,
-          repo: ctx.repo.repo,
-          issue_number: prNumber,
-          body: `> [!NOTE]\n> The assessment questions in this comment were regenerated at commit \`${shortHead}\` and the comment body has been updated. Any previous questions have been replaced.`,
-        });
+        core.info(`Updated PR link comment on PR #${prNumber} → Issue #${issueResult.number}`);
       } else {
         await octokit.rest.issues.createComment({
           owner: ctx.repo.owner,
           repo: ctx.repo.repo,
           issue_number: prNumber,
-          body: report,
+          body,
         });
-        core.info(`Assessment posted as a comment on PR #${prNumber}`);
+        core.info(`PR link comment posted on PR #${prNumber} → Issue #${issueResult.number}`);
       }
-    }
-
-    // ── Create GitHub Issue ──────────────────────────────────────────────────
-    if (inputs.postIssue) {
-      await postIssue({ octokit, ctx, report, branchName, headSha, studentLogin });
     }
 
     // ── Write to instructor repository ──────────────────────────────────────

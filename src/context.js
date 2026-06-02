@@ -7,7 +7,6 @@
  */
 
 import * as core from '@actions/core';
-import path from 'path';
 import { GIT_EMPTY_TREE_SHA, GIT_SHA_SHORT_LENGTH } from './constants.js';
 import { advanceBasePastBotCommits, getFirstCommit } from './git.js';
 
@@ -210,24 +209,14 @@ export async function resolveAssignmentName(ctx, octokit, studentLogin) {
 }
 
 /**
- * Derives the effective output file path under the .assessment/ folder.
- *
- * On main/master (or when the branch is unknown) the file is named after
- * the configured output_file basename. On any other branch the sanitised
- * branch name is appended before the extension so each branch produces a
- * distinct file, all stored under .assessment/.
+ * Returns a filesystem-safe version of a branch name for use in filenames.
+ * Returns an empty string for default branches (main/master) or when the
+ * branch is unknown, so callers can use it as an optional suffix.
  */
-export function resolveOutputFile(outputFile, branchName) {
-  const ext = path.extname(outputFile);
-  const base = path.basename(outputFile, ext);
-  const isDefaultBranch = !branchName || branchName === 'main' || branchName === 'master';
-
-  if (isDefaultBranch) return `.assessment/${base}${ext}`;
-
-  const safeBranch = branchName
+export function safeBranchName(branchName) {
+  if (!branchName || branchName === 'main' || branchName === 'master') return '';
+  return branchName
     .replace(/[^a-zA-Z0-9_-]/g, '-')
     .replace(/-{2,}/g, '-')
     .replace(/^-|-$/g, '');
-
-  return `.assessment/${base}-${safeBranch}${ext}`;
 }

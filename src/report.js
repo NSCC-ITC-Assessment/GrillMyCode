@@ -32,6 +32,7 @@ export function formatReport({
   studentLogin,
   sourceRepo,
   allChangedFiles,
+  pdfUrl,
 }) {
   const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
   const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
@@ -55,9 +56,17 @@ export function formatReport({
   const studentNote = studentLogin ? `\n> **Student:** \`${studentLogin}\`\n` : '';
   const sourceRepoNote = sourceRepo ? `> **Repository:** \`${sourceRepo}\`\n` : '';
 
+  const pdfBadge = pdfUrl
+    ? [
+        `[![Download as PDF](https://img.shields.io/badge/Download_as_PDF-DC143C?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)](${pdfUrl})`,
+        '',
+      ]
+    : [];
+
   return [
     '## GrillMyCode',
     '',
+    ...pdfBadge,
     `> **Generated:** ${date}`,
     studentNote,
     sourceRepoNote,

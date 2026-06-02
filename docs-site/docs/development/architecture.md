@@ -83,24 +83,32 @@ callAI()
     │  POSTs to the provider's chat completions endpoint
     │  Returns the model's response text
     │
-formatReport()          resolveOutputFile()
-    │                          │
-    └──────────┬───────────────┘
-               │
-        writes Markdown file to GITHUB_WORKSPACE
-               │
-    commitAssessmentFile()
-               │  Commits the file back to the repository via the
-               │  GitHub Contents API (creates or updates the blob)
-               │  Skips with a warning on fork PRs (no write access)
-               │
+formatReport(pdfUrl: null)   ← base report (PDF source)
+    │
+generatePdf()
+    │  Converts base report Markdown → PDF Buffer via md-to-pdf + system Chromium
+    │
+uploadPdfAsset()
+    │  Creates/reuses the gmc-assessments rolling release
+    │  Replaces the existing PDF asset for this branch (stable URL)
+    │  Returns browser_download_url → pdfUrl
+    │
+formatReport(pdfUrl)    ← issue body (base + PDF download link)
+    │
         sets action outputs
-        (output_file, questions, code_before_strip, code_after_strip)
+        (pdf_url, questions, code_before_strip, code_after_strip)
                │
-     ┌─────────┴─────────┐
-     ▼                   ▼
-postPrComment         postIssue
-  (REST)               (REST)
+          postIssue()
+               │  Creates or updates the assessment issue (unconditional)
+               │  Returns { number, url }
+               │
+        sets action outputs (issue_url, issue_number)
+               │
+     ┌─────────┴──────────────────┐
+     ▼                            ▼
+  (always)                  if prNumber
+  instructor repo           postPrLinkComment()
+  (if token set)              Posts/updates a link comment on the PR
 ```
 
 ---
@@ -135,9 +143,9 @@ Manual `base_sha` / `head_sha` inputs always take precedence over all of the abo
 
 Validates that a SHA is 4–64 hex characters before passing it to a `git` command. This prevents shell injection through crafted `base_sha`/`head_sha` inputs.
 
-### `resolveOutputFile(outputFile, branchName)`
+### `safeBranchName(branchName)`
 
-Always writes output under the `.assessment/` folder. Uses `path.basename()` to extract only the filename — any directory component of `output_file` is discarded. On `main`/`master` (or when the branch is unknown) the basename is kept as-is; on any other branch the sanitised branch name is inserted before the extension so each branch produces a distinct file without collisions.
+Returns a filesystem-safe version of a branch name for use in filenames. Returns an empty string for `main`, `master`, or unknown branches so callers can use it as an optional suffix. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename (e.g. `grill-my-code-feat-login.pdf`).
 
 ### `callAI({ provider, model, apiKey, messages, retryMaxAttempts })`
 
@@ -158,7 +166,9 @@ Uses an update-first strategy:
 
 1. List open assessment issues for the same branch
 2. If one exists, update its title and body in-place (preserving issue number, URL, and comment history). Extra duplicates are deleted.
-3. If none exists, create a fresh issue.
+3. If none exists, create a fresh issue, then pin it via the `pinIssue` GraphQL mutation (non-fatal — silently warns if the 3-issue pin limit is already reached).
+
+Returns `{ number, url }` for use by the PR link comment and action outputs.
 
 ---
 
@@ -177,7 +187,11 @@ The image uses a **single-stage Dockerfile** based on `node:26-slim`:
 ```
 node:26-slim
       │
-      ├── apt-get install git curl ca-certificates
+      ├── apt-get install git curl ca-certificates chromium
+      │   (chromium provides the system browser used by md-to-pdf for PDF generation)
+      │
+      ├── ENV PUPPETEER_SKIP_DOWNLOAD=true
+      │   ENV PUPPETEER_EXECUTABLE_PATH=/usr/bin/chromium
       │
       ├── curl ──► download pre-built rmcm binary
       │            from GitHub Releases → /usr/local/bin/rmcm
@@ -188,6 +202,8 @@ node:26-slim
       │
       ├── COPY package.json pnpm-lock.yaml
       │   pnpm install --frozen-lockfile --prod --ignore-scripts
+      │   (--ignore-scripts prevents Puppeteer's postinstall Chromium download;
+      │    PUPPETEER_SKIP_DOWNLOAD is belt-and-braces)
       │
       └── COPY src/ entrypoint.sh
 ```

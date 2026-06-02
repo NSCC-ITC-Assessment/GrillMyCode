@@ -21,6 +21,7 @@
     "@actions/github": "^9.1.1",
     "@actions/http-client": "^4.0.1",
     "mammoth": "^1.12.0",
+    "md-to-pdf": "^5.2.5",
     "minimatch": "^10.2.5",
     "unpdf": "^1.6.2"
   },

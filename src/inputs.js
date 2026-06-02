@@ -61,9 +61,6 @@ export function readInputs() {
     numQuestions,
     additionalExcludePatterns,
     excludePatternOverrides: overridePatterns,
-    outputFile: core.getInput('output_file') || 'grill-my-code.md',
-    postPrComment: core.getInput('post_pr_comment') === 'true',
-    postIssue: core.getInput('post_issue') === 'true',
     additionalContext: core.getInput('additional_context') || '',
     assignmentContextGlobs: (() => {
       const raw = core.getInput('assignment_context') || '';

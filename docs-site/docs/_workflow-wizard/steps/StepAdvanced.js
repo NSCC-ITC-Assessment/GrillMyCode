@@ -2,7 +2,6 @@ import React from 'react';
 import styles from '../styles.module.css';
 
 const DEFAULTS = {
-  outputFile: 'grill-my-code.md',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   assignmentContextMaxChars: 20000,
@@ -15,22 +14,6 @@ export default function StepAdvanced({ cfg, onChange }) {
         These inputs have carefully chosen defaults that work well for most setups. Only change them
         if you have a specific reason. Values that remain at their defaults will be omitted from
         the generated workflow to keep it clean.
-      </div>
-
-      <div className={styles.fieldGroup}>
-        <label className={styles.label}>Output file name <span className={styles.optionalBadge}>optional</span></label>
-        <span className={styles.hint}>
-          Basename of the Markdown file written to the student's repository under{' '}
-          <code>.assessment/</code>. Directory components are ignored — only the filename matters.
-          Default: <code>grill-my-code.md</code>
-        </span>
-        <input
-          type="text"
-          className={styles.input}
-          value={cfg.outputFile}
-          onChange={(e) => onChange({ outputFile: e.target.value })}
-          placeholder={DEFAULTS.outputFile}
-        />
       </div>
 
       <div className={styles.inlineRow}>

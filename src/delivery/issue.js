@@ -58,6 +58,8 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
       );
       core.info(`Deleted duplicate assessment Issue #${extra.number}`);
     }
+
+    return { number: updated.number, url: updated.html_url };
   } else {
     const { data: created } = await octokit.rest.issues.create({
       owner,
@@ -68,5 +70,21 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
       assignees: studentLogin ? [studentLogin] : [],
     });
     core.info(`Assessment created as Issue #${created.number}: ${created.html_url}`);
+
+    try {
+      await octokit.graphql(
+        `mutation($issueId: ID!) {
+          pinIssue(input: { issueId: $issueId }) {
+            issue { title }
+          }
+        }`,
+        { issueId: created.node_id },
+      );
+      core.info(`Pinned assessment Issue #${created.number}`);
+    } catch (err) {
+      core.warning(`Could not pin Issue #${created.number}: ${err.message}`);
+    }
+
+    return { number: created.number, url: created.html_url };
   }
 }

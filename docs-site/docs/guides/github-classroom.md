@@ -24,9 +24,10 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write
-      models: read
+      contents: write        # gmc-assessments release + PDF asset
+      issues: write          # assessment issue
+      pull-requests: write   # PR link comment
+      models: read           # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -63,7 +64,7 @@ See the [GitHub Models provider](../ai-providers/github-models#using-an-instruct
 
 ## Assessment issue assignment
 
-When `post_issue: 'true'` is set, the created issue is automatically assigned to the student who authored the head commit. The action resolves the student login by walking the commit range newest-first and skipping commits from `skip_committers` — ensuring the action's own assessment-file commit is never mistaken for a student commit.
+The assessment issue is automatically assigned to the student who authored the head commit. The action resolves the student login by walking the commit range newest-first and skipping commits from `skip_committers`.
 
 ## Private instructor repository
 
