@@ -62,7 +62,7 @@ export default function StepQuestions({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Additional context / instructions <span className={styles.optionalBadge}>optional</span></label>
+        <label className={styles.label}>Instructor context / instructions <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Instructor-specific instructions injected at the end of the AI system prompt. Use this to
           focus questions on particular topics, concepts, or requirements. Supports multi-line text.{' '}
