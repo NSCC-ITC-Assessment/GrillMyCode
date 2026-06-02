@@ -57,6 +57,19 @@ const ANSWER_REGION_RE =
 const ANSWER_MARKER_LINE_RE = /^[ \t]*<!--\s*\/?\s*gmc:answer\s*-->[ \t]*\n?/gim;
 
 /**
+ * Bolds the question sentence on every numbered question line. Applied in
+ * post-processing so the result is deterministic regardless of whether the
+ * model followed the formatting instruction. Skips lines already wrapped in
+ * bold, and skips the <!-- gmc:answer --> interior so answer headings and
+ * bullets are never touched.
+ *
+ *   1. What does `x` return?   →   1. **What does `x` return?**
+ */
+function boldQuestionLines(text) {
+  return text.replace(/^(\s*\d+\. )(?!\*\*)(.+)$/gm, '$1**$2**');
+}
+
+/**
  * Splits bold markers around inline code spans on question-sentence lines so
  * that backtick-wrapped identifiers render in code style only, not bold.
  *
@@ -438,9 +451,11 @@ async function run() {
     );
     const contextSummary = contextSummaryMatch ? contextSummaryMatch[1].trim() : '';
     const cleanedQuestions = splitBoldAroundCode(
-      rawQuestions
-        .replace(/<!--\s*CONTEXT_SUMMARY\s*-->[\s\S]*?<!--\s*\/CONTEXT_SUMMARY\s*-->\n*/g, '')
-        .trim(),
+      boldQuestionLines(
+        rawQuestions
+          .replace(/<!--\s*CONTEXT_SUMMARY\s*-->[\s\S]*?<!--\s*\/CONTEXT_SUMMARY\s*-->\n*/g, '')
+          .trim(),
+      ),
     );
 
     // Always strip incorrect options for quiz; also strip the correct answer when
