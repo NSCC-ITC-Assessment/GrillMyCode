@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.16 — 2026-06-02
+
+### What's Changed
+
+### Features
+
+- update workflows to ignore changes in docs directory
+
 ## v1.0.15 — 2026-06-02
 
 ### What's Changed
