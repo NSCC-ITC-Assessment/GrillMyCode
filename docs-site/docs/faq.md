@@ -113,6 +113,10 @@ Every assessment issue includes a **Repository** metadata line showing the `owne
 
 By default, no. Set `include_answers: 'true'` to include answers in the student-facing report — but this defeats the purpose of the assessment. The instructor repository copy always includes answers regardless of this setting.
 
+### Why are some questions missing from a student's report?
+
+GrillMyCode occasionally withholds individual questions it cannot confirm are answer-free, replacing them with a short note. The instructor repository copy is never affected and always contains the full set of questions and answers.
+
 ### The AI doesn't seem to be reading my code comments. Why?
 
 By default, inline and block comments are stripped from the submitted code before it is sent to the AI. This is intentional — it focuses assessment on what the code does rather than what the student wrote as annotations. To preserve comments, set `keep_comments: 'true'`:

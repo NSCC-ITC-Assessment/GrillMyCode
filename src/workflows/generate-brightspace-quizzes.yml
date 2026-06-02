@@ -90,7 +90,7 @@ jobs:
                 } else if (inSnippet) {
                   snippetLines.push(line.trimEnd());
                 } else if (!question && line && /^\d+\. /.test(line)) {
-                  question = line.split('. ').slice(1).join('. ').trim();
+                  question = line.split('. ').slice(1).join('. ').trim().replace(/\*\*/g, '');
                 } else if (stripped === '**Answer:**' || stripped.startsWith('**Answer:** ')) {
                   inAnswer = true;
                   inInc = false;

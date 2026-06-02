@@ -95,8 +95,9 @@ function checkForRepeatedStrike(launchCoordinates, targetsMap) {
 }
 \`\`\`
 
-1. What is the difference between how \`checkForTargetStrike\` and \`checkForRepeatedStrike\` determine their return values?
+1. **What is the difference between how \`checkForTargetStrike\` and \`checkForRepeatedStrike\` determine their return values?**
 
+   <!-- gmc:answer -->
    **Answer:**
    - checkForTargetStrike checks the locationsMap for \`'1'\` to detect ships, while checkForRepeatedStrike checks targetsMap for any defined value to detect repeated strikes
 
@@ -104,6 +105,7 @@ function checkForRepeatedStrike(launchCoordinates, targetsMap) {
    - checkForTargetStrike reads locationsMap for a \`'0'\` to confirm an empty cell, while checkForRepeatedStrike reads targetsMap for undefined to confirm the coordinate has never been launched
    - checkForTargetStrike compares targetsMap against the string \`'hit'\` to identify destroyed ships, while checkForRepeatedStrike compares locationsMap against null to detect coordinates that have already been processed
    - checkForTargetStrike evaluates locationsMap[\`targetRow\`][\`targetColumn\`] !== \`'hit'\` and returns true on a miss, while checkForRepeatedStrike evaluates targetsMap[\`targetRow\`][\`targetColumn\`] !== undefined and returns true when the coordinate was already attacked
+   <!-- /gmc:answer -->
 
 ---
 
@@ -169,8 +171,9 @@ Every question MUST follow this exact anatomy:
 // relevant code snippet here
 \`\`\`
 
-1. Question text here?
+1. **Question text here?**
 
+   <!-- gmc:answer -->
    **Answer:**
    - <one bullet — the correct answer, as a complete sentence>
 
@@ -178,7 +181,10 @@ Every question MUST follow this exact anatomy:
    - <one bullet — distractor 1>
    - <one bullet — distractor 2>
    - <one bullet — distractor 3>
+   <!-- /gmc:answer -->
 \`\`\`
+
+ANSWER CONTAINER (MANDATORY): Wrap each question's answer section in a single pair of HTML-comment markers — emit <!-- gmc:answer --> on the line directly above its **Answer:** heading, and <!-- /gmc:answer --> on the line directly below its final incorrect-option bullet. Use exactly one such pair per question, and place these markers nowhere else.
 
 Violations that will cause output rejection:
 - Missing the filename header or the fenced code block for any question
