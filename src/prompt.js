@@ -95,7 +95,7 @@ function checkForRepeatedStrike(launchCoordinates, targetsMap) {
 }
 \`\`\`
 
-1. What is the difference between how \`checkForTargetStrike\` and \`checkForRepeatedStrike\` determine their return values?
+1. **What is the difference between how \`checkForTargetStrike\` and \`checkForRepeatedStrike\` determine their return values?**
 
    <!-- gmc:answer -->
    **Answer:**
@@ -171,7 +171,7 @@ Every question MUST follow this exact anatomy:
 // relevant code snippet here
 \`\`\`
 
-1. Question text here?
+1. **Question text here?**
 
    <!-- gmc:answer -->
    **Answer:**
