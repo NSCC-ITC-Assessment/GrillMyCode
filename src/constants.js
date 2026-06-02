@@ -266,7 +266,7 @@ export const DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS = 20000;
  * GitHub REST API version sent in the X-GitHub-Api-Version header on every
  * Octokit request. Update when adopting a newer stable GitHub API version.
  */
-export const GITHUB_API_VERSION = '2022-11-28';
+export const GITHUB_API_VERSION = '2026-03-10';
 
 /**
  * SHA of git's well-known empty tree object. Used as the diff base when the
