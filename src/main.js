@@ -145,6 +145,17 @@ function splitBoldAroundCode(text) {
  */
 function stripAnswers(text, { keepAnswers = false } = {}) {
   let result = text;
+
+  // Protect fenced code blocks so that marker strings embedded in student-
+  // submitted code (e.g. const MARKER = '<!-- gmc:answer -->') are never
+  // matched by the answer-region regexes and do not corrupt question output.
+  // The placeholder uses null bytes, which cannot appear in normal Markdown.
+  const fences = [];
+  result = result.replace(/^(`{3,})[^\n]*\n[\s\S]*?\n\1[ \t]*$/gm, (match) => {
+    fences.push(match);
+    return `FENCE${fences.length - 1}`;
+  });
+
   if (!keepAnswers) {
     // Pass 0: container-based — remove each marked answer region as a unit.
     // Protect --- separators first: the model sometimes places them inside the
@@ -182,6 +193,8 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
       .replace(/^ {0,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
       .replace(/^ {0,4}- [^\n]*/gm, '');
   }
+  // Restore fenced code blocks now that all marker processing is complete.
+  result = result.replace(/FENCE(\d+)/g, (_, i) => fences[parseInt(i, 10)]);
   return result.replace(/\n{3,}/g, '\n\n');
 }
 
