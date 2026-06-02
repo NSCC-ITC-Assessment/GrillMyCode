@@ -19,9 +19,10 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # required to commit the output file back to the repo
-      pull-requests: write  # required to post the PR comment
-      models: read          # required to call GitHub Models API
+      contents: write        # required to create the gmc-assessments release and PDF asset
+      issues: write          # required to create the assessment issue
+      pull-requests: write   # required to post the PR link comment
+      models: read           # required to call GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -107,20 +108,6 @@ jobs:
           # the auto-detected stack patterns (lock files, build artefacts, etc.
           # for your language/framework are excluded automatically).
           # additional_exclude_patterns: 'tests/**,docs/**'
-
-          # ── Output & delivery ─────────────────────────────────────────────
-
-          # Filename for the written assessment file (basename only — directory
-          # components are ignored). Always written under .assessment/.
-          output_file: "grill-my-code.md"
-
-          # Post the assessment as a pull request comment (default: "false").
-          # Set to "true" to enable. Requires pull-requests: write permission.
-          post_pr_comment: "true"
-
-          # Create a GitHub Issue with the assessment.
-          # Requires issues: write permission.
-          post_issue: "false"
 
           # ── Instructor repository ─────────────────────────────────────────
 

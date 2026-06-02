@@ -5,6 +5,60 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.11 — 2026-06-02
+
+### What's Changed
+
+### Features
+
+- add functionality to pin newly created gmc issues
+
+### Bug Fixes
+
+- update pnpm-workspace.yaml to use allowBuilds for puppeteer and clarify comments
+- rename pnpm.yaml to pnpm-workspace.yaml and update paths in workflows
+- add pnpm.yaml to workflow ignore lists for branch and staging builds
+- adjust PDF margin settings for improved layout and add logging for issue body length
+- update GitHub issue body limit to 65,000 characters
+- enhance PDF asset upload to handle concurrent uploads and retry on conflict
+- improve PDF generation logging and handle issue body length limit
+- add PDF options for margin, background printing, and header/footer templates
+- enhance PDF download link with a badge for better visibility
+- add source repository information to PDF report generation
+- add token parameter for secure PDF asset upload and improve upload method
+- enhance PDF generation and upload logging for better debugging
+- improve PDF asset upload reliability by using direct upload URL
+- enhance PDF generation options for better compatibility in Docker
+- handle empty PDF content and improve upload asset parameters
+
+### Documentation
+
+- update to clarify assessment issue pinning and PDF generation details
+- add documentation for GrillMyCode GitHub App and its permissions
+- comprehensive updates to documentation
+- enhance OpenRouter setup instructions and add links for clarity
+- update v1 snapshot
+- update v1 snapshot
+
+### Refactoring
+
+- streamline output file handling and remove commit delivery
+- **workflow:** remove issue types from workflow dispatch configuration
+- **workflow:** update Renovate workflow permissions and issue types
+- **workflow:** add formatting step for gitignore templates output file
+- **workflow:** update app token usage in refresh gitignore templates workflow
+- **ci:** update renovate
+- **ci:** update paths ignored in GitHub workflows for better clarity and maintenance
+- standardize project name to 'GrillMyCode' across all files
+- remove GitHub Discussions delivery option and related configurations
+
+### Chores & Maintenance
+
+- **deps:** update dependency lint-staged to v17.0.7
+- **deps:** update actions/setup-node action to v6
+- **deps:** update commitlint monorepo to v21.0.2
+- **deps:** update dependency lint-staged to v17.0.6
+
 ## v1.0.10 — 2026-06-01
 
 ### What's Changed

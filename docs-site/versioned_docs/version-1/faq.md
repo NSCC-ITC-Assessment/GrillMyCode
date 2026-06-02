@@ -26,20 +26,21 @@ No. GrillMyCode is a GitHub Action — there is nothing to install. Add a workfl
 
 Not for the default configuration. The default AI provider (GitHub Models) authenticates automatically with the built-in `GITHUB_TOKEN` that every repository already has. No secrets need to be created.
 
-If you want to use [OpenRouter](ai-providers.md#openrouter) or supply an [instructor PAT for GitHub Models](ai-providers.md#using-an-instructor-token), you will need to add a secret.
+If you want to use [OpenRouter](./ai-providers/openrouter) or supply an [instructor PAT for GitHub Models](./ai-providers/github-models#using-an-instructor-token), you will need to add a secret.
 
 ### What permissions does the workflow need?
 
-The minimum permissions for the default workflow are:
+The required permissions are the same for every configuration:
 
 ```yaml
 permissions:
-  contents: write        # commit the output file back to the repository
-  pull-requests: write   # post the assessment as a PR comment
-  models: read           # call the GitHub Models API
+  contents: write        # gmc-assessments release + PDF asset
+  issues: write          # assessment issue
+  pull-requests: write   # PR link comment
+  models: read           # GitHub Models API (remove if using openrouter)
 ```
 
-The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` block automatically based on your chosen delivery options. See [Inputs & Outputs](reference/inputs-outputs.md) for the full list of inputs that affect which permissions are required.
+The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` block automatically. See [Permissions](reference/permissions.md) for details.
 
 ### How do I set up the instructor repository feature?
 
@@ -70,7 +71,7 @@ GrillMyCode supports two providers:
 | GitHub Models | `github-models` *(default)* | No |
 | OpenRouter | `openrouter` | Yes (`OPENROUTER_API_KEY`) |
 
-See [AI Providers](ai-providers.md) for configuration details.
+See [GitHub Models](./ai-providers/github-models) and [OpenRouter](./ai-providers/openrouter) for configuration details.
 
 ### What model is used by default?
 
@@ -82,7 +83,7 @@ Yes. For GitHub Models, pass a supported model identifier via `ai_model`. For Op
 
 ### Students are hitting rate limits. What can I do?
 
-By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits are per-student. You can supply an instructor's Personal Access Token via `api_key` to route all calls through the instructor's account, which may have a higher quota. See [Using an instructor token](ai-providers.md#using-an-instructor-token) for trade-offs and setup instructions.
+By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits are per-student. You can supply an instructor's Personal Access Token via `api_key` to route all calls through the instructor's account, which may have a higher quota. See [Using an instructor token](./ai-providers/github-models#using-an-instructor-token) for trade-offs and setup instructions.
 
 ---
 
@@ -90,11 +91,23 @@ By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits
 
 ### Where are the generated questions stored?
 
-Questions are written to a Markdown file committed back to the student repository under `.assessment/` (e.g. `.assessment/grill-my-code.md`). The filename is configurable via the `output_file` input.
+Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created (or updated in place) on every run and assigned to the student. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
 
-### Can the questions also be posted as a PR comment or GitHub Issue?
+### What happens when GrillMyCode is triggered by a pull request?
 
-Yes. Use the `post_pr_comment` and `post_issue` inputs to enable each delivery method. They are both opt-in and can be combined. The [Workflow Wizard](workflow-wizard.mdx) has a dedicated Delivery step that configures these options for you.
+The assessment issue is created as normal. In addition, a short link comment is posted on the pull request pointing to the issue — keeping the PR timeline clean without duplicating the full question set.
+
+### Why is the assessment issue pinned?
+
+GrillMyCode pins the assessment issue in the repository the first time it is created. This keeps it visible at the top of the issues list so students can find it easily without searching. The pin only applies on create — re-runs that update an existing issue do not re-pin it. GitHub allows a maximum of 3 pinned issues per repository; if that limit is already reached, the pin is skipped silently with a warning in the Actions log.
+
+### What happens if the assessment is very long?
+
+GitHub issue bodies have a maximum length of 65,536 characters. If the generated assessment exceeds 65,000 characters, the issue body is automatically truncated and a warning callout is appended pointing to the PDF download for the complete content. A warning is also logged in the Actions run. To avoid truncation, reduce `num_questions` or use a shorter `additional_context`.
+
+### What is the Repository line in the issue header?
+
+Every assessment issue includes a **Repository** metadata line showing the `owner/repo` where the questions were generated (e.g. `NSCC-ITC-Assessment/assignment-1-student123`). This is useful in the instructor repository where multiple student assessments are collected — it makes it immediately clear which student's repository each assessment originated from.
 
 ### Can students see the answers?
 
@@ -147,7 +160,7 @@ Use the `additional_exclude_patterns` input with comma-separated glob patterns:
 additional_exclude_patterns: 'provided_starter/**, tests/fixtures/**, data/**'
 ```
 
-See [Exclude Patterns](guides/exclude-patterns.md) for the full pattern syntax and examples. The [Workflow Wizard](workflow-wizard.mdx) has a Files step that configures both `additional_exclude_patterns` and `exclude_pattern_overrides` without writing patterns by hand.
+See [Exclude Patterns](reference/exclude-patterns.md) for the full pattern syntax and examples. The [Workflow Wizard](workflow-wizard.mdx) has a Files step that configures both `additional_exclude_patterns` and `exclude_pattern_overrides` without writing patterns by hand.
 
 ### How do I re-include a file that is excluded by default?
 
@@ -187,4 +200,4 @@ This is expected. GitHub Actions workflows triggered by pull requests from forks
 
 ### How do I enable verbose logging to debug an issue?
 
-Pass `debug: 'true'` as a workflow input, or enable [GitHub Actions debug logging](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging) for the repository by setting the secret `ACTIONS_STEP_DEBUG` to `true`. See the [Debug Mode guide](guides/debug-mode.md) for details.
+Pass `debug: 'true'` as a workflow input, or enable [GitHub Actions debug logging](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging) for the repository by setting the secret `ACTIONS_STEP_DEBUG` to `true`. See the [Debug Mode reference](reference/debug-mode.md) for details.

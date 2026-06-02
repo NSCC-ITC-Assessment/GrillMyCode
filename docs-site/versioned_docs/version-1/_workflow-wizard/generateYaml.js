@@ -31,9 +31,6 @@ const DEFAULTS = {
   keepComments: false,
   includeInitialCommit: false,
   skipCommitters: 'github-classroom[bot],github-actions[bot]',
-  outputFile: 'grill-my-code.md',
-  postPrComment: false,
-  postIssue: false,
   instructorRepoEnabled: false,
   baseSha: '',
   headSha: '',
@@ -91,15 +88,11 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
 
   // permissions
   lines.push('    permissions:');
-  lines.push('      contents: write       # required to commit the output file');
-  if (cfg.postPrComment) {
-    lines.push('      pull-requests: write  # required to post the PR comment');
-  }
+  lines.push('      contents: write        # gmc-assessments release + PDF asset');
+  lines.push('      issues: write          # assessment issue');
+  lines.push('      pull-requests: write   # PR link comment');
   if (cfg.aiProvider === 'github-models') {
-    lines.push('      models: read          # required to call GitHub Models API');
-  }
-  if (cfg.postIssue) {
-    lines.push('      issues: write         # required to create issues');
+    lines.push('      models: read           # GitHub Models API');
   }
   lines.push('    steps:');
   lines.push('      - uses: actions/checkout@v6');
@@ -167,16 +160,7 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
     lines.push(`          skip_committers: ${yamlStr(cfg.skipCommitters)}`);
   }
 
-  // ── Output & delivery ──────────────────────────────────────────────────────
-  if (differ(cfg, 'outputFile')) {
-    lines.push(`          output_file: ${yamlStr(cfg.outputFile)}`);
-  }
-  if (differ(cfg, 'postPrComment')) {
-    lines.push(`          post_pr_comment: ${yamlStr(cfg.postPrComment)}`);
-  }
-  if (differ(cfg, 'postIssue')) {
-    lines.push(`          post_issue: ${yamlStr(cfg.postIssue)}`);
-  }
+  // ── Instructor repository ──────────────────────────────────────────────────
   if (cfg.instructorRepoEnabled) {
     const tokenSecret = cfg.instructorRepoTokenSecret || 'INSTRUCTOR_REPO_TOKEN';
     lines.push(`          instructor_repo_token: ${secretRef(tokenSecret)}`);

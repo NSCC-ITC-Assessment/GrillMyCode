@@ -24,8 +24,9 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write  # required to post the PR comment
+      contents: write        # gmc-assessments release + PDF asset
+      issues: write          # assessment issue
+      pull-requests: write   # PR link comment
     steps:
       - uses: actions/checkout@v6
         with:
@@ -43,8 +44,8 @@ jobs:
 
 See the [OpenRouter model list](https://openrouter.ai/models) for available models and pricing. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`).
 
-For full provider documentation see [AI Providers](../ai-providers).
+For full provider documentation see [OpenRouter](../ai-providers/openrouter).
 
 OpenRouter gives access to models from many providers through a single API key. See the [OpenRouter model list](https://openrouter.ai/models) for available models.
 
-For full provider documentation see [AI Providers](../ai-providers).
+For full provider documentation see [OpenRouter](../ai-providers/openrouter).

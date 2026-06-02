@@ -94,7 +94,7 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
           tested to work well with GrillMyCode. If you choose your own model, be sure to verify
           its pricing first.
           <br /><br />
-          <a href={`${docsBase}/ai-providers#openrouter`} target="_blank" rel="noopener noreferrer">
+          <a href={`${docsBase}/ai-providers/openrouter`} target="_blank" rel="noopener noreferrer">
             Read more about OpenRouter setup here →
           </a>
         </div>

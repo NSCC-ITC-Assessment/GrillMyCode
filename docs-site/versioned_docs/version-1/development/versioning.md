@@ -240,6 +240,6 @@ pnpm docusaurus docs:version N
 - Changing an input's default behaviour in a way that alters existing results
 - Changing the output file format
 - Removing a supported `ai_provider` value
-- Changing the `output_file` naming convention
+- Changing the PDF or issue naming convention
 - Removing an output
 - Requiring a new mandatory input

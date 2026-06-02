@@ -1,5 +1,5 @@
 ---
-sidebar_position: 4
+sidebar_position: 7
 ---
 
 # Debug Mode
@@ -13,6 +13,9 @@ GrillMyCode supports GitHub Actions' built-in debug logging mechanism. When enab
 | **Resolved inputs** | Every parsed input value after defaults and clamping have been applied. Sensitive fields (`github_token`, `api_key`) are shown as `[REDACTED]`. |
 | **Code after comment stripping** | The full code content after comments have been removed. Omitted when `keep_comments: true` — a message is logged instead confirming no comments were removed. |
 | **Prompt messages** | The full `[system, user]` message array passed to the AI provider, including all injected code content, file lists, assignment context, and instructor instructions. |
+| **PDF: launching Chromium** | The resolved `PUPPETEER_EXECUTABLE_PATH` used to launch the headless browser for PDF generation. |
+| **PDF: md-to-pdf returned** | The content type, byte length, and Buffer status of the PDF returned by md-to-pdf — useful for diagnosing PDF generation failures. |
+| **PDF upload** | The filename, byte count, and upload URL used when attaching the PDF to the `gmc-assessments` release. |
 
 ## How to enable it
 

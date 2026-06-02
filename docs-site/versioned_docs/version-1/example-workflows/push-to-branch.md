@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # Push to Branch
 
-Generates assessment questions on every push to a non-default branch. Useful when students work directly on a feature or personal branch without opening a pull request. The output file is written back to the repository.
+Generates assessment questions on every push to a non-default branch. Useful when students work directly on a feature or personal branch without opening a pull request. The assessment is always delivered as a GitHub Issue with a PDF download link.
 
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
@@ -19,8 +19,10 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: write       # required to commit the output file back to the repo
-      models: read          # required to call GitHub Models API
+      contents: write        # gmc-assessments release + PDF asset
+      issues: write          # assessment issue
+      pull-requests: write   # PR link comment (not used for push, but harmless)
+      models: read           # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -29,12 +31,9 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          post_pr_comment: "false"
-          output_file: "grill-my-code.md"
 ```
 
 ## Notes
 
-- `post_pr_comment: "false"` disables the PR comment since there may be no open PR for this branch
-- `contents: write` is required to commit the `.assessment/` file back to the repository
-- The output file includes the branch name to avoid collisions — e.g. `.assessment/grill-my-code-feat-login-form.md`
+- The assessment issue title and PDF filename both include the branch name to keep runs distinct — e.g. issue `GrillMyCode Questions (feat-login-form)` and PDF `grill-my-code-feat-login-form.pdf`
+- No PR link comment is posted for push events (there is no PR to comment on)

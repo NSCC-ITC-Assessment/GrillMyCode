@@ -39,8 +39,6 @@ const INITIAL_CONFIG = {
   assignmentContext: '',
   assignmentContextMaxChars: 20000,
 
-  postPrComment: false,
-  postIssue: false,
   instructorRepoEnabled: true,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
@@ -50,7 +48,6 @@ const INITIAL_CONFIG = {
   includeInitialCommit: false,
   skipCommitters: 'github-classroom[bot],github-actions[bot]',
 
-  outputFile: 'grill-my-code.md',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   baseSha: '',
@@ -118,11 +115,6 @@ export default function WorkflowWizard({ actionRef = 'v1', docsBase = '/docs' })
   function handleChange(patch) {
     setCfg((prev) => {
       const next = { ...prev, ...patch };
-      // Auto-uncheck PR comment delivery when trigger no longer includes pull_request
-      if ('triggerEvent' in patch) {
-        const isPr = ['pull_request+workflow_dispatch', 'push+pull_request+workflow_dispatch'].includes(next.triggerEvent);
-        if (!isPr) next.postPrComment = false;
-      }
       return next;
     });
   }

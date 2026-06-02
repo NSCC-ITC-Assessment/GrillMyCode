@@ -24,9 +24,10 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write
-      models: read
+      contents: write        # gmc-assessments release + PDF asset
+      issues: write          # assessment issue
+      pull-requests: write   # PR link comment
+      models: read           # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -59,11 +60,11 @@ To include truly everything (including bot-committed starter files), also set `s
 
 By default, API calls to GitHub Models are authenticated with the student's `GITHUB_TOKEN`, which uses the student's own rate limit quota. For large classes with many simultaneous submissions, you may want to use an instructor's Personal Access Token instead.
 
-See the [GitHub Models section of the AI Providers page](../ai-providers#using-an-instructor-token) for details.
+See the [GitHub Models provider](../ai-providers/github-models#using-an-instructor-token) for details.
 
 ## Assessment issue assignment
 
-When `post_issue: 'true'` is set, the created issue is automatically assigned to the student who authored the head commit. The action resolves the student login by walking the commit range newest-first and skipping commits from `skip_committers` — ensuring the action's own assessment-file commit is never mistaken for a student commit.
+The assessment issue is automatically assigned to the student who authored the head commit. The action resolves the student login by walking the commit range newest-first and skipping commits from `skip_committers`.
 
 ## Private instructor repository
 
