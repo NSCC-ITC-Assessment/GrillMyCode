@@ -24,9 +24,10 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write  # required to post the PR comment
-      models: read          # required to call GitHub Models API
+      contents: write        # gmc-assessments release + PDF asset
+      issues: write          # assessment issue
+      pull-requests: write   # PR link comment
+      models: read           # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:

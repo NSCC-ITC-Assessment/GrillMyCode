@@ -13,7 +13,7 @@ slug: /
 2. Collects the git diff of changed files, applying include/exclude filters
 3. Strips inline and block comments from the code before sending it to the AI
 4. Sends the code to an AI provider to generate comprehension questions
-5. Writes the assessment to a Markdown file, and optionally posts it as a PR comment or GitHub Issue
+5. Creates or updates a GitHub Issue with the questions, generates a PDF, and posts a link comment on the PR if triggered by a pull request
 
 ## Quick start
 
@@ -29,9 +29,10 @@ jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write
-      models: read
+      contents: write        # gmc-assessments release + PDF asset
+      issues: write          # assessment issue
+      pull-requests: write   # PR link comment
+      models: read           # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -46,9 +47,10 @@ No secrets need to be created — the default provider (GitHub Models) authentic
 
 ## What you get
 
-- **Comprehension questions** written to a Markdown file committed back to the repository under `.assessment/`
-- **PR comment** (default on) with the questions posted inline on the pull request
-- **GitHub Issue** (optional) — one per branch, updated in place on re-runs
+- **GitHub Issue** — one per branch, automatically created and assigned to the student. Updated in place on re-runs. Pinned in the repository on first create.
+- **PDF download** — a PDF of the assessment is generated and attached to a rolling `gmc-assessments` release. A download link appears at the top of the issue.
+- **PR link comment** — when triggered by a pull request, a short comment is posted on the PR linking to the assessment issue.
+- **Instructor copy** (optional) — a private instructor-only repository receives the full assessment including answers.
 
 ## Designed for GitHub Classroom
 

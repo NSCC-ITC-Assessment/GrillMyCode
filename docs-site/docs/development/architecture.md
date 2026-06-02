@@ -166,7 +166,9 @@ Uses an update-first strategy:
 
 1. List open assessment issues for the same branch
 2. If one exists, update its title and body in-place (preserving issue number, URL, and comment history). Extra duplicates are deleted.
-3. If none exists, create a fresh issue.
+3. If none exists, create a fresh issue, then pin it via the `pinIssue` GraphQL mutation (non-fatal — silently warns if the 3-issue pin limit is already reached).
+
+Returns `{ number, url }` for use by the PR link comment and action outputs.
 
 ---
 

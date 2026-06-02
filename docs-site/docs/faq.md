@@ -97,6 +97,18 @@ Questions are delivered as a **GitHub Issue** in the student's repository. The i
 
 The assessment issue is created as normal. In addition, a short link comment is posted on the pull request pointing to the issue — keeping the PR timeline clean without duplicating the full question set.
 
+### Why is the assessment issue pinned?
+
+GrillMyCode pins the assessment issue in the repository the first time it is created. This keeps it visible at the top of the issues list so students can find it easily without searching. The pin only applies on create — re-runs that update an existing issue do not re-pin it. GitHub allows a maximum of 3 pinned issues per repository; if that limit is already reached, the pin is skipped silently with a warning in the Actions log.
+
+### What happens if the assessment is very long?
+
+GitHub issue bodies have a maximum length of 65,536 characters. If the generated assessment exceeds 65,000 characters, the issue body is automatically truncated and a warning callout is appended pointing to the PDF download for the complete content. A warning is also logged in the Actions run. To avoid truncation, reduce `num_questions` or use a shorter `additional_context`.
+
+### What is the Repository line in the issue header?
+
+Every assessment issue includes a **Repository** metadata line showing the `owner/repo` where the questions were generated (e.g. `NSCC-ITC-Assessment/assignment-1-student123`). This is useful in the instructor repository where multiple student assessments are collected — it makes it immediately clear which student's repository each assessment originated from.
+
 ### Can students see the answers?
 
 By default, no. Set `include_answers: 'true'` to include answers in the student-facing report — but this defeats the purpose of the assessment. The instructor repository copy always includes answers regardless of this setting.
