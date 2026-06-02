@@ -20,6 +20,7 @@ on:
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write  # required to commit the output file back to the repo
       models: read     # required to call GitHub Models API
