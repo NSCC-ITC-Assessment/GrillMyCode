@@ -10,7 +10,7 @@ import * as core from '@actions/core';
 import { mdToPdf } from 'md-to-pdf';
 
 export async function generatePdf(markdownContent) {
-  core.info(
+  core.debug(
     `PDF: launching Chromium (PUPPETEER_EXECUTABLE_PATH=${process.env.PUPPETEER_EXECUTABLE_PATH ?? 'unset'})`,
   );
 
@@ -39,7 +39,7 @@ export async function generatePdf(markdownContent) {
     },
   );
 
-  core.info(
+  core.debug(
     `PDF: md-to-pdf returned — content type: ${typeof result?.content}, length: ${result?.content?.length ?? 'null/undefined'}, isBuffer: ${Buffer.isBuffer(result?.content)}`,
   );
 

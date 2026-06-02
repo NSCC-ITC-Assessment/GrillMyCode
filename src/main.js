@@ -327,11 +327,29 @@ async function run() {
     core.setOutput('code_before_strip', rawContent);
     core.setOutput('code_after_strip', buildCodeContent(processedFiles));
 
+    // ── Guard: GitHub issue bodies cap at 65 536 characters ──────────────────
+    const ISSUE_BODY_LIMIT = 60_000;
+    const safeIssueBody =
+      issueBody.length > ISSUE_BODY_LIMIT
+        ? issueBody.slice(0, ISSUE_BODY_LIMIT) +
+          '\n\n---\n\n> [!WARNING]\n> The assessment was too long to display in full here. ' +
+          (pdfUrl
+            ? `[Download the complete PDF](${pdfUrl}) for all questions.`
+            : 'Re-run with fewer questions to see the full output.')
+        : issueBody;
+
+    if (issueBody.length > ISSUE_BODY_LIMIT) {
+      core.warning(
+        `Issue body exceeded ${ISSUE_BODY_LIMIT} characters (${issueBody.length}) and was truncated. ` +
+          'Consider reducing num_questions or using a shorter additional_context.',
+      );
+    }
+
     // ── Create / update GitHub Issue ─────────────────────────────────────────
     const issueResult = await postIssue({
       octokit,
       ctx,
-      report: issueBody,
+      report: safeIssueBody,
       branchName,
       headSha,
       studentLogin,

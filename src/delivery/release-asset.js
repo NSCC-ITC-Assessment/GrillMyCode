@@ -93,7 +93,7 @@ async function uploadAsset({ uploadUrl, pdfBuffer, filename, token }) {
   // Octokit serialises Buffer bodies as JSON, corrupting binary data.
   // Use global fetch (Node 18+) so the Buffer is sent as raw bytes.
   const url = uploadUrl.replace('{?name,label}', `?name=${encodeURIComponent(filename)}`);
-  core.info(`PDF upload: filename=${filename}, bytes=${pdfBuffer.length}, url=${url}`);
+  core.debug(`PDF upload: filename=${filename}, bytes=${pdfBuffer.length}, url=${url}`);
 
   const response = await fetch(url, {
     method: 'POST',
