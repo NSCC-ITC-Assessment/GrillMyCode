@@ -28,7 +28,7 @@ on:
       - ".devcontainer/**"
       - ".vscode/**"
       - ".husky/**"
-      - "pnpm.yaml"
+      - "pnpm-workspace.yaml"
       - ".claude/**"
       - ".mcp.json"
       - "commitlint.config.cjs"

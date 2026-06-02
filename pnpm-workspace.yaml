@@ -1,0 +1,7 @@
+# pnpm project settings
+#
+# ignoredBuiltDependencies suppresses ERR_PNPM_IGNORED_BUILDS for puppeteer,
+# which is pulled in by md-to-pdf. Its postinstall would download Chromium —
+# we use the system binary instead, so the script is intentionally skipped.
+ignoredBuiltDependencies:
+  - puppeteer
