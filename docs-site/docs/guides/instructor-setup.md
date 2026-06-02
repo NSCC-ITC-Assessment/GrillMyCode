@@ -88,7 +88,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: "20"
-          additional_context: "Replace this with a short description of the assignment"
+          instructor_context: "Replace this with a short description of the assignment"
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 ```
 

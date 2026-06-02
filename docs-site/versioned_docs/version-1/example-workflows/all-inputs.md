@@ -79,14 +79,14 @@ jobs:
           # Assignment-specific instructions for the AI. Injected at the end of
           # the system prompt and takes precedence over default behaviour.
           # Supports multi-line YAML strings.
-          additional_context: |
+          instructor_context: |
             Assignment 3 — Python list comprehensions.
             Focus questions on: when list comprehensions are appropriate,
             performance trade-offs, and readability.
 
           # Comma-separated file glob(s) whose contents are read from the repo
           # and injected into the prompt as assignment context (before
-          # additional_context). Useful for README files, assignment briefs, or
+          # instructor_context). Useful for README files, assignment briefs, or
           # coding style guides. Leave empty (default) to disable.
           # Supported file types: plain text / source files (UTF-8), PDF (.pdf,
           # text layer only), and Microsoft Word (.doc/.docx, text content only).

@@ -23,7 +23,7 @@ const DEFAULTS = {
   aiRetryMaxAttempts: 5,
   numQuestions: 20,
   includeAnswers: false,
-  additionalContext: '',
+  instructorContext: '',
   assignmentContext: '',
   assignmentContextMaxChars: 20000,
   excludePatternOverrides: '',
@@ -137,9 +137,9 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   if (differ(cfg, 'assignmentContextMaxChars')) {
     lines.push(`          assignment_context_max_chars: ${yamlStr(cfg.assignmentContextMaxChars)}`);
   }
-  if (cfg.additionalContext && differ(cfg, 'additionalContext')) {
-    lines.push('          additional_context: |');
-    cfg.additionalContext.split('\n').forEach((l) => {
+  if (cfg.instructorContext && differ(cfg, 'instructorContext')) {
+    lines.push('          instructor_context: |');
+    cfg.instructorContext.split('\n').forEach((l) => {
       lines.push(`            ${l}`);
     });
   }

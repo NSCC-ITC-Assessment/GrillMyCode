@@ -27,7 +27,7 @@ import { SHORT_ANSWER_MAX_CHARS, LONG_ANSWER_MAX_CHARS } from './constants.js';
  *   above it, and explicitly defers to instructor instructions below it.
  *
  * Tier 3 — Instructor instructions (highest priority, optional)
- *   Appended when `additional_context` is provided. Contains free-text
+ *   Appended when `instructor_context` is provided. Contains free-text
  *   instructions written directly by the instructor for this specific run.
  *   Explicitly overrides all content above it, including the assignment context.
  *   Placed last in the prompt to maximise recency-bias reinforcement.
@@ -36,7 +36,7 @@ export function buildPrompt({
   codeContent,
   files,
   numQuestions,
-  context: additionalContext,
+  instructorContext,
   assignmentContext,
   truncated,
 }) {
@@ -44,11 +44,11 @@ export function buildPrompt({
     ? `\n\n---\n\nASSIGNMENT CONTEXT — HIGH PRIORITY\nThe following files describe the assignment requirements. They take precedence over the general guidelines above. Use them to focus your questions on the specific learning objectives and requirements of this assignment. Instructor instructions below take precedence over this section if there is any conflict.\n\n${assignmentContext}`
     : '';
 
-  const contextSection = additionalContext
-    ? `\n\n---\n\nINSTRUCTOR INSTRUCTIONS — HIGHEST PRIORITY\nThe following instructions are specific to this assignment and override all other guidance above, including the assignment context. Follow them exactly.\n\n${additionalContext}`
+  const contextSection = instructorContext
+    ? `\n\n---\n\nINSTRUCTOR INSTRUCTIONS — HIGHEST PRIORITY\nThe following instructions are specific to this assignment and override all other guidance above, including the assignment context. Follow them exactly.\n\n${instructorContext}`
     : '';
 
-  const contextSummaryInstruction = additionalContext
+  const contextSummaryInstruction = instructorContext
     ? `\n\nCONTEXT SUMMARY — APPEND AFTER FINAL QUESTION:\nAfter writing question ${numQuestions} in full (including its answer block and --- separator), append a single sentence completing the following stem based on the questions you just generated and the instructor instructions: "These questions are focused towards". The completed sentence must be 30 words or fewer in total. This is the only exception to the "emit no further content" rule above. Wrap it in these exact markers, each on its own line:\n<!-- CONTEXT_SUMMARY -->\nThese questions are focused towards [your completion here].\n<!-- /CONTEXT_SUMMARY -->\nDo not place these markers anywhere else in your response.`
     : '';
 

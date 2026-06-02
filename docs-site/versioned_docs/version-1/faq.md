@@ -103,7 +103,7 @@ GrillMyCode pins the assessment issue in the repository the first time it is cre
 
 ### What happens if the assessment is very long?
 
-GitHub issue bodies have a maximum length of 65,536 characters. If the generated assessment exceeds 65,000 characters, the issue body is automatically truncated and a warning callout is appended pointing to the PDF download for the complete content. A warning is also logged in the Actions run. To avoid truncation, reduce `num_questions` or use a shorter `additional_context`.
+GitHub issue bodies have a maximum length of 65,536 characters. If the generated assessment exceeds 65,000 characters, the issue body is automatically truncated and a warning callout is appended pointing to the PDF download for the complete content. A warning is also logged in the Actions run. To avoid truncation, reduce `num_questions` or use a shorter `instructor_context`.
 
 ### What is the Repository line in the issue header?
 
@@ -126,14 +126,14 @@ By default, inline and block comments are stripped from the submitted code befor
 
 ### How do I customise the questions for a specific assignment?
 
-Use the `additional_context` input to give the AI assignment-specific instructions:
+Use the `instructor_context` input to give the AI assignment-specific instructions:
 
 ```yaml
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     num_questions: '8'
-    additional_context: 'Assignment 3 — Python list comprehensions. Focus on when list comprehensions are appropriate versus when a regular loop should be preferred.'
+    instructor_context: 'Assignment 3 — Python list comprehensions. Focus on when list comprehensions are appropriate versus when a regular loop should be preferred.'
 ```
 
 You can also inject the assignment brief or rubric directly into the prompt via `assignment_context` (supports plain text, PDF, and Word files). The [Workflow Wizard](workflow-wizard.mdx) has a Questions step that walks through both of these inputs.

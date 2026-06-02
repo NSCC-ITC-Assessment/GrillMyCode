@@ -35,7 +35,7 @@ const INITIAL_CONFIG = {
 
   numQuestions: 20,
   includeAnswers: false,
-  additionalContext: '',
+  instructorContext: '',
   assignmentContext: '',
   assignmentContextMaxChars: 20000,
 

@@ -134,7 +134,7 @@ inputs:
     required: false
     default: "20000"
 
-  additional_context:
+  instructor_context:
     description: >
       Free-text context about the assignment or topic being assessed. Helps the
       AI generate more relevant, targeted questions.
@@ -231,7 +231,7 @@ runs:
     INPUT_EXCLUDE_PATTERN_OVERRIDES: ${{ inputs.exclude_pattern_overrides }}
     INPUT_ASSIGNMENT_CONTEXT: ${{ inputs.assignment_context }}
     INPUT_ASSIGNMENT_CONTEXT_MAX_CHARS: ${{ inputs.assignment_context_max_chars }}
-    INPUT_ADDITIONAL_CONTEXT: ${{ inputs.additional_context }}
+    INPUT_INSTRUCTOR_CONTEXT: ${{ inputs.instructor_context }}
     INPUT_INCLUDE_INITIAL_COMMIT: ${{ inputs.include_initial_commit }}
     INPUT_KEEP_COMMENTS: ${{ inputs.keep_comments }}
     INPUT_SKIP_COMMITTERS: ${{ inputs.skip_committers }}

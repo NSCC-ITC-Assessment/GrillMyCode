@@ -244,7 +244,7 @@ async function run() {
       codeContent,
       files,
       numQuestions: inputs.numQuestions,
-      context: inputs.additionalContext,
+      context: inputs.instructorContext,
       assignmentContext,
       truncated,
     });
@@ -269,7 +269,7 @@ async function run() {
       inputs.numQuestions,
     );
 
-    // Extract the AI-generated context summary (only present when additionalContext was set).
+    // Extract the AI-generated context summary (only present when instructorContext was set).
     const contextSummaryMatch = rawQuestions.match(
       /<!--\s*CONTEXT_SUMMARY\s*-->\n?([\s\S]*?)\n?<!--\s*\/CONTEXT_SUMMARY\s*-->/,
     );
@@ -362,7 +362,7 @@ async function run() {
     if (issueBody.length > ISSUE_BODY_LIMIT) {
       core.warning(
         `Issue body exceeded ${ISSUE_BODY_LIMIT} characters (${issueBody.length}) and was truncated. ` +
-          'Consider reducing num_questions or using a shorter additional_context.',
+          'Consider reducing num_questions or using a shorter instructor_context.',
       );
     }
 

@@ -61,7 +61,7 @@ export function readInputs() {
     numQuestions,
     additionalExcludePatterns,
     excludePatternOverrides: overridePatterns,
-    additionalContext: core.getInput('additional_context') || '',
+    instructorContext: core.getInput('instructor_context') || '',
     assignmentContextGlobs: (() => {
       const raw = core.getInput('assignment_context') || '';
       return raw

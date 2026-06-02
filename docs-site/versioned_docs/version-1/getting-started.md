@@ -53,14 +53,14 @@ See [Example Workflows](example-workflows/pull-request) for ready-to-use files f
 
 ## Customising the questions
 
-Use `additional_context` to give the AI assignment-specific instructions:
+Use `instructor_context` to give the AI assignment-specific instructions:
 
 ```yaml
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     num_questions: '8'
-    additional_context: 'Assignment 3 — Python list comprehensions. Focus on when list comprehensions are appropriate versus when a regular loop should be preferred.'
+    instructor_context: 'Assignment 3 — Python list comprehensions. Focus on when list comprehensions are appropriate versus when a regular loop should be preferred.'
 ```
 
 ## Choosing an AI provider

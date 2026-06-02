@@ -34,7 +34,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: "20"
-          additional_context: "Assignment 2 — Data structures and algorithms"
+          instructor_context: "Assignment 2 — Data structures and algorithms"
 
       - name: Print issue link
         run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"

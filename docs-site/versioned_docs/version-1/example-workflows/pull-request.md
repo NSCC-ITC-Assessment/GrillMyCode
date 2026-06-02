@@ -33,7 +33,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: "20"
-          additional_context: "Assignment 3 — Python list comprehensions"
+          instructor_context: "Assignment 3 — Python list comprehensions"
 ```
 
 ## How PR delivery works

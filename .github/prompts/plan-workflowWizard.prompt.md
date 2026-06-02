@@ -10,7 +10,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 1. **Trigger** — Which event triggers the workflow (pull_request, push, workflow_dispatch, or combined)
 2. **AI Provider** — Provider selection + conditional API key secret name / Azure endpoint
-3. **Questions** — num_questions, include_answers, additional_context, assignment_context
+3. **Questions** — num_questions, include_answers, instructor_context, assignment_context
 4. **Delivery** — Post targets (PR comment, issue, discussion, instructor repo)
 5. **File Filters** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides, exclude_workflow_files, keep_comments, include_initial_commit, skip_committers
 6. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, output_file, SHA overrides)
@@ -32,7 +32,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
   numQuestions: 5,
   includeAnswers: false,
-  additionalContext: '',
+  instructorContext: '',
   assignmentContext: '',
 
   postPrComment: false,

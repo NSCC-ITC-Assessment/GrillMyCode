@@ -70,8 +70,8 @@ export default function StepQuestions({ cfg, onChange }) {
         </span>
         <textarea
           className={styles.textarea}
-          value={cfg.additionalContext}
-          onChange={(e) => onChange({ additionalContext: e.target.value })}
+          value={cfg.instructorContext}
+          onChange={(e) => onChange({ instructorContext: e.target.value })}
           placeholder={
             'Assignment 3 — Python list comprehensions.\nFocus questions on: when list comprehensions are appropriate,\nperformance trade-offs, and readability.'
           }

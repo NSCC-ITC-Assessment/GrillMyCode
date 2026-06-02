@@ -37,7 +37,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: '20'
-          additional_context: 'Assignment 3 — Python list comprehensions'
+          instructor_context: 'Assignment 3 — Python list comprehensions'
 ```
 
 The defaults (`include_initial_commit: 'false'` and `skip_committers: 'github-classroom[bot],github-actions[bot]'`) handle the Classroom-specific commit structure automatically. No additional configuration is needed.

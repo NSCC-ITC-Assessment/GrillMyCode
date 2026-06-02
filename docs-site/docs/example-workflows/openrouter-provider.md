@@ -40,7 +40,7 @@ jobs:
           ai_model: "anthropic/claude-3-5-sonnet"
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
           num_questions: "8"
-          additional_context: "Web Development — REST API design with Express.js"
+          instructor_context: "Web Development — REST API design with Express.js"
 ```
 
 See the [OpenRouter model list](https://openrouter.ai/models) for available models and pricing. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`).

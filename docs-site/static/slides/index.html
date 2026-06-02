@@ -208,7 +208,7 @@
             <div class="feature-card">
               <div class="icon">🔌</div>
               <strong>Multiple AI providers</strong>
-              GitHub Models, OpenAI, OpenRouter, Azure OpenAI
+              GitHub Models (free default), OpenRouter
             </div>
           </div>
         </section>
@@ -236,7 +236,7 @@
             </li>
             <li>
               <span class="step-num">5</span>
-              <div><strong>Deliver the assessment</strong><br /><span class="dim">Writes a Markdown file and optionally posts to a PR comment, Issue, or Discussion</span></div>
+              <div><strong>Deliver the assessment</strong><br /><span class="dim">Creates a GitHub Issue assigned to the student, generates a PDF, and posts a link comment on the PR</span></div>
             </li>
           </ul>
         </section>
@@ -260,7 +260,7 @@ action.yml  ──► pulls Docker image from ghcr.io
                     ┌────────────┼────────────────┐
                     ▼            ▼                 ▼
                git.js         ai.js           delivery/
-              (diffs)      (provider)    (PR / issue / discussion)</code></pre>
+              (diffs)      (provider)    (issue / PDF / instructor repo)</code></pre>
           <p style="font-size:0.75em; color:var(--dim); margin-top:0.6em;">
             The Docker image is built once and reused — consumer repos pay <em>no</em> build cost at runtime.
           </p>
@@ -299,28 +299,28 @@ def add(a, b):
           <h2>Delivery Options</h2>
           <hr class="divider" />
           <p style="font-size:0.82em; color:var(--dim);">
-            The assessment is always written to a Markdown file. Any combination of the options below can be enabled at the same time.
+            A GitHub Issue is always created. The PDF and PR link comment are automatic; the instructor repo requires a token.
           </p>
           <div class="delivery-row">
             <div class="delivery-card">
-              <div class="dicon">💬</div>
-              <strong>PR Comment</strong>
-              <span>Posted inline on the pull request. On by default.</span>
-            </div>
-            <div class="delivery-card">
               <div class="dicon">🐛</div>
               <strong>GitHub Issue</strong>
-              <span>Auto-assigned to the student. Updated in place on re-runs.</span>
+              <span>Primary delivery — always created. Auto-assigned to the student. Updated in place on re-runs.</span>
             </div>
             <div class="delivery-card">
-              <div class="dicon">🗣️</div>
-              <strong>Discussion</strong>
-              <span>Forum-style record. Discussions are auto-enabled if needed.</span>
+              <div class="dicon">💬</div>
+              <strong>PR Link Comment</strong>
+              <span>Posted automatically on pull request events — links to the Issue rather than repeating the full assessment.</span>
             </div>
             <div class="delivery-card">
               <div class="dicon">📄</div>
-              <strong>Markdown File</strong>
-              <span>Committed to <span class="mono">.assessment/</span> in the repo.</span>
+              <strong>PDF Report</strong>
+              <span>Generated for every assessment and uploaded to a GitHub Release asset. Linked from the Issue.</span>
+            </div>
+            <div class="delivery-card">
+              <div class="dicon">🔒</div>
+              <strong>Instructor Repo</strong>
+              <span>Full Q+A copy written to a private instructor repository. Requires <span class="mono">instructor_repo_token</span>.</span>
             </div>
           </div>
         </section>
@@ -343,25 +343,13 @@ def add(a, b):
                 <td>GitHub Models <span class="badge">default</span></td>
                 <td><span class="mono">github-models</span></td>
                 <td>No</td>
-                <td>Uses built-in <span class="mono">GITHUB_TOKEN</span></td>
-              </tr>
-              <tr>
-                <td>OpenAI</td>
-                <td><span class="mono">openai</span></td>
-                <td>Yes</td>
-                <td>GPT-4o, GPT-4 Turbo, etc.</td>
+                <td>Uses built-in <span class="mono">GITHUB_TOKEN</span> — no cost</td>
               </tr>
               <tr>
                 <td>OpenRouter</td>
                 <td><span class="mono">openrouter</span></td>
                 <td>Yes</td>
-                <td>Access to many open models</td>
-              </tr>
-              <tr>
-                <td>Azure OpenAI</td>
-                <td><span class="mono">azure-openai</span></td>
-                <td>Yes</td>
-                <td>Also requires <span class="mono">azure_endpoint</span></td>
+                <td>Access to many open-source and commercial models</td>
               </tr>
             </tbody>
           </table>
@@ -400,12 +388,12 @@ def add(a, b):
             <table class="provider-table">
               <thead><tr><th>Input</th><th>Default</th><th>What it does</th></tr></thead>
               <tbody>
-                <tr><td><span class="mono">num_questions</span></td><td>10</td><td>How many questions to generate (1–50)</td></tr>
+                <tr><td><span class="mono">num_questions</span></td><td>20</td><td>How many questions to generate (1–50)</td></tr>
                 <tr><td><span class="mono">include_answers</span></td><td>false</td><td>Show answers to the student — leave off in almost all cases</td></tr>
-                <tr><td><span class="mono">additional_context</span></td><td>—</td><td>Free-text instructor instructions injected into the prompt</td></tr>
+                <tr><td><span class="mono">instructor_context</span></td><td>—</td><td>Free-text instructor instructions injected into the prompt</td></tr>
                 <tr><td><span class="mono">assignment_context</span></td><td>—</td><td>Globs for brief/rubric files to inject into the prompt</td></tr>
-                <tr><td><span class="mono">include_patterns</span></td><td>—</td><td>Limit assessment to specific file globs</td></tr>
-                <tr><td><span class="mono">exclude_patterns</span></td><td><em>auto</em></td><td>Skip non-code files (lock files, images, etc.)</td></tr>
+                <tr><td><span class="mono">additional_exclude_patterns</span></td><td>—</td><td>Extra globs to exclude on top of auto-detected stack patterns</td></tr>
+                <tr><td><span class="mono">exclude_pattern_overrides</span></td><td>—</td><td>Re-include specific files that auto-detection would exclude</td></tr>
                 <tr><td><span class="mono">ai_temperature</span></td><td>0.5</td><td>Randomness of generated questions (0 = deterministic)</td></tr>
               </tbody>
             </table>
@@ -428,7 +416,8 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: read
-      pull-requests: write   # post the PR comment
+      pull-requests: write   # post the PR link comment
+      issues: write          # create / update the assessment issue
       models: read           # GitHub Models access
     steps:
       - uses: actions/checkout@v6
@@ -438,8 +427,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          num_questions: '10'
-          additional_context: 'Assignment 3 – Python list comprehensions'</code></pre>
+          instructor_context: 'Assignment 3 – Python list comprehensions'</code></pre>
         </section>
 
         <!-- ── 12. What the student sees ────────────────────────── -->
@@ -448,7 +436,7 @@ jobs:
           <hr class="divider" />
           <div class="cols">
             <div>
-              <p style="font-size:0.82em;">A PR comment appears automatically after every push:</p>
+              <p style="font-size:0.82em;">A GitHub Issue is created and assigned to the student:</p>
               <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:1em; font-size:0.75em; line-height:1.7;">
                 <p style="color:var(--accent-light); font-weight:700; margin:0 0 0.5em;">🔥 GrillMyCode</p>
                 <p style="margin:0 0 0.3em;"><strong>1.</strong> Your <span class="mono">add()</span> function uses positional parameters — what would happen if a caller passed keyword arguments in the wrong order?</p>
@@ -457,11 +445,12 @@ jobs:
               </div>
             </div>
             <div>
-              <p style="font-size:0.82em;">A Markdown file is committed to the repo:</p>
-              <pre style="font-size:0.68em;"><code class="language-text">.assessment/
-  └── 2024-11-15-main.md</code></pre>
+              <p style="font-size:0.82em;">On pull request events, a link comment is posted:</p>
+              <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.7em 1em; font-size:0.75em; line-height:1.6;">
+                <p style="margin:0;">ℹ️ GrillMyCode has generated assessment questions for this pull request. <span style="color:var(--accent-light);">View questions →</span></p>
+              </div>
               <p style="font-size:0.78em; color:var(--dim); margin-top:0.5em;">
-                Optionally, a GitHub Issue or Discussion is also created and updated in place on subsequent submissions.
+                A PDF is also generated and uploaded as a release asset, linked from the Issue.
               </p>
             </div>
           </div>
