@@ -122,7 +122,15 @@ inputs:
       so subdirectory paths and wildcards work (e.g. "docs/assignment.md", "**/*.md").
       If no files match, a workflow warning is emitted and the action continues
       without assignment context.
-      Example: "README.md, docs/assignment.md, coding_style.md"
+      SECURITY: point this only at instructor-controlled paths. These globs are
+      matched against the student's checked-out working tree, so a glob like
+      "README.md" or "**/*.md" can pick up files the student can edit. Assignment
+      context is treated as untrusted reference data that only steers question
+      topics — it cannot override the rubric or reveal answers — but to keep
+      students from influencing question focus, prefer paths they do not control
+      (e.g. an instructor-managed docs/ directory or a file committed only by the
+      instructor). Use instructor_context for instructions that must take effect.
+      Example: "docs/assignment.md, instructor/rubric.md"
     required: false
     default: ""
 
