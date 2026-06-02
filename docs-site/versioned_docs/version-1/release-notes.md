@@ -5,6 +5,26 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.12 — 2026-06-02
+
+### What's Changed
+
+### Features
+
+- enhance stripAnswers function to improve answer stripping logic for quiz generation
+- add studentLogin parameter to run function for enhanced context handling
+- add safeFilePart function for filesystem-safe string handling and update PDF filename generation
+
+### Documentation
+
+- add timeout-minutes to generate-questions job in workflow examples
+- fixed broken links in AI Providers category
+- update v1 snapshot
+
+### Refactoring
+
+- update PDF filename generation to include a prefix for better identification
+
 ## v1.0.11 — 2026-06-02
 
 ### What's Changed

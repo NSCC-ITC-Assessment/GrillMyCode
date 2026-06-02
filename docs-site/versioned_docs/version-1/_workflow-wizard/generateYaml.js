@@ -85,6 +85,7 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   lines.push('jobs:');
   lines.push('  generate-questions:');
   lines.push('    runs-on: ubuntu-latest');
+  lines.push('    timeout-minutes: 15');
 
   // permissions
   lines.push('    permissions:');

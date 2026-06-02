@@ -18,6 +18,7 @@ on:
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write        # required to create the gmc-assessments release and PDF asset
       issues: write          # required to create the assessment issue
