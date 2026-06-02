@@ -26,7 +26,16 @@ export async function uploadPdfAsset({ octokit, owner, repo, pdfBuffer, filename
 
   await deleteExistingAsset({ octokit, owner, repo, releaseId: release.id, filename });
 
-  return uploadAsset({ uploadUrl: release.upload_url, pdfBuffer, filename, token });
+  return uploadAsset({
+    octokit,
+    owner,
+    repo,
+    releaseId: release.id,
+    uploadUrl: release.upload_url,
+    pdfBuffer,
+    filename,
+    token,
+  });
 }
 
 async function getOrCreateRelease({ octokit, owner, repo }) {
@@ -89,21 +98,40 @@ async function deleteExistingAsset({ octokit, owner, repo, releaseId, filename }
   }
 }
 
-async function uploadAsset({ uploadUrl, pdfBuffer, filename, token }) {
+async function uploadAsset({
+  octokit,
+  owner,
+  repo,
+  releaseId,
+  uploadUrl,
+  pdfBuffer,
+  filename,
+  token,
+}) {
   // Octokit serialises Buffer bodies as JSON, corrupting binary data.
   // Use global fetch (Node 18+) so the Buffer is sent as raw bytes.
   const url = uploadUrl.replace('{?name,label}', `?name=${encodeURIComponent(filename)}`);
   core.debug(`PDF upload: filename=${filename}, bytes=${pdfBuffer.length}, url=${url}`);
 
-  const response = await fetch(url, {
-    method: 'POST',
-    headers: {
-      Authorization: `Bearer ${token}`,
-      'Content-Type': 'application/pdf',
-      'X-GitHub-Api-Version': '2022-11-28',
-    },
-    body: pdfBuffer,
-  });
+  const doUpload = () =>
+    fetch(url, {
+      method: 'POST',
+      headers: {
+        Authorization: `Bearer ${token}`,
+        'Content-Type': 'application/pdf',
+        'X-GitHub-Api-Version': '2022-11-28',
+      },
+      body: pdfBuffer,
+    });
+
+  let response = await doUpload();
+
+  if (response.status === 422) {
+    // 422 already_exists — a concurrent run uploaded between our delete and
+    // this upload. Delete the conflicting asset and retry once.
+    await deleteExistingAsset({ octokit, owner, repo, releaseId, filename });
+    response = await doUpload();
+  }
 
   if (!response.ok) {
     const text = await response.text().catch(() => response.statusText);
