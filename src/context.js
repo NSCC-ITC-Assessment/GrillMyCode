@@ -220,3 +220,16 @@ export function safeBranchName(branchName) {
     .replace(/-{2,}/g, '-')
     .replace(/^-|-$/g, '');
 }
+
+/**
+ * Returns a filesystem-safe version of an arbitrary string for use as part
+ * of a filename. Unlike safeBranchName, never returns an empty string for
+ * specific values — all non-empty input produces non-empty output.
+ */
+export function safeFilePart(str) {
+  if (!str) return '';
+  return str
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '');
+}
