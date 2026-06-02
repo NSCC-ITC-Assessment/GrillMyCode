@@ -49,19 +49,35 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
  * generated solely to enable quiz-style delivery and should not appear in
  * any rendered report.
  *
- * The correct answer line is removed only when keepAnswers is false
+ * The correct answer is removed only when keepAnswers is false
  * (i.e. when producing student-facing output without include_answers).
+ * Two passes are used for resilience against model formatting drift:
+ *   1. Block removal: strips **Answer:** heading + everything up to **Incorrect Options
+ *      for Quiz:** as a unit, handling answer-on-heading-line, bullet, or multi-line.
+ *   2. Positional fallback: strips any plain-text content sitting between a question
+ *      line and **Incorrect Options for Quiz:** when the **Answer:** label was absent.
  *
  * Collapses any resulting triple+ blank lines down to a double blank line.
  */
 function stripAnswers(text, { keepAnswers = false } = {}) {
   let result = text;
   if (!keepAnswers) {
-    result = result.replace(/^ {3,4}\*\*Answer:\*\*[^\n]*/gm, '');
+    // Pass 1: block-based — strip **Answer:** heading and everything below it
+    // through to **Incorrect Options for Quiz:**, covering all answer formats.
+    result = result.replace(
+      / {0,4}\*\*Answer:\*\*[\s\S]*?(?=\n {0,4}\*\*Incorrect Options for Quiz:\*\*)/g,
+      '',
+    );
+    // Pass 2: positional fallback — if **Answer:** label was absent entirely,
+    // strip any plain-text line between the question line and **Incorrect Options**.
+    result = result.replace(
+      /(\n {0,4}\d+\.[^\n]+\n)\n(?! {0,4}\*\*)[^\n]+\n(?=\n {0,4}\*\*Incorrect Options for Quiz:\*\*)/g,
+      '$1\n',
+    );
   }
   return result
-    .replace(/^ {3,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
-    .replace(/^ {3,4}- [^\n]*/gm, '')
+    .replace(/^ {0,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
+    .replace(/^ {0,4}- [^\n]*/gm, '')
     .replace(/\n{3,}/g, '\n\n');
 }
 
