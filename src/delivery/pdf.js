@@ -27,7 +27,7 @@ export async function generatePdf(markdownContent) {
       },
       highlight_style: 'github',
       pdf_options: {
-        margin: { top: '1.5cm', right: '2cm', bottom: '2cm', left: '2cm' },
+        margin: { top: '1.5cm', right: '1cm', bottom: '2cm', left: '1cm' },
         printBackground: true,
         displayHeaderFooter: true,
         headerTemplate: '<span></span>',

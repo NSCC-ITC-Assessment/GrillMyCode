@@ -329,6 +329,7 @@ async function run() {
 
     // ── Guard: GitHub issue bodies cap at 65 536 characters ──────────────────
     const ISSUE_BODY_LIMIT = 65_000;
+    core.info(`Issue body: ${issueBody.length} characters`);
     const safeIssueBody =
       issueBody.length > ISSUE_BODY_LIMIT
         ? issueBody.slice(0, ISSUE_BODY_LIMIT) +
