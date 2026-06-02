@@ -5,6 +5,34 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.14 — 2026-06-02
+
+### What's Changed
+
+### Bug Fixes
+
+- clarify wording in StepFileOptions component regarding code comments
+- clarify wording in the StepFileOptions component description
+
+### Documentation
+
+- update v1 snapshot
+
+### Refactoring
+
+- add FAQ entry about missing questions in student reports and clarify answer container requirements
+- add sanitising renderer for PDF generation
+
+### Chores & Maintenance
+
+- update packageManager version to pnpm@11.5.1
+- update packageManager version to pnpm@11.5.1
+
+### Other
+
+- enhance question formatting by splitting bold markers around inline code
+- make question text bold for easier reading
+
 ## v1.0.13 — 2026-06-02
 
 ### What's Changed
