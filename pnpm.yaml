@@ -1,0 +1,6 @@
+# pnpm workspace/project settings (pnpm v11+)
+#
+# onlyBuiltDependencies: [] means no dependency postinstall scripts are
+# permitted to run. puppeteer (pulled in by md-to-pdf) would otherwise
+# attempt to download Chromium — the system binary is used instead.
+onlyBuiltDependencies: []
