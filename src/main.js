@@ -51,6 +51,35 @@ const ANSWER_REGION_RE =
 const ANSWER_MARKER_LINE_RE = /^[ \t]*<!--\s*\/?\s*gmc:answer\s*-->[ \t]*\n?/gim;
 
 /**
+ * Splits bold markers around inline code spans on question-sentence lines so
+ * that backtick-wrapped identifiers render in code style only, not bold.
+ *
+ * Input:  1. **What does `x` return when `y` is null?**
+ * Output: 1. **What does** `x` **return when** `y` **is null?**
+ *
+ * Only lines beginning with a question number are touched; filename headers
+ * (**`file.ext`**) and answer headings (**Answer:**) are left unchanged.
+ */
+function splitBoldAroundCode(text) {
+  return text.replace(/^(\s*\d+\. )(\*\*.+\*\*)$/gm, (_, prefix, boldText) => {
+    if (!boldText.includes('`')) return prefix + boldText;
+    const inner = boldText.slice(2, -2);
+    const rebuilt = inner
+      .split(/(`[^`]+`)/)
+      .map((part) => {
+        if (part.startsWith('`')) return part;
+        const trimmed = part.trim();
+        if (!trimmed) return part;
+        const leading = part.match(/^\s*/)[0];
+        const trailing = part.match(/\s*$/)[0];
+        return `${leading}**${trimmed}**${trailing}`;
+      })
+      .join('');
+    return prefix + rebuilt;
+  });
+}
+
+/**
  * Strips distractor content from AI-generated Q+A output.
  *
  * Incorrect options for quiz (header + bullets) are always removed — they are
@@ -389,9 +418,11 @@ async function run() {
       /<!--\s*CONTEXT_SUMMARY\s*-->\n?([\s\S]*?)\n?<!--\s*\/CONTEXT_SUMMARY\s*-->/,
     );
     const contextSummary = contextSummaryMatch ? contextSummaryMatch[1].trim() : '';
-    const cleanedQuestions = rawQuestions
-      .replace(/<!--\s*CONTEXT_SUMMARY\s*-->[\s\S]*?<!--\s*\/CONTEXT_SUMMARY\s*-->\n*/g, '')
-      .trim();
+    const cleanedQuestions = splitBoldAroundCode(
+      rawQuestions
+        .replace(/<!--\s*CONTEXT_SUMMARY\s*-->[\s\S]*?<!--\s*\/CONTEXT_SUMMARY\s*-->\n*/g, '')
+        .trim(),
+    );
 
     // Always strip incorrect options for quiz; also strip the correct answer when
     // include_answers is false. cleanedQuestions retains answers for the instructor copy.
