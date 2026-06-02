@@ -22,7 +22,13 @@ import {
   STUDENT_RESOLUTION_SKIP_COMMITTERS,
 } from './constants.js';
 import { readInputs } from './inputs.js';
-import { resolveSHAs, resolveBranch, resolveAssignmentName, safeFilePart } from './context.js';
+import {
+  resolveSHAs,
+  resolveBranch,
+  resolveAssignmentName,
+  resolveStudentLogin,
+  safeFilePart,
+} from './context.js';
 import { getChangedFiles, getDiff, findStudentCommitSha } from './git.js';
 import {
   filterFiles,
@@ -281,24 +287,37 @@ async function run() {
     const branchName = resolveBranch(ctx);
     core.info(`Branch: ${branchName}`);
 
-    // ── Resolve the student login from the most recent non-bot commit ────────
-    // headSha may point to the action's own assessment-file commit on re-runs
-    // triggered by that push. Walk the range to find the last student commit.
-    // Merge the user's skip_committers with the hardcoded bot list so that
-    // github-actions[bot] is always excluded even if the user clears the input.
+    // ── Resolve the student login ────────────────────────────────────────────
+    // Prefer the trusted Actions event payload (PR author / pusher), which the
+    // student cannot forge. Only fall back to walking commit authors — which are
+    // attacker-controlled strings — when the payload yields no usable login or
+    // resolves to a bot account (e.g. issue_comment, or a bot-triggered run).
     const studentResolutionSkipList = [
       ...new Set([...STUDENT_RESOLUTION_SKIP_COMMITTERS, ...inputs.skipCommitters]),
     ];
-    const studentCommitSha = findStudentCommitSha(baseSha, headSha, studentResolutionSkipList);
-    const { data: studentCommitData } = await octokit.rest.repos.getCommit({
-      owner: ctx.repo.owner,
-      repo: ctx.repo.repo,
-      ref: studentCommitSha,
-    });
-    const studentLogin = studentCommitData.author?.login ?? ctx.actor;
-    core.info(
-      `Student login: ${studentLogin} (resolved from commit ${studentCommitSha.substring(0, GIT_SHA_SHORT_LENGTH)})`,
-    );
+    const isBotLogin = (login) =>
+      studentResolutionSkipList.some((bot) => login.toLowerCase() === bot.toLowerCase());
+
+    const payloadLogin = resolveStudentLogin(ctx);
+    let studentLogin;
+    if (payloadLogin && !isBotLogin(payloadLogin)) {
+      studentLogin = payloadLogin;
+      core.info(`Student login: ${studentLogin} (from trusted event payload)`);
+    } else {
+      // headSha may point to the action's own assessment-file commit on re-runs;
+      // walk the range to find the most recent non-bot commit, then resolve its
+      // GitHub-linked login.
+      const studentCommitSha = findStudentCommitSha(baseSha, headSha, studentResolutionSkipList);
+      const { data: studentCommitData } = await octokit.rest.repos.getCommit({
+        owner: ctx.repo.owner,
+        repo: ctx.repo.repo,
+        ref: studentCommitSha,
+      });
+      studentLogin = studentCommitData.author?.login ?? ctx.actor;
+      core.info(
+        `Student login: ${studentLogin} (resolved from commit ${studentCommitSha.substring(0, GIT_SHA_SHORT_LENGTH)})`,
+      );
+    }
 
     const assignmentName = await resolveAssignmentName(ctx, octokit, studentLogin);
     core.info(`Assignment name: ${assignmentName}`);

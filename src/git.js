@@ -39,22 +39,44 @@ export function getDiff(baseSha, headSha, files) {
 }
 
 /**
- * Advances baseSha past any consecutive commits (oldest-first from baseSha
- * towards headSha) whose author name or email contains one of the
- * skipCommitters substrings (case-insensitive).
+ * Parses `git log` output produced with the NUL-delimited format
+ * `--format=%H%x00%ae%x00%an`. Records are newline-separated; the three fields
+ * (SHA, author email, author name) are separated by NUL bytes.
  *
- * The walk stops as soon as a non-matching commit is encountered, so only a
- * leading run of bot commits is skipped — any bot commits that appear after
- * student work are left in the range.
- *
- * Returns the new baseSha (unchanged if no matching commits were found at
- * the start of the range).
+ * NUL can never appear inside a commit SHA, author email, or author name, so
+ * this parses correctly even when an author name contains a literal tab — a
+ * case that corrupted the previous `\t`-delimited parsing (an attacker controls
+ * their own git author name).
  */
+function parseCommitLog(raw) {
+  return raw
+    .split('\n')
+    .filter((line) => line.length > 0)
+    .map((line) => {
+      const [sha = '', email = '', name = ''] = line.split('\0');
+      return { sha, email, name };
+    });
+}
+
+/** True if a commit's author name or email contains any skip substring. */
+function matchesSkipCommitter(commit, skipCommitters) {
+  return skipCommitters.some((sc) => {
+    const scLower = sc.toLowerCase();
+    return (
+      commit.email.toLowerCase().includes(scLower) || commit.name.toLowerCase().includes(scLower)
+    );
+  });
+}
+
 /**
  * Returns the SHA of the most recent commit in baseSha..headSha whose author
  * is NOT matched by any entry in skipCommitters. This avoids misidentifying a
  * trailing bot commit (e.g. the action's own assessment file commit) as the
  * student's work when resolving the student's GitHub login.
+ *
+ * NOTE: author name/email are attacker-controlled. This is only a fallback for
+ * student-login resolution; the primary path resolves the login from the
+ * trusted Actions event payload (see resolveStudentLogin).
  *
  * Falls back to headSha if skipCommitters is empty or no non-bot commit exists
  * in the range (e.g. the range only contains bot commits).
@@ -65,58 +87,38 @@ export function findStudentCommitSha(baseSha, headSha, skipCommitters) {
   // git log range notation (A..B) requires A to be a commit object.
   // When baseSha is the empty tree, use a plain log up to headSha instead.
   const logRange = baseSha === GIT_EMPTY_TREE_SHA ? [headSha] : [`${baseSha}..${headSha}`];
-  const raw = git('log', '--format=%H\t%ae\t%an', ...logRange);
-  const commits = raw
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((l) => {
-      const parts = l.split('\t');
-      return { sha: parts[0], email: parts[1] || '', name: parts[2] || '' };
-    });
+  const commits = parseCommitLog(git('log', '--format=%H%x00%ae%x00%an', ...logRange));
 
   // git log is newest-first; find() returns the most recent non-bot commit.
-  const studentCommit = commits.find(
-    (commit) =>
-      !skipCommitters.some((sc) => {
-        const scLower = sc.toLowerCase();
-        return (
-          commit.email.toLowerCase().includes(scLower) ||
-          commit.name.toLowerCase().includes(scLower)
-        );
-      }),
-  );
+  const studentCommit = commits.find((commit) => !matchesSkipCommitter(commit, skipCommitters));
 
   return studentCommit?.sha ?? headSha;
 }
 
-export function advanceBasePastBotCommits(baseSha, headSha, skipCommitters) {
+/**
+ * Returns the leading run of commits (oldest-first from baseSha towards headSha)
+ * whose author name or email matches a skipCommitters substring. The walk stops
+ * at the first non-matching commit, so only a consecutive leading run is
+ * returned.
+ *
+ * This is a cheap, local pre-filter only. Because author name/email are fully
+ * attacker-controlled, callers MUST confirm each returned commit against its
+ * GitHub-verified account login before trimming it from the assessed diff —
+ * otherwise a student could hide their own commits by setting their git author
+ * name to a bot's (see resolveSHAs).
+ */
+export function getLeadingSkipCandidates(baseSha, headSha, skipCommitters) {
+  if (!skipCommitters || skipCommitters.length === 0) return [];
+
   // git log range notation (A..B) requires A to be a commit object.
   // When baseSha is the empty tree, use a plain log up to headSha instead.
   const logRange = baseSha === GIT_EMPTY_TREE_SHA ? [headSha] : [`${baseSha}..${headSha}`];
-  const raw = git('log', '--format=%H\t%ae\t%an', '--reverse', ...logRange);
-  const commits = raw
-    .split('\n')
-    .map((l) => l.trim())
-    .filter(Boolean)
-    .map((l) => {
-      const parts = l.split('\t');
-      return { sha: parts[0], email: parts[1] || '', name: parts[2] || '' };
-    });
+  const commits = parseCommitLog(git('log', '--format=%H%x00%ae%x00%an', '--reverse', ...logRange));
 
-  let newBase = baseSha;
+  const run = [];
   for (const commit of commits) {
-    const isBotCommit = skipCommitters.some((sc) => {
-      const scLower = sc.toLowerCase();
-      return (
-        commit.email.toLowerCase().includes(scLower) || commit.name.toLowerCase().includes(scLower)
-      );
-    });
-    if (isBotCommit) {
-      newBase = commit.sha;
-    } else {
-      break;
-    }
+    if (!matchesSkipCommitter(commit, skipCommitters)) break;
+    run.push(commit);
   }
-  return newBase;
+  return run;
 }

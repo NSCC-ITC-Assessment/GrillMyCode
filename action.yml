@@ -169,10 +169,10 @@ inputs:
 
   skip_committers:
     description: >
-      Comma-separated list of commit author names or email substrings.
+      Comma-separated list of bot account logins (e.g. github-actions[bot]).
       Any consecutive commits at the start of the assessed range (immediately
-      after the resolved base SHA) whose author name or email contains one of
-      these values are excluded from the diff. Matching is case-insensitive.
+      after the resolved base SHA) that belong to one of these accounts are
+      excluded from the diff. Matching is case-insensitive.
 
       This handles the automated commits that GitHub Classroom applies to a
       student repository when the assignment is accepted (e.g. feedback PR
@@ -181,6 +181,13 @@ inputs:
 
       Only consecutive leading commits are skipped — if a bot commit appears
       after a student commit it is included as normal.
+
+      SECURITY: a leading commit is skipped only when its GitHub-verified account
+      login matches one of these values. The local commit author name/email is
+      attacker-controlled, so it is used only as a pre-filter, never as the sole
+      basis for skipping — a student cannot hide their own commits by setting
+      their git author name to a bot's. Consequently these values must be GitHub
+      account logins, not arbitrary display names or emails.
 
       Set to an empty string ('') to disable bot-commit skipping entirely.
     required: false

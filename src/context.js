@@ -8,7 +8,7 @@
 
 import * as core from '@actions/core';
 import { GIT_EMPTY_TREE_SHA, GIT_SHA_SHORT_LENGTH } from './constants.js';
-import { advanceBasePastBotCommits, getFirstCommit } from './git.js';
+import { getLeadingSkipCandidates, getFirstCommit } from './git.js';
 
 /**
  * Determines the base and head commit SHAs for the diff based on the
@@ -85,12 +85,43 @@ export async function resolveSHAs(ctx, octokit, inputs) {
   // ── Apply skip_committers ────────────────────────────────────────────────
   // Advance baseSha past any consecutive leading commits by bot accounts so
   // that automated Classroom/Actions commits are excluded from the diff.
+  //
+  // A leading commit is only trimmed when its GitHub-VERIFIED account login
+  // (resolved server-side, which a student cannot forge) matches a skip entry.
+  // The cheap local name/email pre-filter just bounds how many commits we
+  // verify; matching solely on those attacker-controlled strings would let a
+  // student hide their own commits by setting their git author name to a bot's.
   if (inputs.skipCommitters && inputs.skipCommitters.length > 0) {
-    const advancedBase = advanceBasePastBotCommits(baseSha, headSha, inputs.skipCommitters);
+    const candidates = getLeadingSkipCandidates(baseSha, headSha, inputs.skipCommitters);
+    const skipLower = inputs.skipCommitters.map((s) => s.toLowerCase());
+    let advancedBase = baseSha;
+    for (const candidate of candidates) {
+      let verified = false;
+      try {
+        const { data } = await octokit.rest.repos.getCommit({
+          owner: ctx.repo.owner,
+          repo: ctx.repo.repo,
+          ref: candidate.sha,
+        });
+        const logins = [data.author?.login, data.committer?.login]
+          .filter(Boolean)
+          .map((l) => l.toLowerCase());
+        verified = logins.some((login) => skipLower.some((sc) => login.includes(sc)));
+      } catch (err) {
+        core.warning(
+          `skip_committers: could not verify commit ${candidate.sha.substring(0, GIT_SHA_SHORT_LENGTH)} ` +
+            `via the GitHub API (${err.message}); leaving it in the assessed diff.`,
+        );
+      }
+      // Stop at the first commit not confirmed as a skip-listed account — a
+      // student impersonating a bot fails here and their commit stays assessed.
+      if (!verified) break;
+      advancedBase = candidate.sha;
+    }
     if (advancedBase !== baseSha) {
       core.info(
         `skip_committers: advanced base SHA from ${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)} to ` +
-          `${advancedBase.substring(0, GIT_SHA_SHORT_LENGTH)} to exclude consecutive bot commits from the diff.`,
+          `${advancedBase.substring(0, GIT_SHA_SHORT_LENGTH)} past GitHub-verified bot commits.`,
       );
       baseSha = advancedBase;
     }
@@ -112,6 +143,29 @@ export function sanitiseSha(sha) {
     throw new Error(`Invalid git commit SHA: "${sha}"`);
   }
   return sha;
+}
+
+/**
+ * Resolves the student's GitHub login from the trusted Actions event payload.
+ *
+ * The event payload is populated by GitHub from the authenticated actor, so —
+ * unlike commit author name/email, which the student fully controls — it cannot
+ * be spoofed to misattribute the assessment to another user.
+ *
+ *   - pull_request / pull_request_target: the PR author (`pull_request.user`).
+ *   - push / workflow_dispatch / others:  the account that triggered the run
+ *                                         (`sender`, falling back to actor).
+ *   - issue_comment:                      the commenter is not necessarily the
+ *                                         student, so return '' and let the
+ *                                         caller fall back to commit resolution.
+ *
+ * Returns an empty string when no trustworthy login is available.
+ */
+export function resolveStudentLogin(ctx) {
+  const payload = ctx.payload || {};
+  if (payload.pull_request?.user?.login) return payload.pull_request.user.login;
+  if (ctx.eventName === 'issue_comment') return '';
+  return payload.sender?.login || ctx.actor || '';
 }
 
 /**
