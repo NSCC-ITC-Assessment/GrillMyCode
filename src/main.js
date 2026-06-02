@@ -42,6 +42,14 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+// Markers the model wraps each answer block in (see prompt.js). They give the
+// student-facing redaction an explicit region to remove rather than inferring
+// answer boundaries from headings, and let the instructor copy drop just the
+// markers while keeping the content. Both are tolerant of whitespace drift.
+const ANSWER_REGION_RE =
+  /[ \t]*<!--\s*gmc:answer\s*-->[\s\S]*?<!--\s*\/gmc:answer\s*-->[ \t]*\n?/gi;
+const ANSWER_MARKER_LINE_RE = /^[ \t]*<!--\s*\/?\s*gmc:answer\s*-->[ \t]*\n?/gim;
+
 /**
  * Strips distractor content from AI-generated Q+A output.
  *
@@ -51,17 +59,22 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
  *
  * The correct answer is removed only when keepAnswers is false
  * (i.e. when producing student-facing output without include_answers).
- * Two passes are used for resilience against model formatting drift:
- *   1. Block removal: strips **Answer:** heading + everything up to **Incorrect Options
- *      for Quiz:** as a unit, handling answer-on-heading-line, bullet, or multi-line.
+ * Removal is layered for resilience against model formatting drift:
+ *   0. Container removal: strips each explicitly marked <!-- gmc:answer --> …
+ *      <!-- /gmc:answer --> region as a unit — the reliable, primary path.
+ *   1. Block fallback: strips **Answer:** heading + everything up to **Incorrect
+ *      Options for Quiz:** for any answer the model emitted without the markers.
  *   2. Positional fallback: strips any plain-text content sitting between a question
  *      line and **Incorrect Options for Quiz:** when the **Answer:** label was absent.
  *
- * Collapses any resulting triple+ blank lines down to a double blank line.
+ * Stray markers are always removed (so they never surface, including on the
+ * keepAnswers path). Collapses any resulting triple+ blank lines to a double.
  */
 function stripAnswers(text, { keepAnswers = false } = {}) {
   let result = text;
   if (!keepAnswers) {
+    // Pass 0: container-based — remove each marked answer region as a unit.
+    result = result.replace(ANSWER_REGION_RE, '\n');
     // Pass 1: block-based — strip **Answer:** heading and everything below it
     // through to **Incorrect Options for Quiz:**, covering all answer formats.
     result = result.replace(
@@ -75,10 +88,112 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
       '$1\n',
     );
   }
-  return result
-    .replace(/^ {0,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
-    .replace(/^ {0,4}- [^\n]*/gm, '')
-    .replace(/\n{3,}/g, '\n\n');
+  result = result.replace(ANSWER_MARKER_LINE_RE, '');
+  if (keepAnswers) {
+    // include_answers: keep the correct-answer bullet; drop only the quiz-only
+    // distractor block — its heading plus the bullets that immediately follow.
+    result = result.replace(
+      /^ {0,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*(?:\n {0,4}-[^\n]*)*\n?/gm,
+      '',
+    );
+  } else {
+    // Student view: remove the distractor heading and every remaining bullet so
+    // no answer-like content can survive.
+    result = result
+      .replace(/^ {0,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
+      .replace(/^ {0,4}- [^\n]*/gm, '');
+  }
+  return result.replace(/\n{3,}/g, '\n\n');
+}
+
+/** Normalises text to a lowercase alphanumeric word stream for fuzzy matching. */
+function normaliseForMatch(s) {
+  return s
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+/**
+ * Extracts the correct-answer text of each question from output that still
+ * contains answers (i.e. the un-stripped copy). Captures either an inline
+ * answer on the **Answer:** line or the first bullet beneath it. Used as the
+ * oracle for the answer-leak backstop below.
+ */
+function extractCorrectAnswers(text) {
+  const answers = [];
+  const re = /\*\*Answer:\*\*[ \t]*\n?(?: {0,4}-[ \t]*)?([^\n]+)/g;
+  let m;
+  while ((m = re.exec(text)) !== null) {
+    const answer = m[1].trim();
+    if (answer) answers.push(answer);
+  }
+  return answers;
+}
+
+/** True if a long contiguous run of the answer's words appears in the block. */
+function answerLeaksInto(blockNorm, answer) {
+  const words = normaliseForMatch(answer).split(' ').filter(Boolean);
+  // Short answers (e.g. `42`, `null`) overlap question text too often to test
+  // reliably; the structural strip already covers their bullets.
+  if (words.length < 6) return false;
+  const shingleSize = Math.min(8, words.length);
+  for (let i = 0; i + shingleSize <= words.length; i++) {
+    if (blockNorm.includes(words.slice(i, i + shingleSize).join(' '))) return true;
+  }
+  return false;
+}
+
+/** True if the block looks like a generated question (has a numbered stem). */
+function isQuestionBlock(block) {
+  return /^\s*\d+\.\s/m.test(block);
+}
+
+/**
+ * True if the block carries a recognisable answer block. Our redaction (and the
+ * leak oracle) key on the **Answer:** heading; a question that never produced one
+ * means the strip never engaged and the leak check has no answer to verify.
+ */
+function hasAnswerStructure(block) {
+  return /\*\*Answer:\*\*/.test(block);
+}
+
+/**
+ * Fail-closed student-facing filter. Operates per question block (aligned by the
+ * `---` separators between the answer-bearing original and the stripped output)
+ * and withholds a question when either guard trips:
+ *
+ *   1. Structural: the original question carried no recognisable answer block, so
+ *      we cannot trust the stripped view to be answer-free (covers answers the
+ *      model was injected into emitting inline with no **Answer:** heading).
+ *   2. Leak: the correct-answer text still appears in the stripped block (covers
+ *      answers echoed outside their container alongside a normal answer block).
+ *
+ * If the two views don't split into the same number of blocks, the structural
+ * guard is skipped (we never mis-drop on misaligned boundaries) and only the
+ * leak guard runs. Returns the surviving questions and the number withheld.
+ */
+function redactStudentQuestions(originalText, studentText, correctAnswers) {
+  const origBlocks = originalText.split(/\n-{3,}\n/);
+  const studentBlocks = studentText.split(/\n-{3,}\n/);
+  const aligned = origBlocks.length === studentBlocks.length;
+  let dropped = 0;
+
+  const kept = studentBlocks.filter((studentBlock, i) => {
+    const origBlock = aligned ? origBlocks[i] : '';
+    if (aligned && isQuestionBlock(origBlock) && !hasAnswerStructure(origBlock)) {
+      dropped++;
+      return false;
+    }
+    const blockNorm = normaliseForMatch(studentBlock);
+    if (correctAnswers.some((answer) => answerLeaksInto(blockNorm, answer))) {
+      dropped++;
+      return false;
+    }
+    return true;
+  });
+
+  return { text: kept.join('\n\n---\n\n'), dropped };
 }
 
 /**
@@ -280,7 +395,22 @@ async function run() {
 
     // Always strip incorrect options for quiz; also strip the correct answer when
     // include_answers is false. cleanedQuestions retains answers for the instructor copy.
-    const questions = stripAnswers(cleanedQuestions, { keepAnswers: inputs.includeAnswers });
+    const correctAnswers = extractCorrectAnswers(cleanedQuestions);
+    let questions = stripAnswers(cleanedQuestions, { keepAnswers: inputs.includeAnswers });
+    // Fail-closed backstop: withhold any question that either lacked a
+    // recognisable answer block or whose correct-answer text survived redaction
+    // (e.g. the model was injected into echoing it), rather than risk a leak.
+    if (!inputs.includeAnswers) {
+      const { text, dropped } = redactStudentQuestions(cleanedQuestions, questions, correctAnswers);
+      questions = text;
+      if (dropped > 0) {
+        core.warning(
+          `Answer-leak guard: withheld ${dropped} question(s) that could not be confirmed ` +
+            `answer-free — check the submitted code for prompt injection.`,
+        );
+        questions += `\n\n> [!NOTE]\n> ${dropped} question(s) were withheld from this report pending instructor review.`;
+      }
+    }
 
     // ── Build base report (PDF source — no self-referencing link) ───────────
     const sourceRepo = `${ctx.repo.owner}/${ctx.repo.repo}`;
@@ -416,8 +546,11 @@ async function run() {
         headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
       });
       const instructorRepoName = assignmentName + INSTRUCTOR_REPO_SUFFIX;
+      // Keep answers and distractors for the instructor copy; only drop the
+      // invisible answer-container markers so the rendered Markdown stays clean.
+      const instructorQuestions = cleanedQuestions.replace(ANSWER_MARKER_LINE_RE, '');
       const instructorReport = formatReport({
-        questions: cleanedQuestions,
+        questions: instructorQuestions,
         files,
         baseSha,
         headSha,
