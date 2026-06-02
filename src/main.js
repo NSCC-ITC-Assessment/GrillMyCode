@@ -388,7 +388,7 @@ async function run() {
       codeContent,
       files,
       numQuestions: inputs.numQuestions,
-      context: inputs.instructorContext,
+      instructorContext: inputs.instructorContext,
       assignmentContext,
       truncated,
     });
