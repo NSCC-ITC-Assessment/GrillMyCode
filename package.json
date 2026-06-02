@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Analyses code changes and uses AI to generate targeted comprehension questions for viva voce or written assessments.",
   "main": "src/main.js",
-  "packageManager": "pnpm@11.5.0",
+  "packageManager": "pnpm@11.5.1",
   "engines": {
     "node": ">=24"
   },
