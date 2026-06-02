@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.13 — 2026-06-02
+
+### What's Changed
+
+### Documentation
+
+- update v1 snapshot
+
+### Refactoring
+
+- rename `additional context` label to `instructor context` for clarity
+- rename `additional_context` to `instructor_context` across the codebase
+
 ## v1.0.12 — 2026-06-02
 
 ### What's Changed
