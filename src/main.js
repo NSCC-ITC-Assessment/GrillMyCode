@@ -48,6 +48,31 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
+/**
+ * Ensures a --- thematic-break separator appears between every question block.
+ * A block is identified by its **`filename`** bold header line. Separators can
+ * be missing either because the model drifted and omitted them, or because they
+ * were consumed during answer stripping (see stripAnswers for the root-cause fix
+ * that handles the container case; this is the safety net for model drift).
+ * The first block header is never preceded by a separator.
+ */
+function normaliseSeparators(text) {
+  const lines = text.split('\n');
+  const out = [];
+  for (const line of lines) {
+    if (/^\*\*`[^`]+`\*\*$/.test(line) && out.length > 0) {
+      let j = out.length - 1;
+      while (j >= 0 && out[j].trim() === '') j--;
+      if (j >= 0 && !/^-{3,}$/.test(out[j])) {
+        while (out.length > 0 && out[out.length - 1].trim() === '') out.pop();
+        out.push('', '---', '');
+      }
+    }
+    out.push(line);
+  }
+  return out.join('\n');
+}
+
 // Markers the model wraps each answer block in (see prompt.js). They give the
 // student-facing redaction an explicit region to remove rather than inferring
 // answer boundaries from headings, and let the instructor copy drop just the
@@ -122,7 +147,13 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
   let result = text;
   if (!keepAnswers) {
     // Pass 0: container-based — remove each marked answer region as a unit.
+    // Protect --- separators first: the model sometimes places them inside the
+    // container (before the closing marker), and ANSWER_REGION_RE would consume
+    // them along with the answer block. Placeholder round-trips them safely.
+    const SEP = 'GMC_SEP';
+    result = result.replace(/^-{3,}$/gm, SEP);
     result = result.replace(ANSWER_REGION_RE, '\n');
+    result = result.replace(/GMC_SEP/g, '---');
     // Pass 1: block-based — strip **Answer:** heading and everything below it
     // through to **Incorrect Options for Quiz:**, covering all answer formats.
     result = result.replace(
@@ -476,6 +507,7 @@ async function run() {
         questions += `\n\n> [!NOTE]\n> ${dropped} question(s) were withheld from this report pending instructor review.`;
       }
     }
+    questions = normaliseSeparators(questions);
 
     // ── Build base report (PDF source — no self-referencing link) ───────────
     const sourceRepo = `${ctx.repo.owner}/${ctx.repo.repo}`;
