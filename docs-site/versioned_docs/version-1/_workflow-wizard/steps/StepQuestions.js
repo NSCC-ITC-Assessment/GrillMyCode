@@ -50,15 +50,23 @@ export default function StepQuestions({ cfg, onChange }) {
           coding style guides. Leave empty to skip. Supported: plain text, source files, PDF (text
           layer), Word (.doc/.docx).{' '}
           <em>Example: </em>
-          <code>README.md, assignment.pdf</code>
+          <code>docs/assignment.pdf, marking/rubric.docx</code>
         </span>
         <input
           type="text"
           className={styles.input}
           value={cfg.assignmentContext}
           onChange={(e) => onChange({ assignmentContext: e.target.value })}
-          placeholder="README.md, assignment.pdf, marking/rubric.docx"
+          placeholder="docs/assignment.pdf, marking/rubric.docx"
         />
+        <div className={styles.notice} style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)', marginTop: '0.5rem' }}>
+          <strong>⚠️ Point this at instructor-controlled paths only.</strong> Globs match the
+          student's checked-out files, so <code>README.md</code> or <code>**/*.md</code> can pick up
+          files the student can edit. Assignment context is treated as untrusted reference data — it
+          steers question topics but can't override the rubric or reveal answers — yet a student
+          could still nudge question focus. Use the instructor instructions field below for anything
+          that must take effect.
+        </div>
       </div>
 
       <div className={styles.fieldGroup}>

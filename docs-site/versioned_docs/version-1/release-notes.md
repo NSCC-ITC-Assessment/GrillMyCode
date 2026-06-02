@@ -5,6 +5,24 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.15 — 2026-06-02
+
+### What's Changed
+
+### Features
+
+- enhance student login resolution and skip committers handling
+- implement untrusted input boundary for student submissions
+
+### Bug Fixes
+
+- rename context parameter clarity
+
+### Documentation
+
+- enhance security notes for assignment context and inputs
+- update v1 snapshot
+
 ## v1.0.14 — 2026-06-02
 
 ### What's Changed
