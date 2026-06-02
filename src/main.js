@@ -301,7 +301,7 @@ async function run() {
     });
 
     // ── Generate PDF and upload to rolling release ───────────────────────────
-    const pdfFilename = `${safeFilePart(assignmentName)}-${safeFilePart(studentLogin)}.pdf`;
+    const pdfFilename = `grill-my-code-${safeFilePart(assignmentName)}-${safeFilePart(studentLogin)}.pdf`;
     let pdfUrl = null;
     let pdfBuffer = null;
     try {
