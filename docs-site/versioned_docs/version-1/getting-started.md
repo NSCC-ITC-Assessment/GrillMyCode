@@ -17,18 +17,18 @@ Not sure which inputs to use? The [Workflow Wizard](./workflow-wizard.mdx) walks
 ```yaml
 name: GrillMyCode
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write        # gmc-assessments release + PDF asset
-      issues: write          # assessment issue
-      pull-requests: write   # PR link comment
-      models: read           # GitHub Models API
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
+      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -41,15 +41,13 @@ jobs:
 
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository. No secrets need to be created — [GitHub Models](https://github.com/marketplace/models) (the default AI provider) authenticates with the built-in `GITHUB_TOKEN`.
 
-## Choosing a trigger event
+## Trigger event
 
-| Trigger | When to use |
-|---|---|
-| `pull_request` | Students submit work via pull requests |
-| `push` | Students work directly on a branch without opening a PR |
-| `issue_comment` | Re-trigger from a PR comment |
+The `push` trigger fires whenever a commit lands on `main` or `master` — whether pushed directly or merged in via a pull request. Both paths are treated identically; the assessed diff is always the student's full work history on the default branch.
 
-See [Example Workflows](example-workflows/pull-request) for ready-to-use files for each scenario.
+`workflow_dispatch:` allows a manual re-run from the **Actions** tab without pushing a new commit.
+
+See [Example Workflows](example-workflows/pull-request) for ready-to-use files.
 
 ## Customising the questions
 

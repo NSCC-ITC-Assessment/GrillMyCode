@@ -5,6 +5,29 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.18 — 2026-06-03
+
+### What's Changed
+
+### Bug Fixes
+
+- update link to example workflows in getting started documentation
+- update issue mutation for issue updates
+
+### Documentation
+
+- update v1 snapshot
+
+### Refactoring
+
+- update pre-push hook to improve main branch protection and add docs-site build verification; update example workflows link in docs
+- update workflow triggers to use workflow_dispatch and improve formatting in documentation
+- rework workflow triggers to use push events instead of pull requests; update documentation and code comments accordingly
+
+### Chores & Maintenance
+
+- remove obsolete push-to-branch workflow documentation
+
 ## v1.0.17 — 2026-06-03
 
 ### What's Changed

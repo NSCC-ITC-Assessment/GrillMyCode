@@ -39,7 +39,7 @@ readInputs()
     │
 resolveSHAs()
     │  Determines baseSha and headSha from the event context
-    │  Handles: pull_request, push, issue_comment, workflow_dispatch
+    │  Handles: push, workflow_dispatch
     │  Applies include_initial_commit override when enabled
     │
 resolveBranch()
@@ -104,11 +104,8 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │
         sets action outputs (issue_url, issue_number)
                │
-     ┌─────────┴──────────────────┐
-     ▼                            ▼
-  (always)                  if prNumber
-  instructor repo           postPrLinkComment()
-  (if token set)              Posts/updates a link comment on the PR
+          instructor repo
+          (if token set)
 ```
 
 ---
@@ -126,14 +123,12 @@ Reads and normalises every `INPUT_*` environment variable. Responsible for:
 
 ### `resolveSHAs(ctx, octokit, inputs)`
 
-The most event-aware function in the codebase. Handles four distinct event types:
+Determines the base and head SHAs for the diff. Handles two event types:
 
-| Event | Base SHA | Head SHA | PR number |
-|---|---|---|---|
-| `pull_request` / `pull_request_target` | PR base branch SHA | PR head SHA | from payload |
-| `push` | previous SHA (or first commit on new branch) | `after` SHA | — |
-| `issue_comment` | PR base branch SHA (fetched via REST) | PR head SHA | from payload |
-| everything else | first commit | `ctx.sha` | — |
+| Event | Base SHA | Head SHA |
+|---|---|---|
+| `push` | previous SHA (or first commit on new branch) | `after` SHA |
+| everything else (`workflow_dispatch`, etc.) | first commit | `ctx.sha` |
 
 After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for GitHub Classroom to exclude starter template files.
 
@@ -168,7 +163,7 @@ Uses an update-first strategy:
 2. If one exists, update its title and body in-place (preserving issue number, URL, and comment history). Extra duplicates are deleted.
 3. If none exists, create a fresh issue, then pin it via the `pinIssue` GraphQL mutation (non-fatal — silently warns if the 3-issue pin limit is already reached).
 
-Returns `{ number, url }` for use by the PR link comment and action outputs.
+Returns `{ number, url }` for use by action outputs.
 
 ---
 
