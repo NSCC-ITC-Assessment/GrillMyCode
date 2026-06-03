@@ -76,14 +76,17 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
   if (predecessors.length > 0) {
     const [target, ...extras] = predecessors;
 
-    const { data: updated } = await octokit.rest.issues.update({
-      owner,
-      repo,
-      issue_number: target.number,
-      title,
-      body: report,
-    });
-    core.info(`Updated assessment Issue #${updated.number}: ${updated.html_url}`);
+    const {
+      updateIssue: { issue: updated },
+    } = await octokit.graphql(
+      `mutation($issueId: ID!, $title: String!, $body: String!) {
+        updateIssue(input: { id: $issueId, title: $title, body: $body }) {
+          issue { number url }
+        }
+      }`,
+      { issueId: target.node_id, title, body: report },
+    );
+    core.info(`Updated assessment Issue #${updated.number}: ${updated.url}`);
 
     await octokit.rest.issues.createComment({
       owner,
@@ -104,7 +107,7 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
       core.info(`Deleted duplicate assessment Issue #${extra.number}`);
     }
 
-    return { number: updated.number, url: updated.html_url };
+    return { number: updated.number, url: updated.url };
   } else {
     const { data: created } = await octokit.rest.issues.create({
       owner,
