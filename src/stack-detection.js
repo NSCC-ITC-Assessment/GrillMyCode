@@ -98,6 +98,9 @@ const CONFIG_TO_TEMPLATES = {
   'build.gradle.kts': ['Java', 'Gradle'],
   'settings.gradle': ['Java', 'Gradle'],
   'settings.gradle.kts': ['Java', 'Gradle'],
+  // Grails — detected by its signature project directory; adds web-app artifacts
+  // (web-app/WEB-INF/classes, *Db.*, stacktrace.log) on top of Java + Gradle.
+  'grails-app': ['Grails'],
   'composer.json': ['Composer'],
   'Cargo.toml': ['Rust'],
   'go.mod': ['Go'],

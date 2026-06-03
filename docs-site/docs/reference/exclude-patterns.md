@@ -38,7 +38,7 @@ The final exclude list is the **union** of all three. `exclude_pattern_overrides
 When the action runs it performs up to seven lookups using the already-available `github_token`:
 
 1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` to identify all languages present in the repository (the same data shown on the repo's language bar).
-2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
+2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `grails-app/`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
 3. **Root filename suffix scan** — detects frameworks whose project file includes a variable component by checking whether any root entry ends with a known suffix: `.xcodeproj` / `.xcworkspace` → Xcode, `.uproject` → Unreal Engine, `.pro` → Qt, `.ipynb` → Jupyter Notebooks.
 4. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, `@tauri-apps/api`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
 5. **`composer.json` dependency scan** _(PHP repos only)_ — if a `composer.json` is found in the root, its `require` and `require-dev` entries are read and matched against known framework packages (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `codeigniter4/framework`, `yiisoft/yii2`, `cakephp/cakephp`, WordPress installers like `roots/wordpress`, etc.). Like the `package.json` scan, this identifies the framework even when its config files aren't at the repo root — for example Bedrock relocates `wp-config.php`, and Symfony Flex projects may not commit `symfony.lock`.
@@ -66,6 +66,7 @@ Each detected signal is mapped to one or more [github/gitignore](https://github.
 - A **Python** repo → `Python` template: `__pycache__/**`, `*.pyc`, `.venv/**`, `*.egg-info/**`, etc.
 - A **Jupyter Notebooks** repo (any `.ipynb` in root) → `Python` + `community/Python/JupyterNotebooks` templates.
 - A **Java** repo with a `pom.xml` → `Java` + `Maven` templates: `target/**`, `.gradle/**`, `*.class`, etc.
+- A **Grails** repo (has a `grails-app/` directory) → `Java` + `Gradle` + `Grails` templates: adds `web-app/WEB-INF/classes`, `*Db.*`, `stacktrace.log`, etc.
 - A **mixed JS + Python** repo → gets the union of all matched template sets.
 
 :::note[Python frameworks need no per-framework detection]
@@ -205,50 +206,7 @@ Exclude patterns applied (94):
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 ```
 
-For a PHP project the dependency-scan line reflects `composer.json` instead:
-
-```
-Detected languages: PHP, Blade
-Scanned composer.json — 27 deps
-Using gitignore templates: Composer, Laravel
-Exclude patterns applied (61):
-  .git/**
-  .gitignore
-  vendor/**
-  ...
-Assessing 4 file(s): app/Http/Controllers/HomeController.php, ...
-```
-
-And for a Ruby project the scan line reflects the `Gemfile`:
-
-```
-Detected languages: Ruby, HTML, JavaScript
-Scanned Gemfile — 38 gems
-Using gitignore templates: Ruby, Rails
-Exclude patterns applied (72):
-  .git/**
-  .gitignore
-  log/**
-  tmp/**
-  ...
-Assessing 5 file(s): app/models/user.rb, ...
-```
-
-And for an Elixir project the scan line reflects `mix.exs`:
-
-```
-Detected languages: Elixir, HEEx, JavaScript
-Scanned mix.exs — 19 deps
-Using gitignore templates: Elixir, community/Elixir/Phoenix
-Exclude patterns applied (58):
-  .git/**
-  .gitignore
-  _build/**
-  deps/**
-  priv/static/**
-  ...
-Assessing 6 file(s): lib/my_app_web/controllers/page_controller.ex, ...
-```
+The `Scanned …` line reflects whichever manifest matched your stack — `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — and `Using gitignore templates:` lists the resolved templates accordingly (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`).
 
 If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded — the logged pattern list shows exactly which patterns are active so you can identify the culprit and decide whether to add an override.
 
