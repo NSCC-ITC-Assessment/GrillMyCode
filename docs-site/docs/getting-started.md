@@ -70,4 +70,4 @@ The default provider is **GitHub Models** — no setup required. To use OpenRout
 - Generate a custom workflow with the [Workflow Wizard](./workflow-wizard.mdx)
 - Review all available [inputs and outputs](reference/inputs-outputs)
 - Set up [GitHub Classroom](./guides/github-classroom.md) integration
-- Browse [example workflows](./example-workflows/push-to-branch.md) for ready-to-use configurations
+- Browse [example workflows](./example-workflows/pull-request.md) for ready-to-use configurations
