@@ -219,12 +219,20 @@ const GEMFILE_DEP_TO_TEMPLATES = {
   nanoc: ['Nanoc'],
 };
 
+// Maps mix.exs dependency atoms to gitignore template keys. The base Elixir
+// template (from the mix.exs config signal) covers _build/, deps/, etc.; the
+// Phoenix template adds web-specific artifacts like priv/static/** and tmp/.
+const MIX_DEP_TO_TEMPLATES = {
+  phoenix: ['community/Elixir/Phoenix'],
+};
+
 function resolveStack(
   detectedLanguages,
   rootNames,
   packageDeps,
   composerDeps,
   gemfileDeps,
+  mixDeps,
   allTemplates,
 ) {
   const keys = new Set();
@@ -275,6 +283,11 @@ function resolveStack(
     if (templates) templates.forEach((k) => keys.add(k));
   }
 
+  for (const dep of mixDeps) {
+    const templates = MIX_DEP_TO_TEMPLATES[dep];
+    if (templates) templates.forEach((k) => keys.add(k));
+  }
+
   return { keys, extraPatterns };
 }
 
@@ -309,6 +322,25 @@ async function fetchGemfileDeps(owner, repo, headers) {
     // declarations. The leading `\s*` (no `#`) skips commented-out lines.
     const deps = [];
     for (const m of text.matchAll(/^\s*gem\s+['"]([^'"]+)['"]/gm)) {
+      deps.push(m[1]);
+    }
+    return deps;
+  } catch {
+    return [];
+  }
+}
+
+async function fetchMixDeps(owner, repo, headers) {
+  try {
+    const data = await fetchJson(
+      `https://api.github.com/repos/${owner}/${repo}/contents/mix.exs`,
+      headers,
+    );
+    const text = atob(data.content.replace(/\n/g, ''));
+    // mix.exs is Elixir code — deps are tuples like `{:phoenix, "~> 1.7"}`.
+    // Match the leading atom of each tuple; unknown atoms are simply ignored.
+    const deps = [];
+    for (const m of text.matchAll(/\{\s*:([a-z_][a-zA-Z0-9_]*)\s*,/g)) {
       deps.push(m[1]);
     }
     return deps;
@@ -396,12 +428,21 @@ export async function detectExcludePatterns(token, owner, repo) {
     }
   }
 
+  let mixDeps = [];
+  if (rootNames.has('mix.exs')) {
+    mixDeps = await fetchMixDeps(owner, repo, headers);
+    if (mixDeps.length > 0) {
+      core.info(`Scanned mix.exs — ${mixDeps.length} deps`);
+    }
+  }
+
   const { keys: templateKeys, extraPatterns } = resolveStack(
     detectedLanguages,
     rootNames,
     packageDeps,
     composerDeps,
     gemfileDeps,
+    mixDeps,
     allTemplates,
   );
 

@@ -144,7 +144,7 @@ The action exposes several outputs for use in later steps:
 
 ## Exclude patterns behaviour
 
-When the action runs it automatically detects your stack using up to six signals and applies the relevant [github/gitignore](https://github.com/github/gitignore) templates — covering build artifacts, dependency directories, lock files, IDE files, and more. No configuration is needed for standard stacks.
+When the action runs it automatically detects your stack using up to seven signals and applies the relevant [github/gitignore](https://github.com/github/gitignore) templates — covering build artifacts, dependency directories, lock files, IDE files, and more. No configuration is needed for standard stacks.
 
 1. **GitHub Languages API** — identifies all languages in the repository.
 2. **Repository root inspection** — checks for well-known config files and directories (`Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `project.godot`, `firebase.json`, `angular.json`, etc.).
@@ -152,6 +152,7 @@ When the action runs it automatically detects your stack using up to six signals
 4. **`package.json` dependency scan** _(JS/TS repos only)_ — reads `dependencies` and `devDependencies` to identify the exact framework (`next`, `svelte`, `vue`, `@angular/core`, etc.) rather than guessing from config filenames.
 5. **`composer.json` dependency scan** _(PHP repos only)_ — reads `require` and `require-dev` to identify the exact framework (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `yiisoft/yii2`, etc.) rather than guessing from config filenames.
 6. **`Gemfile` dependency scan** _(Ruby repos only)_ — reads `gem` declarations to identify the exact framework (`rails`, `jekyll`, `nanoc`) more reliably than inferring it from a `Rakefile`.
+7. **`mix.exs` dependency scan** _(Elixir repos only)_ — reads dependency tuples (e.g. `{:phoenix, ...}`) to add Phoenix web artifacts on top of the base Elixir excludes.
 
 To exclude additional files specific to your assignment (starter code, fixtures, data files):
 
