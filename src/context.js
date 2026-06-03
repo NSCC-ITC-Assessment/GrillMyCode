@@ -28,35 +28,18 @@ export async function resolveSHAs(ctx, octokit, inputs) {
     return {
       baseSha: sanitiseSha(inputs.baseSha),
       headSha: sanitiseSha(inputs.headSha),
-      prNumber: null,
     };
   }
 
   const event = ctx.eventName;
-  let baseSha,
-    headSha,
-    prNumber = null;
+  let baseSha, headSha;
 
-  // ── Determine the event-specific head SHA and PR number ─────────────────
-  if (event === 'pull_request' || event === 'pull_request_target') {
-    baseSha = ctx.payload.pull_request.base.sha;
-    headSha = ctx.payload.pull_request.head.sha;
-    prNumber = ctx.payload.pull_request.number;
-  } else if (event === 'push') {
+  // ── Determine the event-specific head SHA ────────────────────────────────
+  if (event === 'push') {
     headSha = sanitiseSha(ctx.payload.after);
     const before = ctx.payload.before;
     // All-zero SHA means this is the very first push to a new branch.
     baseSha = /^0+$/.test(before) ? getFirstCommit() : sanitiseSha(before);
-  } else if (event === 'issue_comment') {
-    const prNum = ctx.payload.issue.number;
-    const { data: pr } = await octokit.rest.pulls.get({
-      owner: ctx.repo.owner,
-      repo: ctx.repo.repo,
-      pull_number: prNum,
-    });
-    baseSha = pr.base.sha;
-    headSha = pr.head.sha;
-    prNumber = prNum;
   } else {
     // workflow_dispatch and all other events: HEAD of the current branch.
     baseSha = getFirstCommit();
@@ -132,7 +115,7 @@ export async function resolveSHAs(ctx, octokit, inputs) {
     baseSha = sanitiseSha(inputs.baseSha);
   }
 
-  return { baseSha, headSha, prNumber };
+  return { baseSha, headSha };
 }
 
 /**
@@ -152,19 +135,10 @@ export function sanitiseSha(sha) {
  * unlike commit author name/email, which the student fully controls — it cannot
  * be spoofed to misattribute the assessment to another user.
  *
- *   - pull_request / pull_request_target: the PR author (`pull_request.user`).
- *   - push / workflow_dispatch / others:  the account that triggered the run
- *                                         (`sender`, falling back to actor).
- *   - issue_comment:                      the commenter is not necessarily the
- *                                         student, so return '' and let the
- *                                         caller fall back to commit resolution.
- *
  * Returns an empty string when no trustworthy login is available.
  */
 export function resolveStudentLogin(ctx) {
   const payload = ctx.payload || {};
-  if (payload.pull_request?.user?.login) return payload.pull_request.user.login;
-  if (ctx.eventName === 'issue_comment') return '';
   return payload.sender?.login || ctx.actor || '';
 }
 
@@ -173,15 +147,6 @@ export function resolveStudentLogin(ctx) {
  * Falls back to parsing GITHUB_REF when context properties are absent.
  */
 export function resolveBranch(ctx) {
-  // pull_request / pull_request_target: the head branch of the PR
-  if (ctx.payload.pull_request) {
-    return ctx.payload.pull_request.head.ref;
-  }
-  // issue_comment: branch isn't directly available; return a placeholder
-  if (ctx.eventName === 'issue_comment') {
-    return '';
-  }
-  // push / workflow_dispatch / schedule / etc: parse from GITHUB_REF
   const ref = process.env.GITHUB_REF || ctx.ref || '';
   const match = ref.match(/^refs\/heads\/(.+)$/);
   return match ? match[1] : ref;

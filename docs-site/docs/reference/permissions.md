@@ -10,17 +10,15 @@ GrillMyCode always creates a GitHub Issue and generates a PDF — these are the 
 |---|---|
 | `contents: write` | Create and update the `gmc-assessments` release and its PDF asset |
 | `issues: write` | Create and update the assessment issue |
-| `pull-requests: write` | Post the link comment on the PR (only used when triggered by a pull request) |
 | `models: read` | Call the GitHub Models API (when using the `github-models` provider) |
 
 ## Required permissions block
 
 ```yaml
 permissions:
-  contents: write        # gmc-assessments release + PDF asset
-  issues: write          # assessment issue
-  pull-requests: write   # PR link comment (harmless when not triggered by a PR)
-  models: read           # GitHub Models API (remove if using openrouter)
+  contents: write  # gmc-assessments release + PDF asset
+  issues: write    # assessment issue
+  models: read     # GitHub Models API (remove if using openrouter)
 ```
 
 Add this block to the `generate-questions` job in your workflow. The Workflow Wizard generates it automatically.

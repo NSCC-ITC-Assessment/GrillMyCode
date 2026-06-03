@@ -12,18 +12,17 @@ Copy this file to `.github/workflows/grill-my-code.yml` in the student repositor
 name: GrillMyCode
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: [main, master]
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write        # gmc-assessments release + PDF asset
-      issues: write          # assessment issue
-      pull-requests: write   # PR link comment
-      models: read           # GitHub Models API
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
+      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -44,13 +43,9 @@ jobs:
 
 The created issue is automatically assigned to the student who authored the head commit.
 
-## Update vs recreate
+## Every push regenerates the questions
 
-If an issue already exists for the same branch, its title and body are **updated in place** — preserving the issue number, URL, and comment history. Any duplicate issues are deleted. A note comment is added each time the questions are regenerated, recording when the run occurred and at which commit SHA.
-
-## PR link comment
-
-When triggered by a pull request, a short link comment is automatically posted on the PR pointing to the assessment issue. This keeps the PR timeline clean without duplicating the full question set.
+Each push to the default branch triggers a full regeneration. The existing issue body is **overwritten** with the new questions — the issue number and URL stay the same, preserving comment history. Any duplicate issues are deleted. A note comment is added each time, recording when the run occurred and at which commit SHA.
 
 ## PDF download
 

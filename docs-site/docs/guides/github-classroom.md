@@ -17,17 +17,16 @@ In addition, the `skip_committers` input (defaulting to `github-classroom[bot],g
 ```yaml
 name: GrillMyCode
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: [main, master]
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: write        # gmc-assessments release + PDF asset
-      issues: write          # assessment issue
-      pull-requests: write   # PR link comment
-      models: read           # GitHub Models API
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
+      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -39,6 +38,8 @@ jobs:
           num_questions: '20'
           instructor_context: 'Assignment 3 — Python list comprehensions'
 ```
+
+The trigger fires on every push to `main` or `master` — whether the student pushes directly or merges a pull request. Both paths are treated identically.
 
 The defaults (`include_initial_commit: 'false'` and `skip_committers: 'github-classroom[bot],github-actions[bot]'`) handle the Classroom-specific commit structure automatically. No additional configuration is needed.
 

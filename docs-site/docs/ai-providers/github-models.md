@@ -62,7 +62,7 @@ Supplying an instructor's Personal Access Token via `api_key` changes whose acco
 
 :::note
 
-`github_token` is still required for GitHub API operations (posting PR comments, creating issues, etc.). Only the GitHub Models inference call is authenticated with `api_key` when it is supplied.
+`github_token` is still required for GitHub API operations (creating issues, uploading release assets, etc.). Only the GitHub Models inference call is authenticated with `api_key` when it is supplied.
 
 :::
 

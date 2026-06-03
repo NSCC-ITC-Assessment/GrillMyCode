@@ -8,7 +8,7 @@ sidebar_position: 8
 
 ### What is GrillMyCode?
 
-GrillMyCode is a GitHub Action that analyses a student's code changes and uses AI to generate targeted comprehension questions for oral or written assessments (code vivas). It runs automatically when a student pushes code or opens a pull request — no manual preparation required.
+GrillMyCode is a GitHub Action that analyses a student's code changes and uses AI to generate targeted comprehension questions for oral or written assessments (code vivas). It runs automatically when a student pushes code to the default branch — no manual preparation required.
 
 ### Does GrillMyCode grade code?
 
@@ -34,10 +34,9 @@ The required permissions are the same for every configuration:
 
 ```yaml
 permissions:
-  contents: write        # gmc-assessments release + PDF asset
-  issues: write          # assessment issue
-  pull-requests: write   # PR link comment
-  models: read           # GitHub Models API (remove if using openrouter)
+  contents: write  # gmc-assessments release + PDF asset
+  issues: write    # assessment issue
+  models: read     # GitHub Models API (remove if using openrouter)
 ```
 
 The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` block automatically. See [Permissions](reference/permissions.md) for details.
@@ -52,7 +51,7 @@ The instructor repository feature stores a private copy of each student's questi
 
 ### What is the Workflow Wizard?
 
-The [Workflow Wizard](workflow-wizard.mdx) is an interactive, step-by-step tool that generates a ready-to-use GitHub Actions workflow YAML for GrillMyCode — no YAML writing required. It covers every major option (trigger, AI provider, question count, delivery, instructor repository, file patterns, and more) and outputs a complete workflow file you can copy straight into your repository. You can also write the workflow by hand using the examples in [Getting Started](getting-started.md) or [Example Workflows](example-workflows/pull-request.md).
+The [Workflow Wizard](workflow-wizard.mdx) is an interactive, step-by-step tool that generates a ready-to-use GitHub Actions workflow YAML for GrillMyCode — no YAML writing required. It covers every major option (AI provider, question count, delivery, instructor repository, file patterns, and more) and outputs a complete workflow file you can copy straight into your repository. You can also write the workflow by hand using the examples in [Getting Started](getting-started.md) or [Example Workflows](example-workflows/pull-request.md).
 
 ### Can I edit the generated YAML after copying it?
 
@@ -91,11 +90,7 @@ By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits
 
 ### Where are the generated questions stored?
 
-Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created (or updated in place) on every run and assigned to the student. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
-
-### What happens when GrillMyCode is triggered by a pull request?
-
-The assessment issue is created as normal. In addition, a short link comment is posted on the pull request pointing to the issue — keeping the PR timeline clean without duplicating the full question set.
+Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created on the first run and assigned to the student. On every subsequent push to the default branch, the issue body is **overwritten** with freshly generated questions — the issue number and URL stay the same, but the previous questions are replaced. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
 
 ### Why is the assessment issue pinned?
 
@@ -196,11 +191,7 @@ The action emits a warning — `No assessable files found after applying include
 
 ### The action is failing with a permissions error.
 
-Make sure the workflow's `permissions` block includes all required scopes. At minimum: `contents: write`, `pull-requests: write` (if posting a PR comment), and `models: read` (for GitHub Models). Check the [Getting Started](getting-started.md) page for a reference workflow.
-
-### The output file was not committed on a pull request from a fork.
-
-This is expected. GitHub Actions workflows triggered by pull requests from forks run with read-only `GITHUB_TOKEN` — the action cannot push commits back to the fork owner's repository. The action logs a warning and continues. PR comments and GitHub Issues are not affected; only the file commit is skipped. If you need the file, ask the student to push directly to a branch on the upstream repository instead.
+Make sure the workflow's `permissions` block includes all required scopes: `contents: write`, `issues: write`, and `models: read` (for GitHub Models). Check the [Getting Started](getting-started.md) page for a reference workflow.
 
 ### How do I enable verbose logging to debug an issue?
 

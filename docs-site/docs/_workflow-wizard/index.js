@@ -25,9 +25,9 @@ const STEPS = [
 ];
 
 const INITIAL_CONFIG = {
-  triggerEvent: 'workflow_dispatch',
-  prTypes: ['opened', 'synchronize'],
-  pushBranches: ['main'],
+  triggerEvent: 'push+workflow_dispatch',
+  branchMode: 'specify',
+  pushBranches: ['main', 'master'],
 
   aiProvider: 'github-models',
   aiModel: 'gpt-4.1',
@@ -94,7 +94,7 @@ export default function WorkflowWizard({ actionRef = 'v1', docsBase = '/docs' })
             <strong>GrillMyCode</strong> — without writing a single line of YAML by hand.
           </p>
           <ul className={styles.introFeatures}>
-            <li>Choose your <strong>trigger event</strong> (push, pull request, manual dispatch, or any combination)</li>
+            <li>Choose your <strong>trigger event</strong> (push to default branch, manual dispatch, or both)</li>
             <li>Pick your <strong>AI provider</strong> and model</li>
             <li>Configure <strong>question generation</strong> and delivery destinations</li>
             <li>Fine-tune <strong>file patterns</strong> and advanced options</li>

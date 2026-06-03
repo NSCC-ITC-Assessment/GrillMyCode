@@ -4,7 +4,7 @@ sidebar_position: 7
 
 # All Inputs
 
-A fully annotated workflow showing every available input. Inputs that don't apply to the pull-request scenario are commented out with an explanation of when they would be used instead.
+A fully annotated workflow showing every available input. Inputs that are optional are commented out with an explanation of when they would be used.
 
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository and remove or adjust inputs as needed.
 
@@ -12,18 +12,17 @@ Copy this file to `.github/workflows/grill-my-code.yml` in the student repositor
 name: GrillMyCode
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: [main, master]
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write        # required to create the gmc-assessments release and PDF asset
-      issues: write          # required to create the assessment issue
-      pull-requests: write   # required to post the PR link comment
-      models: read           # required to call GitHub Models API
+      contents: write  # required to create the gmc-assessments release and PDF asset
+      issues: write    # required to create the assessment issue
+      models: read     # required to call GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:

@@ -9,11 +9,11 @@ slug: /
 
 ## How it works
 
-1. Detects the commit range from the triggering event (push, pull request, etc.)
+1. Detects the commit range from the triggering event (push or manual dispatch)
 2. Collects the git diff of changed files, applying include/exclude filters
 3. Strips inline and block comments from the code before sending it to the AI
 4. Sends the code to an AI provider to generate comprehension questions
-5. Creates or updates a GitHub Issue with the questions, generates a PDF, and posts a link comment on the PR if triggered by a pull request
+5. Creates or updates a GitHub Issue with the questions and generates a PDF
 
 ## Quick start
 
@@ -22,17 +22,16 @@ Add this to `.github/workflows/grill-my-code.yml` in the student repository:
 ```yaml
 name: GrillMyCode
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: [main, master]
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: write        # gmc-assessments release + PDF asset
-      issues: write          # assessment issue
-      pull-requests: write   # PR link comment
-      models: read           # GitHub Models API
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
+      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -47,9 +46,8 @@ No secrets need to be created — the default provider (GitHub Models) authentic
 
 ## What you get
 
-- **GitHub Issue** — one per branch, automatically created and assigned to the student. Updated in place on re-runs. Pinned in the repository on first create.
+- **GitHub Issue** — one per branch, automatically created and assigned to the student. The issue body is overwritten with new questions on every push — the issue number and URL stay stable. Pinned in the repository on first create.
 - **PDF download** — a PDF of the assessment is generated and attached to a rolling `gmc-assessments` release. A download link appears at the top of the issue.
-- **PR link comment** — when triggered by a pull request, a short comment is posted on the PR linking to the assessment issue.
 - **Instructor copy** (optional) — a private instructor-only repository receives the full assessment including answers.
 
 ## Designed for GitHub Classroom

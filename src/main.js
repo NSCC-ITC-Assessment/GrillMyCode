@@ -8,8 +8,7 @@
  *   4. Call the configured AI provider to generate comprehension questions
  *   5. Generate a PDF of the assessment and attach it to the gmc-assessments release
  *   6. Create or update a GitHub Issue with the assessment questions and PDF link
- *   7. Post a link comment on the PR (when triggered by a pull request)
- *   8. Optionally write a full instructor copy (with answers) to a private instructor repo
+ *   7. Optionally write a full instructor copy (with answers) to a private instructor repo
  */
 
 import * as core from '@actions/core';
@@ -18,7 +17,6 @@ import {
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
-  ISSUES_PER_PAGE,
   STUDENT_RESOLUTION_SKIP_COMMITTERS,
 } from './constants.js';
 import { readInputs } from './inputs.js';
@@ -335,7 +333,7 @@ async function run() {
     }
 
     // ── Resolve the commit range ────────────────────────────────────────────
-    const { baseSha, headSha, prNumber } = await resolveSHAs(ctx, octokit, inputs);
+    const { baseSha, headSha } = await resolveSHAs(ctx, octokit, inputs);
     core.info(
       `Commit range: ${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)}..${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}`,
     );
@@ -345,10 +343,9 @@ async function run() {
     core.info(`Branch: ${branchName}`);
 
     // ── Resolve the student login ────────────────────────────────────────────
-    // Prefer the trusted Actions event payload (PR author / pusher), which the
-    // student cannot forge. Only fall back to walking commit authors — which are
-    // attacker-controlled strings — when the payload yields no usable login or
-    // resolves to a bot account (e.g. issue_comment, or a bot-triggered run).
+    // Prefer the trusted Actions event payload (pusher), which the student cannot
+    // forge. Only fall back to walking commit authors — which are attacker-controlled
+    // strings — when the payload yields no usable login or resolves to a bot account.
     const studentResolutionSkipList = [
       ...new Set([...STUDENT_RESOLUTION_SKIP_COMMITTERS, ...inputs.skipCommitters]),
     ];
@@ -617,36 +614,6 @@ async function run() {
     });
     core.setOutput('issue_url', issueResult.url);
     core.setOutput('issue_number', String(issueResult.number));
-
-    // ── Post PR link comment ─────────────────────────────────────────────────
-    if (prNumber) {
-      const marker = '<!-- gmc-pr-link -->';
-      const body = `${marker}\n> [!NOTE]\n> GrillMyCode has generated assessment questions for this pull request. [View questions →](${issueResult.url})`;
-      const existingComments = await octokit.rest.issues.listComments({
-        owner: ctx.repo.owner,
-        repo: ctx.repo.repo,
-        issue_number: prNumber,
-        per_page: ISSUES_PER_PAGE,
-      });
-      const prev = existingComments.data.find((c) => c.body?.includes(marker));
-      if (prev) {
-        await octokit.rest.issues.updateComment({
-          owner: ctx.repo.owner,
-          repo: ctx.repo.repo,
-          comment_id: prev.id,
-          body,
-        });
-        core.info(`Updated PR link comment on PR #${prNumber} → Issue #${issueResult.number}`);
-      } else {
-        await octokit.rest.issues.createComment({
-          owner: ctx.repo.owner,
-          repo: ctx.repo.repo,
-          issue_number: prNumber,
-          body,
-        });
-        core.info(`PR link comment posted on PR #${prNumber} → Issue #${issueResult.number}`);
-      }
-    }
 
     // ── Write to instructor repository ──────────────────────────────────────
     if (!inputs.instructorRepoToken) {
