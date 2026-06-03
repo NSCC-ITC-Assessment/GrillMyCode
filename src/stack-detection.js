@@ -209,7 +209,24 @@ const COMPOSER_DEP_TO_TEMPLATES = {
   'cakephp/cakephp': ['CakePHP'],
 };
 
-function resolveStack(detectedLanguages, rootNames, packageDeps, composerDeps, allTemplates) {
+// Maps Gemfile gem names to gitignore template keys. The Gemfile lists the
+// framework reliably, unlike the Rakefile heuristic in CONFIG_TO_TEMPLATES —
+// many Ruby projects ship a Rakefile without being Rails apps, and many Rails
+// apps lean on the Gemfile instead.
+const GEMFILE_DEP_TO_TEMPLATES = {
+  rails: ['Rails'],
+  jekyll: ['Jekyll'],
+  nanoc: ['Nanoc'],
+};
+
+function resolveStack(
+  detectedLanguages,
+  rootNames,
+  packageDeps,
+  composerDeps,
+  gemfileDeps,
+  allTemplates,
+) {
   const keys = new Set();
   const extraPatterns = new Set();
 
@@ -253,6 +270,11 @@ function resolveStack(detectedLanguages, rootNames, packageDeps, composerDeps, a
     if (templates) templates.forEach((k) => keys.add(k));
   }
 
+  for (const dep of gemfileDeps) {
+    const templates = GEMFILE_DEP_TO_TEMPLATES[dep];
+    if (templates) templates.forEach((k) => keys.add(k));
+  }
+
   return { keys, extraPatterns };
 }
 
@@ -271,6 +293,25 @@ async function fetchComposerDeps(owner, repo, headers) {
     const text = atob(data.content.replace(/\n/g, ''));
     const pkg = JSON.parse(text);
     return Object.keys({ ...pkg.require, ...pkg['require-dev'] });
+  } catch {
+    return [];
+  }
+}
+
+async function fetchGemfileDeps(owner, repo, headers) {
+  try {
+    const data = await fetchJson(
+      `https://api.github.com/repos/${owner}/${repo}/contents/Gemfile`,
+      headers,
+    );
+    const text = atob(data.content.replace(/\n/g, ''));
+    // Gemfile is a Ruby DSL, not structured data — match `gem 'name'` / `gem "name"`
+    // declarations. The leading `\s*` (no `#`) skips commented-out lines.
+    const deps = [];
+    for (const m of text.matchAll(/^\s*gem\s+['"]([^'"]+)['"]/gm)) {
+      deps.push(m[1]);
+    }
+    return deps;
   } catch {
     return [];
   }
@@ -347,11 +388,20 @@ export async function detectExcludePatterns(token, owner, repo) {
     }
   }
 
+  let gemfileDeps = [];
+  if (rootNames.has('Gemfile')) {
+    gemfileDeps = await fetchGemfileDeps(owner, repo, headers);
+    if (gemfileDeps.length > 0) {
+      core.info(`Scanned Gemfile — ${gemfileDeps.length} gems`);
+    }
+  }
+
   const { keys: templateKeys, extraPatterns } = resolveStack(
     detectedLanguages,
     rootNames,
     packageDeps,
     composerDeps,
+    gemfileDeps,
     allTemplates,
   );
 

@@ -35,13 +35,14 @@ The final exclude list is the **union** of all three. `exclude_pattern_overrides
 
 ## How auto-detection works
 
-When the action runs it performs up to five lookups using the already-available `github_token`:
+When the action runs it performs up to six lookups using the already-available `github_token`:
 
 1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` to identify all languages present in the repository (the same data shown on the repo's language bar).
 2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
 3. **Root filename suffix scan** — detects frameworks whose project file includes a variable component by checking whether any root entry ends with a known suffix: `.xcodeproj` / `.xcworkspace` → Xcode, `.uproject` → Unreal Engine, `.pro` → Qt, `.ipynb` → Jupyter Notebooks.
 4. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, `@tauri-apps/api`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
 5. **`composer.json` dependency scan** _(PHP repos only)_ — if a `composer.json` is found in the root, its `require` and `require-dev` entries are read and matched against known framework packages (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `codeigniter4/framework`, `yiisoft/yii2`, `cakephp/cakephp`, WordPress installers like `roots/wordpress`, etc.). Like the `package.json` scan, this identifies the framework even when its config files aren't at the repo root — for example Bedrock relocates `wp-config.php`, and Symfony Flex projects may not commit `symfony.lock`.
+6. **`Gemfile` dependency scan** _(Ruby repos only)_ — if a `Gemfile` is found in the root, its `gem` declarations are read and matched against known framework gems (`rails`, `jekyll`, `nanoc`). This is more reliable than inferring the framework from a `Rakefile`, since many non-Rails projects ship a `Rakefile` and many Rails apps don't.
 
 Each detected signal is mapped to one or more [github/gitignore](https://github.com/github/gitignore) templates, or to a set of known artifact paths for frameworks that have no upstream template (e.g. SvelteKit's `.svelte-kit/`, Nuxt's `.nuxt/` and `.output/`). The action ships with all 300+ templates bundled in the Docker image (kept current via a weekly automated PR).
 
@@ -56,6 +57,9 @@ Each detected signal is mapped to one or more [github/gitignore](https://github.
 - A **Symfony / Drupal / CodeIgniter / Yii / CakePHP / WordPress** repo → `Composer` template + the matching framework template, detected from the `composer.json` dependency scan.
 - A **Unity** repo → `Dotnet` template + `Unity` template: `Library/**`, `Temp/**`, `obj/**`, etc.
 - A **Godot** repo → `Godot` template: `.godot/**`, `*.import`, export presets, etc.
+- A **plain Ruby** repo with a `Gemfile` → `Ruby` template: `*.gem`, `/.bundle/`, `/vendor/bundle`, etc.
+- A **Rails** repo → `Ruby` + `Rails` templates: adds `/log/**`, `/tmp/**`, `storage/**`, `public/assets`, etc., detected from the `Gemfile` gem scan.
+- A **Jekyll** repo → `Ruby` + `Jekyll` templates: adds `_site/`, `.jekyll-cache/`, `.jekyll-metadata`.
 - A **Python** repo → `Python` template: `__pycache__/**`, `*.pyc`, `.venv/**`, `*.egg-info/**`, etc.
 - A **Jupyter Notebooks** repo (any `.ipynb` in root) → `Python` + `community/Python/JupyterNotebooks` templates.
 - A **Java** repo with a `pom.xml` → `Java` + `Maven` templates: `target/**`, `.gradle/**`, `*.class`, etc.
@@ -210,6 +214,21 @@ Exclude patterns applied (61):
   vendor/**
   ...
 Assessing 4 file(s): app/Http/Controllers/HomeController.php, ...
+```
+
+And for a Ruby project the scan line reflects the `Gemfile`:
+
+```
+Detected languages: Ruby, HTML, JavaScript
+Scanned Gemfile — 38 gems
+Using gitignore templates: Ruby, Rails
+Exclude patterns applied (72):
+  .git/**
+  .gitignore
+  log/**
+  tmp/**
+  ...
+Assessing 5 file(s): app/models/user.rb, ...
 ```
 
 If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded — the logged pattern list shows exactly which patterns are active so you can identify the culprit and decide whether to add an override.
