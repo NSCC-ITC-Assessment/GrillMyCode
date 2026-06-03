@@ -196,3 +196,23 @@ Make sure the workflow's `permissions` block includes all required scopes: `cont
 ### How do I enable verbose logging to debug an issue?
 
 Pass `debug: 'true'` as a workflow input, or enable [GitHub Actions debug logging](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging) for the repository by setting the secret `ACTIONS_STEP_DEBUG` to `true`. See the [Debug Mode reference](reference/debug-mode.md) for details.
+
+### OpenRouter fails with "No endpoints available matching your guardrail restrictions and data policy" (404).
+
+The full error looks like this:
+
+```
+OpenRouter Error: Assessment failed: AI API error 404: { error: { message:
+"No endpoints available matching your guardrail restrictions and data policy.",
+code: 404 } }
+```
+
+This is an OpenRouter account-level configuration problem, not a GrillMyCode bug. OpenRouter is refusing to route your request because your privacy/guardrail settings exclude every provider that could serve the model you requested. It is most common with free or near-free models, which require you to opt in to data sharing.
+
+Fix it in your [OpenRouter privacy settings](https://openrouter.ai/settings/privacy):
+
+1. **Enable free endpoints** — toggle on the options that allow free endpoints that may train on or publish prompts. Free models will not route until these are enabled.
+2. **Turn off "ZDR Endpoints Only"** — this restricts routing to zero-data-retention providers, which often excludes the free tier.
+3. **Clear provider restrictions** — under Allowed/Ignored Providers, remove any rules so OpenRouter can route dynamically.
+
+Then re-run the workflow. If it still fails, the model identifier may be deprecated — check the [OpenRouter model list](https://openrouter.ai/models) and confirm the exact `ai_model` value (free models often require a `:free` suffix). See [OpenRouter](./ai-providers/openrouter) for the recommended, tested model identifiers.
