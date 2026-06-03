@@ -60,12 +60,11 @@ export default function StepQuestions({ cfg, onChange }) {
           placeholder="docs/assignment.pdf, marking/rubric.docx"
         />
         <div className={styles.notice} style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)', marginTop: '0.5rem' }}>
-          <strong>⚠️ Point this at instructor-controlled paths only.</strong> Globs match the
-          student's checked-out files, so <code>README.md</code> or <code>**/*.md</code> can pick up
-          files the student can edit. Assignment context is treated as untrusted reference data — it
-          steers question topics but can't override the rubric or reveal answers — yet a student
-          could still nudge question focus. Use the instructor instructions field below for anything
-          that must take effect.
+          <strong>Note: globs match the student's checked-out files.</strong> A path like{' '}
+          <code>README.md</code> or <code>**/*.md</code> may pick up files the student has edited,
+          which affects which topics the questions focus on. Prefer instructor-maintained paths (a{' '}
+          <code>docs/</code> directory, a PDF brief) where possible. Use the instructor instructions
+          field below for anything that must take effect regardless.
         </div>
       </div>
 

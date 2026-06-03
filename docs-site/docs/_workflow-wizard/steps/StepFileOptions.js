@@ -15,8 +15,8 @@ export default function StepFileOptions({ cfg, onChange }) {
             <strong>Keep code comments</strong>
             <div className={styles.radioDescription}>
               When left unchecked (default), inline and block comments are stripped from the student's code before
-              sending it to the AI. This prevents students from gaming the assessment by writing
-              comments that hint at answers, and can drastically reduce the number of tokens sent
+              sending it to the AI. This focuses the AI on what the code does rather than what the
+              student wrote as annotations, and can drastically reduce the number of tokens sent
               to the AI. Enable this to preserve comments exactly as written.
             </div>
           </span>

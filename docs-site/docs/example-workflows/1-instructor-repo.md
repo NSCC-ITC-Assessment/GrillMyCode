@@ -35,18 +35,18 @@ Copy this file to `.github/workflows/grill-my-code.yml` in the student repositor
 name: GrillMyCode
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write        # gmc-assessments release + PDF asset
-      issues: write          # assessment issue
-      pull-requests: write   # PR link comment
-      models: read           # GitHub Models API
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
+      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:

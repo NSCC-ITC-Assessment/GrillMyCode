@@ -2,9 +2,9 @@
 sidebar_position: 1
 ---
 
-# Pull Request
+# Push to Default Branch
 
-Generates assessment questions whenever a student opens or updates a pull request. A GitHub Issue is created with the full questions and a PDF download link. A short link comment is also posted on the PR pointing to the issue.
+Generates assessment questions whenever a commit lands on the default branch (`main` or `master`) — whether pushed directly or merged in via a pull request. A GitHub Issue is created with the full questions and a PDF download link.
 
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
 
@@ -12,18 +12,18 @@ Copy this file to `.github/workflows/grill-my-code.yml` in the student repositor
 name: GrillMyCode
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write        # gmc-assessments release + PDF asset
-      issues: write          # assessment issue
-      pull-requests: write   # PR link comment
-      models: read           # GitHub Models API
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
+      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -36,25 +36,19 @@ jobs:
           instructor_context: "Assignment 3 — Python list comprehensions"
 ```
 
-## How PR delivery works
+## How it works
 
-When triggered by a pull request, GrillMyCode:
+When a commit lands on `main` or `master`, GrillMyCode:
 
 1. Creates or updates the assessment **GitHub Issue** (assigned to the student)
 2. Generates a **PDF** and attaches it to the `gmc-assessments` release
-3. Posts a short **link comment** on the PR pointing to the issue
 
-The PR comment contains only the link — the full questions live in the issue, keeping the PR timeline clean.
+Both a direct push and a pull request merge trigger identically — the assessed diff is always the student's full work history on the default branch.
 
-## Update vs recreate
+## Every push regenerates the questions
 
-On re-runs (e.g. when a student pushes another commit), the existing assessment issue is updated in place rather than a new one being added, and the PDF asset is replaced at the same stable URL. A note comment is posted to the issue indicating when the questions were regenerated and at which commit SHA.
+Each push to the default branch triggers a full regeneration. The existing assessment issue body is **overwritten** with the new questions — the issue number and URL stay the same, but the previous questions are replaced. The PDF asset is also replaced at the same stable URL. A note comment is posted to the issue recording when the questions were regenerated and at which commit SHA.
 
-## Why pull requests?
+## Manual re-run
 
-The pull request trigger works well when:
-
-- Students submit work via pull requests
-- The instructor reviews submitted code and wants the assessment questions in a dedicated issue rather than inline on the PR
-- `fetch-depth: 0` ensures the full commit history is available for diff resolution
-- The diff base is automatically resolved from the PR's base branch
+To regenerate questions without pushing a new commit, trigger a run from the **Actions** tab — the `workflow_dispatch:` trigger in the workflow enables this.

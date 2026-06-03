@@ -3,46 +3,20 @@ import styles from '../styles.module.css';
 
 const TRIGGERS = [
   {
+    value: 'push+workflow_dispatch',
+    label: 'Push, PR Merge, or Manual (Recommended)',
+    description: 'Run whenever code lands on the default branch — direct push or pull request merge — and allow manual triggering from the Actions tab.',
+  },
+  {
     value: 'workflow_dispatch',
     label: 'Manual only',
     description: 'Run only when triggered manually from the Actions tab.',
   },
-  {
-    value: 'pull_request+workflow_dispatch',
-    label: 'Pull Request or Manual',
-    description: 'Run on pull request events and allow manual triggering from the Actions tab.',
-  },
-  {
-    value: 'push+workflow_dispatch',
-    label: 'Push or Manual',
-    description: 'Run on pushes and allow manual triggering.',
-  },
-  {
-    value: 'push+pull_request+workflow_dispatch',
-    label: 'Push or Pull Request or Manual',
-    description: 'Run on pushes, PR events, and allow manual triggering.',
-  },
 ];
 
-const PR_TYPES = ['opened', 'synchronize', 'reopened'];
-
 export default function StepTrigger({ cfg, onChange }) {
-  function setPrType(type, checked) {
-    const current = cfg.prTypes || ['opened', 'synchronize'];
-    const next = checked ? [...current, type] : current.filter((t) => t !== type);
-    onChange({ prTypes: next.length > 0 ? next : ['opened'] });
-  }
-
-  const prTypes = cfg.prTypes || ['opened', 'synchronize'];
-  const showPrOptions = [
-    'pull_request+workflow_dispatch',
-    'push+pull_request+workflow_dispatch',
-  ].includes(cfg.triggerEvent);
-
-  const showBranchOption = [
-    'push+workflow_dispatch',
-    'push+pull_request+workflow_dispatch',
-  ].includes(cfg.triggerEvent);
+  const showBranchOption = cfg.triggerEvent === 'push+workflow_dispatch';
+  const branchMode = cfg.branchMode || 'specify';
 
   return (
     <div>
@@ -66,55 +40,65 @@ export default function StepTrigger({ cfg, onChange }) {
         </div>
       </div>
 
-      {showPrOptions && (
-        <div className={styles.subField}>
-          <div className={styles.fieldGroup}>
-            <label className={styles.label}>PR event types</label>
-            <span className={styles.hint}>
-              Which pull request actions should trigger a new assessment? "opened" and "synchronize"
-              (new commits pushed) is the recommended default.
-            </span>
-            <div className={styles.checkboxGroup}>
-              {PR_TYPES.map((type) => (
-                <label key={type} className={styles.checkboxLabel}>
-                  <input
-                    type="checkbox"
-                    checked={prTypes.includes(type)}
-                    onChange={(e) => setPrType(type, e.target.checked)}
-                  />
-                  <span>
-                    <code>{type}</code>
-                  </span>
-                </label>
-              ))}
-            </div>
-          </div>
-        </div>
-      )}
-
       {showBranchOption && (
         <div className={styles.subField}>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>Branch name <span className={styles.optionalBadge}>optional</span></label>
-            <span className={styles.hint}>
-              The branch that push events should be watched on (e.g. <code>main</code> or{' '}
-              <code>feedback</code>).
-            </span>
-            <input
-              type="text"
-              className={styles.input}
-              value={(cfg.pushBranches || ['main']).join(', ')}
-              onChange={(e) =>
-                onChange({
-                  pushBranches: e.target.value
-                    .split(',')
-                    .map((b) => b.trim())
-                    .filter(Boolean),
-                })
-              }
-              placeholder="main"
-            />
+            <label className={styles.label}>Which branch?</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="branchMode"
+                  value="specify"
+                  checked={branchMode === 'specify'}
+                  onChange={() => onChange({ branchMode: 'specify' })}
+                />
+                <span>
+                  <strong>Specify branch names</strong>
+                  <div className={styles.radioDescription}>
+                    List the exact branch names to watch. Most repositories use <code>main</code> or{' '}
+                    <code>master</code> as their default branch — entering both covers either case.
+                  </div>
+                </span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="branchMode"
+                  value="default"
+                  checked={branchMode === 'default'}
+                  onChange={() => onChange({ branchMode: 'default' })}
+                />
+                <span>
+                  <strong>Default branch only (dynamic)</strong>
+                  <div className={styles.radioDescription}>
+                    The workflow detects the repository's default branch at runtime — no branch names
+                    needed. Useful when repositories may use different default branch names and you want the default to be the trigger.
+                  </div>
+                </span>
+              </label>
+            </div>
           </div>
+
+          {branchMode === 'specify' && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.label}>Branch names</label>
+              <input
+                type="text"
+                className={styles.input}
+                value={(cfg.pushBranches || ['main', 'master']).join(', ')}
+                onChange={(e) =>
+                  onChange({
+                    pushBranches: e.target.value
+                      .split(',')
+                      .map((b) => b.trim())
+                      .filter(Boolean),
+                  })
+                }
+                placeholder="main, master"
+              />
+            </div>
+          )}
         </div>
       )}
     </div>

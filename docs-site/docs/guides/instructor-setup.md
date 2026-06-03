@@ -69,16 +69,18 @@ Open the **starter/template repository** for the assignment (the repo you set as
 name: GrillMyCode
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
-      contents: write       # required to commit the output file back to the repo
-      pull-requests: write  # required to post the PR comment
-      models: read          # required to call GitHub Models API
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
+      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -98,7 +100,7 @@ That's it. When GitHub Classroom distributes the assignment, every student repos
 
 ## What happens on the first submission
 
-When the first student opens a pull request:
+When the first student pushes to the default branch:
 
 1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.

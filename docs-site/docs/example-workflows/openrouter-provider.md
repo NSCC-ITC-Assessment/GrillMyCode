@@ -17,17 +17,17 @@ Then copy the workflow file below to `.github/workflows/grill-my-code.yml` in th
 name: GrillMyCode
 
 on:
-  pull_request:
-    types: [opened, synchronize]
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     timeout-minutes: 15
     permissions:
-      contents: write        # gmc-assessments release + PDF asset
-      issues: write          # assessment issue
-      pull-requests: write   # PR link comment
+      contents: write  # gmc-assessments release + PDF asset
+      issues: write    # assessment issue
     steps:
       - uses: actions/checkout@v6
         with:

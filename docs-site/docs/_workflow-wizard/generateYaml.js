@@ -59,41 +59,36 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   // ── on ────────────────────────────────────────────────────────────────────
   lines.push('on:');
 
-  const hasPr = ['pull_request+workflow_dispatch', 'push+pull_request+workflow_dispatch'].includes(cfg.triggerEvent);
-  const hasPush = ['push+workflow_dispatch', 'push+pull_request+workflow_dispatch'].includes(cfg.triggerEvent);
-  const hasDispatch = true; // all options include workflow_dispatch
-
-  if (hasPr) {
-    lines.push('  pull_request:');
-    const types = cfg.prTypes && cfg.prTypes.length > 0 ? cfg.prTypes : ['opened', 'synchronize'];
-    lines.push(`    types: [${types.join(', ')}]`);
-  }
+  const hasPush = cfg.triggerEvent === 'push+workflow_dispatch';
+  const dynamicBranch = hasPush && cfg.branchMode === 'default';
 
   if (hasPush) {
     lines.push('  push:');
-    const branches = cfg.pushBranches && cfg.pushBranches.length > 0 ? cfg.pushBranches : ['main'];
-    lines.push(`    branches: [${branches.map((b) => `"${b}"`).join(', ')}]`);
+    if (!dynamicBranch) {
+      const branches = cfg.pushBranches && cfg.pushBranches.length > 0 ? cfg.pushBranches : ['main', 'master'];
+      lines.push(`    branches: [${branches.map((b) => `"${b}"`).join(', ')}]`);
+    }
   }
 
-  if (hasDispatch) {
-    lines.push('  workflow_dispatch:');
-  }
+  lines.push('  workflow_dispatch:');
 
   lines.push('');
 
   // ── jobs ──────────────────────────────────────────────────────────────────
   lines.push('jobs:');
   lines.push('  generate-questions:');
+  if (dynamicBranch) {
+    lines.push(`    if: github.event_name == 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)`);
+  }
   lines.push('    runs-on: ubuntu-latest');
   lines.push('    timeout-minutes: 15');
 
   // permissions
   lines.push('    permissions:');
-  lines.push('      contents: write        # gmc-assessments release + PDF asset');
-  lines.push('      issues: write          # assessment issue');
-  lines.push('      pull-requests: write   # PR link comment');
+  lines.push('      contents: write  # gmc-assessments release + PDF asset');
+  lines.push('      issues: write    # assessment issue');
   if (cfg.aiProvider === 'github-models') {
-    lines.push('      models: read           # GitHub Models API');
+    lines.push('      models: read     # GitHub Models API');
   }
   lines.push('    steps:');
   lines.push('      - uses: actions/checkout@v6');
