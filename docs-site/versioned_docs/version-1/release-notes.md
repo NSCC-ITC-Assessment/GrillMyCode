@@ -5,6 +5,30 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.17 — 2026-06-03
+
+### What's Changed
+
+### Features
+
+- update GitHub API version to 2026-03-10
+- bold question lines in assessment output
+
+### Bug Fixes
+
+- improve regex for identifying question block headers in normaliseSeparators
+- protect fenced code blocks in answer stripping to prevent corruption of question output
+- add normaliseSeparators to ensure thematic breaks between question blocks
+
+### Documentation
+
+- internal
+- update v1 snapshot
+
+### Refactoring
+
+- remove references to .assessment folder
+
 ## v1.0.16 — 2026-06-02
 
 ### What's Changed
