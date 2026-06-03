@@ -47,7 +47,7 @@ The `push` trigger fires whenever a commit lands on `main` or `master` — wheth
 
 `workflow_dispatch:` allows a manual re-run from the **Actions** tab without pushing a new commit.
 
-See [Example Workflows](example-workflows/push-to-branch) for ready-to-use files.
+See [Example Workflows](example-workflows/pull-request) for ready-to-use files.
 
 ## Customising the questions
 
