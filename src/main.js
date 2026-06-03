@@ -50,7 +50,7 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
 
 /**
  * Ensures a --- thematic-break separator appears between every question block.
- * A block is identified by its **`filename`** bold header line. Separators can
+ * A block is identified by its bold filename header (**filename.ext** or **`filename.ext`**). Separators can
  * be missing either because the model drifted and omitted them, or because they
  * were consumed during answer stripping (see stripAnswers for the root-cause fix
  * that handles the container case; this is the safety net for model drift).
@@ -60,7 +60,7 @@ function normaliseSeparators(text) {
   const lines = text.split('\n');
   const out = [];
   for (const line of lines) {
-    if (/^\*\*`[^`]+`\*\*$/.test(line) && out.length > 0) {
+    if (/^\*\*`?[^\s`*]+\.[^\s`*]+`?\*\*$/.test(line) && out.length > 0) {
       let j = out.length - 1;
       while (j >= 0 && out[j].trim() === '') j--;
       if (j >= 0 && !/^-{3,}$/.test(out[j])) {
