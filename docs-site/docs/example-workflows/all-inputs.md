@@ -13,7 +13,8 @@ name: GrillMyCode
 
 on:
   push:
-    branches: [main, master]
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:

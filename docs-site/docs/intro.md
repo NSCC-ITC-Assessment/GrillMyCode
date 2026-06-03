@@ -23,11 +23,13 @@ Add this to `.github/workflows/grill-my-code.yml` in the student repository:
 name: GrillMyCode
 on:
   push:
-    branches: [main, master]
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write  # gmc-assessments release + PDF asset
       issues: write    # assessment issue
@@ -35,7 +37,7 @@ jobs:
     steps:
       - uses: actions/checkout@v6
         with:
-          fetch-depth: 0
+          fetch-depth: 0    # full history required for diff resolution
 
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:

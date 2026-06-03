@@ -13,7 +13,8 @@ name: GrillMyCode
 
 on:
   push:
-    branches: [main, master]
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
@@ -50,13 +51,4 @@ Each push to the default branch triggers a full regeneration. The existing asses
 
 ## Manual re-run
 
-To regenerate questions without pushing a new commit, add `workflow_dispatch:` to the trigger:
-
-```yaml
-on:
-  push:
-    branches: [main, master]
-  workflow_dispatch:
-```
-
-Then trigger a run from the **Actions** tab in the repository.
+To regenerate questions without pushing a new commit, trigger a run from the **Actions** tab — the `workflow_dispatch:` trigger in the workflow enables this.

@@ -18,7 +18,8 @@ Not sure which inputs to use? The [Workflow Wizard](./workflow-wizard.mdx) walks
 name: GrillMyCode
 on:
   push:
-    branches: [main, master]
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
@@ -44,7 +45,7 @@ Copy this file to `.github/workflows/grill-my-code.yml` in the student repositor
 
 The `push` trigger fires whenever a commit lands on `main` or `master` — whether pushed directly or merged in via a pull request. Both paths are treated identically; the assessed diff is always the student's full work history on the default branch.
 
-To re-run manually (e.g. to regenerate questions without a new push), add `workflow_dispatch:` alongside `push:` and trigger from the **Actions** tab.
+`workflow_dispatch:` allows a manual re-run from the **Actions** tab without pushing a new commit.
 
 See [Example Workflows](example-workflows/push-to-branch) for ready-to-use files.
 

@@ -70,11 +70,13 @@ name: GrillMyCode
 
 on:
   push:
-    branches: [main, master]
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     permissions:
       contents: write  # gmc-assessments release + PDF asset
       issues: write    # assessment issue
