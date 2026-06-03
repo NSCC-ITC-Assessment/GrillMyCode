@@ -35,12 +35,13 @@ The final exclude list is the **union** of all three. `exclude_pattern_overrides
 
 ## How auto-detection works
 
-When the action runs it performs up to three lookups using the already-available `github_token`:
+When the action runs it performs up to five lookups using the already-available `github_token`:
 
 1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` to identify all languages present in the repository (the same data shown on the repo's language bar).
 2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
 3. **Root filename suffix scan** — detects frameworks whose project file includes a variable component by checking whether any root entry ends with a known suffix: `.xcodeproj` / `.xcworkspace` → Xcode, `.uproject` → Unreal Engine, `.pro` → Qt, `.ipynb` → Jupyter Notebooks.
 4. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, `@tauri-apps/api`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
+5. **`composer.json` dependency scan** _(PHP repos only)_ — if a `composer.json` is found in the root, its `require` and `require-dev` entries are read and matched against known framework packages (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `codeigniter4/framework`, `yiisoft/yii2`, `cakephp/cakephp`, WordPress installers like `roots/wordpress`, etc.). Like the `package.json` scan, this identifies the framework even when its config files aren't at the repo root — for example Bedrock relocates `wp-config.php`, and Symfony Flex projects may not commit `symfony.lock`.
 
 Each detected signal is mapped to one or more [github/gitignore](https://github.com/github/gitignore) templates, or to a set of known artifact paths for frameworks that have no upstream template (e.g. SvelteKit's `.svelte-kit/`, Nuxt's `.nuxt/` and `.output/`). The action ships with all 300+ templates bundled in the Docker image (kept current via a weekly automated PR).
 
@@ -50,7 +51,9 @@ Each detected signal is mapped to one or more [github/gitignore](https://github.
 - A **Next.js** repo → `Node` + `Nextjs` templates: adds `.next/**` on top of the Node exclusions.
 - A **SvelteKit** repo → `Node` template + `.svelte-kit/**` (no upstream template exists for Svelte).
 - A **Angular** repo → `Node` + `Angular` templates: adds `.angular/**`.
-- A **Laravel** repo → `PHP` template + `Laravel` template: `vendor/**`, storage cache dirs, etc.
+- A **plain PHP** repo with a `composer.json` → `Composer` template: `vendor/**`, `composer.phar`, etc.
+- A **Laravel** repo → `Composer` template + `Laravel` template: `vendor/**`, `bootstrap/compiled.php`, storage cache dirs, etc.
+- A **Symfony / Drupal / CodeIgniter / Yii / CakePHP / WordPress** repo → `Composer` template + the matching framework template, detected from the `composer.json` dependency scan.
 - A **Unity** repo → `Dotnet` template + `Unity` template: `Library/**`, `Temp/**`, `obj/**`, etc.
 - A **Godot** repo → `Godot` template: `.godot/**`, `*.import`, export presets, etc.
 - A **Python** repo → `Python` template: `__pycache__/**`, `*.pyc`, `.venv/**`, `*.egg-info/**`, etc.
@@ -186,6 +189,20 @@ Exclude patterns applied (94):
   node_modules/**
   ...
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
+```
+
+For a PHP project the dependency-scan line reflects `composer.json` instead:
+
+```
+Detected languages: PHP, Blade
+Scanned composer.json — 27 deps
+Using gitignore templates: Composer, Laravel
+Exclude patterns applied (61):
+  .git/**
+  .gitignore
+  vendor/**
+  ...
+Assessing 4 file(s): app/Http/Controllers/HomeController.php, ...
 ```
 
 If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded — the logged pattern list shows exactly which patterns are active so you can identify the culprit and decide whether to add an override.

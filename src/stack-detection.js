@@ -93,7 +93,7 @@ const CONFIG_TO_TEMPLATES = {
   'build.gradle.kts': ['Java', 'Gradle'],
   'settings.gradle': ['Java', 'Gradle'],
   'settings.gradle.kts': ['Java', 'Gradle'],
-  'composer.json': ['PHP'],
+  'composer.json': ['Composer'],
   'Cargo.toml': ['Rust'],
   'go.mod': ['Go'],
   'go.sum': ['Go'],
@@ -186,7 +186,25 @@ const PACKAGE_DEP_TO_PATTERNS = {
   '@nuxt/kit': ['.nuxt/**', '.output/**'],
 };
 
-function resolveStack(detectedLanguages, rootNames, packageDeps, allTemplates) {
+// Maps composer.json require/require-dev package names to gitignore template keys.
+// Catches PHP frameworks reliably even when their config files aren't at the repo
+// root (e.g. Bedrock relocates wp-config.php; Symfony Flex may not commit symfony.lock).
+const COMPOSER_DEP_TO_TEMPLATES = {
+  'laravel/framework': ['Laravel'],
+  'laravel/lumen-framework': ['Laravel'],
+  'symfony/framework-bundle': ['Symfony'],
+  'symfony/symfony': ['Symfony'],
+  'roots/wordpress': ['WordPress'],
+  'johnpbloch/wordpress': ['WordPress'],
+  'johnpbloch/wordpress-core': ['WordPress'],
+  'drupal/core': ['Drupal'],
+  'drupal/core-recommended': ['Drupal'],
+  'codeigniter4/framework': ['CodeIgniter'],
+  'yiisoft/yii2': ['Yii'],
+  'cakephp/cakephp': ['CakePHP'],
+};
+
+function resolveStack(detectedLanguages, rootNames, packageDeps, composerDeps, allTemplates) {
   const keys = new Set();
   const extraPatterns = new Set();
 
@@ -225,6 +243,11 @@ function resolveStack(detectedLanguages, rootNames, packageDeps, allTemplates) {
     if (patterns) patterns.forEach((p) => extraPatterns.add(p));
   }
 
+  for (const dep of composerDeps) {
+    const templates = COMPOSER_DEP_TO_TEMPLATES[dep];
+    if (templates) templates.forEach((k) => keys.add(k));
+  }
+
   return { keys, extraPatterns };
 }
 
@@ -232,6 +255,20 @@ async function fetchJson(url, headers) {
   const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
   return res.json();
+}
+
+async function fetchComposerDeps(owner, repo, headers) {
+  try {
+    const data = await fetchJson(
+      `https://api.github.com/repos/${owner}/${repo}/contents/composer.json`,
+      headers,
+    );
+    const text = atob(data.content.replace(/\n/g, ''));
+    const pkg = JSON.parse(text);
+    return Object.keys({ ...pkg.require, ...pkg['require-dev'] });
+  } catch {
+    return [];
+  }
 }
 
 async function fetchPackageDeps(owner, repo, headers) {
@@ -297,10 +334,19 @@ export async function detectExcludePatterns(token, owner, repo) {
     }
   }
 
+  let composerDeps = [];
+  if (rootNames.has('composer.json')) {
+    composerDeps = await fetchComposerDeps(owner, repo, headers);
+    if (composerDeps.length > 0) {
+      core.info(`Scanned composer.json — ${composerDeps.length} deps`);
+    }
+  }
+
   const { keys: templateKeys, extraPatterns } = resolveStack(
     detectedLanguages,
     rootNames,
     packageDeps,
+    composerDeps,
     allTemplates,
   );
 
