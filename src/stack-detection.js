@@ -42,6 +42,11 @@ const ALWAYS_EXCLUDE = [
   // Generated build metadata
   '**/*.tsbuildinfo',
 
+  // Python tool caches not covered by the bundled Python gitignore template
+  // (which already handles Django, Flask, Scrapy, Celery, etc. artifacts).
+  '.gradio/**',
+  '.dvc/cache/**',
+
   // OS noise
   '.DS_Store',
   'Thumbs.db',

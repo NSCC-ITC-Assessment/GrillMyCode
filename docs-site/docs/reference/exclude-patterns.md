@@ -61,6 +61,12 @@ Each detected signal is mapped to one or more [github/gitignore](https://github.
 - A **Java** repo with a `pom.xml` → `Java` + `Maven` templates: `target/**`, `.gradle/**`, `*.class`, etc.
 - A **mixed JS + Python** repo → gets the union of all matched template sets.
 
+:::note[Python frameworks need no per-framework detection]
+
+Unlike JavaScript and PHP — where each framework ships its own gitignore template or build directory — Python's upstream `Python` template is a single comprehensive file that already folds in the artifacts for Django (`db.sqlite3`, `local_settings.py`), Flask (`instance/**`, `.webassets-cache`), Scrapy (`.scrapy`), Celery (`celerybeat-*`), Sphinx/MkDocs, and more. A Django or Flask repo is therefore fully covered the moment Python is detected — there is no `requirements.txt` / `pyproject.toml` dependency scan because it would add nothing the `Python` template doesn't already exclude. The only Python tool caches not in that template — `.gradio/**` and `.dvc/cache/**` — are added to the always-excluded list below.
+
+:::
+
 If detection fails (e.g. the GitHub API is unreachable) the action falls back to a broad built-in list covering the most common languages.
 
 ## Patterns always excluded
@@ -76,6 +82,7 @@ The following are excluded from every run regardless of detected stack:
 | `**/*.min.js`, `**/*.min.css` | Minified assets — unreadable by design |
 | `.env`, `.env.*`, `**/.env`, `**/.env.*` | Environment files — may contain secrets |
 | `**/*.tsbuildinfo` | TypeScript incremental build metadata |
+| `.gradio/**`, `.dvc/cache/**` | Python tool caches (Gradio, DVC) not covered by the bundled `Python` template |
 | `.DS_Store`, `Thumbs.db` | OS-generated noise |
 | `**/*.map` | Source maps (generated, not authored) |
 | `**/*.log` | Log output |
