@@ -5,6 +5,25 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.19 — 2026-06-03
+
+### What's Changed
+
+### Features
+
+- enhance stack detection to support Grails by adding detection for grails-app directory
+- enhance stack detection to support Elixir by adding mix.exs dependency scans
+- enhance stack detection to support Ruby by adding Gemfile dependency scans
+- enhance stack detection to support additional signals and improve PHP framework identification
+
+### Bug Fixes
+
+- update exclude patterns to include Python tool caches not covered by the bundled template
+
+### Documentation
+
+- update v1 snapshot
+
 ## v1.0.18 — 2026-06-03
 
 ### What's Changed
