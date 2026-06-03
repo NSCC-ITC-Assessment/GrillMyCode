@@ -90,7 +90,7 @@ By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits
 
 ### Where are the generated questions stored?
 
-Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created on the first run and assigned to the student. On every subsequent push to the default branch, the issue body is **overwritten** with freshly generated questions — the issue number and URL stay the same, but the previous questions are replaced. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
+Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created on the first run and assigned to the student. On every run of the GrillMyCode action, regardless of the trigger type, the issue body is **overwritten** with freshly generated questions — the issue number and URL stay the same, but the previous questions are replaced. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
 
 ### Why is the assessment issue pinned?
 
