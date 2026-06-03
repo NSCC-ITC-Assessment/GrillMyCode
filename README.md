@@ -175,21 +175,9 @@ Set `include_initial_commit: 'true'` to include the initial commit's eligible fi
 
 ---
 
-## Output file naming
-
-All assessment files are written under the `.assessment/` folder. Any directory component of the `output_file` setting is ignored — only the basename is used. On the default branch (`main`/`master`) the file keeps the configured basename; on any other branch the sanitised branch name is appended before the extension:
-
-| Branch            | `output_file` setting | Actual file written                            |
-| ----------------- | --------------------- | ---------------------------------------------- |
-| `main`            | `grill-my-code.md`    | `.assessment/grill-my-code.md`                 |
-| `feat/login-form` | `grill-my-code.md`    | `.assessment/grill-my-code-feat-login-form.md` |
-| `student/a1`      | `assessment.md`       | `.assessment/assessment-student-a1.md`         |
-
----
-
 ## Using action outputs
 
-The action exposes two outputs for use in later steps:
+The action exposes several outputs for use in later steps:
 
 ```yaml
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
@@ -197,11 +185,8 @@ The action exposes two outputs for use in later steps:
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
 
-- name: Upload assessment
-  uses: actions/upload-artifact@v7
-  with:
-    name: assessment
-    path: ${{ steps.assess.outputs.output_file }}
+- name: Print issue link
+  run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"
 
 - name: Print questions
   run: echo "${{ steps.assess.outputs.questions }}"

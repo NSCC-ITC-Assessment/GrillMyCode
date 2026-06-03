@@ -68,7 +68,6 @@ The following are excluded from every run regardless of detected stack:
 |---|---|
 | `.git/**` | Git internals |
 | `.gitignore`, `.gitattributes`, `.gitmodules`, `.mailmap`, `.git-blame-ignore-revs` | VCS config, not student code |
-| `.assessment/**` | GrillMyCode's own output files |
 | `.github/workflows/**` | GitHub Actions workflow files — usually not student-authored code. You can override certain files for evaluation if needed. |
 | `**/*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Pipfile.lock`, `poetry.lock` | Lock files — machine-generated, often enormous |
 | `**/*.min.js`, `**/*.min.css` | Minified assets — unreadable by design |

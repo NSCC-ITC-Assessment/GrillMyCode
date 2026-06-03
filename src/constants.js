@@ -91,9 +91,6 @@ export const FALLBACK_EXCLUDE_PATTERNS = [
 
   // Documents
   '**/*.md',
-
-  // GrillMyCode assessment internals
-  '.assessment/**',
 ];
 
 /**

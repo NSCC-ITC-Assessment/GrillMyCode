@@ -20,7 +20,6 @@ const ALWAYS_EXCLUDE = [
   '.gitmodules',
   '.mailmap',
   '.git-blame-ignore-revs',
-  '.assessment/**',
 
   // Lock files — always machine-generated, often enormous
   '**/*.lock',
