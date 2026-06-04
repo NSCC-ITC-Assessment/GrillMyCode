@@ -40,7 +40,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: "20"
-          instructor_context: "Assignment 3 — Python list comprehensions"
+          instructor_context: "Assignment 3 — Python list comprehensions. For each comprehension, ask the student to justify it over an explicit loop, trace through any nested comprehension step by step, and explain when a generator expression would be a better choice."
 ```
 
 ## How it works

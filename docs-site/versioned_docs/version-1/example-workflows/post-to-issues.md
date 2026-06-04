@@ -41,7 +41,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: "20"
-          instructor_context: "Assignment 2 — Data structures and algorithms"
+          instructor_context: "Assignment 2 — Linked list implementation. Ask students to walk through their pointer manipulation during insertion and deletion, explain how their code handles edge cases like an empty list or single-element list, and state the time complexity of each public method."
 
       - name: Print issue link
         run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"

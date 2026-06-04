@@ -97,7 +97,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: "20"
-          instructor_context: "Replace this with a short description of the assignment"
+          instructor_context: "Assignment 1 — Introduction to Python functions. Ask students to explain what each parameter does, describe what would happen if a mutable default argument were modified across calls, and identify any function that could be split into smaller single-purpose pieces."
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 ```
 

@@ -88,8 +88,10 @@ jobs:
           # Supports multi-line YAML strings.
           instructor_context: |
             Assignment 3 — Python list comprehensions.
-            Focus questions on: when list comprehensions are appropriate,
-            performance trade-offs, and readability.
+            For each comprehension, ask the student to explain why they chose
+            it over an explicit loop and whether the complexity hurts readability.
+            Probe the difference between a list comprehension and a generator
+            expression, and ask when they would reach for one over the other.
 
           # Comma-separated file glob(s) whose contents are read from the repo
           # and injected into the prompt as assignment context (before

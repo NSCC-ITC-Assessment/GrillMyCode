@@ -132,7 +132,7 @@ Use the `instructor_context` input to give the AI assignment-specific instructio
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     num_questions: '8'
-    instructor_context: 'Assignment 3 — Python list comprehensions. Focus on when list comprehensions are appropriate versus when a regular loop should be preferred.'
+    instructor_context: 'Assignment 3 — Python list comprehensions. For each comprehension in the submission, ask the student to explain why they used it instead of an explicit loop, whether its complexity affects readability, and how they would rewrite it as a generator expression if memory were a concern.'
 ```
 
 You can also inject the assignment brief or rubric directly into the prompt via `assignment_context` (supports plain text, PDF, and Word files). The [Workflow Wizard](workflow-wizard.mdx) has a Questions step that walks through both of these inputs.
