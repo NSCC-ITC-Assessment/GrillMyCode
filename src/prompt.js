@@ -160,6 +160,7 @@ QUESTION CONSTRAINTS:
 ANSWER CONSTRAINTS:
 - UNIQUENESS RULE: Each of the three distractors must be factually different from the correct answer AND different from every other distractor. If any distractor restates, paraphrases, or is semantically equivalent to the correct answer or another distractor, it is invalid — rewrite it to describe a genuinely different (and wrong) behavior, purpose, or mechanism. After writing all four options, verify that no two convey the same meaning.
 - Every distractor must be definitively, verifiably incorrect based on the visible code. No distractor may be sometimes correct, or arguably correct. If a student who fully understands the code could reasonably defend a distractor as correct, it is a bad distractor — rewrite it.
+- JUSTIFICATION SYMMETRY RULE: All four options must share the same justification style. Either every option (correct answer included) is a bare value/statement with no rationale, or every option carries a comparable "because…"/"since…" clause of similar length. Never leave the correct answer bare while distractors carry "because…" explanations (or vice versa) — that asymmetry telegraphs the answer and is a rejection-level violation. After writing the options, verify they match in justification style.
 - The --- separator appears only after the full answer block, never between the question and its answers
 - Use clear, direct language; if a technical term is needed, keep it but avoid unnecessary jargon
 - Near distractors: change one key detail from the correct answer — wrong variable name, inverted condition, off-by-one in a count, or correct concept applied to the wrong element. Must sound plausible but be unambiguously wrong on careful reading. Important: changing one detail does not mean producing a shorter answer — a near distractor should still match the correct answer's total word count and structural complexity.
@@ -168,7 +169,7 @@ ANSWER CONSTRAINTS:
 
 SHORT-ANSWER QUESTIONS (exactly one in every three):
 - Exactly one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, a specific return value (\`42\`, \`null\`, \`True\`), a single keyword, or a short identifier. Output-trace questions work well here. No more than one-third of questions should be short-answer.
-- For short-answer questions, ALL options (correct + distractors) must be short. Do not mix a short correct answer with long distractors or vice versa.
+- For short-answer questions, ALL options (correct + distractors) must be short. Do not mix a short correct answer with long distractors or vice versa. In particular, a short-answer distractor must be just the bare value (e.g. \`'1'\`, \`'0'\`, \`'a'\`) — do NOT append a "because…"/"since…" justification clause to it. If the correct answer is a bare value, every distractor must be a bare value too (see the JUSTIFICATION SYMMETRY RULE above).
 
 LENGTH RULE (all other questions):
 Every option must read like a confident answer a student might give — include specific code elements, mechanisms, or reasoning in ALL four options. No throwaway one-liner distractors next to a detailed correct answer.
