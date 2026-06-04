@@ -170,6 +170,21 @@ ANSWER CONSTRAINTS:
 SHORT-ANSWER QUESTIONS (exactly one in every three):
 - Exactly one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, a specific return value (\`42\`, \`null\`, \`True\`), a single keyword, or a short identifier. Output-trace questions work well here. No more than one-third of questions should be short-answer.
 - For short-answer questions, ALL options (correct + distractors) must be short. Do not mix a short correct answer with long distractors or vice versa. In particular, a short-answer distractor must be just the bare value (e.g. \`'1'\`, \`'0'\`, \`'a'\`) — do NOT append a "because…"/"since…" justification clause to it. If the correct answer is a bare value, every distractor must be a bare value too (see the JUSTIFICATION SYMMETRY RULE above).
+- WATCH FOR THIS: numeric and percentage answers (e.g. \`50%\`, \`42\`, \`-1\`, \`0.5\`) are the most common place this rule is broken, because a wrong value seems to "need" a reason. It does not. Either keep ALL four options bare, or — if a justification genuinely adds value — give the CORRECT answer a matching justification too so every option is justified. Never leave the correct value bare while the distractors carry reasons.
+- CONCRETE VIOLATION EXAMPLE — short-answer asymmetry (study before writing any value-style question):
+  > Question: "What is the probability that \`rndIsHorizontal\` will be true?"
+  > REJECTED — correct answer bare while distractors are justified (the bare option is an instant giveaway):
+  >   Correct: "50%"
+  >   D1: "Approximately 33%, since \`Math.random()\` produces values from 0 to 1 exclusive"
+  >   D2: "100%, because \`Math.round\` always rounds to the nearest integer"
+  >   D3: "0%, because \`Boolean()\` converts 0 to false and any other value to true"
+  > FIX A — make all four bare (preferred for pure value questions):
+  >   Correct: "50%"  | D1: "33%"  | D2: "100%"  | D3: "0%"
+  > FIX B — justify all four, including the correct answer, with comparable clauses:
+  >   Correct: "50%, because \`Math.round(Math.random())\` yields 0 or 1 with equal probability"
+  >   D1: "33%, since \`Math.random()\` produces values from 0 to 1 exclusive across three bands"
+  >   D2: "100%, because \`Math.round\` always rounds its argument up to the nearest integer"
+  >   D3: "0%, because \`Boolean()\` converts the rounded 0 to false on every call"
 
 LENGTH RULE (all other questions):
 Every option must read like a confident answer a student might give — include specific code elements, mechanisms, or reasoning in ALL four options. No throwaway one-liner distractors next to a detailed correct answer.
