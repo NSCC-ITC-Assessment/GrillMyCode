@@ -75,6 +75,7 @@ on:
 
 # A new push cancels any run still in progress for the same branch,
 # so only the latest commit is ever assessed (see FAQ).
+# Do not modify this setting unless you have a compelling reason to.
 concurrency:
   group: grillmycode-${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
