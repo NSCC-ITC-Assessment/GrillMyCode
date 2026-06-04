@@ -21,6 +21,12 @@ on:
       - main
       - master
 
+# A new push cancels any run still in progress for the same branch,
+# so only the latest commit is ever assessed (see FAQ).
+concurrency:
+  group: grillmycode-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   generate-questions:
     runs-on: ubuntu-latest

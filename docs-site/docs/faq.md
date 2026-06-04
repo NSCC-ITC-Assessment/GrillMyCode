@@ -141,6 +141,25 @@ You can also inject the assignment brief or rubric directly into the prompt via 
 
 The default is 20. Set `num_questions` to any value between 1 and 50.
 
+### What happens if a student pushes again while a run is still in progress?
+
+The example workflows include a `concurrency` block that keeps only the **most recent** run alive:
+
+```yaml
+concurrency:
+  group: grillmycode-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+When a new push arrives for the same branch while an earlier run is still going, GitHub **cancels the in-progress run** and starts a fresh one against the latest commit. The practical effects:
+
+- **Only the latest code is assessed.** The superseded run stops before it publishes, so a stale assessment based on the older commit is never produced.
+- **No duplicate or conflicting output.** Because the runs never overlap, you avoid duplicate assessment issues, clashing release-asset uploads, and competing commits to the instructor repository.
+- **A cancelled run may stop part-way.** If an earlier run is cancelled after it has already written some output, the replacement run regenerates and overwrites it, so the final state still reflects the latest push. You may briefly see a cancelled run in the **Actions** tab — this is expected.
+- **AI quota is not spent twice — but Actions minutes are.** The cancelled run stops before it finishes generating, so you are not billed by the AI provider for an assessment that gets thrown away. However, the cancelled run still consumed GitHub Actions minutes for the time it was running before cancellation, and the replacement run consumes its own minutes on top. On public repositories runner minutes are free; on private repositories (including most GitHub Classroom repos) they count against your plan's allowance, so rapid repeated pushes will use more minutes than a single run. Consider this when deciding how you'll configure the triggering of your GrillMyCode runs.
+
+The grouping is per workflow **and** per branch (`github.ref`), so pushes to different branches still run independently. If you would rather let an in-progress run finish and queue the newer push instead, set `cancel-in-progress: false` — but note this assesses the older commit first and consumes AI quota for both runs.
+
 ---
 
 ## File filtering
