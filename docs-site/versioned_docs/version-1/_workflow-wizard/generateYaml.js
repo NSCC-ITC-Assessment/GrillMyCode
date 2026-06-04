@@ -74,6 +74,15 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
 
   lines.push('');
 
+  // ── concurrency ─────────────────────────────────────────────────────────────
+  // A new push cancels any run still in progress for the same branch, so only
+  // the latest commit is ever assessed (see FAQ).
+  lines.push('# Concurrency setting - Do not modify unless you understand the implications (see FAQ)');
+  lines.push('concurrency:');
+  lines.push('  group: grillmycode-${{ github.workflow }}-${{ github.ref }}');
+  lines.push('  cancel-in-progress: true');
+  lines.push('');
+
   // ── jobs ──────────────────────────────────────────────────────────────────
   lines.push('jobs:');
   lines.push('  generate-questions:');

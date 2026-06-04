@@ -5,6 +5,20 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.20 — 2026-06-04
+
+### What's Changed
+
+### Features
+
+- add concurrency settings to workflows and update FAQ for clarity
+
+### Documentation
+
+- clarify issue body update process in FAQ
+- add troubleshooting section for OpenRouter configuration errors in FAQ
+- update v1 snapshot
+
 ## v1.0.19 — 2026-06-03
 
 ### What's Changed

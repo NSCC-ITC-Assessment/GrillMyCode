@@ -90,7 +90,7 @@ By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits
 
 ### Where are the generated questions stored?
 
-Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created on the first run and assigned to the student. On every subsequent push to the default branch, the issue body is **overwritten** with freshly generated questions — the issue number and URL stay the same, but the previous questions are replaced. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
+Questions are delivered as a **GitHub Issue** in the student's repository. The issue is automatically created on the first run and assigned to the student. On every run of the GrillMyCode action, regardless of the trigger type, the issue body is **overwritten** with freshly generated questions — the issue number and URL stay the same, but the previous questions are replaced. A PDF of the assessment is simultaneously generated and attached to a rolling GitHub Release tagged `gmc-assessments` — a download link is included in the issue body.
 
 ### Why is the assessment issue pinned?
 
@@ -140,6 +140,25 @@ You can also inject the assignment brief or rubric directly into the prompt via 
 ### How many questions are generated?
 
 The default is 20. Set `num_questions` to any value between 1 and 50.
+
+### What happens if a student pushes again while a run is still in progress?
+
+The example workflows include a `concurrency` block that keeps only the **most recent** run alive:
+
+```yaml
+concurrency:
+  group: grillmycode-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+```
+
+When a new push arrives for the same branch while an earlier run is still going, GitHub **cancels the in-progress run** and starts a fresh one against the latest commit. The practical effects:
+
+- **Only the latest code is assessed.** The superseded run stops before it publishes, so a stale assessment based on the older commit is never produced.
+- **No duplicate or conflicting output.** Because the runs never overlap, you avoid duplicate assessment issues, clashing release-asset uploads, and competing commits to the instructor repository.
+- **A cancelled run may stop part-way.** If an earlier run is cancelled after it has already written some output, the replacement run regenerates and overwrites it, so the final state still reflects the latest push. You may briefly see a cancelled run in the **Actions** tab — this is expected.
+- **AI quota is not spent twice — but Actions minutes are.** The cancelled run stops before it finishes generating, so you are not billed by the AI provider for an assessment that gets thrown away. However, the cancelled run still consumed GitHub Actions minutes for the time it was running before cancellation, and the replacement run consumes its own minutes on top. On public repositories runner minutes are free; on private repositories (including most GitHub Classroom repos) they count against your plan's allowance, so rapid repeated pushes will use more minutes than a single run. Consider this when deciding how you'll configure the triggering of your GrillMyCode runs.
+
+The grouping is per workflow **and** per branch (`github.ref`), so pushes to different branches still run independently. If you would rather let an in-progress run finish and queue the newer push instead, set `cancel-in-progress: false` — but note this assesses the older commit first and consumes AI quota for both runs.
 
 ---
 
@@ -196,3 +215,23 @@ Make sure the workflow's `permissions` block includes all required scopes: `cont
 ### How do I enable verbose logging to debug an issue?
 
 Pass `debug: 'true'` as a workflow input, or enable [GitHub Actions debug logging](https://docs.github.com/en/actions/monitoring-and-troubleshooting-workflows/enabling-debug-logging) for the repository by setting the secret `ACTIONS_STEP_DEBUG` to `true`. See the [Debug Mode reference](reference/debug-mode.md) for details.
+
+### OpenRouter fails with "No endpoints available matching your guardrail restrictions and data policy" (404).
+
+The full error looks like this:
+
+```
+OpenRouter Error: Assessment failed: AI API error 404: { error: { message:
+"No endpoints available matching your guardrail restrictions and data policy.",
+code: 404 } }
+```
+
+This is an OpenRouter account-level configuration problem, not a GrillMyCode bug. OpenRouter is refusing to route your request because your privacy/guardrail settings exclude every provider that could serve the model you requested. It is most common with free or near-free models, which require you to opt in to data sharing.
+
+Fix it in your [OpenRouter privacy settings](https://openrouter.ai/settings/privacy):
+
+1. **Enable free endpoints** — toggle on the options that allow free endpoints that may train on or publish prompts. Free models will not route until these are enabled.
+2. **Turn off "ZDR Endpoints Only"** — this restricts routing to zero-data-retention providers, which often excludes the free tier.
+3. **Clear provider restrictions** — under Allowed/Ignored Providers, remove any rules so OpenRouter can route dynamically.
+
+Then re-run the workflow. If it still fails, the model identifier may be deprecated — check the [OpenRouter model list](https://openrouter.ai/models) and confirm the exact `ai_model` value (free models often require a `:free` suffix). See [OpenRouter](./ai-providers/openrouter) for the recommended, tested model identifiers.
