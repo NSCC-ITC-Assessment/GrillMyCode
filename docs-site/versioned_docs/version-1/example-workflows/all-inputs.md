@@ -87,11 +87,11 @@ jobs:
           # the system prompt and takes precedence over default behaviour.
           # Supports multi-line YAML strings.
           instructor_context: |
-            Assignment 3 — Python list comprehensions.
-            For each comprehension, ask the student to explain why they chose
-            it over an explicit loop and whether the complexity hurts readability.
-            Probe the difference between a list comprehension and a generator
-            expression, and ask when they would reach for one over the other.
+            Assignment 3 — Python loops.
+            Prioritize execution flow questions that trace what a loop
+            produces for a given input, conceptual questions about loop
+            design, and at least one error identification question about
+            off-by-one errors.
 
           # Comma-separated file glob(s) whose contents are read from the repo
           # and injected into the prompt as assignment context (before

@@ -97,7 +97,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: "20"
-          instructor_context: "Assignment 1 — Introduction to Python functions. Ask students to explain what each parameter does, describe what would happen if a mutable default argument were modified across calls, and identify any function that could be split into smaller single-purpose pieces."
+          instructor_context: |
+            Assignment 1 — Python functions. Prioritize conceptual
+            questions about parameter design and return values, and at
+            least one error identification question about what happens
+            when an invalid argument is passed.
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 ```
 

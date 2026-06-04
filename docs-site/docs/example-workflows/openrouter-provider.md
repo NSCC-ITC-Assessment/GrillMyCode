@@ -47,7 +47,12 @@ jobs:
           ai_model: "anthropic/claude-3-5-sonnet"
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
           num_questions: "8"
-          instructor_context: "Web Development — REST API with Express.js. Ask students to explain how their routes are organised, why middleware is applied in the order it is, how errors are propagated back to the client, and whether each HTTP status code correctly reflects the semantics of the response."
+          instructor_context: |
+            Web Development — REST API with Express.js. Prioritize
+            conceptual questions about route and middleware design,
+            execution flow questions that trace a request through the
+            pipeline, and at least one error identification question
+            about missing error-handling middleware.
 ```
 
 See the [OpenRouter model list](https://openrouter.ai/models) for available models and pricing. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`).

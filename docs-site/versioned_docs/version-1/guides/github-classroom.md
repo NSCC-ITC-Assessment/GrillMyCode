@@ -45,7 +45,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           num_questions: '20'
-          instructor_context: 'Assignment 3 — Python list comprehensions. Ask students to justify each comprehension over an explicit loop, trace through any nested comprehension step by step, and explain when a generator expression would be preferable.'
+          instructor_context: |
+            Assignment 3 — Python loops. Prioritize execution flow
+            questions that trace what a loop produces for a given input,
+            and at least one error identification question about
+            off-by-one errors or incorrect loop bounds.
 ```
 
 The trigger fires on every push to `main` or `master` — whether the student pushes directly or merges a pull request. Both paths are treated identically.

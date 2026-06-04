@@ -65,7 +65,11 @@ Use `instructor_context` to give the AI assignment-specific instructions:
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
     num_questions: '8'
-    instructor_context: 'Assignment 3 — Python list comprehensions. For each comprehension in the submission, ask the student to explain why they used it instead of an explicit loop, whether its complexity affects readability, and how they would rewrite it as a generator expression if memory were a concern.'
+    instructor_context: |
+      Assignment 3 — Python loops. Prioritize execution flow questions
+      that trace what a loop produces for a given input, conceptual
+      questions about loop design choices, and at least one error
+      identification question about off-by-one errors.
 ```
 
 ## Choosing an AI provider
