@@ -28,8 +28,8 @@ const FeatureList = [
     Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
     description: (
       <>
-        Post assessment questions as a PR comment, GitHub Issue, or GitHub Discussion.
-        Supports GitHub Models, OpenAI, OpenRouter, and Azure OpenAI.
+        Assessment questions are posted as a GitHub Issue and a downloadable PDF.
+        Supports GitHub Models and OpenRouter for AI-powered question generation.
       </>
     ),
   },
