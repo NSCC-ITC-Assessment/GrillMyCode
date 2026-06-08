@@ -2,7 +2,7 @@
   "name": "docs-site",
   "version": "0.0.0",
   "private": true,
-  "packageManager": "pnpm@11.5.1",
+  "packageManager": "pnpm@11.5.2",
   "scripts": {
     "preinstall": "npx only-allow pnpm",
     "docusaurus": "docusaurus",
