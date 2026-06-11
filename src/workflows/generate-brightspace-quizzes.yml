@@ -99,7 +99,7 @@ jobs:
                 } else if (inAnswer && stripped.startsWith('- ')) {
                   answer = stripped.slice(2).trim();
                   inAnswer = false;
-                } else if (stripped.startsWith('**Incorrect Options for Quiz:**')) {
+                } else if (stripped.startsWith('**Distractors for Multiple-Choice Quiz:**')) {
                   inAnswer = false;
                   inInc = true;
                 } else if (inInc && stripped.startsWith('- ')) {

@@ -134,7 +134,7 @@ function checkForRepeatedStrike(launchCoordinates, targetsMap) {
    **Answer:**
    - checkForTargetStrike checks the locationsMap for \`'1'\` to detect ships, while checkForRepeatedStrike checks targetsMap for any defined value to detect repeated strikes
 
-   **Incorrect Options for Quiz:**
+   **Distractors for Multiple-Choice Quiz:**
    - checkForTargetStrike reads locationsMap for a \`'0'\` to confirm an empty cell, while checkForRepeatedStrike reads targetsMap for undefined to confirm the coordinate has never been launched
    - checkForTargetStrike compares targetsMap against the string \`'hit'\` to identify destroyed ships, while checkForRepeatedStrike compares locationsMap against null to detect coordinates that have already been processed
    - checkForTargetStrike evaluates locationsMap[\`targetRow\`][\`targetColumn\`] !== \`'hit'\` and returns true on a miss, while checkForRepeatedStrike evaluates targetsMap[\`targetRow\`][\`targetColumn\`] !== undefined and returns true when the coordinate was already attacked
@@ -142,7 +142,7 @@ function checkForRepeatedStrike(launchCoordinates, targetsMap) {
 
 ---
 
-MANDATORY WHITESPACE: You MUST include a blank line between the question and the **Answer:** heading, and a blank line between the last answer bullet and the **Incorrect Options for Quiz:** heading.
+MANDATORY WHITESPACE: You MUST include a blank line between the question and the **Answer:** heading, and a blank line between the last answer bullet and the **Distractors for Multiple-Choice Quiz:** heading.
 Without these blank lines the Markdown will not render correctly. Never collapse these sections together.
 
 QUESTION CONSTRAINTS:
@@ -231,7 +231,7 @@ Every question MUST follow this exact anatomy:
    **Answer:**
    - <one bullet — the correct answer, as a complete sentence>
 
-   **Incorrect Options for Quiz:**
+   **Distractors for Multiple-Choice Quiz:**
    - <one bullet — distractor 1>
    - <one bullet — distractor 2>
    - <one bullet — distractor 3>
@@ -243,9 +243,9 @@ ANSWER CONTAINER (MANDATORY): Wrap each question's answer section in a single pa
 Violations that will cause output rejection:
 - Missing the filename header or the fenced code block for any question
 - Writing \`**Answer:** &lt;plain text with no bullet&gt;\` — the correct answer MUST be a bullet, not bare inline text
-- Merging the **Answer:** and **Incorrect Options for Quiz:** sections into a single flat list
+- Merging the **Answer:** and **Distractors for Multiple-Choice Quiz:** sections into a single flat list
 - Placing the correct answer directly after the \`**Answer:**\` heading on the same line without a newline
-- Skipping the blank line between the last correct-answer bullet and the \`**Incorrect Options for Quiz:**\` heading
+- Skipping the blank line between the last correct-answer bullet and the \`**Distractors for Multiple-Choice Quiz:**\` heading
 
 Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
 

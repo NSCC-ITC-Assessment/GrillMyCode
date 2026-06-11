@@ -136,7 +136,7 @@ function splitBoldAroundCode(text) {
  *   1. Block fallback: strips **Answer:** heading + everything up to **Incorrect
  *      Options for Quiz:** for any answer the model emitted without the markers.
  *   2. Positional fallback: strips any plain-text content sitting between a question
- *      line and **Incorrect Options for Quiz:** when the **Answer:** label was absent.
+ *      line and **Distractors for Multiple-Choice Quiz:** when the **Answer:** label was absent.
  *
  * Stray markers are always removed (so they never surface, including on the
  * keepAnswers path). Collapses any resulting triple+ blank lines to a double.
@@ -164,15 +164,15 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
     result = result.replace(ANSWER_REGION_RE, '\n');
     result = result.replace(/GMC_SEP/g, '---');
     // Pass 1: block-based — strip **Answer:** heading and everything below it
-    // through to **Incorrect Options for Quiz:**, covering all answer formats.
+    // through to **Distractors for Multiple-Choice Quiz:**, covering all answer formats.
     result = result.replace(
-      / {0,4}\*\*Answer:\*\*[\s\S]*?(?=\n {0,4}\*\*Incorrect Options for Quiz:\*\*)/g,
+      / {0,4}\*\*Answer:\*\*[\s\S]*?(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*)/g,
       '',
     );
     // Pass 2: positional fallback — if **Answer:** label was absent entirely,
     // strip any plain-text line between the question line and **Incorrect Options**.
     result = result.replace(
-      /(\n {0,4}\d+\.[^\n]+\n)\n(?! {0,4}\*\*)[^\n]+\n(?=\n {0,4}\*\*Incorrect Options for Quiz:\*\*)/g,
+      /(\n {0,4}\d+\.[^\n]+\n)\n(?! {0,4}\*\*)[^\n]+\n(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*)/g,
       '$1\n',
     );
   }
@@ -181,14 +181,14 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
     // include_answers: keep the correct-answer bullet; drop only the quiz-only
     // distractor block — its heading plus the bullets that immediately follow.
     result = result.replace(
-      /^ {0,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*(?:\n {0,4}-[^\n]*)*\n?/gm,
+      /^ {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*[^\n]*(?:\n {0,4}-[^\n]*)*\n?/gm,
       '',
     );
   } else {
     // Student view: remove the distractor heading and every remaining bullet so
     // no answer-like content can survive.
     result = result
-      .replace(/^ {0,4}\*\*Incorrect Options for Quiz:\*\*[^\n]*/gm, '')
+      .replace(/^ {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*[^\n]*/gm, '')
       .replace(/^ {0,4}- [^\n]*/gm, '');
   }
   // Restore fenced code blocks now that all marker processing is complete.
