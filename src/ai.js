@@ -169,6 +169,24 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       );
     }
 
+    if (finishReason === 'error') {
+      const providerMessage = data.error?.message ?? 'no details';
+      const nativeReason = data.choices[0].native_finish_reason;
+      const detail = nativeReason ? `${providerMessage}; native: ${nativeReason}` : providerMessage;
+      if (attempt < retryMaxAttempts - 1) {
+        const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+        core.warning(
+          `AI returned partial content with finish_reason "error" (${detail}). ` +
+            `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
+        );
+        await sleep(delay);
+        continue;
+      }
+      throw new Error(
+        `AI API returned finish_reason "error" after all retry attempts (${detail}).`,
+      );
+    }
+
     if (finishReason === 'length') {
       core.warning(
         `AI response was cut off because the output token limit was reached. ` +
