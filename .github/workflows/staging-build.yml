@@ -9,6 +9,7 @@ on:
       - "docs/**"
       - "README.md"
       - "AGENTS.md"
+      - "LICENSE"
       - "_prompt-archive/**"
       - "action.yml"
       - ".github/CODEOWNERS"
