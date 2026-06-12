@@ -23,3 +23,6 @@ grill-my-code*.md
 
 # Husky (internal bootstrap only — hooks themselves are committed)
 .husky/_
+
+# Claude (internal bootstrap only — configuration file is committed)
+.claude
