@@ -1,5 +1,0 @@
-{
-  "permissions": {
-    "allow": ["Bash(node scripts/fetch-gitignore-templates.js)", "Bash(node -e ' *)"]
-  }
-}
