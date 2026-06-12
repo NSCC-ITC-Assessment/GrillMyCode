@@ -221,6 +221,21 @@ function extractCorrectAnswers(text) {
   return answers;
 }
 
+/**
+ * Removes code from a block before the leak check runs against it.
+ *
+ * The code snippet is intentionally shown to the student, so it must never be
+ * treated as leaked answer text. Because `normaliseForMatch` discards all
+ * punctuation, a correct answer that paraphrases the code (common for
+ * output-trace and execution-flow questions) produces a run of shared
+ * identifiers/keywords that collides with the visible code — a false leak.
+ * Stripping fenced blocks and inline spans leaves only prose, which is the only
+ * place a genuinely leaked answer could survive.
+ */
+function stripCodeForLeakCheck(block) {
+  return block.replace(/^(`{3,})[^\n]*\n[\s\S]*?\n\1[ \t]*$/gm, ' ').replace(/`[^`]*`/g, ' ');
+}
+
 /** True if a long contiguous run of the answer's words appears in the block. */
 function answerLeaksInto(blockNorm, answer) {
   const words = normaliseForMatch(answer).split(' ').filter(Boolean);
@@ -240,12 +255,22 @@ function isQuestionBlock(block) {
 }
 
 /**
- * True if the block carries a recognisable answer block. Our redaction (and the
- * leak oracle) key on the **Answer:** heading; a question that never produced one
- * means the strip never engaged and the leak check has no answer to verify.
+ * True if the block carries a recognisable answer structure that stripAnswers can
+ * reliably remove. Two forms qualify:
+ *   - the **Answer:** heading, which the block/positional strip passes key on; or
+ *   - a complete <!-- gmc:answer --> … <!-- /gmc:answer --> container, which the
+ *     primary container-removal pass strips as a unit even when the heading inside
+ *     is malformed or absent.
+ * Both markers of the container must be present — a lone opening marker would not
+ * be stripped by the container pass and could leave the answer in the student view,
+ * so it does not count as proof. A block with neither form means the strip never
+ * engaged and the leak check has no answer to verify, so the structural guard drops it.
  */
 function hasAnswerStructure(block) {
-  return /\*\*Answer:\*\*/.test(block);
+  return (
+    /\*\*Answer:\*\*/.test(block) ||
+    /<!--\s*gmc:answer\s*-->[\s\S]*?<!--\s*\/gmc:answer\s*-->/i.test(block)
+  );
 }
 
 /**
@@ -261,29 +286,32 @@ function hasAnswerStructure(block) {
  *
  * If the two views don't split into the same number of blocks, the structural
  * guard is skipped (we never mis-drop on misaligned boundaries) and only the
- * leak guard runs. Returns the surviving questions and the number withheld.
+ * leak guard runs. Returns the surviving questions plus a per-guard breakdown
+ * (`structural`, `leak`) and the total `dropped`, so callers can report which
+ * guard fired.
  */
 function redactStudentQuestions(originalText, studentText, correctAnswers) {
   const origBlocks = originalText.split(/\n-{3,}\n/);
   const studentBlocks = studentText.split(/\n-{3,}\n/);
   const aligned = origBlocks.length === studentBlocks.length;
-  let dropped = 0;
+  let structural = 0;
+  let leak = 0;
 
   const kept = studentBlocks.filter((studentBlock, i) => {
     const origBlock = aligned ? origBlocks[i] : '';
     if (aligned && isQuestionBlock(origBlock) && !hasAnswerStructure(origBlock)) {
-      dropped++;
+      structural++;
       return false;
     }
-    const blockNorm = normaliseForMatch(studentBlock);
+    const blockNorm = normaliseForMatch(stripCodeForLeakCheck(studentBlock));
     if (correctAnswers.some((answer) => answerLeaksInto(blockNorm, answer))) {
-      dropped++;
+      leak++;
       return false;
     }
     return true;
   });
 
-  return { text: kept.join('\n\n---\n\n'), dropped };
+  return { text: kept.join('\n\n---\n\n'), structural, leak, dropped: structural + leak };
 }
 
 /**
@@ -507,13 +535,26 @@ async function run() {
     // recognisable answer block or whose correct-answer text survived redaction
     // (e.g. the model was injected into echoing it), rather than risk a leak.
     if (!inputs.includeAnswers) {
-      const { text, dropped } = redactStudentQuestions(cleanedQuestions, questions, correctAnswers);
+      const { text, structural, leak, dropped } = redactStudentQuestions(
+        cleanedQuestions,
+        questions,
+        correctAnswers,
+      );
       questions = text;
-      if (dropped > 0) {
+      if (structural > 0) {
         core.warning(
-          `Answer-leak guard: withheld ${dropped} question(s) that could not be confirmed ` +
+          `Structural guard: withheld ${structural} question(s) whose original block carried no ` +
+            `recognisable **Answer:** heading, so the stripped view could not be confirmed ` +
             `answer-free — check the submitted code for prompt injection.`,
         );
+      }
+      if (leak > 0) {
+        core.warning(
+          `Answer-leak guard: withheld ${leak} question(s) whose correct-answer text survived ` +
+            `redaction in the student view — check the submitted code for prompt injection.`,
+        );
+      }
+      if (dropped > 0) {
         questions += `\n\n> [!NOTE]\n> ${dropped} question(s) were withheld from this report pending instructor review.`;
       }
     }
