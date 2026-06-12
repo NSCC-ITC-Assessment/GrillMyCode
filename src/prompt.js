@@ -247,7 +247,7 @@ Violations that will cause output rejection:
 - Placing the correct answer directly after the \`**Answer:**\` heading on the same line without a newline
 - Skipping the blank line between the last correct-answer bullet and the \`**Distractors for Multiple-Choice Quiz:**\` heading
 
-Generate exactly ${numQuestions} questions. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
+Generate exactly ${numQuestions} questions. No more, no less. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
 
 ANTI-TRUNCATION RULE — CRITICAL:
 You MUST write out every single question in full, from question 1 through question ${numQuestions}. The following are ALL violations that constitute a failed response:
