@@ -5,6 +5,37 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.21 — 2026-06-12
+
+### What's Changed
+
+### Documentation
+
+- update description for Flexible Delivery feature in HomepageFeatures
+- format instructor context for better readability in workflow documentation
+- enhance instructor context for assignments in workflow documentation
+- add warning to concurrency setting in workflow documentation
+- update v1 snapshot
+
+### Refactoring
+
+- update package manager version to pnpm@11.6.0
+- clarify question generation instructions in prompt builder
+- update terminology from "Incorrect Options for Quiz" to "Distractors for Multiple-Choice Quiz"
+- update paths-ignore to include LICENSE in branch and staging build workflows
+- update package manager version to pnpm@11.5.3
+- handle AI provider error responses with retry logic
+- update package manager version to pnpm@11.5.2
+- enhance guidelines for short-answer question justification and symmetry
+- enhance length and elaboration guidelines for answer options in question formatting
+- enhance guidelines for correct answer and distractor length in question options
+- add justification symmetry rule for answer options in question constraints
+- clarify length requirements in question formatting
+
+### Chores & Maintenance
+
+- add BSD 3-Clause License and update license in package.json
+
 ## v1.0.20 — 2026-06-04
 
 ### What's Changed
