@@ -130,7 +130,7 @@ Determines the base and head SHAs for the diff. Handles two event types:
 | `push` | previous SHA (or first commit on new branch) | `after` SHA |
 | everything else (`workflow_dispatch`, etc.) | first commit | `ctx.sha` |
 
-After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for GitHub Classroom to exclude starter template files.
+After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for Classroom 50 to exclude starter template files.
 
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
 

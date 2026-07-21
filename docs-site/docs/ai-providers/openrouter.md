@@ -28,7 +28,7 @@ To use OpenRouter with GrillMyCode, an instructor needs to perform the following
 5. **Configure the workflow** — Set `ai_provider: 'openrouter'` and choose a model via `ai_model` (see the tables below for recommended options).
 
 :::tip[Classroom tip]
-For a GitHub Classroom setup the secret should **always** be added at the organisation level. This ensures every student repo has access to the key from the moment it is created, with no extra setup required from students.
+For a Classroom 50 setup the secret should **always** be added at the organization level. This ensures every student repo has access to the key from the moment it is created, with no extra setup required from students.
 :::
 
 ## Required secrets

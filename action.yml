@@ -174,10 +174,12 @@ inputs:
       after the resolved base SHA) that belong to one of these accounts are
       excluded from the diff. Matching is case-insensitive.
 
-      This handles the automated commits that GitHub Classroom applies to a
-      student repository when the assignment is accepted (e.g. feedback PR
-      setup, autograder configuration) so they are never included in the
-      assessed diff.
+      Classroom 50's accept-time setup commit is authored under the student's
+      own account rather than a bot, so it has no login for this input to
+      match — its .classroom50.yaml file is excluded by the action's default
+      exclude patterns instead. This input remains useful for any other
+      bot-authored commits (e.g. a template's own CI bot) that land at the
+      start of the assessed range.
 
       Only consecutive leading commits are skipped — if a bot commit appears
       after a student commit it is included as normal.
@@ -191,7 +193,7 @@ inputs:
 
       Set to an empty string ('') to disable bot-commit skipping entirely.
     required: false
-    default: "github-classroom[bot],github-actions[bot]"
+    default: "github-actions[bot]"
 
   base_sha:
     description: >-
@@ -241,7 +243,6 @@ runs:
     INPUT_AI_TEMPERATURE: ${{ inputs.ai_temperature }}
     INPUT_API_KEY: ${{ inputs.api_key }}
     INPUT_NUM_QUESTIONS: ${{ inputs.num_questions }}
-    INPUT_INCLUDE_PATTERNS: ${{ inputs.include_patterns }}
     INPUT_ADDITIONAL_EXCLUDE_PATTERNS: ${{ inputs.additional_exclude_patterns }}
     INPUT_EXCLUDE_PATTERN_OVERRIDES: ${{ inputs.exclude_pattern_overrides }}
     INPUT_ASSIGNMENT_CONTEXT: ${{ inputs.assignment_context }}

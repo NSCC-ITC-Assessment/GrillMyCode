@@ -47,7 +47,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   excludeWorkflowFiles: true,
   keepComments: false,
   includeInitialCommit: false,
-  skipCommitters: 'github-classroom[bot],github-actions[bot]',
+  skipCommitters: 'github-actions[bot]',
 
   outputFile: 'grill-my-code.md',
   aiTemperature: 0.5,

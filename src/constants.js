@@ -71,6 +71,9 @@ export const FALLBACK_EXCLUDE_PATTERNS = [
   '.git/**',
   '.gitignore',
 
+  // Classroom 50 accept-time metadata (not student-authored)
+  '.classroom50.yaml',
+
   // Environment files — may contain secrets
   '.env',
   '.env.*',
@@ -223,7 +226,7 @@ export const AI_MAX_OUTPUT_TOKENS = 16_384;
  * own assessment-file commit never gets mistaken for a student commit even
  * when skip_committers has been overridden or cleared by the user.
  */
-export const STUDENT_RESOLUTION_SKIP_COMMITTERS = ['github-actions[bot]', 'github-classroom[bot]'];
+export const STUDENT_RESOLUTION_SKIP_COMMITTERS = ['github-actions[bot]'];
 
 /**
  * Maximum number of open issues to fetch when searching for predecessors.

@@ -5,8 +5,9 @@
  * assessment PDF as a named asset. Each run replaces the existing asset for
  * the same filename so the download URL remains stable.
  *
- * Handles concurrent runs (GitHub Classroom can trigger multiple simultaneous
- * workflows in one repo) with get-after-create and delete-before-upload guards.
+ * Handles concurrent runs — e.g. group assignments sharing one repo, or pushes
+ * to different branches racing on the same per-repo release — with
+ * get-after-create and delete-before-upload guards.
  */
 
 import * as core from '@actions/core';
