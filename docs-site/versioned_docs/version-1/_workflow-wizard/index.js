@@ -46,7 +46,7 @@ const INITIAL_CONFIG = {
   additionalExcludePatterns: '',
   keepComments: false,
   includeInitialCommit: false,
-  skipCommitters: 'github-classroom[bot],github-actions[bot]',
+  skipCommitters: 'github-actions[bot]',
 
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,

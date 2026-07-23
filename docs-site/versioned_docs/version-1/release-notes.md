@@ -5,6 +5,35 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.22 — 2026-07-23
+
+### What's Changed
+
+### Features
+
+- implement code stripping for leak checks and enhance question redaction logic
+
+### Bug Fixes
+
+- include pnpm-workspace.yaml in Dockerfile for dependency installation
+- update vite version to avoid vulnerabilities in vitest dependencies
+- update link for Classroom 50 guides to point to GitHub Classroom
+
+### Documentation
+
+- update v1 snapshot
+
+### Refactoring
+
+- update documentation and code references from GitHub Classroom to Classroom 50
+
+### Chores & Maintenance
+
+- update package overrides in pnpm-workspace.yaml for compatibility and security
+- update package manager version to pnpm@11.7.0
+- update .gitignore
+- remove settings.local.json from tracking
+
 ## v1.0.21 — 2026-06-12
 
 ### What's Changed

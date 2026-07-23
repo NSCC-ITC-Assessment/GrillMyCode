@@ -7,7 +7,7 @@ sidebar_label: GitHub Models
 
 Uses the [GitHub Models](https://github.com/marketplace/models) inference endpoint. Authentication is handled automatically with the built-in `GITHUB_TOKEN` — no secrets need to be created.
 
-**When to use:** The default for all workflows. No setup cost. Suitable for most classroom deployments.
+**When to use:** The default for all workflows. No setup cost. Suitable for most Classroom 50 deployments.
 
 ## Quick comparison with OpenRouter
 
@@ -33,7 +33,7 @@ Uses the [GitHub Models](https://github.com/marketplace/models) inference endpoi
 
 ## Using an instructor token
 
-By default, the action authenticates GitHub Models API calls with the built-in `GITHUB_TOKEN`. Because `GITHUB_TOKEN` represents the **repository owner** — in a GitHub Classroom context, that is the **student's personal account** — the rate limit tier applied is the one attached to the student's GitHub plan (typically the free tier).
+By default, the action authenticates GitHub Models API calls with the built-in `GITHUB_TOKEN`. Because `GITHUB_TOKEN` represents the **repository owner** — in a Classroom 50 context, that is the **student's personal account** — the rate limit tier applied is the one attached to the student's GitHub plan (typically the free tier).
 
 Supplying an instructor's Personal Access Token via `api_key` changes whose account is billed:
 

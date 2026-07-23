@@ -59,8 +59,8 @@ No secrets need to be created — the default provider (GitHub Models) authentic
 - **PDF download** — a PDF of the assessment is generated and attached to a rolling `gmc-assessments` release. A download link appears at the top of the issue.
 - **Instructor copy** (optional) — a private instructor-only repository receives the full assessment including answers.
 
-## Designed for GitHub Classroom
+## Designed for Classroom 50
 
-GrillMyCode is built for use with [GitHub Classroom](https://classroom.github.com/). The default configuration excludes template/starter code and bot-committed setup files, so only code written by the student after accepting the assignment is eligible for assessment.
+GrillMyCode was originally built for [GitHub Classroom](https://classroom.github.com/), which GitHub is discontinuing (full shutdown August 28, 2026). It now targets [Classroom 50](https://github.com/foundation50/classroom50), the open-source replacement. The default configuration excludes template/starter code and setup files, so only code written by the student after accepting the assignment is eligible for assessment.
 
-See the [GitHub Classroom guide](./guides/github-classroom.md) for details.
+See the [Classroom 50 guide](./guides/classroom50.md) for details.

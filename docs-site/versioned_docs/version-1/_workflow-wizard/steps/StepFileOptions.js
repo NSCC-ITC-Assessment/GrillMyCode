@@ -45,16 +45,17 @@ export default function StepFileOptions({ cfg, onChange }) {
         <label className={styles.label}>Skip committers <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Comma-separated list of author name or email substrings. A leading run of commits whose
-          author matches any entry is skipped (e.g. bot commits from GitHub Classroom setup). Only
+          author matches any entry is skipped (e.g. bot commits from a template's own CI). Only
           skips a <em>contiguous leading run</em>, not all matching commits. Set to empty to disable
-          entirely. The defaults skip the two most common bots.
+          entirely. Classroom 50's own setup commit isn't bot-authored, so this default has no
+          effect on it — its metadata file is excluded by pattern instead.
         </span>
         <input
           type="text"
           className={styles.input}
           value={cfg.skipCommitters}
           onChange={(e) => onChange({ skipCommitters: e.target.value })}
-          placeholder="github-classroom[bot],github-actions[bot]"
+          placeholder="github-actions[bot]"
         />
       </div>
     </div>

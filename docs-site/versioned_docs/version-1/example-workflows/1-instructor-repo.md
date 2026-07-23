@@ -10,7 +10,7 @@ Automatically stores a **private, instructor-only** copy of every assessment —
 
 When `instructor_repo_token` is provided the action:
 
-1. Resolves the assignment name from the student repo's `template_repository` field (set automatically by GitHub Classroom). For non-Classroom repos it falls back to the source repository name.
+1. Resolves the assignment name from the student repo's `template_repository` field (set automatically by GitHub when the repo is created from a template — the mechanism Classroom 50 uses). For repos with no template it falls back to the source repository name.
 2. Derives the instructor repository name as `{assignment-name}-grillmycode-instructor` in the same organisation.
 3. Creates the repository as **private** on first run if it does not already exist, commits a `generate-brightspace-quizzes.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents.
 4. Creates a folder named `{student-login}/` in the instructor repository and writes the full assessment (questions and answers) to `{student-login}/questions.md`, overwriting any previous run for the same student. The folder is created automatically if it does not already exist.
@@ -68,17 +68,17 @@ jobs:
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 ```
 
-## GitHub Classroom setup
+## Classroom 50 setup
 
-For a Classroom assignment named `assignment-1`:
+For a Classroom 50 classroom `cs-principles`, assignment slug `hello`, with a template repo also named `hello`:
 
-- Student repos: `your-org/assignment-1-student-login`
-- Instructor repo (auto-created): `your-org/assignment-1-grillmycode-instructor`
+- Student repos: `your-org/cs-principles-hello-student-login`
+- Instructor repo (auto-created): `your-org/hello-grillmycode-instructor`
 - Files written per student: `student-login/questions.md`, `student-login/future_brightspace_quiz.txt`
 
-The assignment name is resolved automatically from the `template_repository` that GitHub Classroom sets on every student repo — no configuration is needed beyond the token.
+The assignment name is resolved automatically from the `template_repository` that Classroom 50 sets on every templated student repo — no configuration is needed beyond the token. Note that the resolved name comes from the **template repo's name**, which doesn't have to match the assignment slug (see [Instructor Setup](../guides/instructor-setup#assignment-name-vs-template-repo-name)).
 
-## Non-Classroom setup
+## Non-classroom setup
 
 For a generic repository named `my-project`:
 
