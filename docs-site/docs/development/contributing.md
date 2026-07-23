@@ -98,7 +98,7 @@ This project enforces [Conventional Commits](https://www.conventionalcommits.org
 ```
 feat: add anthropic as a supported ai_provider
 fix: handle null output when AI returns empty choices array
-docs: add GitHub Classroom usage example to README
+docs: add Classroom 50 usage example to README
 chore: update @actions/core to v3
 ci: fix sed quote mismatch in release workflow
 ```

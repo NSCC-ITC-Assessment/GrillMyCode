@@ -57,11 +57,11 @@ Adding the secret at the organisation level means every student repository inher
 
 ## Phase 2 — Per-assignment setup
 
-Do this once each time you create a new Classroom assignment. It takes about one minute.
+Do this once each time you create a new Classroom 50 assignment. It takes about one minute.
 
 ### Step 3 — Add the workflow to the assignment's starter repo
 
-Open the **starter/template repository** for the assignment (the repo you set as the starter code in GitHub Classroom). Add the following file:
+Open the **starter/template repository** for the assignment (the repo registered with `gh teacher assignment add --template <owner>/<repo>`). Add the following file:
 
 **`.github/workflows/grill-my-code.yml`**
 
@@ -105,7 +105,7 @@ jobs:
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 ```
 
-That's it. When GitHub Classroom distributes the assignment, every student repository receives this workflow file. The org-level secret (`INSTRUCTOR_REPO_TOKEN`) is available to all of them automatically.
+That's it. Every student repo created by `gh student accept` from this template receives this workflow file, since it's a copy of the template at accept time. The org-level secret (`INSTRUCTOR_REPO_TOKEN`) is available to all of them automatically.
 
 ---
 
@@ -152,11 +152,17 @@ Re-running the action (e.g. when a student pushes more commits) overwrites the e
 
 ## Assignments without a starter repo
 
-If your Classroom assignment has no starter code repository, GitHub does not set `template_repository` on student repos. The action falls back to stripping the student login suffix from the repo name to infer the assignment name. For example, a student repo named `lab-3-jsmith` with student login `jsmith` produces an instructor repo named `lab-3-grillmycode-instructor`.
+If your Classroom 50 assignment is **template-less** (registered with `gh teacher assignment add` and no `--template`), GitHub does not set `template_repository` on the student's repo. The action falls back to stripping the student login suffix from the repo name to infer the assignment name.
+
+Classroom 50 names student repos `<classroom>-<assignment>-<username>` (lowercased). The login-suffix strip only removes the trailing `-<username>`, so the inferred assignment name keeps the classroom slug attached. For example, a student repo `cs-principles-lab-3-jsmith` (classroom `cs-principles`, assignment `lab-3`, student `jsmith`) produces an instructor repo named `cs-principles-lab-3-grillmycode-instructor`, not `lab-3-grillmycode-instructor`. This is expected and stays consistent across the whole classroom — it just isn't the bare assignment slug.
 
 A workflow warning is emitted on each run to confirm the inferred name — check it after the first submission to verify the instructor repo was created with the expected name.
 
-For assignments without a starter repo, add the workflow file directly to each student repo (or use a Classroom-level default workflow if your org has one configured).
+For assignments without a starter repo, add the workflow file directly to each student repo (there is no template to ship it from).
+
+## Assignment name vs. template repo name
+
+For a **templated** assignment, the resolved assignment name is the **template repository's name** (`template_repository.name`), not necessarily the assignment slug students pass to `gh student accept`. Classroom 50 explicitly allows these to differ — a teacher can register a template repo called `cs50-hello-starter` under the assignment slug `hello`. In that case the instructor repo is named after the template (`cs50-hello-starter-grillmycode-instructor`), not the slug (`hello-grillmycode-instructor`). If you want the instructor repo name to match the slug students actually type, name your template repository the same as the slug.
 
 ---
 

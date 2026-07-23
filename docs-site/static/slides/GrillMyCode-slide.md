@@ -18,7 +18,7 @@
 ## Key features
 
 - ✦ Zero student setup — triggers on every push, pull request, or manually
-- ✦ Built for GitHub Classroom — skips template/starter files automatically
+- ✦ Built for Classroom 50 — skips template/starter files automatically
 - ✦ Free by default — uses GitHub Models, OpenRouter, etc.
 - ✦ Configurable — questions, file filters, assignment context, AI provider
 

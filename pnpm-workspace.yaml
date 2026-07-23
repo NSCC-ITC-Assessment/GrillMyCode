@@ -6,3 +6,8 @@
 # Setting this explicitly suppresses ERR_PNPM_IGNORED_BUILDS in CI.
 allowBuilds:
   puppeteer: false
+
+# Force a patched vite: vitest's declared range (^6||^7||^8) is satisfied by
+# the vulnerable 8.0.x line, and pnpm won't otherwise reach past it.
+overrides:
+  vite: ^8.1.5

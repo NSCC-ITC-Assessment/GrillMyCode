@@ -37,7 +37,7 @@ The instructor receives a ready-to-use question set at the moment the student pu
 
 A GitHub Action is the natural deployment target because:
 
-- **Code already lives there.** Student work on GitHub Classroom runs the action where the code is, with no data movement.
+- **Code already lives there.** Student work on Classroom 50 runs the action where the code is, with no data movement.
 - **Triggers are free.** The assessment is generated automatically on push to the default branch — instructors do not need to remember to run anything.
 - **No infrastructure to manage.** There is no server to host, no database to maintain, and no credentials beyond the built-in `GITHUB_TOKEN` needed for the default provider.
 - **Results are versioned.** The generated question file is committed back to the repository, creating a permanent, auditable record alongside the code it assesses.
@@ -50,6 +50,6 @@ GrillMyCode deliberately does not grade. It generates questions and leaves evalu
 
 ## Who it is for
 
-- **Instructors** using GitHub Classroom who want to run vivas without spending an hour per student on preparation
+- **Instructors** using Classroom 50 who want to run vivas without spending an hour per student on preparation
 - **Assessment designers** who want per-submission, code-specific questions as a complement to automated testing
 - **Any GitHub-based workflow** where committers should be able to articulate what their changes do

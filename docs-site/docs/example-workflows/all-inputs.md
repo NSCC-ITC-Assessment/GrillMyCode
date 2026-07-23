@@ -127,8 +127,9 @@ jobs:
           # to a repository named {assignment-name}-grillmycode-instructor in the same org.
           # The repository is auto-created on first run if it does not exist.
           # The assignment name is resolved from the student repo's
-          # template_repository (GitHub Classroom), falling back to the source
-          # repo name for non-Classroom setups.
+          # template_repository (set by Classroom 50 
+          # templated assignments), falling back to the source repo name
+          # otherwise.
           # Leave empty (default) to disable instructor repository delivery.
           # instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 
@@ -149,7 +150,10 @@ jobs:
           # A leading run of commits whose author matches any entry is skipped.
           # Only skips a contiguous leading run — not all matching commits.
           # Set to '' to disable entirely.
-          skip_committers: "github-classroom[bot],github-actions[bot]"
+          # Classroom 50's accept-time setup commit is authored under the
+          # student's own identity, not a bot, so it isn't matched here — its
+          # .classroom50.yaml file is excluded by pattern instead.
+          skip_committers: "github-actions[bot]"
 
           # Manually override the base and/or head commit SHA.
           # These take precedence over all automatic SHA resolution.

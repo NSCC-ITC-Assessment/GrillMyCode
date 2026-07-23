@@ -30,7 +30,7 @@ const DEFAULTS = {
   additionalExcludePatterns: '',
   keepComments: false,
   includeInitialCommit: false,
-  skipCommitters: 'github-classroom[bot],github-actions[bot]',
+  skipCommitters: 'github-actions[bot]',
   instructorRepoEnabled: false,
   baseSha: '',
   headSha: '',

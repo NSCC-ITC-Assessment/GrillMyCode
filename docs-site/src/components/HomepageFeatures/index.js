@@ -14,7 +14,7 @@ const FeatureList = [
     ),
   },
   {
-    title: 'Built for GitHub Classroom',
+    title: 'Built for Classroom 50',
     Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
     description: (
       <>

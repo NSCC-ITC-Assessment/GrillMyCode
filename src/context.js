@@ -54,7 +54,7 @@ export async function resolveSHAs(ctx, octokit, inputs) {
       core.info(
         `include_initial_commit is disabled: overriding base SHA from ` +
           `${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)} to initial commit ${initialCommit.substring(0, GIT_SHA_SHORT_LENGTH)} ` +
-          `to exclude GitHub Classroom starter files from the diff.`,
+          `to exclude Classroom 50 starter files from the diff.`,
       );
     }
     baseSha = initialCommit;
@@ -153,20 +153,12 @@ export function resolveBranch(ctx) {
 }
 
 /**
- * Resolves the assignment name for the instructor repository.
+ * Strips the student login suffix from a Classroom 50 repo name
+ * ({classroom-slug}-{assignment-slug}-{student-login}).
  *
- * For GitHub Classroom repos, the student's repository is created from a
- * template whose name is the assignment slug (e.g. "assignment-1"). The
- * GitHub API exposes this via `template_repository.name`. For non-Classroom
- * repos (where no template was used), the source repository name is used as
- * the assignment name.
- */
-/**
- * Strips the student login suffix from a GitHub Classroom repo name.
- *
- * Classroom repos follow the pattern {assignment-slug}-{student-login}.
  * Because we have the confirmed student login we can strip it unambiguously
- * even when the login itself contains hyphens.
+ * even when the login itself contains hyphens — this leaves the classroom
+ * slug attached to the inferred name.
  *
  * Returns the stripped name, or the original if no match is found.
  */
@@ -181,13 +173,14 @@ function stripStudentLoginSuffix(repoName, studentLogin) {
  * Resolves the assignment name for the instructor repository.
  *
  * Resolution order (first match wins):
- *   1. template_repository.name — set by GitHub Classroom when the assignment
- *      has a starter code repository. This is the cleanest source.
- *   2. Strip "-{studentLogin}" suffix from the repo name — handles Classroom
- *      assignments created without starter code (template_repository is null
- *      in that case). Because studentLogin is already confirmed, this is
- *      unambiguous even for logins that contain hyphens.
- *   3. Full source repo name — generic fallback for non-Classroom repos.
+ *   1. template_repository.name — set by GitHub when the assignment has a
+ *      starter code repository (a Classroom 50 templated assignment
+ *      populates this). This is the cleanest source.
+ *   2. Strip "-{studentLogin}" suffix from the repo name — handles
+ *      template-less assignments (template_repository is null in that case).
+ *      Because studentLogin is already confirmed, this is unambiguous even
+ *      for logins that contain hyphens.
+ *   3. Full source repo name — generic fallback for non-templated repos.
  */
 export async function resolveAssignmentName(ctx, octokit, studentLogin) {
   try {
@@ -198,9 +191,8 @@ export async function resolveAssignmentName(ctx, octokit, studentLogin) {
     if (data.template_repository?.name) {
       return data.template_repository.name;
     }
-    // template_repository is null — GitHub Classroom does not reliably populate
-    // this field even for template-based assignments; it depends on how Classroom
-    // internally created the repo. Fall back to stripping the student login suffix.
+    // template_repository is null — a template-less assignment. Fall back to
+    // stripping the student login suffix.
     // Only warn when the suffix strip doesn't match (i.e. the login wasn't found
     // at the end of the repo name), since in that case the inferred name is the
     // full repo name and may be wrong.

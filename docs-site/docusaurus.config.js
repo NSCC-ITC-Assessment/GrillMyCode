@@ -198,7 +198,7 @@ const config = {
             title: 'Guides',
             items: [
               {
-                label: 'GitHub Classroom',
+                label: 'Classroom 50',
                 to: `${latestVersionPath}/guides/github-classroom`,
               },
               {

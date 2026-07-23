@@ -6,7 +6,7 @@ const PROVIDERS = [
     value: 'github-models',
     label: 'GitHub Models (default)',
     description:
-      'Uses the built-in GITHUB_TOKEN — no API key needed. Ideal for GitHub Classroom. Requires a "models: read" permission.',
+      'Uses the built-in GITHUB_TOKEN — no API key needed. Ideal for Classroom 50. Requires a "models: read" permission.',
   },
   {
     value: 'openrouter',
