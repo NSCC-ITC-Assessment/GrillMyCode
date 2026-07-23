@@ -199,7 +199,7 @@ const config = {
             items: [
               {
                 label: 'Classroom 50',
-                to: `${latestVersionPath}/guides/github-classroom`,
+                to: `${latestVersionPath}/guides/classroom50`,
               },
               {
                 label: 'Example Workflows',
