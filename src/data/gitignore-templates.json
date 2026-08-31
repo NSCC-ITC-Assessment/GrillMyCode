@@ -2714,6 +2714,7 @@
     "*.jl.cov",
     "*.jl.*.cov",
     "*.jl.mem",
+    "*.jl.*.mem",
     "deps/deps.jl",
     "deps/build.log",
     "deps/downloads/**",
@@ -2725,7 +2726,8 @@
     "LocalPreferences.toml",
     "LocalPreferences.toml/**",
     "JuliaLocalPreferences.toml",
-    "JuliaLocalPreferences.toml/**"
+    "JuliaLocalPreferences.toml/**",
+    ".CondaPkg/**"
   ],
   "Katalon": [
     "*.class",
@@ -2846,6 +2848,8 @@
     ".vagrant/**",
     ".phpunit.result.cache",
     ".phpunit.result.cache/**",
+    ".phpunit.cache",
+    ".phpunit.cache/**",
     "public/build",
     "storage/pail",
     ".env.backup",
