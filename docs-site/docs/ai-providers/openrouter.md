@@ -55,7 +55,7 @@ The following models have been tested with GrillMyCode and are all usually under
 | Google Gemini 3.1 Flash Lite | `google/gemini-3.1-flash-lite` | Google's entry-level flash tier; fast, cheap, and consistent for short-form generation tasks. |
 | Minimax M2.7 | `minimax/minimax-m2.7` | Very inexpensive; performs well on question generation with minimal prompt tuning. |
 | StepFun Step 3.5 Flash | `stepfun/step-3.5-flash` | Competitive quality-per-token ratio; tested to produce well-formed assessment questions. |
-| Tencent Hy3 Preview | `tencent/hy3-preview` | Preview-tier model from Tencent; cheap and functional, though output style may vary. |
+| Tencent Hy3 | `tencent/hy3` | Model from Tencent; cheap and functional, though output style may vary. |
 | Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` | Reasoning-optimised model from Xiaomi; good at following structured output constraints. |
 
 All six are in the "free-or-near-free" tier on OpenRouter, making them suitable for deployments where many students submit simultaneously. If you want higher output quality and are willing to pay more, you can use any other OpenRouter model via the **Own Choice** option — just verify pricing at [openrouter.ai/models](https://openrouter.ai/models) first.
