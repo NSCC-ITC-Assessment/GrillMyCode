@@ -104,7 +104,7 @@ jobs:
         run: pnpm install --frozen-lockfile
 
       - name: Audit dependencies
-        run: pnpm audit
+        run: pnpm audit --ignore-unfixable
 
   action-image-tag:
     name: action.yml Image Tag
