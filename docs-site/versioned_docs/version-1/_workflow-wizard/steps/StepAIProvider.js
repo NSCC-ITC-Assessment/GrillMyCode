@@ -23,7 +23,7 @@ const PROVIDER_DEFAULT_SECRETS = {
 const GITHUB_MODELS = ['gpt-4.1'];
 const OPENROUTER_MODELS = [
   { label: 'Deepseek V4 Flash', value: 'deepseek/deepseek-v4-flash' },
-  { label: 'Google Gemini 3.1 Flash Lite', value: 'google/gemini-3.1-flash-lite' },
+  { label: 'Google Gemini 3.5 Flash Lite', value: 'google/gemini-3.5-flash-lite' },
   { label: 'Minimax 2.7', value: 'minimax/minimax-m2.7' },
   { label: 'Step 3.5 Flash', value: 'stepfun/step-3.5-flash' },
   { label: 'Tencent Hy3', value: 'tencent/hy3' },

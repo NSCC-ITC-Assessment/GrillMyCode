@@ -52,7 +52,7 @@ The following models have been tested with GrillMyCode and are all usually under
 | Model | `ai_model` value | Notes |
 |---|---|---|
 | DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | Extremely low cost; strong instruction-following for structured JSON output. A reliable first choice. |
-| Google Gemini 3.1 Flash Lite | `google/gemini-3.1-flash-lite` | Google's entry-level flash tier; fast, cheap, and consistent for short-form generation tasks. |
+| Google Gemini 3.5 Flash Lite | `google/gemini-3.5-flash-lite` | Google's entry-level flash tier; fast, cheap, and consistent for short-form generation tasks. |
 | Minimax M2.7 | `minimax/minimax-m2.7` | Very inexpensive; performs well on question generation with minimal prompt tuning. |
 | StepFun Step 3.5 Flash | `stepfun/step-3.5-flash` | Competitive quality-per-token ratio; tested to produce well-formed assessment questions. |
 | Tencent Hy3 | `tencent/hy3` | Model from Tencent; cheap and functional, though output style may vary. |
