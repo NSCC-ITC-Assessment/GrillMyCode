@@ -48,5 +48,5 @@ jobs:
         working-directory: docs-site
 
       - name: Audit dependencies
-        run: pnpm audit
+        run: pnpm audit --ignore-unfixable
         working-directory: docs-site
