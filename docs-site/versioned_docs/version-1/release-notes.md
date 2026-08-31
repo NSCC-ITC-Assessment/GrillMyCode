@@ -5,6 +5,25 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.23 — 2026-08-31
+
+### What's Changed
+
+### Bug Fixes
+
+- improve pre-push hook to allow tag pushes on main branch
+- point footer Classroom 50 link to renamed guide slug
+
+### Documentation
+
+- update v1 snapshot
+
+### Chores & Maintenance
+
+- refresh gitignore templates
+- updated dependencies via pnpm
+- updated dependencies via pnpm
+
 ## v1.0.22 — 2026-07-23
 
 ### What's Changed
