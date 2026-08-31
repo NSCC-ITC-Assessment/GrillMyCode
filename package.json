@@ -20,10 +20,10 @@
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@actions/http-client": "^4.0.1",
-    "mammoth": "^1.12.0",
+    "mammoth": "^1.12.2",
     "md-to-pdf": "^5.2.5",
-    "minimatch": "^10.2.5",
-    "unpdf": "^1.6.2"
+    "minimatch": "^10.2.6",
+    "unpdf": "^1.8.1"
   },
   "type": "module",
   "license": "BSD-3-Clause",
@@ -37,14 +37,14 @@
     "*.{json,yml,yaml,md}": "prettier --write"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.1",
-    "@commitlint/config-conventional": "^21.2.0",
+    "@commitlint/cli": "^21.2.2",
+    "@commitlint/config-conventional": "^21.2.2",
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.7.0",
+    "eslint": "^10.9.1",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
-    "lint-staged": "^17.1.1",
+    "lint-staged": "^17.4.1",
     "prettier": "^3.9.6",
-    "vitest": "^4.1.10"
+    "vitest": "^4.1.11"
   }
 }
