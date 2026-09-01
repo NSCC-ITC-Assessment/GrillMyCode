@@ -21,6 +21,9 @@ const ALWAYS_EXCLUDE = [
   '.mailmap',
   '.git-blame-ignore-revs',
 
+  // Classroom 50 accept-time metadata (not student-authored)
+  '.classroom50.yaml',
+
   // Lock files — always machine-generated, often enormous
   '**/*.lock',
   'package-lock.json',
