@@ -5,6 +5,25 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.0.24 — 2026-09-01
+
+### What's Changed
+
+### Bug Fixes
+
+- add .classroom50.yaml to always exclude list
+- update dependency audit command to ignore unfixable issues
+- update Tencent Hy3 model reference in documentation and code
+
+### Documentation
+
+- update Google Gemini model version to 3.5 in code and documentation
+- update v1 snapshot
+
+### Chores & Maintenance
+
+- update deps
+
 ## v1.0.23 — 2026-08-31
 
 ### What's Changed
