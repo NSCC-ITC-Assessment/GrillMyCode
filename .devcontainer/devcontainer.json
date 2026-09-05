@@ -3,7 +3,7 @@
   "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
-  "onCreateCommand": "corepack prepare pnpm@11.1.3 --activate",
+  "onCreateCommand": "corepack prepare pnpm@12.3.4 --activate",
   "postCreateCommand": "pnpm install && git config merge.ours.driver true",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 
