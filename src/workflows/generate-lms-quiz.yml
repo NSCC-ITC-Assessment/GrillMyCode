@@ -22,11 +22,12 @@ jobs:
 
       - name: Install Node.js dependencies
         # Exact versions, no ranges. This workflow is seeded into every
-        # instructor repository and (see docs-internal/lms-quiz-known-issues.md)
-        # existing repositories never receive updates to it, so a floating range
-        # would let a breaking major release of either package break quiz
-        # generation everywhere at once, with no way to roll back short of
-        # editing each repository's workflow by hand. Bump these deliberately.
+        # instructor repository, so a floating range would let a breaking major
+        # release of either package break quiz generation everywhere at once,
+        # with no push of ours involved and nothing to roll back to. Rolling a
+        # bad pin back is a release of this action, which every instructor
+        # repository then picks up on its next delivery; a bad floating range
+        # is not fixable that way. Bump these deliberately.
         run: npm install --prefix /tmp/quiz-deps jszip@3.10.1 prismjs@1.30.0
 
       - name: Generate LMS quiz for changed students
