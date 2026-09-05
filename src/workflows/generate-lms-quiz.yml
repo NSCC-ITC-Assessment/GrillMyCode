@@ -1,0 +1,626 @@
+name: Generate LMS Quiz
+
+on:
+  push:
+    paths:
+      - "*/questions.md"
+  workflow_dispatch:
+
+concurrency:
+  group: generate-lms-quiz
+  cancel-in-progress: false
+
+jobs:
+  generate:
+    name: Generate LMS quiz from questions files
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Install Node.js dependencies
+        # Exact versions, no ranges. This workflow is seeded into every
+        # instructor repository and (see docs-internal/lms-quiz-known-issues.md)
+        # existing repositories never receive updates to it, so a floating range
+        # would let a breaking major release of either package break quiz
+        # generation everywhere at once, with no way to roll back short of
+        # editing each repository's workflow by hand. Bump these deliberately.
+        run: npm install --prefix /tmp/quiz-deps jszip@3.10.1 prismjs@1.30.0
+
+      - name: Generate LMS quiz for changed students
+        run: |
+          node <<'JSEOF'
+          const fs = require('fs');
+          const path = require('path');
+          const crypto = require('crypto');
+          const JSZip = require('/tmp/quiz-deps/node_modules/jszip');
+          const Prism = require('/tmp/quiz-deps/node_modules/prismjs');
+          const loadLanguages = require('/tmp/quiz-deps/node_modules/prismjs/components/index.js');
+          loadLanguages(['javascript','typescript','jsx','tsx','python','ruby','java','kotlin','csharp','cpp','c','go','rust','php','swift','bash','css','scss','yaml','json','sql','markdown']);
+
+          function detectLang(fp) {
+            if (!fp) return null;
+            const ext = fp.split('.').pop().toLowerCase();
+            const map = {
+              js: 'javascript', mjs: 'javascript', cjs: 'javascript',
+              ts: 'typescript', tsx: 'tsx', jsx: 'jsx',
+              py: 'python', rb: 'ruby', java: 'java', kt: 'kotlin',
+              cs: 'csharp', cpp: 'cpp', c: 'c', go: 'go', rs: 'rust',
+              php: 'php', swift: 'swift', sh: 'bash', bash: 'bash',
+              html: 'markup', htm: 'markup', xml: 'markup',
+              css: 'css', scss: 'scss', json: 'json',
+              yml: 'yaml', yaml: 'yaml', sql: 'sql', md: 'markdown',
+            };
+            return map[ext] || null;
+          }
+
+          function findQuestionsFiles(dir) {
+            const results = [];
+            for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+              if (entry.name === '.git') continue;
+              const full = path.join(dir, entry.name);
+              if (entry.isDirectory()) {
+                results.push(...findQuestionsFiles(full));
+              } else if (entry.name === 'questions.md') {
+                results.push(full);
+              }
+            }
+            return results;
+          }
+
+          function parseQuestions(content) {
+            const blocks = content.split('\n---\n');
+            const results = [];
+            let lastFilePath = null;
+            let lastSnippet = null;
+            let lastSnippetLang = null;
+
+            for (const block of blocks) {
+              let question = null, answer = null, filePath = null, snippetLang = null;
+              const incorrect = [], snippetLines = [];
+              let inInc = false, inSnippet = false, inAnswer = false;
+
+              for (const line of block.split('\n')) {
+                const stripped = line.trim();
+                // The model occasionally prefixes the distractor heading with a
+                // stray list marker (observed from gemini-3.5-flash-lite:
+                // "-- **Distractors for Multiple-Choice Quiz:**"). An exact
+                // startsWith() misses it, so the heading never opens the
+                // distractor section, every option bullet below it is dropped,
+                // and the question exports as a single-choice item — the correct
+                // answer alone, which every student scores. Stripping a leading
+                // marker that sits directly before the bold heading recovers it
+                // without letting an ordinary option bullet look like a heading.
+                const unmarked = stripped.replace(/^[-*+]{1,3}\s+(?=\*\*)/, '');
+                // !inSnippet matters for Markdown snippets: a bold line such as
+                // "**Setup**" inside a fence is snippet content, not a filename
+                // header. Without the guard it was consumed as the filename,
+                // corrupting both the heading shown above the snippet and the
+                // code shown to the student. The fence check below runs first
+                // for fence lines, so this only ever sees snippet body lines.
+                const fpMatch = !question && !inSnippet && stripped.match(/^\*\*`?(.+?)`?\*\*\s*$/);
+                if (fpMatch) {
+                  filePath = fpMatch[1];
+                } else if (stripped.startsWith('```') && !question) {
+                  if (!inSnippet) {
+                    const fenceLang = stripped.slice(3).trim();
+                    if (fenceLang) snippetLang = fenceLang;
+                  }
+                  inSnippet = !inSnippet;
+                } else if (inSnippet) {
+                  snippetLines.push(line.trimEnd());
+                } else if (!question && line && /^\d+\. /.test(line)) {
+                  question = line.split('. ').slice(1).join('. ').trim().replace(/\*\*/g, '');
+                } else if (stripped === '**Answer:**' || stripped.startsWith('**Answer:** ')) {
+                  inAnswer = true;
+                  inInc = false;
+                  const inline = stripped.slice('**Answer:**'.length).trim();
+                  if (inline) { answer = inline; inAnswer = false; }
+                } else if (inAnswer && stripped.startsWith('- ')) {
+                  answer = stripped.slice(2).trim();
+                  inAnswer = false;
+                } else if (unmarked.startsWith('**Distractors for Multiple-Choice Quiz:**')) {
+                  inAnswer = false;
+                  inInc = true;
+                } else if (inInc && stripped.startsWith('- ')) {
+                  incorrect.push(stripped.slice(2).trim());
+                }
+              }
+
+              if (filePath) lastFilePath = filePath;
+              else filePath = lastFilePath;
+              if (snippetLang) lastSnippetLang = snippetLang;
+              else snippetLang = lastSnippetLang;
+              const finalSnippet = snippetLines.length ? snippetLines : (lastSnippet || []);
+              if (snippetLines.length) lastSnippet = snippetLines;
+
+              if (question && answer) {
+                results.push({ question, answer, incorrect, filePath, snippetLang, snippet: finalSnippet });
+              }
+            }
+
+            return results;
+          }
+
+          function escapeXml(str) {
+            return String(str).replace(/[&<>"']/g, (ch) => ({
+              '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&apos;',
+            }[ch]));
+          }
+
+          // mattext content is an HTML fragment nested inside XML, so the LMS
+          // decodes it twice: XML first, then HTML. Text interpolated into that
+          // fragment therefore needs escaping at BOTH layers — this one for the
+          // HTML layer, escapeXml() for the XML layer. Without this, a snippet
+          // containing "<div>" survives XML decoding as a live tag and is
+          // swallowed by the HTML parser instead of shown to the student.
+          // Only & < > are escaped: text is only ever placed in text nodes,
+          // never attribute values, and &apos; is not valid in older HTML.
+          function escapeHtmlText(str) {
+            return String(str).replace(/[&<>]/g, (ch) => ({
+              '&': '&amp;', '<': '&lt;', '>': '&gt;',
+            }[ch]));
+          }
+
+          // Strips Markdown inline-code/bold markers so `identifiers` and
+          // **emphasis** from questions.md don't leak as literal punctuation
+          // into the plain-text quiz shown to students.
+          function stripInlineMarkdown(str) {
+            return str.replace(/`([^`]*)`/g, '$1').replace(/\*\*([^*]*)\*\*/g, '$1');
+          }
+
+          // Matches the D2L/Brightspace CC export convention: mattext content is
+          // itself an HTML fragment, so the whole "<p>...</p>" string is escaped
+          // once more as the XML text content of <mattext>.
+          function qtiText(raw) {
+            return escapeXml('<p>' + escapeHtmlText(stripInlineMarkdown(raw)) + '</p>');
+          }
+
+          // Colors from PrismJS's default "prism.css" theme, inlined per-token
+          // instead of relying on a shared <style> block or class attributes —
+          // both are commonly stripped by LMS rich-text sanitizers on CC/QTI
+          // import, while inline styles on allowed tags are far more likely
+          // to survive.
+          //
+          // Prism's "punctuation" type is deliberately absent: it accounted for
+          // 63% of every span in a generated quiz, in a grey (#999) barely
+          // distinguishable from the body text. Leaving it uncoloured lets the
+          // brackets and separators merge into their neighbouring runs instead
+          // of each costing Brightspace's importer a span to sanitize.
+          const TOKEN_COLORS = {
+            comment: 'slategray', prolog: 'slategray', doctype: 'slategray', cdata: 'slategray',
+            property: '#905', tag: '#905', boolean: '#905', number: '#905',
+            constant: '#905', symbol: '#905', deleted: '#905',
+            selector: '#690', 'attr-name': '#690', string: '#690', char: '#690',
+            builtin: '#690', inserted: '#690',
+            operator: '#9a6e3a', entity: '#9a6e3a', url: '#9a6e3a',
+            atrule: '#07a', 'attr-value': '#07a', keyword: '#07a',
+            function: '#DD4A68', 'class-name': '#DD4A68',
+            regex: '#e90', important: '#e90', variable: '#e90',
+          };
+
+          // Flattens a Prism token tree into {color, text} pieces. A nested
+          // token with no color of its own inherits its parent's, which is what
+          // the previous nested-span rendering displayed anyway (the outer span
+          // covered any uncoloured content inside it).
+          function collectPrismPieces(token, inherited, out) {
+            if (typeof token === 'string') {
+              out.push({ color: inherited, text: token });
+              return;
+            }
+            const color = TOKEN_COLORS[token.type] || inherited;
+            const content = token.content;
+            if (Array.isArray(content)) {
+              for (const child of content) collectPrismPieces(child, color, out);
+            } else if (typeof content === 'string') {
+              out.push({ color, text: content });
+            } else {
+              collectPrismPieces(content, color, out);
+            }
+          }
+
+          // Renders the flattened pieces, merging every run of adjacent pieces
+          // that share a color into a single span. Prism emits one token per
+          // lexeme, so an unmerged rendering wraps each identifier, operator and
+          // literal separately — Brightspace's CC import parses and sanitizes
+          // every one of those on the way in, and each inline style attribute
+          // costs it a CSS parse. Merging runs (together with leaving
+          // punctuation uncoloured) took a real 20-question quiz from 911 spans
+          // to 338, with identical visible output. Token text is escaped for the HTML
+          // layer here; the assembled fragment is escaped again for the XML
+          // layer by buildQuestionHtml().
+          function renderPrismTokens(tokens) {
+            const pieces = [];
+            for (const token of tokens) collectPrismPieces(token, null, pieces);
+
+            let html = '';
+            for (let i = 0; i < pieces.length; i++) {
+              const color = pieces[i].color;
+              let text = pieces[i].text;
+              while (i + 1 < pieces.length && pieces[i + 1].color === color) {
+                text += pieces[++i].text;
+              }
+              const escaped = escapeHtmlText(text);
+              html += color ? '<span style="color:' + color + '">' + escaped + '</span>' : escaped;
+            }
+            return html;
+          }
+
+          function highlightCode(code, lang) {
+            const grammar = lang && Prism.languages[lang];
+            return grammar ? renderPrismTokens(Prism.tokenize(code, grammar)) : escapeHtmlText(code);
+          }
+
+          // Builds the full question HTML (filename + colorized snippet +
+          // question text), then applies one escapeXml() pass so it can be
+          // embedded as XML text content of <mattext texttype="text/html">.
+          function buildQuestionHtml(q) {
+            const parts = [];
+            if (q.filePath) {
+              parts.push('<p><strong>' + escapeHtmlText(stripInlineMarkdown(q.filePath)) + '</strong></p>');
+            }
+            if (q.snippet && q.snippet.length) {
+              const lang = q.snippetLang || detectLang(q.filePath);
+              parts.push('<pre><code>' + highlightCode(q.snippet.join('\n'), lang) + '</code></pre>');
+            }
+            parts.push('<p>' + escapeHtmlText(stripInlineMarkdown(q.question)) + '</p>');
+            return escapeXml(parts.join(''));
+          }
+
+          // Workflow-command annotations are newline-delimited and use % as the
+          // escape character, so question text is encoded and truncated before
+          // being interpolated into a ::warning:: line.
+          function annotate(text) {
+            const encoded = String(text)
+              .replace(/%/g, '%25')
+              .replace(/\r/g, '%0D')
+              .replace(/\n/g, '%0A');
+            return encoded.length > 120 ? encoded.slice(0, 120) + '…' : encoded;
+          }
+
+          function newId() {
+            return 'i' + crypto.randomUUID();
+          }
+
+          function buildQtiXml(title, questions, contentHash) {
+            const assessmentId = newId();
+            const sectionId = newId();
+
+            const items = questions.map((q) => {
+              const itemId = newId();
+              const respId = newId();
+              const choices = [
+                { text: q.answer, correct: true },
+                ...q.incorrect.map((text) => ({ text, correct: false })),
+              ];
+              const labelIds = choices.map(() => newId());
+
+              const responseLabels = choices.map((c, idx) => `
+              <response_label ident="${labelIds[idx]}">
+                <material>
+                  <mattext texttype="text/html">${qtiText(c.text)}</mattext>
+                </material>
+              </response_label>`).join('');
+
+              const respConditions = choices.map((c, idx) => c.correct ? `
+              <respcondition continue="No">
+                <conditionvar>
+                  <varequal respident="${respId}">${labelIds[idx]}</varequal>
+                </conditionvar>
+                <setvar action="Set" varname="SCORE">100</setvar>
+              </respcondition>` : `
+              <respcondition>
+                <conditionvar>
+                  <varequal respident="${respId}">${labelIds[idx]}</varequal>
+                </conditionvar>
+              </respcondition>`).join('');
+
+              return `
+            <item ident="${itemId}">
+              <itemmetadata>
+                <qtimetadata>
+                  <qtimetadatafield>
+                    <fieldlabel>cc_profile</fieldlabel>
+                    <fieldentry>cc.multiple_choice.v0p1</fieldentry>
+                  </qtimetadatafield>
+                  <qtimetadatafield>
+                    <fieldlabel>cc_weighting</fieldlabel>
+                    <fieldentry>1</fieldentry>
+                  </qtimetadatafield>
+                </qtimetadata>
+              </itemmetadata>
+              <presentation>
+                <material>
+                  <mattext texttype="text/html">${buildQuestionHtml(q)}</mattext>
+                </material>
+                <response_lid ident="${respId}" rcardinality="Single">
+                  <render_choice shuffle="Yes">${responseLabels}
+                  </render_choice>
+                </response_lid>
+              </presentation>
+              <resprocessing>
+                <outcomes>
+                  <decvar minvalue="0" maxvalue="100" varname="SCORE" vartype="Decimal" />
+                </outcomes>${respConditions}
+              </resprocessing>
+            </item>`;
+            }).join('');
+
+            return `<?xml version="1.0" encoding="utf-8"?>
+          <questestinterop xmlns="http://www.imsglobal.org/xsd/ims_qtiasiv1p2" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.imsglobal.org/xsd/ims_qtiasiv1p2 http://www.imsglobal.org/profile/cc/ccv1p3/ccv1p3_qtiasiv1p2p1_v1p0.xsd">
+            <assessment ident="${assessmentId}" title="${escapeXml(title)}">
+              <qtimetadata>
+                <qtimetadatafield>
+                  <fieldlabel>cc_profile</fieldlabel>
+                  <fieldentry>cc.exam.v0p1</fieldentry>
+                </qtimetadatafield>
+                <qtimetadatafield>
+                  <fieldlabel>qmd_assessmenttype</fieldlabel>
+                  <fieldentry>Examination</fieldentry>
+                </qtimetadatafield>
+                <qtimetadatafield>
+                  <fieldlabel>cc_maxattempts</fieldlabel>
+                  <fieldentry>1</fieldentry>
+                </qtimetadatafield>
+                <qtimetadatafield>
+                  <fieldlabel>qmd_timelimit</fieldlabel>
+                  <fieldentry>0</fieldentry>
+                </qtimetadatafield>
+                <qtimetadatafield>
+                  <fieldlabel>gmc_content_hash</fieldlabel>
+                  <fieldentry>${contentHash}</fieldentry>
+                </qtimetadatafield>
+              </qtimetadata>
+              <section ident="${sectionId}">${items}
+              </section>
+            </assessment>
+          </questestinterop>`;
+          }
+
+          // The <organizations> element is left empty on purpose. In Common
+          // Cartridge that tree is the course's content structure, so an <item>
+          // carrying an identifierref asks the LMS to build a content topic
+          // linking to the resource — which is why Brightspace's import screen
+          // used to offer a link alongside the quiz. Brightspace picks quizzes
+          // up from the <resources> declaration regardless, so dropping the
+          // organization entry imports the quiz and nothing else, and measured
+          // 115s against 193s for a 20-question quiz because the content-topic
+          // path is not walked. Together with the other changes here, that quiz
+          // now imports in 60s. See docs-internal/lms-quiz-known-issues.md.
+          function buildManifest(title, resourceId, qtiHref) {
+            const manifestId = newId();
+
+            return `<?xml version="1.0" encoding="utf-8"?>
+          <manifest identifier="${manifestId}" xmlns="http://www.imsglobal.org/xsd/imsccv1p3/imscp_v1p1" xmlns:lomr="http://ltsc.ieee.org/xsd/imsccv1p3/LOM/resource" xmlns:lomm="http://ltsc.ieee.org/xsd/imsccv1p3/LOM/manifest" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://ltsc.ieee.org/xsd/imsccv1p3/LOM/resource http://www.imsglobal.org/profile/cc/ccv1p3/LOM/ccv1p3_lomresource_v1p0.xsd http://www.imsglobal.org/xsd/imsccv1p3/imscp_v1p1 http://www.imsglobal.org/profile/cc/ccv1p3/ccv1p3_imscp_v1p2_v1p0.xsd http://ltsc.ieee.org/xsd/imsccv1p3/LOM/manifest http://www.imsglobal.org/profile/cc/ccv1p3/LOM/ccv1p3_lommanifest_v1p0.xsd">
+            <metadata>
+              <schema>IMS Common Cartridge</schema>
+              <schemaversion>1.3.0</schemaversion>
+              <lomm:lom>
+                <lomm:general>
+                  <lomm:title>
+                    <lomm:string language="en-US">${escapeXml(title)}</lomm:string>
+                  </lomm:title>
+                </lomm:general>
+              </lomm:lom>
+            </metadata>
+            <organizations />
+            <resources>
+              <resource identifier="${resourceId}" type="imsqti_xmlv1p2/imscc_xmlv1p3/assessment" href="${qtiHref}">
+                <file href="${qtiHref}" />
+              </resource>
+            </resources>
+          </manifest>`;
+          }
+
+          // Titled with assignment + student because the filename is not
+          // visible once the package is imported — this title is what
+          // identifies the quiz in the LMS.
+          async function buildQuizPackage(student, questions, contentHash) {
+            const title = assignment + ' - ' + student;
+            const resourceId = newId();
+            // Flat, so the package carries no directory entries and the file
+            // does not land in the LMS's file manager under a meaningless
+            // random-UUID path. readContentHash() matches this name.
+            const qtiHref = 'quiz.xml';
+
+            const zip = new JSZip();
+            zip.file('imsmanifest.xml', buildManifest(title, resourceId, qtiHref));
+            zip.file(qtiHref, buildQtiXml(title, questions, contentHash));
+            // JSZip defaults to STORE, which left the package uncompressed:
+            // 118KB where the same content deflates to 12KB. The XML is highly
+            // repetitive, so it compresses about tenfold.
+            return zip.generateAsync({ type: 'nodebuffer', compression: 'DEFLATE' });
+          }
+
+          // Reads back the gmc_content_hash embedded in a previously generated
+          // package, so unchanged students can be skipped instead of getting a
+          // fresh (and spuriously different, since idents are random per run)
+          // package on every manual run.
+          async function readContentHash(buffer) {
+            try {
+              const zip = await JSZip.loadAsync(buffer);
+              // Matches both the current flat "quiz.xml" and the nested
+              // "quiz/<id>/qti_<id>.xml" written by earlier versions.
+              const [qtiEntry] = zip.file(/^quiz(\/.*)?\.xml$/);
+              if (!qtiEntry) return null;
+              const qtiXml = await qtiEntry.async('string');
+              const match = qtiXml.match(/<fieldlabel>gmc_content_hash<\/fieldlabel>\s*<fieldentry>([a-f0-9]+)<\/fieldentry>/);
+              return match ? match[1] : null;
+            } catch {
+              return null;
+            }
+          }
+
+          // Bumped whenever the generated package changes shape — or whenever
+          // the parser changes what it extracts, since that alters the quiz
+          // without altering questions.md, which the hash alone cannot see.
+          // v2: empty <organizations>, DEFLATE compression, flat quiz.xml,
+          // merged syntax-highlight spans.
+          // v3: bold lines inside a fenced snippet are no longer read as the
+          // filename header.
+          const PACKAGE_FORMAT = 'v3';
+
+          // The instructor repo is named {assignment}-grillmycode-instructor,
+          // so the assignment name can be recovered from GITHUB_REPOSITORY
+          // (owner/repo, set automatically on every Actions run) the same way
+          // instructor-repo.js derives it when creating the repository.
+          const repoName = (process.env.GITHUB_REPOSITORY || '').split('/').pop() || 'assignment';
+          const assignment = repoName.replace('-grillmycode-instructor', '');
+
+          // Every run scans all students rather than just the pushed diff:
+          // the gmc_content_hash check already skips unchanged students, and
+          // a full sweep keeps runs idempotent. That matters because GitHub
+          // keeps only one pending run per concurrency group — a run cancelled
+          // while queued would otherwise drop that student's quiz silently.
+          (async () => {
+            const allFiles = findQuestionsFiles('.');
+            const failures = [];
+
+            for (const qmd of allFiles) {
+              // One student's failure must not discard everyone else's work:
+              // an uncaught throw here would fail the step, and the commit step
+              // would never run, so every package built earlier in the same run
+              // would be thrown away too. Each student is therefore isolated,
+              // and the run is failed at the end instead — after the packages
+              // that did build have been written and committed.
+              try {
+                const studentDir = path.dirname(qmd);
+                const student = path.basename(studentDir);
+
+                const content = fs.readFileSync(qmd, 'utf8');
+                const parsed = parseQuestions(content);
+
+                // A question whose distractors did not parse would export as a
+                // single-choice item — the correct answer on its own, which every
+                // student scores — so it is withheld and raised as a run
+                // annotation instead. The markers this parser matches are only
+                // the drift seen so far; this is the backstop for the drift that
+                // has not been seen, turning a silent wrong quiz into a visibly
+                // short one that says which question to go and fix.
+                const questions = parsed.filter((q) => q.incorrect.length > 0);
+                for (const q of parsed) {
+                  if (q.incorrect.length === 0) {
+                    console.log(
+                      '::warning file=' + qmd + '::No distractors parsed for question "' +
+                      annotate(q.question) + '" — withheld from the quiz. Check that its ' +
+                      'distractor heading and option bullets match the expected format.',
+                    );
+                  }
+                }
+
+                if (questions.length === 0) {
+                  console.log('Skipped (no complete questions found): ' + qmd);
+                  continue;
+                }
+
+                const out = path.join(studentDir, assignment + '_' + student + '_quiz.imscc');
+
+                // Clean up the pre-rename filename so it doesn't linger as a
+                // stale duplicate once a student's package regenerates under
+                // the new name.
+                const legacyOut = path.join(studentDir, 'brightspace_quiz.imscc');
+                if (fs.existsSync(legacyOut)) {
+                  fs.unlinkSync(legacyOut);
+                  console.log('Removed legacy file: ' + legacyOut);
+                }
+
+                // PACKAGE_FORMAT is folded into the hash so that changing how a
+                // package is built invalidates every stored hash. Without it a
+                // student whose questions.md has not changed keeps the package
+                // built by the previous format forever, since the skip below
+                // would still match — the trap that made earlier parser fixes
+                // require deleting the .imscc files by hand.
+                const contentHash = crypto
+                  .createHash('sha256')
+                  .update(PACKAGE_FORMAT + '\n' + content)
+                  .digest('hex');
+
+                if (fs.existsSync(out)) {
+                  const previousHash = await readContentHash(fs.readFileSync(out));
+                  if (previousHash === contentHash) {
+                    console.log('Unchanged, skipping: ' + out);
+                    continue;
+                  }
+                }
+
+                const buffer = await buildQuizPackage(student, questions, contentHash);
+                fs.writeFileSync(out, buffer);
+                const withheld = parsed.length - questions.length;
+                console.log(
+                  'Generated: ' + out + ' (' + questions.length + ' questions' +
+                  (withheld ? ', ' + withheld + ' withheld for missing distractors' : '') + ')',
+                );
+              } catch (err) {
+                failures.push(qmd);
+                // The annotation is the signal in the Actions UI; the stack goes
+                // to the plain log, since annotate() truncates to 120 characters.
+                console.log('::error file=' + qmd + '::Quiz generation failed for this student — ' + annotate((err && err.message) || String(err)));
+                console.error(err && err.stack ? err.stack : err);
+              }
+            }
+
+            if (allFiles.length === 0) {
+              console.log('No questions.md files found — nothing to generate.');
+            }
+
+            // Non-zero so the run goes red and someone looks, but only once every
+            // other student has been processed. The commit step runs regardless
+            // (if: !cancelled()), so the packages that did build are still saved.
+            if (failures.length) {
+              console.log(
+                'Failed for ' + failures.length + ' of ' + allFiles.length + ' students: ' +
+                failures.join(', ') + '. Quizzes for the rest were generated normally.',
+              );
+              process.exitCode = 1;
+            }
+          })().catch((err) => {
+            // A throw outside the per-student loop (findQuestionsFiles, say) still
+            // reaches here rather than surfacing as an unhandled rejection.
+            console.log('::error::Quiz generation aborted before finishing — ' + annotate((err && err.message) || String(err)));
+            console.error(err && err.stack ? err.stack : err);
+            process.exitCode = 1;
+          });
+          JSEOF
+
+      - name: Commit generated quiz files
+        # Runs even when the generate step exited non-zero, so packages that did
+        # build are committed rather than discarded along with the failing
+        # student. Skipped only if the run was cancelled.
+        if: ${{ !cancelled() }}
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          find . -name "*_quiz.imscc" -not -path "./.git/*" | xargs -r git add --
+          git add -A -- '*/brightspace_quiz.imscc' 2>/dev/null || true # pre-rename filename; errors when none exist
+
+          if git diff --staged --quiet; then
+            echo "No quiz changes to commit."
+            exit 0
+          fi
+          git commit -m "chore: regenerate LMS quizzes [skip ci]"
+
+          # The concurrency group only serialises this workflow against itself. A
+          # student's action writing questions.md through the Contents API can
+          # land a commit in the window between the pull and the push, and the
+          # push is then rejected non-fast-forward. That needs no human action —
+          # the next run's full sweep plus the content-hash check would recover
+          # it — so retry rather than going red and training people to ignore a
+          # red run. --autostash covers any unstaged leftovers; a rebase that
+          # stops on a conflict is aborted so the next attempt starts clean.
+          delay=5
+          for attempt in 1 2 3 4 5; do
+            if git pull --rebase --autostash && git push; then
+              echo "Pushed on attempt ${attempt}."
+              exit 0
+            fi
+            git rebase --abort 2>/dev/null || true
+            if [ "${attempt}" -lt 5 ]; then
+              echo "Push attempt ${attempt} failed (likely a concurrent commit); retrying in ${delay}s."
+              sleep "${delay}"
+              delay=$((delay * 2))
+            fi
+          done
+          echo "::error::Could not push regenerated quizzes after 5 attempts. The next run will regenerate and retry them."
+          exit 1
