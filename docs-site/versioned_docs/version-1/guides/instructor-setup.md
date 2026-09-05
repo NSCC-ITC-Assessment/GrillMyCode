@@ -115,9 +115,9 @@ When the first student pushes to the default branch:
 
 1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.
-3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `generate-brightspace-quizzes.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents.
+3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `generate-lms-quiz.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents.
 4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
-5. Once any student question files are present, run the **Generate Brightspace Quizzes** workflow manually from the Actions tab of the instructor repository to produce a Brightspace-compatible quiz export (`{student-login}/future_brightspace_quiz.txt`) for every student questions file currently present. Quiz generation can be re-run if needed as more question files are added or files are modified.
+5. That write automatically triggers the **Generate LMS Quiz** workflow in the instructor repository, which produces an IMS Common Cartridge / QTI quiz package (`{student-login}/{assignment-name}_{student-login}_quiz.imscc`) for that student, ready to import directly into Brightspace or any other Common Cartridge / QTI-compatible LMS. Every run checks all students but skips any whose `questions.md` is unchanged since their quiz was last built, so normally only the student who just pushed gets a new file; a change to the quiz package format rebuilds every student's quiz in a single run. The workflow can also be run manually from the Actions tab to regenerate every student's quiz at once.
 
 For subsequent students the repo already exists — the action just adds or updates their individual file.
 
@@ -137,14 +137,14 @@ Each student's assessment is stored in a dedicated folder:
 README.md
 {student-login}/
   questions.md
-  future_brightspace_quiz.txt
+  {assignment-name}_{student-login}_quiz.imscc
 ```
 
 For example, if your org is `my-school`, your assignment is `lab-3`, and a student's login is `jsmith`:
 
 - Instructor repo: `https://github.com/my-school/lab-3-grillmycode-instructor`
 - Student file: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/questions.md`
-- Brightspace export: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/future_brightspace_quiz.txt`
+- Quiz package: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_quiz.imscc`
 
 Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student.
 

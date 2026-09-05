@@ -5,6 +5,24 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.1.0 — 2026-09-05
+
+### What's Changed
+
+### Features
+
+- generate LMS quiz packages for any Common Cartridge LMS
+
+### Documentation
+
+- record LMS quiz generation known issues
+- document LMS quiz workflow behaviour for instructors
+- update v1 snapshot
+
+### Chores & Maintenance
+
+- update packageManager version to pnpm@11.25.0 in package.json
+
 ## v1.0.24 — 2026-09-01
 
 ### What's Changed
