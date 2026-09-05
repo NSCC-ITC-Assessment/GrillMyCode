@@ -27,6 +27,8 @@ on:
       - ".github/workflows/refresh-gitignore-templates.yml"
       - ".github/workflows/release.yml"
       - ".github/workflows/renovate.yml"
+      - ".github/workflows/cleanup-packages.yml"
+      - ".github/workflows/cleanup-branch-image.yml"
       - ".devcontainer/**"
       - ".vscode/**"
       - ".husky/**"

@@ -1,0 +1,61 @@
+name: Cleanup Untagged Images
+
+# Every build pushes a new image digest and moves a mutable tag (:next,
+# :branch-*, :latest) onto it. The digest the tag used to point at stays in
+# GHCR forever as an untagged "sha256:..." entry. Nothing references those,
+# so this sweeps them up weekly.
+#
+# NOTE: this is only safe because every image in this package is a single
+# manifest. If multi-arch builds or buildx attestations are ever added, a
+# tagged image becomes an index whose children are themselves untagged, and
+# deleting untagged versions would break it. Revisit this then.
+
+on:
+  schedule:
+    - cron: "0 5 * * 1"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Only list what would be deleted"
+        type: boolean
+        default: true
+
+jobs:
+  cleanup:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: List untagged versions
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+        run: |
+          gh api --paginate \
+            "/orgs/${OWNER}/packages/container/grillmycode/versions" \
+            --jq '.[] | select((.metadata.container.tags | length) == 0)
+                  | "\(.id)\t\(.name[0:19])\t\(.created_at)"' \
+            > /tmp/untagged.txt || true
+          COUNT=$(wc -l < /tmp/untagged.txt)
+          echo "Untagged versions found: ${COUNT}"
+          cat /tmp/untagged.txt
+          {
+            echo "### Untagged image versions: ${COUNT}"
+            echo ""
+            echo '```'
+            cat /tmp/untagged.txt
+            echo '```'
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Delete untagged versions
+        if: github.event.inputs.dry_run != 'true'
+        uses: actions/delete-package-versions@v5
+        with:
+          package-name: grillmycode
+          package-type: container
+          delete-only-untagged-versions: true
+          # 0 = delete every untagged version. There is nothing to preserve:
+          # an untagged digest is a superseded build that no tag points at.
+          # Note: the action deletes at most 100 versions per run.
+          min-versions-to-keep: 0
