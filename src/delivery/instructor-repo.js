@@ -33,7 +33,7 @@ import {
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STUDENT_QUESTIONS_WORKFLOW = readFileSync(
-  join(__dirname, '../workflows/generate-brightspace-quizzes.yml'),
+  join(__dirname, '../workflows/generate-lms-quiz.yml'),
   'utf-8',
 );
 const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
@@ -41,7 +41,7 @@ const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
   'utf-8',
 );
 
-const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/generate-brightspace-quizzes.yml';
+const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/generate-lms-quiz.yml';
 
 /** Resolves after `ms` milliseconds. */
 function sleep(ms) {
@@ -248,7 +248,7 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
     owner,
     repo: instructorRepoName,
     path: STUDENT_QUESTIONS_WORKFLOW_PATH,
-    message: 'chore: add generate-brightspace-quizzes workflow [skip ci]',
+    message: 'chore: add generate-lms-quiz workflow [skip ci]',
     content: Buffer.from(STUDENT_QUESTIONS_WORKFLOW, 'utf-8').toString('base64'),
   });
 
