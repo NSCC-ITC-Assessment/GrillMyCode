@@ -46,6 +46,8 @@ Runs automatically whenever a `{studentLogin}/questions.md` file is added or mod
 
 It can also be triggered manually from the Actions tab, which regenerates quizzes for every student in the repository at once (skipping any whose questions haven't changed since their last quiz was generated) — useful after a change to the quiz format itself, or to backfill a repository that predates this workflow.
 
+This workflow file and this README are maintained by GrillMyCode: each assessment it writes here also refreshes them if a newer version of the action has changed them, which is how fixes to quiz generation reach this repository. **Edits made to either file are replaced on the next run** — put anything you want to keep in a separate file.
+
 #### Reading a run's annotations
 
 A run reports anything it could not do as an annotation on the run summary. Note that a **green run can still carry warnings** — it is worth opening a successful run that shows them.

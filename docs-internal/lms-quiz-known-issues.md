@@ -37,6 +37,22 @@ re-applied without re-deriving it.
   exponential backoff, aborts any stopped rebase between attempts, and is
   skipped entirely when nothing is staged.
 - **Unpinned dependencies.** Pinned to `jszip@3.10.1 prismjs@1.30.0`.
+- **Instructor repositories never received workflow updates.** The workflow and
+  the README are now action-owned and re-synced on every delivery, each
+  rewritten only when its bytes differ from the copy shipped in
+  `src/workflows/` and `src/templates/`. A repository created by an earlier
+  release therefore picks up every fix above on its next student push, and the
+  concurrent-creation race dissolves — the run that loses the `422` now syncs
+  too, retrying through the 409s raised while the winner's `auto_init` lands.
+  The sync warns rather than throws, so it can never cost a student their
+  assessment.
+- **A 403 sat through four minutes of backoff before failing.** `isRateLimited`
+  treated every 403 as a rate limit, but GitHub also returns 403 for a token
+  lacking the scope for a write — `workflow`, for anything under
+  `.github/workflows/`. A 403 now counts as a rate limit only with the evidence
+  for one (`retry-after`, an exhausted `x-ratelimit-remaining`, or GitHub's
+  limit wording); a scope failure fails fast, which matters now that a write
+  needing `workflow` scope is attempted on every run.
 
 ---
 
@@ -88,27 +104,33 @@ must stay an option, not become a heading).
 
 ---
 
-## Not addressed — instructor repositories never receive workflow updates
+## Not addressed — the pre-rename workflow file is left in place
 
-`ensureInstructorRepo` in `src/delivery/instructor-repo.js` returns early when
-the repository already exists, and the workflow file is only ever written on
-creation. Consequences:
+A repository created before commit `3070d29` has
+`.github/workflows/generate-brightspace-quizzes.yml` as well as the
+`generate-lms-quiz.yml` the sync now gives it. The old file is
+`workflow_dispatch`-only — it has no `push:` trigger at all, which is why those
+repositories generated nothing on a student push — so it costs nothing until
+somebody dispatches it by hand from the Actions tab and gets the 2026-era
+generator, with none of the fixes above. Deleting it was considered and left
+out: nothing in the delivery path removes files, and a delete is the one
+operation here that cannot be undone by the next run.
 
-- **Existing repositories keep the workflow they were created with.** A repo
-  created before commit `3070d29` still runs `generate-brightspace-quizzes.yml`
-  and will never receive `generate-lms-quiz.yml`. Every fix listed above has to
-  be copied into each instructor repository by hand.
-- **A concurrent-creation race can skip the workflow.** When two student runs
-  create the repository at once, the loser returns at the `422` branch and
-  writes its `questions.md` while the winner may not have committed the workflow
-  yet, so that push triggers nothing. It self-heals on the next student's push,
-  since every run sweeps all students — but a single-student assignment needs a
-  manual dispatch.
-
-**Fix, if wanted.** Write the workflow on every run when its content differs
-from what the repository has, not only at creation.
+**Fix, if wanted.** `repos.deleteFile` on that path when it exists, guarded the
+same way as the sync. Or delete it by hand — it is one file per
+pre-rename repository, and the Actions tab shows which repositories still have
+it.
 
 ---
+
+## Operational note — the first sync sweeps the whole class
+
+The first delivery after a repository receives a push-triggered workflow
+generates a package for **every** student in it, not just the one who pushed —
+each run sweeps all students, and none of them have a `gmc_content_hash` on
+file yet. For a class of thirty that is thirty packages in one run, serialised
+by the workflow's `concurrency: generate-lms-quiz` group. It is slow, not
+broken, and it happens once.
 
 ## Operational note — regenerating an already-generated quiz
 

@@ -5,6 +5,11 @@
  * a private instructor-only repository using the GitHub Contents API. The
  * repository is created automatically if it does not already exist.
  *
+ * The quiz-generation workflow and the README that documents it are owned by
+ * this action: every delivery brings both into line with the copies shipped
+ * here, so a repository created by an earlier release picks up later fixes on
+ * its own rather than by hand.
+ *
  * The file is written to {studentLogin}/questions.md inside the repository.
  * The repository is named {assignmentName}-grillmycode-instructor and lives in the same
  * organization as the student repositories.
@@ -76,13 +81,25 @@ function isWriteConflict(err) {
 /**
  * True when an error reflects a rate limit that warrants backing off and
  * retrying rather than failing:
- *   - 403 / 429: primary or secondary rate limit.
+ *   - 429: always a rate limit.
+ *   - 403 carrying rate-limit evidence — a Retry-After header, an exhausted
+ *     x-ratelimit-remaining, or GitHub's wording for a primary or secondary
+ *     limit. GitHub also returns 403 for a token that simply lacks the scope
+ *     for the write (notably `workflow`, required under .github/workflows/),
+ *     and waiting cannot fix that: without this evidence check, a missing
+ *     scope would sit through every backoff before failing anyway.
  *   - 422 whose message reports the endpoint has been "spammed" — GitHub's
  *     wording for content-creation abuse throttling; treat it as a rate limit
  *     (wait, don't hammer) rather than a fast conflict retry.
  */
 function isRateLimited(err) {
-  if (err.status === 403 || err.status === 429) return true;
+  if (err.status === 429) return true;
+  if (err.status === 403) {
+    const headers = err.response?.headers ?? {};
+    if (headers['retry-after'] !== undefined) return true;
+    if (headers['x-ratelimit-remaining'] === '0') return true;
+    return /rate limit|secondary|abuse|spam|throttl/i.test(err.message ?? '');
+  }
   if (err.status === 422 && /spam|abuse/i.test(err.message ?? '')) return true;
   return false;
 }
@@ -110,15 +127,26 @@ function rateLimitDelayMs(err) {
 }
 
 /**
- * Fetches the current blob SHA of a file, or undefined if it does not yet exist.
- * The Contents API requires this SHA when updating an existing file.
+ * Fetches a file's current blob SHA and decoded content, or an empty object if
+ * it does not yet exist. The Contents API requires the SHA when updating an
+ * existing file; the content comes back on the same request, so a caller can
+ * skip a write that would change nothing without spending a second call.
+ *
+ * `content` is undefined when GitHub declines to inline it — a file over 1MB is
+ * returned with `encoding: 'none'` — which reads as "differs" to any comparison
+ * against it. Rewriting is the safe answer in that case.
  */
-async function fetchFileSha(octokit, owner, repo, path) {
+async function fetchFile(octokit, owner, repo, path) {
   try {
     const { data } = await octokit.rest.repos.getContent({ owner, repo, path });
-    return data.sha;
+    if (Array.isArray(data)) return {}; // the path is a directory, not a file
+    const content =
+      data.encoding === 'base64'
+        ? Buffer.from(data.content, 'base64').toString('utf-8')
+        : undefined;
+    return { sha: data.sha, content };
   } catch (err) {
-    if (err.status === 404) return undefined;
+    if (err.status === 404) return {};
     throw err;
   }
 }
@@ -127,9 +155,23 @@ async function fetchFileSha(octokit, owner, repo, path) {
  * Writes a file to the instructor repository, retrying on concurrent-write
  * conflicts. Before each attempt (after the first) the file's current blob SHA
  * is re-fetched so the retry commits on top of whatever landed in the meantime.
+ *
+ * With `skipIfUnchanged`, a file whose content already matches is left alone —
+ * both up front and after a conflict, where the conflict may well have been a
+ * racing run committing the very same bytes. Returns true when a commit was
+ * made, false when the write was skipped as unnecessary.
  */
-async function writeFileWithRetry({ octokit, owner, repo, path, message, content }) {
-  let sha = await fetchFileSha(octokit, owner, repo, path);
+async function writeFileWithRetry({
+  octokit,
+  owner,
+  repo,
+  path,
+  message,
+  content,
+  skipIfUnchanged = false,
+}) {
+  let { sha, content: current } = await fetchFile(octokit, owner, repo, path);
+  if (skipIfUnchanged && current === content) return false;
 
   for (let attempt = 0; attempt < INSTRUCTOR_WRITE_MAX_ATTEMPTS; attempt++) {
     try {
@@ -141,7 +183,7 @@ async function writeFileWithRetry({ octokit, owner, repo, path, message, content
         content: Buffer.from(content, 'utf-8').toString('base64'),
         sha,
       });
-      return;
+      return true;
     } catch (err) {
       const lastAttempt = attempt === INSTRUCTOR_WRITE_MAX_ATTEMPTS - 1;
 
@@ -172,7 +214,8 @@ async function writeFileWithRetry({ octokit, owner, repo, path, message, content
             `Re-fetching the latest revision and retrying in ${delay}ms…`,
         );
         await sleep(delay);
-        sha = await fetchFileSha(octokit, owner, repo, path);
+        ({ sha, content: current } = await fetchFile(octokit, owner, repo, path));
+        if (skipIfUnchanged && current === content) return false;
         continue;
       }
 
@@ -183,9 +226,9 @@ async function writeFileWithRetry({ octokit, owner, repo, path, message, content
 
 /**
  * Ensures the instructor repository exists, creating it (private) if not.
- * On creation: polls until auto_init's commit lands, then commits the
- * student-questions workflow so it is present before the first questions.md
- * write triggers it.
+ * On creation, polls until auto_init's commit lands so the caller can write to
+ * the default branch straight away. The action-managed files are written by
+ * syncInstructorRepoFiles afterwards, on this run and on every later one.
  */
 async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
   try {
@@ -206,8 +249,10 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
     }));
   } catch (err) {
     // Another student's run created the repository between our 404 check and
-    // this call. Treat the existing repository as success — the winning run
-    // seeds the workflow and README; we proceed straight to writing questions.
+    // this call. Treat the existing repository as success — whichever run gets
+    // there first seeds the workflow and README, and the loser's own sync (see
+    // syncInstructorRepoFiles) retries through any 409 raised while the
+    // winner's auto_init commit is still landing.
     if (err.status === 422) {
       core.info(
         `Instructor repository ${owner}/${instructorRepoName} was created concurrently by ` +
@@ -244,45 +289,76 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
     }
   }
 
-  await octokit.rest.repos.createOrUpdateFileContents({
-    owner,
-    repo: instructorRepoName,
-    path: STUDENT_QUESTIONS_WORKFLOW_PATH,
-    message: 'chore: add generate-lms-quiz workflow [skip ci]',
-    content: Buffer.from(STUDENT_QUESTIONS_WORKFLOW, 'utf-8').toString('base64'),
-  });
+  core.info(`Instructor repository ${owner}/${instructorRepoName} created (private).`);
+}
 
-  // Replace the auto_init placeholder README with a descriptive one.
+/** Fills the instructor README template in for this repository. */
+function renderInstructorReadme(owner, instructorRepoName) {
   const assignmentName = instructorRepoName.replace(INSTRUCTOR_REPO_SUFFIX, '');
   const workflowFilename = STUDENT_QUESTIONS_WORKFLOW_PATH.split('/').at(-1);
   const workflowUrl = `https://github.com/${owner}/${instructorRepoName}/actions/workflows/${workflowFilename}`;
-  const readmeContent = INSTRUCTOR_REPO_README_TEMPLATE.replace(
+  return INSTRUCTOR_REPO_README_TEMPLATE.replace(
     /\{\{ASSIGNMENT_NAME\}\}/g,
     assignmentName,
   ).replace(/\{\{WORKFLOW_URL\}\}/g, workflowUrl);
-  let readmeSha;
-  try {
-    const { data } = await octokit.rest.repos.getContent({
-      owner,
-      repo: instructorRepoName,
-      path: 'README.md',
-    });
-    readmeSha = data.sha;
-  } catch {
-    // README doesn't exist yet — will be created fresh.
-  }
-  await octokit.rest.repos.createOrUpdateFileContents({
-    owner,
-    repo: instructorRepoName,
-    path: 'README.md',
-    message: 'docs: add instructor repository README [skip ci]',
-    content: Buffer.from(readmeContent, 'utf-8').toString('base64'),
-    sha: readmeSha,
-  });
+}
 
-  core.info(
-    `Instructor repository ${owner}/${instructorRepoName} created (private) with student-questions workflow and README.`,
-  );
+/**
+ * Brings the two action-managed files — the student-questions workflow and the
+ * README describing it — into line with the copies shipped in this action,
+ * committing each only when its content differs from what the repository has.
+ *
+ * This runs on every delivery rather than only at creation. A repository
+ * created by an earlier release would otherwise keep that release's workflow
+ * for good, so every fix to quiz generation had to be pasted into each
+ * instructor repository by hand; repositories predating the rename to
+ * generate-lms-quiz.yml never received a push-triggered workflow at all. Both
+ * files are owned by the action, so a local edit to either is replaced here.
+ *
+ * Every failure is a warning, never a throw. The likely cause is an instructor
+ * PAT without the `workflow` scope, which GitHub refuses for any write under
+ * .github/workflows/ — and losing the student's assessment, which is written
+ * next and needs no such scope, would be a far worse outcome than running one
+ * more time on a stale workflow. The next run retries the sync.
+ */
+async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
+  const files = [
+    {
+      path: STUDENT_QUESTIONS_WORKFLOW_PATH,
+      content: STUDENT_QUESTIONS_WORKFLOW,
+      message: 'chore: sync generate-lms-quiz workflow [skip ci]',
+    },
+    {
+      path: 'README.md',
+      content: renderInstructorReadme(owner, instructorRepoName),
+      message: 'docs: sync instructor repository README [skip ci]',
+    },
+  ];
+
+  // Independently guarded: a workflow-scope rejection on the first file must
+  // not stop the second, which any `repo`-scoped token can write.
+  for (const file of files) {
+    try {
+      const written = await writeFileWithRetry({
+        octokit,
+        owner,
+        repo: instructorRepoName,
+        path: file.path,
+        message: file.message,
+        content: file.content,
+        skipIfUnchanged: true,
+      });
+      if (written) {
+        core.info(`Updated ${file.path} in ${owner}/${instructorRepoName}.`);
+      }
+    } catch (err) {
+      core.warning(
+        `Could not update ${file.path} in ${owner}/${instructorRepoName}: ${err.message}. ` +
+          `The assessment is still being written. If this persists, check that the ` +
+          `instructor PAT carries both the \`repo\` and \`workflow\` scopes.`,
+      );
+    }
+  }
 }
 
 /**
@@ -305,6 +381,10 @@ export async function deliverToInstructorRepo({
   headSha,
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
+
+  // Before the questions.md write below, so that the push it makes is handled
+  // by the current workflow rather than whatever the repository was seeded with.
+  await syncInstructorRepoFiles(octokit, owner, instructorRepoName);
 
   const filePath = `${studentLogin}/questions.md`;
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
