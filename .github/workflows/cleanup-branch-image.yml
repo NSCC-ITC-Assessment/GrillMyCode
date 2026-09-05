@@ -1,0 +1,46 @@
+name: Cleanup Branch Image
+
+# When a branch is deleted (typically after its PR merges), remove the
+# :branch-<name> image that branch-build.yml published for it. Without this
+# the tag lives in GHCR forever, and the next cleanup sweep can't touch it
+# because it is still tagged.
+#
+# This only runs from the copy of the workflow on the default branch, which
+# is how GitHub handles the `delete` event.
+
+on: delete
+
+jobs:
+  cleanup:
+    if: github.event.ref_type == 'branch'
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+
+    steps:
+      - name: Delete branch image tag
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          OWNER: ${{ github.repository_owner }}
+          BRANCH: ${{ github.event.ref }}
+        run: |
+          # Must match the tag sanitizing in branch-build.yml exactly.
+          SAFE=$(echo "$BRANCH" | sed 's/[^a-zA-Z0-9._-]/-/g' | sed 's/-\+/-/g' | sed 's/^-\|-$//g')
+          TAG="branch-${SAFE}"
+          echo "Looking for image tag: ${TAG}"
+
+          IDS=$(gh api --paginate \
+            "/orgs/${OWNER}/packages/container/grillmycode/versions" \
+            --jq ".[] | select(.metadata.container.tags[]? == \"${TAG}\") | .id")
+
+          if [[ -z "$IDS" ]]; then
+            echo "No image tagged ${TAG}; nothing to do."
+            exit 0
+          fi
+
+          for ID in $IDS; do
+            echo "Deleting package version ${ID} (${TAG})"
+            gh api --method DELETE \
+              "/orgs/${OWNER}/packages/container/grillmycode/versions/${ID}"
+          done
+          echo "Deleted ${TAG}" >> "$GITHUB_STEP_SUMMARY"
