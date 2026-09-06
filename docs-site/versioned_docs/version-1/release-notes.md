@@ -9,9 +9,14 @@ toc_max_heading_level: 2
 
 ### What's Changed
 
+### Bug Fixes
+
+- **instructor repo:** keep the generated quiz workflow and README in sync on every delivery, so an instructor repository created by an earlier release picks up quiz-generation fixes on its own instead of needing them pasted in by hand
+- **instructor repo:** handle GitHub rate limits when a whole class pushes at once, and fail fast on a PAT missing the `workflow` scope rather than sitting through the full backoff before reporting it
+
 ### Documentation
 
-- update README and documentation for instructor repository delivery and workflow synchronization fix: enhance instructor repository file management and update handling chore: improve error handling for rate limits and file synchronization in instructor repo
+- update README and documentation for instructor repository delivery and workflow synchronization
 - update v1 snapshot
 
 ### Chores & Maintenance

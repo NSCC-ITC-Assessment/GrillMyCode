@@ -180,6 +180,86 @@ For a **templated** assignment, the resolved assignment name is the **template r
 
 ---
 
+## Troubleshooting
+
+Instructor repository delivery reports through **annotations on the student's GrillMyCode run**
+(Actions → the run → the summary page). The quiz workflow's own annotations are described in the
+instructor repository's `README.md`, under "Reading a run's annotations".
+
+### The run is green but nothing arrived in the instructor repository
+
+**This is the one to watch for.** A delivery failure is raised as an *error annotation* — `Failed to
+write to instructor repository {org}/{assignment-name}-grillmycode-instructor: …` — but it does
+**not** fail the job. The student's assessment issue and PDF are produced normally, so the run
+finishes successfully and no red X appears in the Actions list.
+
+The reasoning is that a student should never see a failed assessment because of an instructor-side
+delivery problem. The trade-off is that the failure is easy to miss: open the run summary and read
+the annotations rather than trusting the green tick. The message names the underlying GitHub error
+— most often a token that has expired, lost access to the org, or cannot create repositories there.
+
+Delivery is not retried out of band, but nothing is lost permanently: the next push from that
+student re-delivers their assessment in full.
+
+### `Could not update .github/workflows/generate-lms-quiz.yml in …`
+
+The PAT cannot write under `.github/workflows/`, which needs the `workflow` scope (classic) or
+Workflows: Read and Write (fine-grained). The assessment itself still lands — only the sync of the
+action-owned files is skipped — so the repository keeps working with whatever version of the quiz
+workflow it was seeded with, and never receives later fixes. See
+[Already have an instructor PAT?](#step-1--create-an-instructor-pat) above for how to fix it.
+
+The same warning naming `README.md` instead means a broader permission problem, since that file
+needs no special scope.
+
+### `… was rate limited (403)` / `… hit a concurrent-write conflict (409)`
+
+Both are expected when a whole class pushes at once — every student's run commits to the same
+branch of the same repository. Each write is retried up to five times: conflicts re-fetch the file
+and retry with jittered backoff, rate limits wait for `Retry-After`/`X-RateLimit-Reset` (capped at
+60 seconds per wait). A run that logs these warnings and then finishes has delivered successfully.
+
+Only if all five attempts are exhausted does it become the error annotation described above — and
+the student's next push retries from scratch.
+
+### `Timed out waiting for … default branch to initialise`
+
+Raised while creating a brand-new instructor repository, when GitHub's initial commit has not
+appeared after ten one-second polls. Rare, and self-correcting: the repository now exists, so the
+next student push takes the "already exists" path and delivers normally.
+
+### The first run after an upgrade regenerates every student's quiz
+
+Expected, once. The quiz workflow decides what to rebuild by comparing a content hash stored inside
+each `.imscc`. A repository that has just received an updated workflow has no current hashes on
+file, so a single run rebuilds the package for **every** student, serialised by the workflow's
+concurrency group. For a class of thirty that is a long run, not a broken one — subsequent pushes
+go back to rebuilding only the student who pushed.
+
+### An older instructor repository has two quiz workflows
+
+Repositories created before the workflow was renamed still contain
+`.github/workflows/generate-brightspace-quizzes.yml` alongside the `generate-lms-quiz.yml` the sync
+now adds. The sync never deletes files, so the old one stays.
+
+It is harmless where it sits — it has no `push:` trigger, so it never runs on its own (which is why
+those repositories generated nothing on a student push before the sync existed). Dispatching it by
+hand from the Actions tab, though, runs the old generator without any of the current fixes. Delete
+it from the repository if you would rather not have it there; nothing in the action re-creates it.
+
+### The instructor repository is never created (personal accounts)
+
+Automatic creation uses GitHub's *create an organisation repository* endpoint, so the owner of the
+student repositories must be an **organisation**. Under a personal account the creation call fails
+and the delivery is reported as the error annotation above.
+
+To use the feature there anyway, create the repository by hand — named exactly
+`{assignment-name}-grillmycode-instructor`, private, initialised with a README so it has a default
+branch — and grant the PAT access to it. The action creates a repository only when one does not
+already exist, so every later run writes to yours and syncs the workflow into it as normal.
+
+---
+
 ## Setup summary
 
 | What | When | Where |
