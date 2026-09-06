@@ -5,6 +5,20 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.1.1 — 2026-09-06
+
+### What's Changed
+
+### Documentation
+
+- update README and documentation for instructor repository delivery and workflow synchronization fix: enhance instructor repository file management and update handling chore: improve error handling for rate limits and file synchronization in instructor repo
+- update v1 snapshot
+
+### Chores & Maintenance
+
+- automate cleanup of untagged GHCR image versions
+- upgrade pnpm to v12.3.4
+
 ## v1.1.0 — 2026-09-05
 
 ### What's Changed

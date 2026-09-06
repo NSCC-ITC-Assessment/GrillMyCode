@@ -24,7 +24,7 @@ Create a Personal Access Token that the action will use to create and write to t
 2. Click **Generate new token (classic)**.
 3. Give it a descriptive name, e.g. `GrillMyCode instructor delivery`.
 4. Set an expiry that suits your retention policy (e.g. 1 year).
-5. Select the **`repo`** scope (the full checkbox — this covers creating private org repos and reading/writing file contents) and the **`workflow`** scope (required to commit GitHub Actions workflow files into the instructor repository).
+5. Select the **`repo`** scope (the full checkbox — this covers creating private org repos and reading/writing file contents) and the **`workflow`** scope (required to commit GitHub Actions workflow files into the instructor repository, and to keep them up to date afterwards).
 6. Click **Generate token** and copy the value immediately.
 
 #### Fine-grained PAT (more restrictive)
@@ -33,7 +33,7 @@ Create a Personal Access Token that the action will use to create and write to t
 2. Click **Generate new token**.
 3. Set **Resource owner** to your organisation.
 4. Under **Organisation permissions**, grant **Administration: Read and Write** (required to create new repositories).
-5. Under **Repository permissions**, grant **Contents: Read and Write** (required to write assessment files) and **Workflows: Read and Write** (required to commit GitHub Actions workflow files into the instructor repository).
+5. Under **Repository permissions**, grant **Contents: Read and Write** (required to write assessment files) and **Workflows: Read and Write** (required to commit GitHub Actions workflow files into the instructor repository, and to keep them up to date afterwards).
 6. Click **Generate token** and copy the value.
 
 :::note
@@ -115,7 +115,7 @@ When the first student pushes to the default branch:
 
 1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.
-3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `generate-lms-quiz.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents.
+3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `generate-lms-quiz.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents. On every later run it refreshes both files whenever they differ from the copies shipped with the action, so existing instructor repositories receive quiz-generation fixes without any manual step. Both are action-owned — edit them in the repository and the next run puts them back.
 4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
 5. That write automatically triggers the **Generate LMS Quiz** workflow in the instructor repository, which produces an IMS Common Cartridge / QTI quiz package (`{student-login}/{assignment-name}_{student-login}_quiz.imscc`) for that student, ready to import directly into Brightspace or any other Common Cartridge / QTI-compatible LMS. Every run checks all students but skips any whose `questions.md` is unchanged since their quiz was last built, so normally only the student who just pushed gets a new file; a change to the quiz package format rebuilds every student's quiz in a single run. The workflow can also be run manually from the Actions tab to regenerate every student's quiz at once.
 
