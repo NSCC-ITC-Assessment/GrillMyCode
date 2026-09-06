@@ -171,7 +171,13 @@ jobs:
           } catch {}
 
           const range = prevTag ? `${prevTag}..${tag}` : tag;
-          const log = execSync(`git log ${range} --pretty=format:%s --no-merges`, { encoding: 'utf8' }).trim();
+          // %B (the raw message), not %s: git defines the subject as the first
+          // *paragraph* with its newlines folded to spaces, so a commit whose
+          // subject is not followed by a blank line arrives as one run-on line
+          // carrying every following line with it. Records are separated by RS
+          // (0x1e), which cannot occur in a commit message.
+          const RS = String.fromCharCode(30);
+          const log = execSync(`git log ${range} --pretty=format:%B%x1e --no-merges`, { encoding: 'utf8' }).trim();
 
           if (!log) {
             fs.writeFileSync('/tmp/release-body.txt', '');
@@ -190,18 +196,33 @@ jobs:
           };
           const buckets = Object.fromEntries(order.map(k => [k, []]));
           const other = [];
+          // Types accepted from a line after the header. Restricted to the known
+          // set so trailers (Refs:, Closes:, Signed-off-by:) can never turn into
+          // release-note entries.
+          const known = new Set([...order, 'build', 'ci', 'style', 'revert']);
 
           const re = /^(\w+)(\([\w\-./ ]+\))?: (.+)$/;
-          for (const line of log.split('\n')) {
-            const m = line.match(re);
-            if (m) {
-              const [, type, scope, desc] = m;
-              const prefix = scope ? `**${scope.slice(1, -1)}:** ` : '';
-              const entry = `- ${prefix}${desc}`;
-              const key = ['build', 'ci'].includes(type) ? 'chore' : type;
-              (buckets[key] ?? other).push(entry);
-            } else {
-              other.push(`- ${line}`);
+
+          function push(type, scope, desc) {
+            const prefix = scope ? `**${scope.slice(1, -1)}:** ` : '';
+            const key = ['build', 'ci'].includes(type) ? 'chore' : type;
+            (buckets[key] ?? other).push(`- ${prefix}${desc.trim()}`);
+          }
+
+          for (const record of log.split(RS)) {
+            const message = record.trim();
+            if (!message) continue;
+            const [header, ...rest] = message.split('\n');
+            const m = header.trim().match(re);
+            if (m) push(m[1], m[2], m[3]);
+            else other.push(`- ${header.trim()}`);
+
+            // Pick any further conventional-commit lines out of the remainder, so
+            // a commit that states more than one change is filed under each type
+            // rather than landing whole in the header's category.
+            for (const line of rest) {
+              const bm = line.trim().match(re);
+              if (bm && known.has(bm[1])) push(bm[1], bm[2], bm[3]);
             }
           }
 
