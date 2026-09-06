@@ -40,6 +40,20 @@ Create a Personal Access Token that the action will use to create and write to t
 Fine-grained tokens require the organisation to allow them. Check **Org → Settings → Personal access tokens → Allow access via fine-grained personal access tokens**.
 :::
 
+:::caution Already have an instructor PAT?
+Tokens created before the `workflow` scope became a requirement need updating. Every delivery now
+rewrites `.github/workflows/generate-lms-quiz.yml` when the action ships a newer copy, and GitHub
+refuses any write under `.github/workflows/` from a token without that scope — so a `repo`-only
+token produces a `Could not update .github/workflows/generate-lms-quiz.yml …` warning on **every
+student push**, and the instructor repository stays on its original quiz-generation code.
+
+Assessments are still delivered — the sync warns rather than fails — but the fixes never arrive.
+To fix it, edit the existing classic token (**Settings → Developer settings → Tokens (classic) →
+your token → Regenerate/Edit**) and tick **`workflow`** alongside **`repo`**, or add
+**Workflows: Read and Write** to a fine-grained token. Update the `INSTRUCTOR_REPO_TOKEN` org
+secret if regenerating produced a new value.
+:::
+
 ---
 
 ### Step 2 — Add the token as an org-level Actions secret
@@ -156,7 +170,7 @@ If your Classroom 50 assignment is **template-less** (registered with `gh teache
 
 Classroom 50 names student repos `<classroom>-<assignment>-<username>` (lowercased). The login-suffix strip only removes the trailing `-<username>`, so the inferred assignment name keeps the classroom slug attached. For example, a student repo `cs-principles-lab-3-jsmith` (classroom `cs-principles`, assignment `lab-3`, student `jsmith`) produces an instructor repo named `cs-principles-lab-3-grillmycode-instructor`, not `lab-3-grillmycode-instructor`. This is expected and stays consistent across the whole classroom — it just isn't the bare assignment slug.
 
-A workflow warning is emitted on each run to confirm the inferred name — check it after the first submission to verify the instructor repo was created with the expected name.
+Each run logs the name it inferred, so you can confirm it from the Actions log after the first submission — look for `Instructor repo: inferred assignment name "…"`. If the student's login is not found at the end of the repo name the strip cannot run, and the action falls back to the full repository name and raises a **workflow warning** instead; that case is worth checking, because the resulting instructor repo name may not be the one you expect.
 
 For assignments without a starter repo, add the workflow file directly to each student repo (there is no template to ship it from).
 

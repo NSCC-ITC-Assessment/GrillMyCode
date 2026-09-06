@@ -28,6 +28,8 @@ In short:
 1. Create a PAT with `repo` **and** `workflow` scopes (classic) or Contents + Workflows read/write permissions (fine-grained). The `workflow` scope is required to commit the `generate-lms-quiz.yml` workflow file into the instructor repository, both on creation and whenever a later release updates it.
 2. Add it as an **org-level** Actions secret named `INSTRUCTOR_REPO_TOKEN` — this makes it available to all student repos without any per-repo configuration.
 
+If you set this up before the `workflow` scope was required, update the existing token — a `repo`-only PAT warns on every run and never picks up quiz-generation fixes. See [Already have an instructor PAT?](../guides/instructor-setup#step-1--create-an-instructor-pat).
+
 ## Example workflow
 
 Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
@@ -93,6 +95,6 @@ The instructor copy always contains:
 - Questions **and** answers (regardless of the `include_answers` setting)
 - Student GitHub login and source repository name
 - Commit range reviewed (base → head SHA)
-- Full list of all files changed since the starter template (pre-filter)
+- The list of code files assessed (the same filtered list the student report shows)
 - Assignment context files used (if any)
 - AI provider and model

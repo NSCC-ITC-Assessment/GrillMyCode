@@ -111,6 +111,10 @@ jobs:
 | `issues: write`   | Create and update the assessment issue                  |
 | `models: read`    | Call the GitHub Models API (default provider)           |
 
+Instructor repository delivery adds nothing to this block — it runs entirely on the
+`instructor_repo_token` PAT, whose own scopes (`repo` + `workflow`) cover repository creation and
+the workflow file it maintains. See [Instructor repository delivery](#instructor-repository-delivery).
+
 ---
 
 ## Classroom 50
@@ -122,6 +126,36 @@ By default (`include_initial_commit: 'false'`), the diff base is pinned to the r
 Classroom 50's accept-time setup commit (which writes `.classroom50.yaml` and the autograde workflow shim) is authored under the student's own identity rather than a bot, so there's no leading bot commit for `skip_committers` to advance past — its `.classroom50.yaml` metadata file is excluded by pattern instead. `skip_committers` (defaulting to `github-actions[bot]`) remains available for any other bot-authored commits that land at the start of the assessed range.
 
 Set `include_initial_commit: 'true'` to include the initial commit's eligible files in the diff — the base is pinned to the empty tree regardless of event type, so all files from the very beginning of history are eligible to be assessed. To include truly everything (bot-committed starter files as well), also set `skip_committers: ''` to prevent the base from being advanced past those initial bot commits.
+
+---
+
+## Instructor repository delivery
+
+Setting `instructor_repo_token` stores a private, instructor-only copy of every assessment —
+questions **and** answers — outside the student's repository:
+
+```yaml
+- uses: NSCC-ITC-Assessment/GrillMyCode@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+```
+
+- The repository is named `{assignment-name}-grillmycode-instructor` and created **private** in the
+  same organisation on the first student push. Each student's copy lands at
+  `{student-login}/questions.md`.
+- That write triggers a bundled **Generate LMS Quiz** workflow in the instructor repository, which
+  builds an IMS Common Cartridge / QTI package per student for import into Brightspace or any other
+  Common Cartridge–compatible LMS.
+- That workflow and the instructor repository's `README.md` are owned by the action and re-synced on
+  every delivery, so repositories created by an earlier release pick up quiz-generation fixes on
+  their own. Local edits to either file are replaced on the next run.
+- The PAT needs the `repo` **and** `workflow` scopes. The `workflow` scope is what allows the sync;
+  without it the assessment is still delivered but every run warns and the quiz workflow stays
+  frozen at the version it was seeded with.
+
+Add the PAT once as an **org-level** Actions secret and every student repository inherits it. Full
+walkthrough: [Instructor Setup](https://nscc-itc-assessment.github.io/GrillMyCode/docs/guides/instructor-setup).
 
 ---
 
@@ -168,10 +202,11 @@ additional_exclude_patterns: 'tests/**,docs/**'
 
 Full documentation is available at **https://nscc-itc-assessment.github.io/GrillMyCode/**.
 
-| Page                                                                                                   | Description                                                                     |
-| ------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------- |
-| [AI Providers](https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers)                    | Supported AI providers, required inputs, secrets, and example snippets for each |
-| [Architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/architecture)        | How the Docker-based action is structured and executed                          |
-| [Example Workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) | Copy-paste workflow files for each configuration                                |
-| [Contributing](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/contributing)        | Local development setup, commit conventions, and the release process            |
-| [Versioning](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning)            | Release guide — patch, minor, and major releases                                |
+| Page                                                                                                   | Description                                                                       |
+| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
+| [AI Providers](https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers)                    | Supported AI providers, required inputs, secrets, and example snippets for each   |
+| [Architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/architecture)        | How the Docker-based action is structured and executed                            |
+| [Example Workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) | Copy-paste workflow files for each configuration                                  |
+| [Instructor Setup](https://nscc-itc-assessment.github.io/GrillMyCode/docs/guides/instructor-setup)     | One-time org setup for private instructor repository delivery and LMS quiz export |
+| [Contributing](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/contributing)        | Local development setup, commit conventions, and the release process              |
+| [Versioning](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning)            | Release guide — patch, minor, and major releases                                  |
