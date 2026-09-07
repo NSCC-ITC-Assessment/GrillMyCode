@@ -104,8 +104,20 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │
         sets action outputs (issue_url, issue_number)
                │
-          instructor repo
-          (if token set)
+     deliverToInstructorRepo()   ← only when instructor_repo_token is set
+               │  Runs on a separate Octokit built from the instructor PAT
+               │
+               ├── ensureInstructorRepo()
+               │     Creates {assignment}-grillmycode-instructor (private) if absent,
+               │     then polls until auto_init's first commit lands
+               │
+               ├── syncInstructorRepoFiles()
+               │     Rewrites generate-lms-quiz.yml and README.md when they differ
+               │     from the copies shipped in src/; warns (never throws) on failure
+               │
+               └── writeFileWithRetry()
+                     Writes {studentLogin}/questions.md, retrying on 409/422
+                     conflicts and backing off on rate limits
 ```
 
 ---
@@ -165,6 +177,34 @@ Uses an update-first strategy:
 
 Returns `{ number, url }` for use by action outputs.
 
+### `deliverToInstructorRepo()`
+
+Writes the instructor copy of the assessment — questions **and** answers, regardless of
+`include_answers` — to a private repository shared by the whole class. It runs only when
+`instructor_repo_token` is set, and every call in the module uses an Octokit built from that PAT;
+the student's `github_token` is never used here.
+
+Three concerns are layered inside it:
+
+1. **Repository lifecycle.** `ensureInstructorRepo()` creates the repository private via
+   `repos.createInOrg` when `repos.get` 404s — so the owner must be an organisation — and then
+   polls for the `auto_init` commit so the first write has a branch to land on. A 422 from a racing
+   run that created it first is treated as success.
+2. **File ownership.** `syncInstructorRepoFiles()` brings `.github/workflows/generate-lms-quiz.yml`
+   and `README.md` into line with the copies in `src/workflows/` and `src/templates/` on **every**
+   delivery, not just at creation, committing only when the bytes differ. This is how a repository
+   created by an earlier release picks up quiz-generation fixes. Each file is guarded
+   independently and failures are warnings, never throws: the workflow write needs the PAT's
+   `workflow` scope, and a token lacking it must not cost the student their assessment.
+3. **Concurrent writes.** `writeFileWithRetry()` re-fetches the blob SHA and retries on the 409s and
+   stale-SHA 422s that a class pushing at once produces, and distinguishes genuine rate limits
+   (`Retry-After`, exhausted `x-ratelimit-remaining`, GitHub's limit wording) from a 403 raised by a
+   missing scope, which fails fast rather than sitting through the full backoff budget.
+
+A failure that escapes all of this is caught in `main.js` and reported with `core.error` — an
+annotation that does not fail the job, since the student-facing assessment has already been
+delivered by that point.
+
 ---
 
 ## Security considerations
@@ -172,6 +212,7 @@ Returns `{ number, url }` for use by action outputs.
 - **Shell injection prevention:** all `git` calls use `spawnSync` with an explicit argument array — no shell string interpolation. SHAs are validated with `sanitiseSha()` before use.
 - **Secret masking:** the external API key is registered with `core.setSecret()` before any API call, preventing it from appearing in workflow logs.
 - **Minimal permissions:** the action only requests the permissions it needs for the chosen delivery method.
+- **Token separation:** the instructor PAT is used exclusively by `src/delivery/instructor-repo.js`, through its own Octokit instance. It is never passed to the student-facing delivery paths, and the student's `GITHUB_TOKEN` is never given access to the instructor repository — which is what keeps the answer key out of reach of anyone who can read the student's repository or its workflow logs.
 
 ---
 

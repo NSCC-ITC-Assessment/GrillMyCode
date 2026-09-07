@@ -5,6 +5,20 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.1.2 — 2026-09-07
+
+### What's Changed
+
+### Documentation
+
+- enhance instructor repository delivery documentation and troubleshooting guidance
+- update Workflow Wizard paths and instructor repository delivery instructions
+- update v1 snapshot
+
+### Chores & Maintenance
+
+- improve release note generation by using full commit messages and handling multiple entries
+
 ## v1.1.1 — 2026-09-06
 
 ### What's Changed
