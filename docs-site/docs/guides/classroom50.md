@@ -23,6 +23,7 @@ By default (`include_initial_commit: 'false'`), the diff base is pinned to the r
 
 ```yaml
 name: GrillMyCode
+
 on:
   push:
     branches: ["main", "master"]
@@ -42,7 +43,6 @@ jobs:
     permissions:
       contents: write  # gmc-assessments release + PDF asset
       issues: write    # assessment issue
-      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -51,6 +51,10 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          # If desired, uncomment this input and edit to use a different one —
+          # any model from https://openrouter.ai/models (provider/model-name).
+          # ai_model: "google/gemini-3.5-flash-lite"
           num_questions: '20'
           instructor_context: |
             Assignment 3 — Python loops. Prioritize execution flow
@@ -69,11 +73,11 @@ Set `include_initial_commit: 'true'` to include the initial commit's eligible fi
 
 To include the setup files as well, add an `exclude_pattern_overrides` entry for the specific files you want re-included (e.g. `.classroom50.yaml`) — see [Exclude Patterns](../reference/exclude-patterns).
 
-## Instructor token for higher rate limits
+## One API key for the whole class
 
-By default, API calls to GitHub Models are authenticated with the student's `GITHUB_TOKEN`, which uses the student's own rate limit quota. For large classes with many simultaneous submissions, you may want to use an instructor's Personal Access Token instead.
+Question generation runs through [OpenRouter](../ai-providers/openrouter.md), and every student repository authenticates with the same instructor-owned key. Add `OPENROUTER_API_KEY` once as an **organisation-level** Actions secret and every repository Classroom 50 creates inherits it automatically — students never see or manage the key.
 
-See the [GitHub Models provider](../ai-providers/github-models#using-an-instructor-token) for details.
+Because the whole class shares one key, rate limits and costs are pooled rather than per-student. Fund the OpenRouter account with a small prepaid balance and pick one of the [recommended low-cost models](../ai-providers/openrouter.md#recommended-models); at typical classroom scale these run well under a cent per assessment.
 
 ## Assessment issue assignment
 

@@ -24,9 +24,9 @@ No. GrillMyCode is a GitHub Action — there is nothing to install. Add a workfl
 
 ### Do I need to create any secrets or API keys?
 
-Not for the default configuration. The default AI provider (GitHub Models) authenticates automatically with the built-in `GITHUB_TOKEN` that every repository already has. No secrets need to be created.
+Yes. Question generation runs through [OpenRouter](./ai-providers/openrouter), which requires its own API key — the built-in `GITHUB_TOKEN` cannot be used for it. Create a key at [openrouter.ai/keys](https://openrouter.ai/keys), store it as a secret (org-level is recommended so every student repository inherits it), and pass it as `api_key`.
 
-If you want to use [OpenRouter](./ai-providers/openrouter) or supply an [instructor PAT for GitHub Models](./ai-providers/github-models#using-an-instructor-token), you will need to add a secret.
+The `github_token` input is still needed, but only for GitHub API access — creating the assessment issue, the release, and reading repository metadata. It defaults to the built-in `GITHUB_TOKEN`, so you do not need to create anything for it.
 
 ### What permissions does the workflow need?
 
@@ -36,7 +36,6 @@ The required permissions are the same for every configuration:
 permissions:
   contents: write  # gmc-assessments release + PDF asset
   issues: write    # assessment issue
-  models: read     # GitHub Models API (remove if using openrouter)
 ```
 
 The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` block automatically. See [Permissions](reference/permissions.md) for details.
@@ -63,26 +62,54 @@ Yes. The Wizard output is plain YAML — you can edit any value in your workflow
 
 ### Which AI providers are supported?
 
-GrillMyCode supports two providers:
+[OpenRouter](./ai-providers/openrouter) is the only supported provider. It is a gateway to hundreds of models from Anthropic, Google, DeepSeek, Meta, and others through a single API key, so you can still choose whichever model suits your course.
 
 | Provider | `ai_provider` value | Requires a secret? |
 |---|---|---|
-| GitHub Models | `github-models` *(default)* | No |
-| OpenRouter | `openrouter` | Yes (`OPENROUTER_API_KEY`) |
+| OpenRouter | `openrouter` *(default)* | Yes (`OPENROUTER_API_KEY`) |
 
-See [GitHub Models](./ai-providers/github-models) and [OpenRouter](./ai-providers/openrouter) for configuration details.
+Because `openrouter` is the default, you can omit `ai_provider` entirely. See [OpenRouter](./ai-providers/openrouter) for configuration details.
+
+### I've used GitHub Models with GrillMyCode in the past and now they no longer function. Why?
+
+GitHub **permanently discontinued GitHub Models**, so the endpoint GrillMyCode called no longer exists. This affects every version of GrillMyCode that offered `ai_provider: 'github-models'` — there is no configuration or token that will bring it back.
+
+Current versions of GrillMyCode fail immediately with a message pointing here if a workflow still sets `ai_provider: 'github-models'`.
+
+**To migrate**, update your workflow as follows:
+
+1. **Create an OpenRouter API key** — sign up at [openrouter.ai](https://openrouter.ai/), add a small prepaid balance, and generate a key at [openrouter.ai/keys](https://openrouter.ai/keys).
+2. **Store it as a secret** — add it as an organisation-level Actions secret named `OPENROUTER_API_KEY` so all student repositories inherit it.
+3. **Update the workflow** — remove `ai_provider: 'github-models'` (or set it to `'openrouter'`, which is now the default), replace the `ai_model` value with an OpenRouter `provider/model-name` identifier, and add `api_key`.
+
+```diff
+ permissions:
+   contents: write
+   issues: write
+
+ steps:
+   - uses: NSCC-ITC-Assessment/GrillMyCode@v1
+     with:
+       github_token: ${{ secrets.GITHUB_TOKEN }}
+-      ai_provider: 'github-models'
+-      ai_model: 'gpt-4.1'
++      ai_model: 'google/gemini-3.5-flash-lite'
++      api_key: ${{ secrets.OPENROUTER_API_KEY }}
+```
+
+The main practical difference is cost: GitHub Models was free within your GitHub quota, whereas OpenRouter bills per token. The [recommended models](./ai-providers/openrouter#recommended-models) are typically well under one cent per assessment, so a small prepaid balance covers a full class for a semester.
 
 ### What model is used by default?
 
-The default model is `gpt-4.1` on GitHub Models. You can override it with the `ai_model` input.
+The default model is `google/gemini-3.5-flash-lite` on OpenRouter. It is inexpensive at classroom scale and, of the models tested, produces the most effective distractors for multiple-choice questions. You can override it with the `ai_model` input.
 
 ### Can I use a different model?
 
-Yes. For GitHub Models, pass a supported model identifier via `ai_model`. For OpenRouter, set `ai_provider: 'openrouter'` and supply any model from the OpenRouter catalogue in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`).
+Yes. Supply any model from the OpenRouter catalogue in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`) via `ai_model`. Check pricing at [openrouter.ai/models](https://openrouter.ai/models) before deploying to a class — costs vary by orders of magnitude between models.
 
 ### Students are hitting rate limits. What can I do?
 
-By default each student's workflow uses their own `GITHUB_TOKEN`, so rate limits are per-student. You can supply an instructor's Personal Access Token via `api_key` to route all calls through the instructor's account, which may have a higher quota. See [Using an instructor token](./ai-providers/github-models#using-an-instructor-token) for trade-offs and setup instructions.
+Rate limits on OpenRouter apply to the API key, not to individual students, so a whole class pushing at once shares one budget. If you see 429 errors, check that your OpenRouter account has a positive credit balance (free-tier keys are rate-limited far more aggressively than funded ones), and consider raising `ai_retry_max_attempts` so transient limits are retried for longer. Switching to a less congested model also helps — see [recommended models](./ai-providers/openrouter#recommended-models).
 
 ---
 
@@ -120,6 +147,7 @@ By default, inline and block comments are stripped from the submitted code befor
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
     keep_comments: 'true'
 ```
 
@@ -131,6 +159,7 @@ Use the `instructor_context` input to give the AI assignment-specific instructio
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
     num_questions: '8'
     instructor_context: |
       Assignment 3 — Python loops. Prioritize execution flow questions
@@ -214,7 +243,7 @@ The action emits a warning — `No assessable files found after applying include
 
 ### The action is failing with a permissions error.
 
-Make sure the workflow's `permissions` block includes all required scopes: `contents: write`, `issues: write`, and `models: read` (for GitHub Models). Check the [Getting Started](getting-started.md) page for a reference workflow.
+Make sure the workflow's `permissions` block includes all required scopes: `contents: write` and `issues: write`. Check the [Getting Started](getting-started.md) page for a reference workflow.
 
 ### How do I enable verbose logging to debug an issue?
 

@@ -118,6 +118,22 @@ export const GIT_MAX_BUFFER = 20 * 1024 * 1024; // 20 MB
 export const COMMENT_STRIP_TIMEOUT_MS = 10_000;
 
 /**
+ * Default AI provider. OpenRouter is currently the only supported provider:
+ * GitHub Models, formerly the default, was permanently discontinued by GitHub.
+ * Overridable via the ai_provider action input.
+ */
+export const DEFAULT_AI_PROVIDER = 'openrouter';
+
+/**
+ * Default AI model, expressed as an OpenRouter provider/model identifier.
+ * Overridable via the ai_model action input.
+ * Gemini Flash Lite is inexpensive at classroom scale and, of the tested
+ * models, produces the most effective distractors for multiple-choice
+ * questions.
+ */
+export const DEFAULT_AI_MODEL = 'google/gemini-3.5-flash-lite';
+
+/**
  * Default AI model sampling temperature (0 = deterministic, 1 = most random).
  * Overridable via the ai_temperature action input.
  * 0.5 keeps questions tightly anchored to the submitted code while still

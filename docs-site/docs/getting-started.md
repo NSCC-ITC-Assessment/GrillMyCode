@@ -16,6 +16,7 @@ Not sure which inputs to use? The [Workflow Wizard](./workflow-wizard.mdx) walks
 
 ```yaml
 name: GrillMyCode
+
 on:
   push:
     branches: ["main", "master"]
@@ -35,7 +36,6 @@ jobs:
     permissions:
       contents: write  # gmc-assessments release + PDF asset
       issues: write    # assessment issue
-      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -44,9 +44,15 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          # If desired, uncomment this input and edit to use a different one —
+          # any model from https://openrouter.ai/models (provider/model-name).
+          # ai_model: "google/gemini-3.5-flash-lite"
 ```
 
-Copy this file to `.github/workflows/grill-my-code.yml` in the student repository. No secrets need to be created — [GitHub Models](https://github.com/marketplace/models) (the default AI provider) authenticates with the built-in `GITHUB_TOKEN`.
+Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
+
+This workflow needs one secret: `OPENROUTER_API_KEY`. Question generation runs through [OpenRouter](./ai-providers/openrouter.md), which requires its own API key — the built-in `GITHUB_TOKEN` cannot be used for it. Add the key once as an **organisation-level** Actions secret and every student repository inherits it automatically. See the [OpenRouter setup guide](./ai-providers/openrouter.md#instructor-setup-guide) for the one-time steps.
 
 ## Trigger event
 
@@ -64,6 +70,7 @@ Use `instructor_context` to give the AI assignment-specific instructions:
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
     num_questions: '8'
     instructor_context: |
       Assignment 3 — Python loops. Prioritize execution flow questions
@@ -72,9 +79,9 @@ Use `instructor_context` to give the AI assignment-specific instructions:
       identification question about off-by-one errors.
 ```
 
-## Choosing an AI provider
+## Choosing a model
 
-The default provider is **GitHub Models** — no setup required. To use OpenRouter instead, see the [AI Providers](./ai-providers/github-models) and [OpenRouter](./ai-providers/openrouter) pages.
+[OpenRouter](./ai-providers/openrouter.md) is the only supported provider, so `ai_provider` can be left out entirely. What you *can* choose is the model: `ai_model` accepts any OpenRouter model in `provider/model-name` format, and defaults to `google/gemini-3.5-flash-lite`. See [recommended models](./ai-providers/openrouter.md#recommended-models) for tested, low-cost options.
 
 ## Next steps
 

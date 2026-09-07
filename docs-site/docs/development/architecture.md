@@ -156,14 +156,13 @@ Returns a filesystem-safe version of a branch name for use in filenames. Returns
 
 ### `callAI({ provider, model, apiKey, messages, retryMaxAttempts })`
 
-A thin provider abstraction over the OpenAI-compatible chat completions API. Each provider maps to a different base URL and authentication header:
+A thin provider abstraction over the OpenAI-compatible chat completions API. Each provider maps to a base URL and authentication header:
 
 | Provider | URL | Auth header |
 |---|---|---|
-| `github-models` | `models.inference.ai.azure.com/chat/completions` | `Authorization: Bearer <github_token>` |
 | `openrouter` | `openrouter.ai/api/v1/chat/completions` | `Authorization: Bearer <api_key>` |
 
-All providers use the same request body shape (`model`, `messages`, `temperature`, `max_tokens`, `top_p`).
+`openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `max_tokens`, `top_p`).
 
 Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
 

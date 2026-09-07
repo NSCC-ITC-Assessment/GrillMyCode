@@ -207,8 +207,8 @@
             </div>
             <div class="feature-card">
               <div class="icon">🔌</div>
-              <strong>Multiple AI providers</strong>
-              GitHub Models (free default), OpenRouter
+              <strong>Hundreds of AI models</strong>
+              Any model on OpenRouter, from one API key
             </div>
           </div>
         </section>
@@ -325,9 +325,9 @@ def add(a, b):
           </div>
         </section>
 
-        <!-- ── 8. AI Providers ───────────────────────────────────── -->
+        <!-- ── 8. AI Provider ────────────────────────────────────── -->
         <section data-auto-animate>
-          <h2>AI Providers</h2>
+          <h2>AI Provider</h2>
           <hr class="divider" />
           <table class="provider-table">
             <thead>
@@ -340,20 +340,14 @@ def add(a, b):
             </thead>
             <tbody>
               <tr class="default-row">
-                <td>GitHub Models <span class="badge">default</span></td>
-                <td><span class="mono">github-models</span></td>
-                <td>No</td>
-                <td>Uses built-in <span class="mono">GITHUB_TOKEN</span> — no cost</td>
-              </tr>
-              <tr>
-                <td>OpenRouter</td>
+                <td>OpenRouter <span class="badge">default</span></td>
                 <td><span class="mono">openrouter</span></td>
                 <td>Yes</td>
-                <td>Access to many open-source and commercial models</td>
+                <td>One key, access to hundreds of open-source and commercial models</td>
               </tr>
             </tbody>
           </table>
-          <p class="footnote">All providers share the same OpenAI-compatible chat completions API shape — swapping is a config change only.</p>
+          <p class="footnote">OpenRouter is a gateway, not a single vendor — switching between Anthropic, Google, DeepSeek, Meta and others is an <span class="mono">ai_model</span> change only.</p>
         </section>
 
         <!-- ── 9. Classroom 50 Integration ──────────────────── -->
@@ -415,7 +409,6 @@ jobs:
       contents: read
       pull-requests: write   # post the PR link comment
       issues: write          # create / update the assessment issue
-      models: read           # GitHub Models access
     steps:
       - uses: actions/checkout@v6
         with:
@@ -424,6 +417,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
           instructor_context: 'Assignment 3 – Python list comprehensions'</code></pre>
         </section>
 

@@ -12,12 +12,12 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 
 | Input | Required | Default | Description |
 |---|---|---|---|
-| `github_token` | Yes | `${{ github.token }}` | GitHub token for API access and GitHub Models credential |
-| `ai_provider` | No | `github-models` | AI provider: `github-models` or `openrouter` |
-| `ai_model` | No | `gpt-4.1` | Model identifier for the chosen provider |
+| `github_token` | Yes | `${{ github.token }}` | GitHub token for API access — issues, releases, and repository metadata. Not used for question generation |
+| `ai_provider` | No | `openrouter` | AI provider. `openrouter` is the only supported value, so this can be omitted |
+| `ai_model` | No | `google/gemini-3.5-flash-lite` | Model identifier in OpenRouter `provider/model-name` format. See [openrouter.ai/models](https://openrouter.ai/models) |
 | `ai_retry_max_attempts` | No | `5` | Total number of attempts (initial + retries) when calling the AI provider. Retries are triggered by transient errors: 429 (rate limit), 500, 502, 503, 504, and network-level failures. Values below 1 are clamped to 1 |
 | `ai_temperature` | No | `0.5` | Controls the randomness of the AI's output (0.0 = fully deterministic, 1.0 = most random). Lower values produce more consistent questions; higher values produce more varied output |
-| `api_key` | No | | API key for the provider. For `github-models`, leave empty to use `github_token`, or supply an instructor PAT to override it |
+| `api_key` | Yes | | OpenRouter API key. Required — `github_token` cannot be used for question generation, and the action fails immediately if this is empty. Create one at [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `num_questions` | No | `20` | Number of questions to generate (minimum 1, maximum 50). Values above 50 are automatically capped |
 | `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting |
 | `exclude_pattern_overrides` | No | | Comma-separated entries to re-include files excluded by auto-detection or `additional_exclude_patterns`. Each entry can be an exact pattern (e.g. `**/*.md`) to re-include all files of that type, or a specific file path (e.g. `README.md`) to allow only that file through. Note: binary files are **always** skipped regardless of overrides |
@@ -52,6 +52,7 @@ Give the action step an `id`, then reference its outputs with `steps.<id>.output
   id: assess
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
 
 - name: Print issue link
   run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"

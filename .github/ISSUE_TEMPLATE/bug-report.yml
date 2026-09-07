@@ -35,17 +35,16 @@ body:
     validations:
       required: true
 
-  - type: dropdown
-    id: ai-provider
+  - type: input
+    id: ai-model
     attributes:
-      label: AI provider
-      description: Which `ai_provider` value is set in your workflow?
-      options:
-        - github-models (default)
-        - openrouter
-        - Not applicable / unsure
+      label: AI model
+      description: >
+        Which `ai_model` value is set in your workflow? OpenRouter is the only
+        supported provider; leave blank if you have not set `ai_model`.
+      placeholder: google/gemini-3.5-flash-lite
     validations:
-      required: true
+      required: false
 
   - type: dropdown
     id: trigger-event

@@ -26,9 +26,9 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   prTypes: ['opened', 'synchronize'],    // pull_request only
   pushBranches: ['main'],                // push only
 
-  aiProvider: 'github-models' | 'openrouter',
-  aiModel: 'gpt-4o',
-  apiKeySecret: 'OPENROUTER_API_KEY',        // openrouter only
+  aiProvider: 'openrouter',                  // only supported value
+  aiModel: 'google/gemini-3.5-flash-lite',
+  apiKeySecret: 'OPENROUTER_API_KEY',        // required
 
   numQuestions: 5,
   includeAnswers: false,
@@ -63,14 +63,16 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 ## YAML Generation Rules (generateYaml.js)
 
 - Only emit inputs that differ from defaults (keeps output minimal and readable)
+- Exception: `ai_model` is always shown. At the default it is emitted **commented out**, with a
+  pointer to https://openrouter.ai/models, so instructors can switch models by uncommenting one
+  line rather than discovering the input name from the docs
 - `permissions:` block built dynamically:
   - `contents: write` — always
   - `pull-requests: write` — if postPrComment
-  - `models: read` — if aiProvider === 'github-models'
   - `issues: write` — if postIssue
   - `discussions: write` — if postDiscussion
 - `on:` block varies by triggerEvent
-- `api_key` only emitted for non-github-models providers
+- `api_key` always emitted — OpenRouter requires it and the action fails without it
 - `discussion_category` only emitted if postDiscussion
 - `instructor_repo_token` only emitted if instructorRepoEnabled
 - Include inline YAML comments on non-obvious inputs
@@ -113,8 +115,8 @@ snapshot — never edit it directly.
 2. Navigate to `/workflow-wizard` — wizard renders with correct step 1
 3. Step through all 7 steps — Back/Next navigation works, progress bar updates
 4. Select each trigger type — `on:` YAML block changes correctly
-5. Select github-models — no api_key in output
-6. Select openrouter — api_key appears
+5. Choose a pre-defined model, then "Own Choice" — the custom model ID field appears and validates `provider/model` format
+6. Clear the API key secret name — the step blocks with a validation message; `api_key` is always present in the output
 7. Enable discussion — discussion_category appears; enable instructor repo — instructor_repo_token appears
 8. Advanced step — defaults pre-filled; changing values reflects in YAML
 9. Review step — copy button writes YAML to clipboard

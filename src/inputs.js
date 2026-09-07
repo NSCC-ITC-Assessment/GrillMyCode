@@ -14,6 +14,8 @@ import {
   DEFAULT_AI_RETRY_MAX_ATTEMPTS,
   DEFAULT_AI_TEMPERATURE,
   DEFAULT_NUM_QUESTIONS,
+  DEFAULT_AI_PROVIDER,
+  DEFAULT_AI_MODEL,
 } from './constants.js';
 
 export function readInputs() {
@@ -45,10 +47,21 @@ export function readInputs() {
         .filter(Boolean)
     : [];
 
+  const apiKey = core.getInput('api_key') || '';
+  if (!apiKey) {
+    throw new Error(
+      'api_key is required. GrillMyCode generates questions via OpenRouter, which needs ' +
+        'its own API key — github_token cannot be used for this. Create a key at ' +
+        'https://openrouter.ai/keys, store it as a repository or organisation secret, and pass ' +
+        'it as api_key. See ' +
+        'https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers/openrouter',
+    );
+  }
+
   return {
     githubToken: core.getInput('github_token', { required: true }),
-    aiProvider: core.getInput('ai_provider') || 'github-models',
-    aiModel: core.getInput('ai_model') || 'gpt-4.1',
+    aiProvider: core.getInput('ai_provider') || DEFAULT_AI_PROVIDER,
+    aiModel: core.getInput('ai_model') || DEFAULT_AI_MODEL,
     aiRetryMaxAttempts: Math.max(
       1,
       parseInt(core.getInput('ai_retry_max_attempts') || String(DEFAULT_AI_RETRY_MAX_ATTEMPTS), 10),
@@ -57,7 +70,7 @@ export function readInputs() {
       1,
       Math.max(0, parseFloat(core.getInput('ai_temperature') || String(DEFAULT_AI_TEMPERATURE))),
     ),
-    apiKey: core.getInput('api_key') || '',
+    apiKey,
     numQuestions,
     additionalExcludePatterns,
     excludePatternOverrides: overridePatterns,
