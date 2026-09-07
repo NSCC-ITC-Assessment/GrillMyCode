@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-label="A dinosaur mascot generates an AI spark that branches into a GitHub issue and a downloadable PDF">
+  <defs>
+    <style>
+      .cardBg{fill:#F7F9FB;stroke:#1A2421;stroke-opacity:.08;stroke-width:2;}
+    </style>
+  </defs>
+
+  <circle cx="340" cy="150" r="150" fill="#25C2A0" opacity=".07"/>
+
+  <!-- connector lines from the spark to each output -->
+  <path d="M242,70 C280,80 292,90 308,100" fill="none" stroke="#25C2A0" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <path d="M234,86 C270,140 290,175 308,206" fill="none" stroke="#25C2A0" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+
+  <!-- AI spark -->
+  <g transform="translate(226,46)">
+    <path d="M10,0 C11,7 13,9 20,10 C13,11 11,13 10,20 C9,13 7,11 0,10 C7,9 9,7 10,0 Z" fill="#FFE477"/>
+    <circle cx="26" cy="22" r="2.4" fill="#FFE477"/>
+    <circle cx="-4" cy="20" r="1.6" fill="#FFE477"/>
+  </g>
+
+  <!-- GitHub issue card -->
+  <g>
+    <rect x="300" y="58" width="150" height="78" rx="14" class="cardBg"/>
+    <circle cx="328" cy="84" r="13" fill="#38CC6C"/>
+    <path d="M328,77 v10 M328,90.5 v.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    <rect x="352" y="76" width="82" height="7" rx="3.5" fill="#25C2A0"/>
+    <rect x="352" y="90" width="60" height="7" rx="3.5" fill="#25C2A0" opacity=".55"/>
+    <rect x="316" y="108" width="42" height="14" rx="7" fill="#FFE477"/>
+    <text x="337" y="118" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#1A2421" text-anchor="middle">ISSUE</text>
+  </g>
+
+  <!-- PDF card -->
+  <g>
+    <rect x="300" y="164" width="150" height="78" rx="14" class="cardBg"/>
+    <path d="M322,180 h20 l8,8 v24 h-28 Z" fill="#25C2A0"/>
+    <path d="M342,180 v8 h8 Z" fill="#1B8F76"/>
+    <path d="M328,215 v-8 l6,6 l6,-6 v8" fill="none" stroke="#FFFFFF" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+    <rect x="368" y="188" width="66" height="7" rx="3.5" fill="#25C2A0"/>
+    <rect x="368" y="202" width="46" height="7" rx="3.5" fill="#25C2A0" opacity=".55"/>
+    <rect x="316" y="214" width="34" height="14" rx="7" fill="#FFE477"/>
+    <text x="333" y="224" font-family="Helvetica, Arial, sans-serif" font-size="9" font-weight="700" fill="#1A2421" text-anchor="middle">PDF</text>
+  </g>
+
+  <!-- dino -->
+  <g transform="translate(24,95) scale(1.05)">
+    <path d="M28,142 Q2,150 6,178 Q24,168 40,146 Z" fill="#229953"/>
+    <ellipse cx="50" cy="166" rx="17" ry="11" fill="#229953"/>
+    <ellipse cx="98" cy="166" rx="17" ry="11" fill="#229953"/>
+    <path d="M75,14 C42,14 20,42 18,80 C16,118 34,156 75,162 C116,156 134,118 132,80 C130,42 108,14 75,14 Z" fill="#38CC6C"/>
+    <ellipse cx="75" cy="112" rx="30" ry="36" fill="#FFE477"/>
+    <ellipse cx="18" cy="106" rx="13" ry="10" fill="#38CC6C" transform="rotate(-20 18 106)"/>
+    <path d="M120,132 Q136,96 146,66" fill="none" stroke="#38CC6C" stroke-width="18" stroke-linecap="round"/>
+    <circle cx="147" cy="62" r="10" fill="#38CC6C"/>
+    <ellipse cx="124" cy="94" rx="15" ry="12" fill="#7EE39D"/>
+    <circle cx="130" cy="90" r="1.8" fill="#1A2421"/>
+    <polygon points="52,20 60,2 66,20" fill="#229953"/>
+    <polygon points="68,16 76,-2 82,16" fill="#229953"/>
+    <polygon points="84,20 92,4 98,20" fill="#229953"/>
+    <circle cx="98" cy="72" r="14" fill="#FFFFFF"/>
+    <circle cx="102" cy="72" r="6.5" fill="#1A2421"/>
+    <circle cx="104.5" cy="68" r="2" fill="#FFFFFF"/>
+    <path d="M104,104 Q112,110 121,102" fill="none" stroke="#1A2421" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>

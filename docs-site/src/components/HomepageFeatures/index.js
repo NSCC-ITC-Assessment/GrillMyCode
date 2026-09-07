@@ -5,7 +5,7 @@ import styles from './styles.module.css';
 const FeatureList = [
   {
     title: 'One-Time Setup',
-    Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
+    Svg: require('@site/static/img/grillmycode-setup.svg').default,
     description: (
       <>
         Add one <code>OPENROUTER_API_KEY</code> secret at the organisation level and every
@@ -15,7 +15,7 @@ const FeatureList = [
   },
   {
     title: 'Built for Classroom 50',
-    Svg: require('@site/static/img/undraw_docusaurus_tree.svg').default,
+    Svg: require('@site/static/img/grillmycode-classroom.svg').default,
     description: (
       <>
         Automatically excludes template starter code and bot commits,
@@ -25,7 +25,7 @@ const FeatureList = [
   },
   {
     title: 'Flexible Delivery',
-    Svg: require('@site/static/img/undraw_docusaurus_react.svg').default,
+    Svg: require('@site/static/img/grillmycode-delivery.svg').default,
     description: (
       <>
         Assessment questions are posted as a GitHub Issue and a downloadable PDF.

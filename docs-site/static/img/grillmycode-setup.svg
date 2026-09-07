@@ -1,0 +1,58 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-label="A dinosaur mascot sets one secret key that connects to several repositories">
+  <defs>
+    <style>
+      .cardBg{fill:#F7F9FB;stroke:#1A2421;stroke-opacity:.08;stroke-width:2;}
+    </style>
+  </defs>
+
+  <!-- soft glow behind key panel -->
+  <circle cx="330" cy="145" r="110" fill="#25C2A0" opacity=".08"/>
+
+  <!-- connecting lines from key panel to repo chips -->
+  <path d="M368,95 C400,80 415,70 430,58" fill="none" stroke="#25C2A0" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <path d="M372,145 C400,145 412,145 430,145" fill="none" stroke="#25C2A0" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <path d="M368,195 C400,210 415,220 430,232" fill="none" stroke="#25C2A0" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+
+  <!-- repo chips -->
+  <g>
+    <rect x="430" y="42" width="34" height="32" rx="8" class="cardBg"/>
+    <path d="M438,54 h18 M438,60 h18 M438,66 h11" stroke="#25C2A0" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g>
+    <rect x="430" y="129" width="34" height="32" rx="8" class="cardBg"/>
+    <path d="M438,141 h18 M438,147 h18 M438,153 h11" stroke="#25C2A0" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <g>
+    <rect x="430" y="216" width="34" height="32" rx="8" class="cardBg"/>
+    <path d="M438,228 h18 M438,234 h18 M438,240 h11" stroke="#25C2A0" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- key / secret panel -->
+  <g>
+    <rect x="255" y="90" width="115" height="110" rx="16" class="cardBg"/>
+    <circle cx="312" cy="128" r="16" fill="none" stroke="#25C2A0" stroke-width="6"/>
+    <rect x="308" y="140" width="8" height="22" rx="3" fill="#25C2A0"/>
+    <rect x="277" y="172" width="70" height="12" rx="6" fill="#FFE477"/>
+    <rect x="277" y="172" width="26" height="12" rx="6" fill="#38CC6C"/>
+  </g>
+
+  <!-- dino, facing right toward the panel -->
+  <g transform="translate(30,95) scale(1.05)">
+    <path d="M28,142 Q2,150 6,178 Q24,168 40,146 Z" fill="#229953"/>
+    <ellipse cx="50" cy="166" rx="17" ry="11" fill="#229953"/>
+    <ellipse cx="98" cy="166" rx="17" ry="11" fill="#229953"/>
+    <path d="M75,14 C42,14 20,42 18,80 C16,118 34,156 75,162 C116,156 134,118 132,80 C130,42 108,14 75,14 Z" fill="#38CC6C"/>
+    <ellipse cx="75" cy="112" rx="30" ry="36" fill="#FFE477"/>
+    <ellipse cx="18" cy="106" rx="13" ry="10" fill="#38CC6C" transform="rotate(-20 18 106)"/>
+    <ellipse cx="134" cy="122" rx="13" ry="9" fill="#38CC6C" transform="rotate(35 134 122)"/>
+    <ellipse cx="124" cy="94" rx="15" ry="12" fill="#7EE39D"/>
+    <circle cx="130" cy="90" r="1.8" fill="#1A2421"/>
+    <polygon points="52,20 60,2 66,20" fill="#229953"/>
+    <polygon points="68,16 76,-2 82,16" fill="#229953"/>
+    <polygon points="84,20 92,4 98,20" fill="#229953"/>
+    <circle cx="98" cy="72" r="14" fill="#FFFFFF"/>
+    <circle cx="102" cy="72" r="6.5" fill="#1A2421"/>
+    <circle cx="104.5" cy="68" r="2" fill="#FFFFFF"/>
+    <path d="M104,104 Q112,110 121,102" fill="none" stroke="#1A2421" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+</svg>
