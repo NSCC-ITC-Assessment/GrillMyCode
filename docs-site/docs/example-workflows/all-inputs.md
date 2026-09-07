@@ -143,6 +143,9 @@ jobs:
           # Include the initial commit's eligible files in the diff (default: false).
           # Set to "true" to use the empty tree as the base instead,
           # which includes the initial commit's eligible files in the diff.
+          # Required for Classroom 50 empty-repository assignments
+          # (--empty-repo): those repos start with no commits at all, so the
+          # first commit is the student's own work, not starter code.
           # include_initial_commit: "false"
 
           # Comma-separated list of author names or email substrings.
