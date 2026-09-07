@@ -36,12 +36,23 @@ export default function StepFileOptions({ cfg, onChange }) {
               When left unchecked (default), the diff base is pinned to the repository's first commit,
               excluding template or starter code provided by the instructor. Only the student's own
               additions are assessed. Enable to include the initial commit's eligible files in the diff.
-              Enable this for Classroom 50 empty-repository assignments (<code>--empty-repo</code>):
-              those repos are created bare, so the first commit is the student's own first push and
-              leaving this unchecked would exclude it.
             </div>
           </span>
         </label>
+        {!cfg.includeInitialCommit && (
+          <div
+            className={styles.notice}
+            style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)', marginTop: '0.5rem' }}
+          >
+            <strong>Tick this if your assignment uses empty student repositories.</strong> A
+            Classroom 50 assignment registered with{' '}
+            <code>gh teacher assignment add --empty-repo</code> gives each student a bare repository
+            with no commits at all, so the repository's first commit is the student's own first push
+            rather than instructor starter code. Left unchecked, that entire first push is excluded
+            from assessment, and a student who commits their work all at once gets no questions
+            generated. Templated and README-seeded assignments should leave this unchecked.
+          </div>
+        )}
       </div>
 
       <div className={styles.fieldGroup}>
