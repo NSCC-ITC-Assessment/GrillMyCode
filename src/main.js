@@ -499,14 +499,11 @@ async function run() {
       `Calling ${inputs.aiProvider} (model: ${inputs.aiModel}) to generate ${inputs.numQuestions} questions…`,
     );
 
-    const effectiveApiKey =
-      inputs.aiProvider === 'github-models' ? inputs.apiKey || inputs.githubToken : inputs.apiKey;
-
     const rawQuestions = truncateToMaxQuestions(
       await callAI({
         provider: inputs.aiProvider,
         model: inputs.aiModel,
-        apiKey: effectiveApiKey,
+        apiKey: inputs.apiKey,
         messages,
         retryMaxAttempts: inputs.aiRetryMaxAttempts,
         temperature: inputs.aiTemperature,

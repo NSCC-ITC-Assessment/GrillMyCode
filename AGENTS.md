@@ -29,12 +29,30 @@ New inputs must be added consistently across **all six locations**:
 
 ## New AI Providers
 
+OpenRouter is currently the **only** supported provider, so parts of the UI that existed to
+_choose_ between providers have been collapsed. The `ai_provider` input itself is fully preserved
+— input, parsing, default constant, and the `switch` in `src/ai.js` — so adding a second provider
+is an additive change, not a restoration.
+
 Adding a new `ai_provider` value requires changes in all of the following places:
 
-1. `src/ai.js` — new `case` in the provider `switch`
-2. `action.yml` — updated `ai_provider` input description listing the new value
-3. `README.md` — updated `ai_provider` description in the inputs table
-4. A new dedicated example workflow page under `docs-site/docs/example-workflows/` following the naming and style of `openrouter-provider.md`
+1. `src/ai.js` — new `case` in the provider `switch` (URL + auth headers)
+2. `src/constants.js` — update `DEFAULT_AI_PROVIDER` / `DEFAULT_AI_MODEL` only if the new provider becomes the default
+3. `action.yml` — updated `ai_provider` input description listing the new value
+4. `README.md` — updated `ai_provider` description in the inputs table
+5. `docs-site/docs/reference/inputs-outputs.md` — same, plus the provider table in `docs-site/docs/faq.md`
+6. A new provider page under `docs-site/docs/ai-providers/` following the style of `openrouter.md`
+7. A new dedicated example workflow page under `docs-site/docs/example-workflows/`
+8. **Workflow Wizard** — `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js` currently has
+   **no provider selector**: with one provider there was nothing to choose, so the radio group was
+   removed and the step configures only the model and API key secret. Re-introduce a provider
+   control there, keyed on `cfg.aiProvider` (the field is still carried in `INITIAL_CONFIG` and
+   `DEFAULTS`). Note that `generateYaml.js` emits `ai_provider` only when it differs from the
+   default, and currently emits `api_key` unconditionally — revisit that if the new provider does
+   not require a key.
+
+Also note: `src/ai.js` keeps a `case 'github-models'` that throws a migration error. It is not a
+supported provider — it exists so old workflows fail with an actionable message. Leave it in place.
 
 ## Constants vs Magic Numbers
 

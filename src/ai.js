@@ -2,7 +2,7 @@
  * AI Client
  *
  * Calls the configured AI provider's chat completions endpoint and returns
- * the model's response text. Supports github-models and openrouter.
+ * the model's response text. OpenRouter is the only supported provider.
  *
  * Transient failures (429, 500, 502, 503, 504, network errors) are retried
  * automatically using exponential backoff with full jitter. 429 responses
@@ -72,11 +72,6 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
   const headers = { 'Content-Type': 'application/json' };
 
   switch (provider) {
-    case 'github-models':
-      url = 'https://models.inference.ai.azure.com/chat/completions';
-      headers['Authorization'] = `Bearer ${apiKey}`;
-      break;
-
     case 'openrouter':
       url = 'https://openrouter.ai/api/v1/chat/completions';
       headers['Authorization'] = `Bearer ${apiKey}`;
@@ -84,10 +79,18 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       headers['X-Title'] = 'GrillMyCode';
       break;
 
-    default:
+    // GitHub Models was permanently discontinued by GitHub. Workflows that
+    // still specify it get a migration message rather than a generic
+    // "unknown provider" error, since it was the default for a long time.
+    case 'github-models':
       throw new Error(
-        `Unknown ai_provider: "${provider}". Valid values: github-models | openrouter`,
+        'ai_provider "github-models" is no longer supported: GitHub permanently ' +
+          'discontinued GitHub Models. Set ai_provider to "openrouter" and supply an ' +
+          'OpenRouter api_key. See https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers/openrouter',
       );
+
+    default:
+      throw new Error(`Unknown ai_provider: "${provider}". Valid values: openrouter`);
   }
 
   const body = JSON.stringify({

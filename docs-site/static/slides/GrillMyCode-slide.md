@@ -19,8 +19,8 @@
 
 - ✦ Zero student setup — triggers on every push, pull request, or manually
 - ✦ Built for Classroom 50 — skips template/starter files automatically
-- ✦ Free by default — uses GitHub Models, OpenRouter, etc.
-- ✦ Configurable — questions, file filters, assignment context, AI provider
+- ✦ Low cost — routes through OpenRouter; recommended models run well under a cent per assessment
+- ✦ Configurable — questions, file filters, assignment context, choice of model
 
 ## A sample workflow
 
@@ -36,7 +36,6 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
-      models: read
     steps:
       - uses: actions/checkout@v6
         with:
@@ -44,6 +43,7 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }} # OpenRouter key (required)
           num_questions: '20' # how many questions to generate
           include_answers: 'false' # attach model answers for instructor review
           instructor_context: | # tell the AI what the assignment is about

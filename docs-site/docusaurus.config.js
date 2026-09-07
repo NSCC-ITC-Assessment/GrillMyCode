@@ -26,6 +26,20 @@ const releasedVersions = JSON.parse(
 const latestVersion = releasedVersions[0];
 const latestVersionPath = `/docs/v${latestVersion}`;
 
+// Whether the latest release snapshot still contains the removed GitHub Models
+// provider page. The release workflow regenerates versioned_docs from docs/ on
+// every tag, so this flips to false on the next release and the redirect below
+// takes over. See the redirects block for why this has to be conditional.
+const githubModelsPageInLatestVersion = fs.existsSync(
+  path.join(
+    docsSiteDir,
+    'versioned_docs',
+    `version-${latestVersion}`,
+    'ai-providers',
+    'github-models.md',
+  ),
+);
+
 const docsVersions = {
   current: { label: 'Next (unreleased)', path: 'next', banner: 'unreleased' },
 };
@@ -111,6 +125,30 @@ const config = {
             from: '/workflow-wizard',
             to: `${latestVersionPath}/workflow-wizard`,
           },
+          // The GitHub Models provider page was removed when GitHub discontinued
+          // the service. Send its former URLs to the FAQ entry that explains why.
+          // /docs/next is always current, so it is safe to redirect unconditionally.
+          {
+            from: '/docs/next/ai-providers/github-models',
+            to: '/docs/next/faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why',
+          },
+          // The unversioned /docs/* alias is normally produced by createRedirects
+          // below, for every path that still exists in the latest release. While
+          // that snapshot still contains the page, adding it here too would be a
+          // duplicate `from` and fail the build — so only claim it once the
+          // release snapshot has dropped the page.
+          ...(githubModelsPageInLatestVersion
+            ? []
+            : [
+                {
+                  from: '/docs/ai-providers/github-models',
+                  to: `${latestVersionPath}/faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why`,
+                },
+                {
+                  from: `${latestVersionPath}/ai-providers/github-models`,
+                  to: `${latestVersionPath}/faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why`,
+                },
+              ]),
         ],
         // Redirect bare /docs and every unversioned /docs/* path to the current
         // released version. Target is derived from latestVersion, so it follows

@@ -30,7 +30,6 @@ jobs:
     permissions:
       contents: write  # required to create the gmc-assessments release and PDF asset
       issues: write    # required to create the assessment issue
-      models: read     # required to call GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -40,21 +39,25 @@ jobs:
         with:
           # ── Authentication ────────────────────────────────────────────────
 
-          # GitHub token used for API access and as the GitHub Models credential.
-          # The built-in token is sufficient for most setups; supply an instructor
-          # PAT here if you need an account with a higher GitHub Models rate limit.
+          # GitHub token used for API access — creating the assessment issue and
+          # release, and reading repository metadata. It is NOT used to generate
+          # questions; see api_key below. The built-in token is sufficient.
           github_token: ${{ secrets.GITHUB_TOKEN }}
+
+          # API key for the AI provider. REQUIRED — the action fails immediately
+          # without it. Create a key at https://openrouter.ai/keys and store it as
+          # a repository or organisation secret.
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
 
           # ── AI Provider ───────────────────────────────────────────────────
 
           # Provider to use for question generation.
-          # Supported values: github-models | openrouter
-          ai_provider: "github-models"
+          # Supported values: openrouter (the default — may be omitted)
+          # ai_provider: "openrouter"
 
-          # Model identifier for the chosen provider.
-          # GitHub Models: gpt-4.1
-          # OpenRouter:    provider/model-name format (e.g. deepseek/deepseek-v4-flash)
-          ai_model: "gpt-4.1"
+          # Model identifier, in OpenRouter's provider/model-name format.
+          # See https://openrouter.ai/models for the full catalogue and pricing.
+          ai_model: "google/gemini-3.5-flash-lite"
 
           # Total number of attempts (initial + retries) when calling the AI provider.
           # Retries are triggered by 429 (rate limit), 500, 502, 503, 504, and network
@@ -67,10 +70,6 @@ jobs:
           # higher values produce more varied output. Most users should leave this
           # at the default.
           # ai_temperature: "0.5"
-
-          # API key for the provider. Leave empty when using github-models with
-          # the built-in GITHUB_TOKEN. Required for openrouter.
-          # api_key: ${{ secrets.OPENROUTER_API_KEY }}
 
           # ── Question generation ───────────────────────────────────────────
 

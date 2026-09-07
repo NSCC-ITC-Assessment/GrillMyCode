@@ -4,12 +4,12 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    title: 'Zero Setup',
+    title: 'One-Time Setup',
     Svg: require('@site/static/img/undraw_docusaurus_mountain.svg').default,
     description: (
       <>
-        Uses GitHub Models by default — no API keys or secrets needed.
-        Just add the workflow file and the built-in <code>GITHUB_TOKEN</code> handles everything.
+        Add one <code>OPENROUTER_API_KEY</code> secret at the organisation level and every
+        student repository inherits it. After that, each assignment just needs the workflow file.
       </>
     ),
   },
@@ -29,7 +29,7 @@ const FeatureList = [
     description: (
       <>
         Assessment questions are posted as a GitHub Issue and a downloadable PDF.
-        Supports GitHub Models and OpenRouter for AI-powered question generation.
+        Questions are generated through OpenRouter, so you can pick any model it offers.
       </>
     ),
   },

@@ -14,25 +14,27 @@ branding:
 inputs:
   github_token:
     description: >
-      GitHub token used for API access and as the credential for GitHub Models.
-      Defaults to the built-in GITHUB_TOKEN.
+      GitHub token used for API access (issues, releases, and repository
+      metadata). Defaults to the built-in GITHUB_TOKEN.
+      This token is not used for AI question generation — see api_key.
     required: true
     default: ${{ github.token }}
 
   ai_provider:
     description: >
       AI provider to use for question generation.
-      Supported values: github-models | openrouter
+      Supported values: openrouter
+      (GitHub Models is no longer supported — GitHub permanently discontinued it.)
     required: false
-    default: "github-models"
+    default: "openrouter"
 
   ai_model:
     description: >
-      Model identifier for the chosen provider.
-      GitHub Models : gpt-4.1
-      OpenRouter    : provider/model-name format (e.g. deepseek/deepseek-v4-flash)
+      Model identifier for the chosen provider, in OpenRouter's
+      provider/model-name format (e.g. google/gemini-3.5-flash-lite).
+      See https://openrouter.ai/models for the full list.
     required: false
-    default: "gpt-4.1"
+    default: "google/gemini-3.5-flash-lite"
 
   ai_retry_max_attempts:
     description: >
@@ -55,11 +57,10 @@ inputs:
 
   api_key:
     description: >
-      API key for the chosen AI provider.
-      For github-models, leave empty to use github_token automatically, or supply a
-      Personal Access Token (e.g. an instructor token with an alternative license)
-      to use that instead.
-    required: false
+      API key for the chosen AI provider. Required — create an OpenRouter key at
+      https://openrouter.ai/keys and store it as a repository or organisation
+      secret. github_token cannot be used for question generation.
+    required: true
     default: ""
 
   num_questions:
