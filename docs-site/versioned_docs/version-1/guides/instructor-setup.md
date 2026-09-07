@@ -101,7 +101,6 @@ jobs:
     permissions:
       contents: write  # gmc-assessments release + PDF asset
       issues: write    # assessment issue
-      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -110,6 +109,10 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          # If desired, uncomment this input and edit to use a different one —
+          # any model from https://openrouter.ai/models (provider/model-name).
+          # ai_model: "google/gemini-3.5-flash-lite"
           num_questions: "20"
           instructor_context: |
             Assignment 1 — Python functions. Prioritize conceptual

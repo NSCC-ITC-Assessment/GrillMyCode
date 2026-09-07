@@ -144,6 +144,7 @@ Use `additional_exclude_patterns` for files specific to your assignment that the
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
   with:
     github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
     additional_exclude_patterns: 'data/**, tests/fixtures/**, provided_starter/**'
 ```
 

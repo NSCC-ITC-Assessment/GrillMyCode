@@ -17,8 +17,8 @@ function normalizePatterns(value) {
 }
 
 const DEFAULTS = {
-  aiProvider: 'github-models',
-  aiModel: 'gpt-4.1',
+  aiProvider: 'openrouter',
+  aiModel: 'google/gemini-3.5-flash-lite',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   numQuestions: 20,
@@ -75,9 +75,11 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   lines.push('');
 
   // ── concurrency ─────────────────────────────────────────────────────────────
-  // A new push cancels any run still in progress for the same branch, so only
-  // the latest commit is ever assessed (see FAQ).
-  lines.push('# Concurrency setting - Do not modify unless you understand the implications (see FAQ)');
+  // Kept identical to the concurrency comment used by every workflow example in
+  // the docs, so a wizard-generated file and a copied example look the same.
+  lines.push('# A new push cancels any run still in progress for the same branch,');
+  lines.push('# so only the latest commit is ever assessed (see FAQ).');
+  lines.push('# Do not modify this setting unless you have a compelling reason to.');
   lines.push('concurrency:');
   lines.push('  group: grillmycode-${{ github.workflow }}-${{ github.ref }}');
   lines.push('  cancel-in-progress: true');
@@ -96,9 +98,6 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   lines.push('    permissions:');
   lines.push('      contents: write  # gmc-assessments release + PDF asset');
   lines.push('      issues: write    # assessment issue');
-  if (cfg.aiProvider === 'github-models') {
-    lines.push('      models: read     # GitHub Models API');
-  }
   lines.push('    steps:');
   lines.push('      - uses: actions/checkout@v6');
   lines.push('        with:');
@@ -108,7 +107,14 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   lines.push('        with:');
 
   // ── Authentication ─────────────────────────────────────────────────────────
+  // Both credentials are emitted together so they read as a pair in the copied
+  // file. api_key is always emitted: OpenRouter requires it and the action
+  // fails without it.
   lines.push('          github_token: ${{ secrets.GITHUB_TOKEN }}');
+  {
+    const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
+    lines.push(`          api_key: ${secretRef(secretName)}`);
+  }
 
   // ── AI Provider ────────────────────────────────────────────────────────────
   if (differ(cfg, 'aiProvider')) {
@@ -116,10 +122,13 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   }
   if (differ(cfg, 'aiModel')) {
     lines.push(`          ai_model: ${yamlStr(cfg.aiModel)}`);
-  }
-  if (cfg.aiProvider !== 'github-models') {
-    const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
-    lines.push(`          api_key: ${secretRef(secretName)}`);
+  } else {
+    // The model is the input instructors are most likely to revisit later, so
+    // keep it visible even when it matches the default — commented out, so
+    // uncommenting the line is the only edit needed to switch models.
+    lines.push(`          # If desired, uncomment this input and edit to use a different one —`);
+    lines.push(`          # any model from https://openrouter.ai/models (provider/model-name).`);
+    lines.push(`          # ai_model: ${yamlStr(cfg.aiModel)}`);
   }
   if (differ(cfg, 'aiRetryMaxAttempts')) {
     lines.push(`          ai_retry_max_attempts: ${yamlStr(cfg.aiRetryMaxAttempts)}`);

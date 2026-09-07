@@ -12,16 +12,12 @@ function buildChecklist(cfg, docsBase) {
     },
   ];
 
-  if (cfg.aiProvider === 'github-models') {
-    items.push({
-      text: 'GitHub Models is selected — no API key needed. The built-in GITHUB_TOKEN is used automatically.',
-    });
-  } else {
+  {
     const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
     items.push({
-      text: `Add the secret "${secretName}" to the repository (or organisation) via Settings → Secrets and variables → Actions.`,
-      linkHref: `${docsBase}/ai-providers`,
-      linkLabel: 'AI Providers docs',
+      text: `Add the secret "${secretName}" to the repository (or organisation) via Settings → Secrets and variables → Actions. An OpenRouter API key is required — the workflow will not run without it.`,
+      linkHref: `${docsBase}/ai-providers/openrouter`,
+      linkLabel: 'OpenRouter setup guide',
     });
   }
 

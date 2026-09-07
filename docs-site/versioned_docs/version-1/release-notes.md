@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.2.0 — 2026-09-07
+
+### What's Changed
+
+### Documentation
+
+- update v1 snapshot
+
+### Refactoring
+
+- set GrillMyCode to use OpenRouter as the sole AI provider
+
 ## v1.1.3 — 2026-09-07
 
 ### What's Changed

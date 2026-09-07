@@ -21,6 +21,7 @@ Add this to `.github/workflows/grill-my-code.yml` in the student repository:
 
 ```yaml
 name: GrillMyCode
+
 on:
   push:
     branches: ["main", "master"]
@@ -40,7 +41,6 @@ jobs:
     permissions:
       contents: write  # gmc-assessments release + PDF asset
       issues: write    # assessment issue
-      models: read     # GitHub Models API
     steps:
       - uses: actions/checkout@v6
         with:
@@ -49,9 +49,13 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          # If desired, uncomment this input and edit to use a different one —
+          # any model from https://openrouter.ai/models (provider/model-name).
+          # ai_model: "google/gemini-3.5-flash-lite"
 ```
 
-No secrets need to be created — the default provider (GitHub Models) authenticates automatically with the built-in `GITHUB_TOKEN`.
+One secret is needed: `OPENROUTER_API_KEY`. Questions are generated through [OpenRouter](./ai-providers/openrouter.md), which requires its own API key. Add it once at the organisation level and every student repository inherits it.
 
 ## What you get
 

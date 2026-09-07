@@ -10,7 +10,6 @@ GrillMyCode always creates a GitHub Issue and generates a PDF — these are the 
 |---|---|
 | `contents: write` | Create and update the `gmc-assessments` release and its PDF asset |
 | `issues: write` | Create and update the assessment issue |
-| `models: read` | Call the GitHub Models API (when using the `github-models` provider) |
 
 ## Required permissions block
 
@@ -18,7 +17,10 @@ GrillMyCode always creates a GitHub Issue and generates a PDF — these are the 
 permissions:
   contents: write  # gmc-assessments release + PDF asset
   issues: write    # assessment issue
-  models: read     # GitHub Models API (remove if using openrouter)
 ```
+
+:::note
+Earlier versions also required a `models: read` scope. It is no longer used by anything and can be removed from existing workflows — see the [FAQ](../faq.md#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why) if an older workflow of yours has stopped generating questions.
+:::
 
 Add this block to the `generate-questions` job in your workflow. The Workflow Wizard generates it automatically.

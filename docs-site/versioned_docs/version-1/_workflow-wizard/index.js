@@ -13,7 +13,7 @@ import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
 
 const STEPS = [
-  { label: 'AI',         title: 'Which AI provider and model should GrillMyCode use?',                   subtitle: 'Select the model that will generate the comprehension questions.',                              Component: StepAIProvider },
+  { label: 'AI',         title: 'Which model should GrillMyCode use?',                   subtitle: 'Select the OpenRouter model that will generate the comprehension questions.',                              Component: StepAIProvider },
   { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions GrillMyCode should generate and what context the chosen AI receives.',             Component: StepQuestions },
   { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff that\'s sent to the AI.',                    Component: StepFiles },
   { label: 'File opts',  title: 'File handling options',                 subtitle: 'Configure how the diff is built — what to skip, how comments are handled, and which commits count.', Component: StepFileOptions },
@@ -29,9 +29,9 @@ const INITIAL_CONFIG = {
   branchMode: 'specify',
   pushBranches: ['main', 'master'],
 
-  aiProvider: 'github-models',
-  aiModel: 'gpt-4.1',
-  apiKeySecret: '',
+  aiProvider: 'openrouter',
+  aiModel: 'google/gemini-3.5-flash-lite',
+  apiKeySecret: 'OPENROUTER_API_KEY',
 
   numQuestions: 20,
   includeAnswers: false,
@@ -54,11 +54,11 @@ const INITIAL_CONFIG = {
   headSha: '',
 };
 
-const OPENROUTER_MODEL_VALUES = ['deepseek/deepseek-v4-flash', 'google/gemini-3.5-flash-lite', 'minimax/minimax-m2.7', 'stepfun/step-3.5-flash', 'tencent/hy3', 'xiaomi/mimo-v2.5-pro'];
+const OPENROUTER_MODEL_VALUES = ['google/gemini-3.5-flash-lite', 'deepseek/deepseek-v4-flash', 'minimax/minimax-m2.7', 'stepfun/step-3.5-flash', 'tencent/hy3', 'xiaomi/mimo-v2.5-pro'];
 
 function getStepError(stepIndex, cfg) {
   if (stepIndex === 0) {
-    if (cfg.aiProvider === 'openrouter' && !OPENROUTER_MODEL_VALUES.includes(cfg.aiModel)) {
+    if (!OPENROUTER_MODEL_VALUES.includes(cfg.aiModel)) {
       if (!cfg.aiModel || !cfg.aiModel.trim()) {
         return 'Please enter a model ID for OpenRouter before continuing.';
       }
@@ -66,8 +66,8 @@ function getStepError(stepIndex, cfg) {
         return 'Model ID must be in provider/model format (e.g. deepseek/deepseek-v4-flash).';
       }
     }
-    if (cfg.aiProvider === 'github-models' && (!cfg.aiModel || !cfg.aiModel.trim())) {
-      return 'Please enter a model ID before continuing.';
+    if (!cfg.apiKeySecret || !cfg.apiKeySecret.trim()) {
+      return 'Please enter the name of the secret holding your OpenRouter API key.';
     }
   }
   if (stepIndex === 6) {

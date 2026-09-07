@@ -2,9 +2,9 @@
 sidebar_position: 5
 ---
 
-# OpenRouter Provider
+# Choosing a Specific Model
 
-Uses [OpenRouter](https://openrouter.ai/) to route requests to any model from a wide range of providers (Anthropic, Google, Meta, Mistral, and more) through a single API key. Useful when you want to use a model not available on GitHub Models, or want to compare outputs across different models.
+Every GrillMyCode workflow runs through [OpenRouter](https://openrouter.ai/), which routes requests to models from a wide range of providers (Anthropic, Google, Meta, Mistral, and more) through a single API key. This example shows a workflow pinned to a specific, higher-capability model rather than the default `google/gemini-3.5-flash-lite` — useful when you want stronger reasoning on complex assignments and are willing to pay more per assessment.
 
 ### Setup
 
@@ -43,9 +43,8 @@ jobs:
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-          ai_provider: "openrouter"
-          ai_model: "anthropic/claude-3-5-sonnet"
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          ai_model: "anthropic/claude-3-5-sonnet"
           num_questions: "8"
           instructor_context: |
             Web Development — REST API with Express.js. Prioritize
@@ -55,10 +54,10 @@ jobs:
             about missing error-handling middleware.
 ```
 
-See the [OpenRouter model list](https://openrouter.ai/models) for available models and pricing. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`).
+`ai_provider` is omitted here because `openrouter` is the default. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`) — see the [OpenRouter model list](https://openrouter.ai/models) for what is available and what it costs.
 
-For full provider documentation see [OpenRouter](../ai-providers/openrouter).
+:::warning[Check pricing before deploying to a class]
+Costs vary by orders of magnitude between models. `anthropic/claude-3-5-sonnet` is considerably more expensive per assessment than the [recommended low-cost models](../ai-providers/openrouter.md#recommended-models). Verify the current rate at [openrouter.ai/models](https://openrouter.ai/models) and check it against your class size before rolling this out.
+:::
 
-OpenRouter gives access to models from many providers through a single API key. See the [OpenRouter model list](https://openrouter.ai/models) for available models.
-
-For full provider documentation see [OpenRouter](../ai-providers/openrouter).
+For full provider documentation see [OpenRouter](../ai-providers/openrouter.md).
