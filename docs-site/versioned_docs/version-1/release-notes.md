@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.1.3 — 2026-09-07
+
+### What's Changed
+
+### Documentation
+
+- update v1 snapshot
+
+### Chores & Maintenance
+
+- update dependencies
+- refresh gitignore templates
+
 ## v1.1.2 — 2026-09-07
 
 ### What's Changed
