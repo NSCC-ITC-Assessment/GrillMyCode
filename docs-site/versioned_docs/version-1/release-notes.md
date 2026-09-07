@@ -5,6 +5,15 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.2.1 — 2026-09-07
+
+### What's Changed
+
+### Documentation
+
+- update documentation for Classroom 50 empty-repository assignments
+- update v1 snapshot
+
 ## v1.2.0 — 2026-09-07
 
 ### What's Changed

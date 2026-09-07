@@ -233,13 +233,21 @@ Yes — it is designed for [Classroom 50](https://github.com/foundation50/classr
 
 `include_initial_commit: 'false'` (the default) already excludes the template's starter code, since the base is pinned to the repo's first commit. The `.classroom50.yaml` metadata file that `gh student accept` writes is excluded automatically. For additional file-level exclusions of provided starter files, use `additional_exclude_patterns: 'provided_starter/**'` (adjusting the path to match your repository layout).
 
+### What are the `[Classroom 50]` commits in my students' repositories?
+
+Classroom 50 prefixes every commit its own tooling makes with `[Classroom 50]`. In a student assignment repo you'll see the accept-time setup commit, an empty commit that opens the Feedback PR, and — if you later change the assignment's submission mode or rename it — commits authored under your own instructor account. All of them touch only files GrillMyCode already excludes, and the instructor-side ones carry `[skip ci]` so they don't trigger a run. Note that `gh student submit` also uses the prefix (`[Classroom 50] Submit <assignment>`) for the **student's own work**, so the prefix must never be treated as a "not the student" marker. See [Classroom 50's own commits](guides/classroom50.md#classroom-50s-own-commits).
+
+### My empty-repository assignment produced no questions. Why?
+
+An assignment created with `gh teacher assignment add --empty-repo` gives each student a bare repo with no commits, so the repository's first commit is the student's own first push. The default `include_initial_commit: 'false'` pins the diff base there and excludes it. Set `include_initial_commit: 'true'` in the workflow for those assignments — see [Empty-repository assignments](guides/classroom50.md#empty-repository-assignments).
+
 ---
 
 ## Troubleshooting
 
 ### The action runs but no files are being assessed.
 
-The action emits a warning — `No assessable files found after applying include/exclude filters` — when the filtered file list is empty. Open the workflow step log and check the `Exclude patterns applied` list. If a pattern is too broad, use `exclude_pattern_overrides` to recover the files you need.
+The action emits a warning — `No assessable files found after applying include/exclude filters` — when the filtered file list is empty. Open the workflow step log and check the `Exclude patterns applied` list. If a pattern is too broad, use `exclude_pattern_overrides` to recover the files you need. On a Classroom 50 **empty-repository** assignment this warning usually means the student's work is all in the repo's first commit; set `include_initial_commit: 'true'` (see [Empty-repository assignments](guides/classroom50.md#empty-repository-assignments)).
 
 ### The action is failing with a permissions error.
 
