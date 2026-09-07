@@ -159,6 +159,10 @@ inputs:
       first commit so that starter/template files are excluded from assessment.
       When true, the base is set to the empty tree regardless of the event type,
       so the initial commit's eligible files are included in the assessed diff.
+      Set this to "true" for Classroom 50 empty-repository assignments
+      (gh teacher assignment add --empty-repo): those repos are created bare, so
+      the first commit is the student's own first push rather than starter code,
+      and the default would exclude it.
     required: false
     default: "false"
 

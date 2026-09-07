@@ -36,6 +36,9 @@ export default function StepFileOptions({ cfg, onChange }) {
               When left unchecked (default), the diff base is pinned to the repository's first commit,
               excluding template or starter code provided by the instructor. Only the student's own
               additions are assessed. Enable to include the initial commit's eligible files in the diff.
+              Enable this for Classroom 50 empty-repository assignments (<code>--empty-repo</code>):
+              those repos are created bare, so the first commit is the student's own first push and
+              leaving this unchecked would exclude it.
             </div>
           </span>
         </label>
