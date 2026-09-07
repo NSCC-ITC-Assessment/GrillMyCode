@@ -1765,7 +1765,10 @@
     "mise.local.toml",
     "mise.local.toml/**",
     ".mise/*.local.toml",
-    "mise/*.local.toml"
+    "mise/*.local.toml",
+    "mise.local.lock",
+    "mise.local.lock/**",
+    "mise.*.local.lock"
   ],
   "Go": [
     "*.exe",
@@ -2821,7 +2824,8 @@
     "*.exe",
     "*.aliases",
     "*.lvlps",
-    ".cache/**"
+    ".cache/**",
+    "*.UserState"
   ],
   "LangChain": [".langgraph_api/**"],
   "Laravel": [
@@ -3743,6 +3747,8 @@
     "*.knit.md",
     ".Renviron",
     ".Renviron/**",
+    ".env",
+    ".env/**",
     "docs/**",
     "po/*~",
     "rsconnect/**"
@@ -4452,6 +4458,7 @@
     "[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers",
     "[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta",
     "[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*",
+    "UIElementsSchema/**",
     "[Aa]ssets/[Ss]ceneDependencyCache*"
   ],
   "UnrealEngine": [
@@ -4767,7 +4774,7 @@
     ".htaccess/**"
   ],
   "Xojo": [
-    "Builds*",
+    "Builds - */**",
     "*.debug",
     "*.debug.app",
     "Debug*.exe",
