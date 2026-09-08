@@ -238,6 +238,8 @@ Every question MUST follow this exact anatomy:
    <!-- /gmc:answer -->
 \`\`\`
 
+QUESTION NUMBERING: The anatomy above shows question 1 only. Number the stems sequentially across the whole response — the first is \`1.\`, the second \`2.\`, and so on through \`${numQuestions}.\`. Each question is separated by a \`---\`, but that does NOT restart the count: never emit \`1.\` more than once.
+
 ANSWER CONTAINER (MANDATORY): Wrap each question's answer section in a single pair of HTML-comment markers — emit <!-- gmc:answer --> on the line directly above its **Answer:** heading, and <!-- /gmc:answer --> on the line directly below its final incorrect-option bullet. Use exactly one such pair per question, and place these markers nowhere else.
 
 Violations that will cause output rejection:

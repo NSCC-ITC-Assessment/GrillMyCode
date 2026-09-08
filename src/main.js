@@ -81,6 +81,45 @@ const ANSWER_REGION_RE =
 const ANSWER_MARKER_LINE_RE = /^[ \t]*<!--\s*\/?\s*gmc:answer\s*-->[ \t]*\n?/gim;
 
 /**
+ * Renumbers the question stems sequentially from 1.
+ *
+ * Some models emit every stem as `1.` because the anatomy template in the prompt shows a
+ * single question numbered `1.`. Markdown then renders three questions all
+ * labelled "1.". Numbering is purely presentational, so it is fixed
+ * deterministically here rather than trusted to the model. Runs before
+ * truncateToMaxQuestions, which needs real numbers to spot over-generation.
+ *
+ * Only top-level stems are touched: lines inside fenced code blocks and inside
+ * <!-- gmc:answer --> regions keep whatever numbering they carry.
+ */
+function renumberQuestions(text) {
+  let inFence = false;
+  let inAnswer = false;
+  let n = 0;
+  return text
+    .split('\n')
+    .map((line) => {
+      if (/^\s*(?:```|~~~)/.test(line)) {
+        inFence = !inFence;
+        return line;
+      }
+      if (inFence) return line;
+      if (/<!--\s*gmc:answer\s*-->/i.test(line)) {
+        inAnswer = true;
+        return line;
+      }
+      if (/<!--\s*\/\s*gmc:answer\s*-->/i.test(line)) {
+        inAnswer = false;
+        return line;
+      }
+      if (inAnswer || !/^\s*\d+\.\s/.test(line)) return line;
+      n += 1;
+      return line.replace(/^(\s*)\d+\./, `$1${n}.`);
+    })
+    .join('\n');
+}
+
+/**
  * Bolds the question sentence on every numbered question line. Applied in
  * post-processing so the result is deterministic regardless of whether the
  * model followed the formatting instruction. Skips lines already wrapped in
@@ -623,14 +662,16 @@ async function run() {
     );
 
     const rawQuestions = truncateToMaxQuestions(
-      await callAI({
-        provider: inputs.aiProvider,
-        model: inputs.aiModel,
-        apiKey: inputs.apiKey,
-        messages,
-        retryMaxAttempts: inputs.aiRetryMaxAttempts,
-        temperature: inputs.aiTemperature,
-      }),
+      renumberQuestions(
+        await callAI({
+          provider: inputs.aiProvider,
+          model: inputs.aiModel,
+          apiKey: inputs.apiKey,
+          messages,
+          retryMaxAttempts: inputs.aiRetryMaxAttempts,
+          temperature: inputs.aiTemperature,
+        }),
+      ),
       inputs.numQuestions,
     );
 
