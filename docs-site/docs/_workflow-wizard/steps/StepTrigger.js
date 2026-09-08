@@ -196,7 +196,11 @@ export default function StepTrigger({ cfg, onChange }) {
                 : { marginTop: '0.75rem' }
             }
           >
-            {selected.length} of {MAX_DISPATCH_INPUTS} selected.{' '}
+            {/* Counted against the settings actually on offer, not GitHub's
+                10-input cap — measuring against a number larger than the list
+                reads as though options are hidden. The cap only becomes worth
+                mentioning if the catalogue ever grows past it. */}
+            {selected.length} of {DISPATCH_OVERRIDES.length} selected.{' '}
             {atCap ? (
               <>
                 You have reached GitHub's limit — a workflow declaring more than{' '}
@@ -205,25 +209,11 @@ export default function StepTrigger({ cfg, onChange }) {
               </>
             ) : (
               <>
-                GitHub allows at most {MAX_DISPATCH_INPUTS} <code>workflow_dispatch</code> inputs, so
-                pick only the settings you genuinely expect to vary between runs.
+                Each one becomes a field on the run form, so pick only the settings you genuinely
+                expect to vary between runs.
               </>
             )}
           </div>
-
-          {selectedSet.has('instructor_context') && (
-            <div className={styles.notice} style={{ marginTop: '0.5rem' }}>
-              <strong>GitHub has no multi-line dispatch field.</strong> The{' '}
-              <strong>Run workflow</strong> form gives <code>instructor_context</code> a single-line
-              text box, prefilled with the context you set on the Questions step so you can edit it in
-              place. If that context spans several lines it is shown collapsed to one line, and a
-              manual run submitted as-is sends the collapsed version — the wording is identical, only
-              the line breaks are lost. Automatic runs always use the full multi-line version, and
-              clearing the field restores it on a manual run too. To pass genuinely multi-line text on
-              a manual run, use the CLI:{' '}
-              <code>gh workflow run grill-my-code.yml -f instructor_context="$(cat brief.md)"</code>.
-            </div>
-          )}
         </div>
       </div>
     </div>

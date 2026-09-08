@@ -60,6 +60,8 @@ The `push` trigger fires whenever a commit lands on `main` or `master` — wheth
 
 `workflow_dispatch:` allows a manual re-run from the **Actions** tab without pushing a new commit.
 
+A manual run uses the settings baked into the workflow file. To change a setting for a single run — a different question count or model, a retargeted instructor context — expose it as a `workflow_dispatch` input and it becomes a form field on the **Run workflow** button. See [Manual Run Overrides](example-workflows/manual-dispatch.md).
+
 See [Example Workflows](example-workflows/pull-request) for ready-to-use files.
 
 ## Customising the questions

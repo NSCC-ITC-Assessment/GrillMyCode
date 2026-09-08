@@ -53,6 +53,11 @@ getChangedFiles() → filterFiles()
     │  Runs `git diff --name-only baseSha headSha`
     │  Applies auto-detected stack patterns, additional_exclude_patterns, and exclude_pattern_overrides via minimatch
     │
+    ├─ no files survive → reportEmptyAssessment() and return
+    │     Distinguishes an empty commit range from a fully excluded file list,
+    │     writes a job summary naming the reason, then warns — or fails when
+    │     fail_on_empty_assessment is enabled
+    │
 getDiff()
     │  Runs `git diff baseSha headSha -- <files>`
     │  Result kept as a fallback only — not sent to the AI directly
@@ -145,6 +150,23 @@ Determines the base and head SHAs for the diff. Handles two event types:
 After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for Classroom 50 to exclude starter template files.
 
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
+
+### `reportEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePatterns, inputs })`
+
+Reports a run that produced no assessment, and decides whether that ends the run as a success or a failure.
+
+Two distinct conditions reach this point and need different fixes, so each gets its own message and its own "what to check" list rather than a shared one:
+
+| `reason` | Condition | Points at |
+|---|---|---|
+| `empty-range` | `git diff --name-only` returned nothing — base and head resolved to the same commit | `include_initial_commit`, or a `base_sha`/`head_sha` override |
+| `fully-excluded` | Files did change, but every one was removed by the exclude patterns | `exclude_pattern_overrides`, and the applied pattern list |
+
+Both write a `core.summary` block, because a warning annotation shows on the run page but not in a list of runs — an instructor scanning a cohort would otherwise see an unbroken row of green ticks. Summary writing is wrapped in `try`/`catch`: a summary is a convenience, never a reason to lose the diagnosis.
+
+Failing is opt-in via `fail_on_empty_assessment` (default `false`). Both conditions occur normally the moment an assignment is accepted — a template repository's only commit is its starter code, and a Classroom 50 setup commit contains only the excluded `.classroom50.yaml` — so failing by default would mark every student repository red at creation.
+
+Explanations that only hold in specific circumstances are emitted conditionally: the accept-time note appears for `empty-range` only when the initial commit is being excluded and no SHA override is set, and for `fully-excluded` only when the excluded set is exactly `.classroom50.yaml`. The excluded file list is capped at `EMPTY_ASSESSMENT_FILE_LIST_LIMIT` entries, since an excluded tree can run to hundreds of paths.
 
 ### `sanitiseSha(sha)`
 

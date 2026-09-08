@@ -122,6 +122,61 @@ for the models tested with GrillMyCode.
     instructor_context: 'Web Development — REST API design with Express.js'
 ```
 
+### Manual run overrides
+
+Settings in a workflow file are fixed until you edit and commit the file again. Exposing one as a
+`workflow_dispatch` input adds it as a form field on the **Run workflow** button, so you can change it
+for a single manual run:
+
+```yaml
+on:
+  workflow_dispatch:
+    inputs:
+      num_questions:
+        description: 'num_questions - Number of comprehension questions to generate (1-50)'
+        required: false
+        default: '20'
+
+# ...
+      - uses: NSCC-ITC-Assessment/GrillMyCode@v1
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          num_questions: "${{ github.event.inputs.num_questions || '20' }}"
+```
+
+The `||` fallback is what an automatic run uses, where the field does not exist — so keep it in sync
+with the `default:` above it. GitHub allows at most 10 `workflow_dispatch` inputs.
+
+Never expose `api_key`, `github_token` or `instructor_repo_token` this way — a dispatch input is typed
+in plaintext and recorded in the run's metadata. `include_answers`, `base_sha`/`head_sha` and
+`skip_committers` are also best kept in the file: anyone who can run the workflow can set a dispatch
+input, and in a Classroom repository that includes the student being assessed.
+
+See [Manual Run Overrides](https://nscc-itc-assessment.github.io/GrillMyCode/docs/example-workflows/manual-dispatch)
+for the full example, or build one with the
+[Workflow Wizard](https://nscc-itc-assessment.github.io/GrillMyCode/workflow-wizard).
+
+---
+
+## When nothing is assessed
+
+A run can finish without generating anything, for one of two reasons:
+
+- **The commit range contains no changed files** — base and head resolved to the same commit, so the
+  exclude patterns were never involved. Usually `include_initial_commit`, or a `base_sha`/`head_sha`
+  override.
+- **Every changed file was removed by the exclude patterns** — recover what you need with
+  `exclude_pattern_overrides`.
+
+Either way the run writes a job summary naming the reason and what to check. By default it still
+**succeeds**, because both cases happen normally the moment an assignment is accepted — a template
+repository's only commit is its starter code, and a Classroom 50 setup commit contains only the
+excluded `.classroom50.yaml`. Failing by default would mark every student repository red at creation.
+
+Once students have started work, set `fail_on_empty_assessment: 'true'` so an unassessed repository
+shows as a failed run rather than a green one you have to open to notice.
+
 ---
 
 ## Permissions
