@@ -98,7 +98,7 @@ To include the setup files as well, add an `exclude_pattern_overrides` entry for
 An assignment registered with `gh teacher assignment add --empty-repo` creates **bare** student repositories: no template, no README, no autograde shim, no `.classroom50.yaml` — literally zero commits. Students on these assignments don't use `gh student submit`; they commit and `git push` directly.
 
 :::warning Set `include_initial_commit: 'true'` for empty-repository assignments
-With the default `include_initial_commit: 'false'`, the diff base is pinned to the repository's first commit — and on a bare repo that first commit is **the student's own first push**, not instructor starter code. A student who commits their whole assignment at once therefore has all of it excluded, and GrillMyCode ends the run with `No assessable files found after applying include/exclude filters`.
+With the default `include_initial_commit: 'false'`, the diff base is pinned to the repository's first commit — and on a bare repo that first commit is **the student's own first push**, not instructor starter code. A student who commits their whole assignment at once therefore has all of it excluded, and GrillMyCode ends the run reporting that the commit range contains no changed files. The run's job summary names this case and points at `include_initial_commit`; note that by default the run still **succeeds**, so it appears as a green tick unless you open it — see [`fail_on_empty_assessment`](../reference/inputs-outputs.md).
 
 Set `include_initial_commit: 'true'` in the workflow for any `--empty-repo` assignment. There is no template to exclude, so nothing is lost by doing so.
 :::

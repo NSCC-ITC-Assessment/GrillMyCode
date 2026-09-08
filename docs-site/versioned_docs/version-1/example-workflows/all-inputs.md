@@ -132,6 +132,18 @@ jobs:
           # Leave empty (default) to disable instructor repository delivery.
           # instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 
+          # ── Run reporting ─────────────────────────────────────────────────
+
+          # When true, a run that finds nothing to assess fails instead of
+          # succeeding. A run ends with nothing to assess when the commit range
+          # is empty, or when every changed file is removed by the exclude
+          # patterns; either way the job summary explains which and what to
+          # check. Left "false" (default) because both cases occur normally the
+          # moment an assignment is accepted, so failing by default would show a
+          # red run on every student repository at creation. Set to "true" once
+          # students have started work.
+          # fail_on_empty_assessment: "false"
+
           # ── Comment stripping ─────────────────────────────────────────────
 
           # When false (default), inline and block comments are stripped from

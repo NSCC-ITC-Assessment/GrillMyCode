@@ -5,6 +5,20 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.2.4 — 2026-09-08
+
+### What's Changed
+
+### Features
+
+- enhance documentation for manual run overrides and empty assessment handling
+- add fail_on_empty_assessment input to control run failure behavior
+- add workflow_dispatch input overrides for manual runs
+
+### Documentation
+
+- update v1 snapshot
+
 ## v1.2.3 — 2026-09-08
 
 ### What's Changed

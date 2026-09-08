@@ -56,6 +56,14 @@ The [Workflow Wizard](workflow-wizard.mdx) is an interactive, step-by-step tool 
 
 Yes. The Wizard output is plain YAML — you can edit any value in your workflow file at any time. The [Inputs & Outputs reference](reference/inputs-outputs.md) documents every available input.
 
+### Can I change settings when running the workflow manually, without editing the file?
+
+Yes, for settings you expose as `workflow_dispatch` inputs. Those appear as a form on the **Run workflow** button in the Actions tab, pre-filled with the values from your workflow file, and anything you change there applies to that run only.
+
+In the Wizard this is the **Manual run overrides** section on the **Trigger** step — expand it and tick the settings you want on the form. Six are ticked by default: `num_questions`, `ai_model`, `instructor_context`, `keep_comments`, `additional_exclude_patterns` and `exclude_pattern_overrides`. See [Manual Run Overrides](example-workflows/manual-dispatch.md) for the generated YAML and how it works.
+
+Secrets and a few integrity-sensitive settings are deliberately not offered — see [Settings to keep out of the form](example-workflows/manual-dispatch.md#settings-to-keep-out-of-the-form).
+
 ---
 
 ## AI providers & models
@@ -245,9 +253,15 @@ An assignment created with `gh teacher assignment add --empty-repo` gives each s
 
 ## Troubleshooting
 
-### The action runs but no files are being assessed.
+### The run succeeded but no questions were generated.
 
-The action emits a warning — `No assessable files found after applying include/exclude filters` — when the filtered file list is empty. Open the workflow step log and check the `Exclude patterns applied` list. If a pattern is too broad, use `exclude_pattern_overrides` to recover the files you need. On a Classroom 50 **empty-repository** assignment this warning usually means the student's work is all in the repo's first commit; set `include_initial_commit: 'true'` (see [Empty-repository assignments](guides/classroom50.md#empty-repository-assignments)).
+A run that finds nothing to assess reports the reason and, by default, still succeeds — so in a list of student repositories it shows a green tick like any other. Open the run and read the **job summary**: it names which of two things happened and what to check.
+
+**"The commit range … contains no changed files."** Base and head resolved to the same commit, so nothing was compared and the exclude patterns were never involved. On a Classroom 50 **empty-repository** assignment this means the student's work is all in the repo's first commit, which the default excludes — set `include_initial_commit: 'true'` (see [Empty-repository assignments](guides/classroom50.md#empty-repository-assignments)). Otherwise check any `base_sha`/`head_sha` override.
+
+**"All N changed file(s) were removed by the exclude patterns."** Files did change but every one was filtered out. The summary lists the excluded files; use `exclude_pattern_overrides` to recover the ones you need, and check the `Exclude patterns applied` list in the step log for the over-broad pattern.
+
+Both are normal immediately after an assignment is accepted — a template repository's only commit is its starter code, and a Classroom 50 setup commit contains only the excluded `.classroom50.yaml`. That is why the run succeeds by default. Once students have started work, set [`fail_on_empty_assessment`](reference/inputs-outputs.md) to `'true'` and an unassessed repository will show as a failed run instead of one you have to open to notice.
 
 ### The action is failing with a permissions error.
 

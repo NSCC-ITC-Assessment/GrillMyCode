@@ -230,4 +230,8 @@ The Languages API reflects GitHub's language detection, which is based on file e
 
 **No files are being assessed at all.**
 
-The action logs a warning — `No assessable files found after applying include/exclude filters` — when the filtered file list is empty. This usually means all changed files matched an exclude pattern. Check the `Exclude patterns applied` list, identify the over-broad pattern, and use `exclude_pattern_overrides` to recover the files you need.
+When every changed file is removed by the patterns, the run reports `All N changed file(s) were removed by the exclude patterns` and writes a job summary listing the excluded files. Identify the over-broad pattern in the `Exclude patterns applied` log line, then use `exclude_pattern_overrides` to recover the files you need.
+
+If the summary instead says the **commit range contains no changed files**, the patterns are not the cause — nothing was compared in the first place. See [the FAQ entry](../faq.md#the-run-succeeded-but-no-questions-were-generated) for that case.
+
+By default such a run still succeeds. Set [`fail_on_empty_assessment`](inputs-outputs.md) to `'true'` to have it fail instead.
