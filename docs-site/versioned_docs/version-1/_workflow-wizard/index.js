@@ -101,7 +101,6 @@ export default function WorkflowWizard({ actionRef = 'v1', docsBase = '/docs' })
           <ul className={styles.introFeatures}>
             <li>Choose your <strong>trigger event</strong> (manual dispatch, push to default branch, or both)</li>
             <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
-            <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
             <li>Pick your <strong>AI provider</strong> and model</li>
             <li>Configure <strong>question generation</strong> and delivery destinations</li>
             <li>Fine-tune <strong>file patterns</strong> and advanced options</li>
