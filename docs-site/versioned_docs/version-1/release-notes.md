@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.2.6 — 2026-09-08
+
+### What's Changed
+
+### Bug Fixes
+
+- update OpenRouter API key instructions for organization-level secret usage
+- remove duplicate manual run overrides entry in workflow wizard
+
+### Documentation
+
+- update v1 snapshot
+
 ## v1.2.5 — 2026-09-08
 
 ### What's Changed
