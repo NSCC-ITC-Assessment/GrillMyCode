@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.2.7 — 2026-09-08
+
+### What's Changed
+
+### Bug Fixes
+
+- clean up release notes
+
 ## v1.2.6 — 2026-09-08
 
 ### What's Changed
