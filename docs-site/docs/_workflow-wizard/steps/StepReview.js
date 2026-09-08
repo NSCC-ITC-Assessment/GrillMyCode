@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import styles from '../styles.module.css';
 import { generateYaml } from '../generateYaml';
+import { resolveDispatchOverrides } from '../dispatchInputs';
 
 function buildChecklist(cfg, docsBase) {
   const items = [
@@ -19,6 +20,20 @@ function buildChecklist(cfg, docsBase) {
       linkHref: `${docsBase}/ai-providers/openrouter`,
       linkLabel: 'OpenRouter setup guide',
     });
+  }
+
+  {
+    const overrides = resolveDispatchOverrides(cfg.dispatchOverrides);
+    if (overrides.length > 0) {
+      items.push({
+        text:
+          `To change ${overrides.map((k) => `"${k}"`).join(', ')} for a single run, go to ` +
+          'Actions \u2192 GrillMyCode \u2192 Run workflow and edit the form fields. Leaving a field ' +
+          'untouched uses the same value a push-triggered run would. If you later edit a default in ' +
+          'the workflow file, change it in both places \u2014 the "default:" under ' +
+          '"workflow_dispatch.inputs" and the fallback in the matching "${{ ... }}" expression.',
+      });
+    }
   }
 
   if (cfg.instructorRepoEnabled) {

@@ -11,6 +11,7 @@ import StepFiles from './steps/StepFiles';
 import StepFileOptions from './steps/StepFileOptions';
 import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
+import { DEFAULT_DISPATCH_OVERRIDES } from './dispatchInputs';
 
 const STEPS = [
   { label: 'AI',         title: 'Which model should GrillMyCode use?',                   subtitle: 'Select the OpenRouter model that will generate the comprehension questions.',                              Component: StepAIProvider },
@@ -25,9 +26,13 @@ const STEPS = [
 ];
 
 const INITIAL_CONFIG = {
-  triggerEvent: 'push+workflow_dispatch',
+  triggerEvent: 'workflow_dispatch',
   branchMode: 'specify',
   pushBranches: ['main', 'master'],
+  // Action inputs additionally exposed as workflow_dispatch inputs, so a manual
+  // run can change them from the Actions tab. Copied, not referenced, so the
+  // exported default list is never mutated through wizard state.
+  dispatchOverrides: [...DEFAULT_DISPATCH_OVERRIDES],
 
   aiProvider: 'openrouter',
   aiModel: 'google/gemini-3.5-flash-lite',
@@ -94,7 +99,9 @@ export default function WorkflowWizard({ actionRef = 'v1', docsBase = '/docs' })
             <strong>GrillMyCode</strong> — without writing a single line of YAML by hand.
           </p>
           <ul className={styles.introFeatures}>
-            <li>Choose your <strong>trigger event</strong> (push to default branch, manual dispatch, or both)</li>
+            <li>Choose your <strong>trigger event</strong> (manual dispatch, push to default branch, or both)</li>
+            <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
+            <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
             <li>Pick your <strong>AI provider</strong> and model</li>
             <li>Configure <strong>question generation</strong> and delivery destinations</li>
             <li>Fine-tune <strong>file patterns</strong> and advanced options</li>
