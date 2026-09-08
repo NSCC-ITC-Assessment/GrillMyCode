@@ -52,7 +52,7 @@ export function readInputs() {
     throw new Error(
       'api_key is required. GrillMyCode generates questions via OpenRouter, which needs ' +
         'its own API key — github_token cannot be used for this. Create a key at ' +
-        'https://openrouter.ai/keys, store it as a repository or organisation secret, and pass ' +
+        'https://openrouter.ai/keys, store it as an organization-level secret, and pass ' +
         'it as api_key. See ' +
         'https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers/openrouter',
     );

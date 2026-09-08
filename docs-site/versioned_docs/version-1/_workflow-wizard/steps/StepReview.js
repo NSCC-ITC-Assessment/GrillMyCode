@@ -16,7 +16,7 @@ function buildChecklist(cfg, docsBase) {
   {
     const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
     items.push({
-      text: `Add the secret "${secretName}" to the repository (or organisation) via Settings → Secrets and variables → Actions. An OpenRouter API key is required — the workflow will not run without it.`,
+      text: `Add the secret "${secretName}" at the organisation level via your GitHub organisation's Settings → Secrets and variables → Actions → New organization secret, then grant it access to the repositories that run GrillMyCode. An OpenRouter API key is required — the workflow will not run without it. If you do not have organisation access, add the same secret to the repository instead.`,
       linkHref: `${docsBase}/ai-providers/openrouter`,
       linkLabel: 'OpenRouter setup guide',
     });

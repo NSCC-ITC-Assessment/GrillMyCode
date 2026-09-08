@@ -45,8 +45,8 @@ jobs:
           github_token: ${{ secrets.GITHUB_TOKEN }}
 
           # API key for the AI provider. REQUIRED — the action fails immediately
-          # without it. Create a key at https://openrouter.ai/keys and store it as
-          # a repository or organisation secret.
+          # without it. Create a key at https://openrouter.ai/keys and store it as an
+          # organisation-level secret so every student repository inherits it.
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
 
           # ── AI Provider ───────────────────────────────────────────────────
