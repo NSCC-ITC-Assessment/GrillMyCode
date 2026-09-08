@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.2.5 — 2026-09-08
+
+### What's Changed
+
+### Bug Fixes
+
+- add question renumbering function and update prompt documentation
+
+### Documentation
+
+- update v1 snapshot
+
 ## v1.2.4 — 2026-09-08
 
 ### What's Changed
