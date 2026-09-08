@@ -202,6 +202,10 @@ jobs:
           const known = new Set([...order, 'build', 'ci', 'style', 'revert']);
 
           const re = /^(\w+)(\([\w\-./ ]+\))?: (.+)$/;
+          // The snapshot-docs job commits "docs: update vN snapshot" after every
+          // release, so that commit lands in the *next* release's range. It is
+          // release plumbing, not a change worth listing, so drop it entirely.
+          const excluded = /^docs: update v\d+ snapshot$/;
 
           function push(type, scope, desc) {
             const prefix = scope ? `**${scope.slice(1, -1)}:** ` : '';
@@ -213,6 +217,7 @@ jobs:
             const message = record.trim();
             if (!message) continue;
             const [header, ...rest] = message.split('\n');
+            if (excluded.test(header.trim())) continue;
             const m = header.trim().match(re);
             if (m) push(m[1], m[2], m[3]);
             else other.push(`- ${header.trim()}`);

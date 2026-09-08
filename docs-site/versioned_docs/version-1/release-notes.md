@@ -14,10 +14,6 @@ toc_max_heading_level: 2
 - update OpenRouter API key instructions for organization-level secret usage
 - remove duplicate manual run overrides entry in workflow wizard
 
-### Documentation
-
-- update v1 snapshot
-
 ## v1.2.5 — 2026-09-08
 
 ### What's Changed
@@ -25,10 +21,6 @@ toc_max_heading_level: 2
 ### Bug Fixes
 
 - add question renumbering function and update prompt documentation
-
-### Documentation
-
-- update v1 snapshot
 
 ## v1.2.4 — 2026-09-08
 
@@ -40,10 +32,6 @@ toc_max_heading_level: 2
 - add fail_on_empty_assessment input to control run failure behavior
 - add workflow_dispatch input overrides for manual runs
 
-### Documentation
-
-- update v1 snapshot
-
 ## v1.2.3 — 2026-09-08
 
 ### What's Changed
@@ -51,7 +39,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - updated images in site
-- update v1 snapshot
 
 ## v1.2.2 — 2026-09-07
 
@@ -60,7 +47,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - enhance guidance for Classroom 50 empty-repository assignments
-- update v1 snapshot
 
 ## v1.2.1 — 2026-09-07
 
@@ -69,15 +55,10 @@ toc_max_heading_level: 2
 ### Documentation
 
 - update documentation for Classroom 50 empty-repository assignments
-- update v1 snapshot
 
 ## v1.2.0 — 2026-09-07
 
 ### What's Changed
-
-### Documentation
-
-- update v1 snapshot
 
 ### Refactoring
 
@@ -86,10 +67,6 @@ toc_max_heading_level: 2
 ## v1.1.3 — 2026-09-07
 
 ### What's Changed
-
-### Documentation
-
-- update v1 snapshot
 
 ### Chores & Maintenance
 
@@ -104,7 +81,6 @@ toc_max_heading_level: 2
 
 - enhance instructor repository delivery documentation and troubleshooting guidance
 - update Workflow Wizard paths and instructor repository delivery instructions
-- update v1 snapshot
 
 ### Chores & Maintenance
 
@@ -122,7 +98,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - update README and documentation for instructor repository delivery and workflow synchronization
-- update v1 snapshot
 
 ### Chores & Maintenance
 
@@ -141,7 +116,6 @@ toc_max_heading_level: 2
 
 - record LMS quiz generation known issues
 - document LMS quiz workflow behaviour for instructors
-- update v1 snapshot
 
 ### Chores & Maintenance
 
@@ -160,7 +134,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - update Google Gemini model version to 3.5 in code and documentation
-- update v1 snapshot
 
 ### Chores & Maintenance
 
@@ -174,10 +147,6 @@ toc_max_heading_level: 2
 
 - improve pre-push hook to allow tag pushes on main branch
 - point footer Classroom 50 link to renamed guide slug
-
-### Documentation
-
-- update v1 snapshot
 
 ### Chores & Maintenance
 
@@ -198,10 +167,6 @@ toc_max_heading_level: 2
 - include pnpm-workspace.yaml in Dockerfile for dependency installation
 - update vite version to avoid vulnerabilities in vitest dependencies
 - update link for Classroom 50 guides to point to GitHub Classroom
-
-### Documentation
-
-- update v1 snapshot
 
 ### Refactoring
 
@@ -224,7 +189,6 @@ toc_max_heading_level: 2
 - format instructor context for better readability in workflow documentation
 - enhance instructor context for assignments in workflow documentation
 - add warning to concurrency setting in workflow documentation
-- update v1 snapshot
 
 ### Refactoring
 
@@ -257,7 +221,6 @@ toc_max_heading_level: 2
 
 - clarify issue body update process in FAQ
 - add troubleshooting section for OpenRouter configuration errors in FAQ
-- update v1 snapshot
 
 ## v1.0.19 — 2026-06-03
 
@@ -274,10 +237,6 @@ toc_max_heading_level: 2
 
 - update exclude patterns to include Python tool caches not covered by the bundled template
 
-### Documentation
-
-- update v1 snapshot
-
 ## v1.0.18 — 2026-06-03
 
 ### What's Changed
@@ -286,10 +245,6 @@ toc_max_heading_level: 2
 
 - update link to example workflows in getting started documentation
 - update issue mutation for issue updates
-
-### Documentation
-
-- update v1 snapshot
 
 ### Refactoring
 
@@ -319,7 +274,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - internal
-- update v1 snapshot
 
 ### Refactoring
 
@@ -349,7 +303,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - enhance security notes for assignment context and inputs
-- update v1 snapshot
 
 ## v1.0.14 — 2026-06-02
 
@@ -359,10 +312,6 @@ toc_max_heading_level: 2
 
 - clarify wording in StepFileOptions component regarding code comments
 - clarify wording in the StepFileOptions component description
-
-### Documentation
-
-- update v1 snapshot
 
 ### Refactoring
 
@@ -383,10 +332,6 @@ toc_max_heading_level: 2
 
 ### What's Changed
 
-### Documentation
-
-- update v1 snapshot
-
 ### Refactoring
 
 - rename `additional context` label to `instructor context` for clarity
@@ -406,7 +351,6 @@ toc_max_heading_level: 2
 
 - add timeout-minutes to generate-questions job in workflow examples
 - fixed broken links in AI Providers category
-- update v1 snapshot
 
 ### Refactoring
 
@@ -444,8 +388,6 @@ toc_max_heading_level: 2
 - add documentation for GrillMyCode GitHub App and its permissions
 - comprehensive updates to documentation
 - enhance OpenRouter setup instructions and add links for clarity
-- update v1 snapshot
-- update v1 snapshot
 
 ### Refactoring
 
@@ -473,7 +415,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - enhance OpenRouter setup instructions and add links for clarity
-- update v1 snapshot
 
 ### Refactoring
 
@@ -482,10 +423,6 @@ toc_max_heading_level: 2
 ## v1.0.9 — 2026-05-31
 
 ### What's Changed
-
-### Documentation
-
-- update v1 snapshot
 
 ### Refactoring
 
@@ -500,7 +437,6 @@ toc_max_heading_level: 2
 - **wizard:** reorder workflow steps and update step index references for clarity
 - update AI provider and model descriptions, enhance workflow wizard labels, and clarify context file examples
 - add vetted models for OpenRouter to enhance user guidance
-- update v1 snapshot
 
 ### Refactoring
 
@@ -514,10 +450,6 @@ toc_max_heading_level: 2
 
 - implement retry logic for writing assessment files to instructor repository for concurrency purposes
 
-### Documentation
-
-- update v1 snapshot
-
 ## v1.0.6 — 2026-05-31
 
 ### What's Changed
@@ -525,10 +457,6 @@ toc_max_heading_level: 2
 ### Features
 
 - update README template to include workflow URL for generating Brightspace quizzes
-
-### Documentation
-
-- update v1 snapshot
 
 ### Refactoring
 
@@ -545,7 +473,6 @@ toc_max_heading_level: 2
 ### Documentation
 
 - update instructor repository setup and delivery process with README and quiz export details
-- update v1 snapshot
 
 ## v1.0.4 — 2026-05-31
 
@@ -560,7 +487,6 @@ toc_max_heading_level: 2
 - clarify output descriptions for generated questions in using-outputs and inputs-outputs guides
 - **wizard:** add Google Gemini 3.1 Flash Lite model to list of options
 - **rationale:** update wording for clarity on code submission sources
-- update v1 snapshot
 
 ## v1.0.3 — 2026-05-31
 
@@ -575,7 +501,6 @@ toc_max_heading_level: 2
 
 - **exclude-patterns:** update description of Docker image template management
 - **wizard:** add Xiaomi Mimo V2.5 Pro to OpenRouter model options
-- update v1 snapshot
 
 ### Refactoring
 
