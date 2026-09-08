@@ -26,7 +26,8 @@
  * the run form; the other three all narrow what gets assessed — a SHA pair
  * collapsed to a single commit, or a skip_committers list naming the student's
  * own login, yields an empty diff, and main.js treats that as a warning and a
- * clean exit, so the run goes green with no assessment and nothing looks wrong.
+ * clean exit — the run succeeds with no assessment, carrying an annotation that
+ * is visible on the run page but not in a list of runs.
  *
  * All four remain settable in the workflow file (base_sha/head_sha via the
  * wizard's Advanced step), where changing them takes a commit that is visible

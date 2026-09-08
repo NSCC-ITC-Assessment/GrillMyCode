@@ -108,6 +108,13 @@ export const MAX_QUESTIONS = 50;
 export const GIT_SHA_SHORT_LENGTH = 7;
 
 /**
+ * Maximum number of excluded file paths listed in the job summary when a run
+ * finds nothing to assess. Enough to identify the pattern at fault; the full
+ * list is always in the run log.
+ */
+export const EMPTY_ASSESSMENT_FILE_LIST_LIMIT = 20;
+
+/**
  * Maximum stdout buffer size for git spawnSync calls.
  */
 export const GIT_MAX_BUFFER = 20 * 1024 * 1024; // 20 MB

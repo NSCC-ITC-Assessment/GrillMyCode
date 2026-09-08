@@ -166,6 +166,22 @@ inputs:
     required: false
     default: "false"
 
+  fail_on_empty_assessment:
+    description: >
+      When true, a run that finds nothing to assess fails instead of succeeding.
+      A run ends with nothing to assess when the commit range is empty, or when
+      every changed file is removed by the exclude patterns; either way no
+      questions, issue or PDF are produced. By default such a run reports the
+      reason and succeeds, because both cases occur normally the moment an
+      assignment is accepted — a template repository's only commit is its
+      starter code, and a Classroom 50 setup commit contains just the
+      .classroom50.yaml file, which the default exclude patterns remove.
+      Set this to "true" once students have started work, if you would rather an
+      unassessed repository show as a failed run than as a green one you have to
+      open to notice. The run summary explains the reason either way.
+    required: false
+    default: "false"
+
   keep_comments:
     description: >
       When false (the default), inline and block comments are stripped from the
@@ -257,6 +273,7 @@ runs:
     INPUT_INSTRUCTOR_CONTEXT: ${{ inputs.instructor_context }}
     INPUT_INCLUDE_INITIAL_COMMIT: ${{ inputs.include_initial_commit }}
     INPUT_KEEP_COMMENTS: ${{ inputs.keep_comments }}
+    INPUT_FAIL_ON_EMPTY_ASSESSMENT: ${{ inputs.fail_on_empty_assessment }}
     INPUT_SKIP_COMMITTERS: ${{ inputs.skip_committers }}
     INPUT_BASE_SHA: ${{ inputs.base_sha }}
     INPUT_HEAD_SHA: ${{ inputs.head_sha }}

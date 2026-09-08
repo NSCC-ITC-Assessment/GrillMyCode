@@ -93,6 +93,11 @@ export function readInputs() {
     keepComments: core.getInput('keep_comments') === 'true',
     includeAnswers: core.getInput('include_answers') === 'true',
     includeInitialCommit: core.getInput('include_initial_commit') === 'true',
+    // Defaults to false so that accepting an assignment does not immediately
+    // fail every student repository: at accept time the diff is legitimately
+    // empty (template repos) or contains only the excluded .classroom50.yaml
+    // setup commit, both of which end the run with nothing to assess.
+    failOnEmptyAssessment: core.getInput('fail_on_empty_assessment') === 'true',
     // Three-way logic for skip_committers:
     //   • Input not provided (empty string from Actions default) → use the
     //     built-in default list of known Actions bot accounts.

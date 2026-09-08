@@ -14,6 +14,7 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import {
+  EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
@@ -335,6 +336,111 @@ function truncateToMaxQuestions(text, maxQuestions) {
   return text;
 }
 
+/**
+ * Reports a run that produced no assessment, and decides whether that ends the
+ * run as a success or a failure.
+ *
+ * The two reasons need different fixes, so each gets its own message and its own
+ * "what to check" list rather than a shared one naming filters that may not be
+ * involved. Everything is also written to the job summary: a warning annotation
+ * shows on the run page but not in a list of runs, so an instructor scanning a
+ * cohort sees an unbroken row of green ticks and no indication that one of the
+ * repositories was never assessed.
+ *
+ * Failing is opt-in via fail_on_empty_assessment because both reasons occur
+ * normally at accept time — see that input's description in action.yml.
+ */
+async function reportEmptyAssessment({
+  reason,
+  baseSha,
+  headSha,
+  allFiles,
+  excludePatterns,
+  inputs,
+}) {
+  const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
+  const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
+
+  let headline;
+  let detail;
+  let checks;
+
+  if (reason === 'empty-range') {
+    // The accept-time explanation only holds when the first commit is being
+    // excluded and no SHA override is in play. With include_initial_commit
+    // enabled the base is the empty tree, so a freshly accepted repository has
+    // files in range and this is genuinely unexpected — saying otherwise would
+    // send the reader looking for a cause that cannot apply.
+    const acceptTimeExplains = !inputs.includeInitialCommit && !inputs.baseSha && !inputs.headSha;
+    headline = `No assessment generated: the commit range ${shortBase}..${shortHead} contains no changed files.`;
+    detail =
+      `Nothing was compared, so the exclude patterns were never involved.` +
+      (acceptTimeExplains
+        ? ` This is expected immediately after an assignment is accepted, when the ` +
+          `repository's only commit is the starter code.`
+        : '');
+    checks = [
+      `The range assessed was \`${shortBase}..${shortHead}\`${baseSha === headSha ? ' — base and head are the same commit.' : '.'}`,
+      inputs.includeInitialCommit
+        ? '`include_initial_commit` is **true**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'
+        : '`include_initial_commit` is **false** (the default), so the first commit is excluded. If this is a Classroom 50 empty-repository assignment (`--empty-repo`), the student\'s own first push is that first commit — set `include_initial_commit: "true"` so their work is assessed.',
+      inputs.baseSha || inputs.headSha
+        ? 'A manual `base_sha`/`head_sha` override is set on this workflow. Check it still points at the range you intend.'
+        : 'No manual SHA override is set, so the range came from the event and `include_initial_commit`.',
+    ];
+  } else {
+    // Only claim the accept-time explanation when the excluded set actually is
+    // the Classroom 50 setup commit. Asserting it for an arbitrary set of
+    // excluded files would point the reader at a cause that is not theirs.
+    const isClassroomSetupCommit = allFiles.length === 1 && allFiles[0] === '.classroom50.yaml';
+    headline = `No assessment generated: all ${allFiles.length} changed file(s) were removed by the exclude patterns.`;
+    detail =
+      `Files did change in ${shortBase}..${shortHead}, but none survived filtering, ` +
+      `so there was nothing to send to the AI.` +
+      (isClassroomSetupCommit
+        ? ` This is the Classroom 50 setup commit, so this is expected immediately ` +
+          `after the assignment is accepted and before the student has pushed any work.`
+        : '');
+    // A whole excluded tree can run to hundreds of paths; enough to identify the
+    // pattern at fault is enough, and the full list is already in the run log.
+    const shown = allFiles.slice(0, EMPTY_ASSESSMENT_FILE_LIST_LIMIT);
+    const remainder = allFiles.length - shown.length;
+    checks = [
+      `Excluded files: ${shown.map((f) => `\`${f}\``).join(', ')}` +
+        (remainder > 0 ? `, and ${remainder} more (full list in the run log).` : ''),
+      `Re-include any of these with \`exclude_pattern_overrides\` — pass the exact path (e.g. \`${allFiles[0]}\`) or the default pattern that matched it.`,
+      `${excludePatterns.length} exclude pattern(s) were applied, combining the auto-detected stack patterns with \`additional_exclude_patterns\`. The full list is in the run log above.`,
+    ];
+  }
+
+  // The summary is the part an instructor can actually find later; the
+  // annotation only makes the run page show something is off.
+  try {
+    await core.summary
+      .addHeading('GrillMyCode: no assessment generated', 2)
+      .addRaw(`**${headline}**\n\n${detail}\n`)
+      .addHeading('What to check', 3)
+      .addList(checks)
+      .addRaw(
+        `\nNo questions, issue or PDF were produced by this run. ` +
+          (inputs.failOnEmptyAssessment
+            ? 'The run is marked as failed because `fail_on_empty_assessment` is enabled.'
+            : 'The run is reported as successful; set `fail_on_empty_assessment: "true"` to have this fail instead.'),
+      )
+      .write();
+  } catch (err) {
+    // A summary is a convenience, never a reason to lose the actual diagnosis.
+    core.debug(`Could not write job summary: ${err.message}`);
+  }
+
+  const logMessage = `${headline} ${detail}`;
+  if (inputs.failOnEmptyAssessment) {
+    core.setFailed(logMessage);
+  } else {
+    core.warning(logMessage);
+  }
+}
+
 // ─── Entry Point ─────────────────────────────────────────────────────────────
 
 async function run() {
@@ -434,7 +540,24 @@ async function run() {
     const files = filterFiles(allFiles, excludePatterns, inputs.excludePatternOverrides);
 
     if (files.length === 0) {
-      core.warning('No assessable files found after applying include/exclude filters. Skipping.');
+      // Two distinct failures reach this point and they need different fixes,
+      // so report them separately rather than behind one "no files" message.
+      //
+      //   Empty range     — base and head resolved to the same commit, so there
+      //                     were no changed files to filter in the first place.
+      //   Fully excluded  — files did change, but every one was removed by the
+      //                     exclude patterns.
+      //
+      // Both occur normally at assignment-accept time, which is why this is not
+      // a failure unless the instructor opts in. See fail_on_empty_assessment.
+      await reportEmptyAssessment({
+        reason: allFiles.length === 0 ? 'empty-range' : 'fully-excluded',
+        baseSha,
+        headSha,
+        allFiles,
+        excludePatterns,
+        inputs,
+      });
       return;
     }
     core.info(`Assessing ${files.length} file(s): ${files.join(', ')}`);
