@@ -12,6 +12,7 @@ import StepFileOptions from './steps/StepFileOptions';
 import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
 import { DEFAULT_DISPATCH_OVERRIDES } from './dispatchInputs';
+import { instructorRepoActive } from './generateYaml';
 
 const STEPS = [
   { label: 'AI',         title: 'Which model should GrillMyCode use?',                   subtitle: 'Select the OpenRouter model that will generate the comprehension questions.',                              Component: StepAIProvider },
@@ -20,7 +21,7 @@ const STEPS = [
   { label: 'File opts',  title: 'File handling options',                 subtitle: 'Configure how the diff is built — what to skip, how comments are handled, and which commits count.', Component: StepFileOptions },
   { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
   { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Choose one or more destinations for the generated questions.',                             Component: StepDelivery },
-  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository.',          Component: StepInstructorRepo },
+  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository. Available for Classroom 50 assignment repositories only.', Component: StepInstructorRepo },
   { label: 'Advanced',   title: 'Advanced settings',                    subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
   { label: 'Review',     title: 'Your workflow is ready',               subtitle: 'Copy the generated YAML into your assignment repository.',                                Component: StepReview },
 ];
@@ -44,6 +45,10 @@ const INITIAL_CONFIG = {
   assignmentContext: '',
   assignmentContextMaxChars: 20000,
 
+  // Instructor repository delivery works only in Classroom 50 assignment
+  // repositories, so the Instructor step asks first: null until answered, and the
+  // step cannot be left until it is. See instructorRepoActive in generateYaml.js.
+  usesClassroom50: null,
   instructorRepoEnabled: true,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
@@ -76,7 +81,10 @@ function getStepError(stepIndex, cfg) {
     }
   }
   if (stepIndex === 6) {
-    if (cfg.instructorRepoEnabled && (!cfg.instructorRepoTokenSecret || !cfg.instructorRepoTokenSecret.trim())) {
+    if (cfg.usesClassroom50 === null) {
+      return 'Please say whether your student repositories are created by Classroom 50 before continuing.';
+    }
+    if (instructorRepoActive(cfg) && (!cfg.instructorRepoTokenSecret || !cfg.instructorRepoTokenSecret.trim())) {
       return 'Please enter a secret name for the instructor repo token before continuing.';
     }
   }

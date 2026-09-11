@@ -20,17 +20,11 @@ import {
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
-  STUDENT_RESOLUTION_SKIP_COMMITTERS,
 } from './constants.js';
 import { readInputs } from './inputs.js';
-import {
-  resolveSHAs,
-  resolveBranch,
-  resolveAssignmentName,
-  resolveStudentLogin,
-  safeFilePart,
-} from './context.js';
-import { getChangedFiles, getDiff, getDiffStat, findStudentCommitSha } from './git.js';
+import { resolveSHAs, resolveBranch, safeFilePart } from './context.js';
+import { resolveSubmissionIdentity } from './submission-identity.js';
+import { getChangedFiles, getDiff, getDiffStat } from './git.js';
 import {
   filterFiles,
   collectRawFiles,
@@ -404,8 +398,12 @@ function createRunState() {
     handled: false,
 
     repoSlug: '',
+    // Submission identity (see submission-identity.js). submitter is the student
+    // login, or `group-<n>` for a team repo, in which case studentLogin is ''.
     assignmentName: '',
+    submitter: '',
     studentLogin: '',
+    identityError: '',
     branchName: '',
     baseSha: '',
     headSha: '',
@@ -504,7 +502,14 @@ function renderHeadline(state) {
 function renderOverview(state) {
   const rows = [
     ['Assignment', state.assignmentName ? `\`${state.assignmentName}\`` : '—'],
-    ['Student', state.studentLogin ? `@${state.studentLogin}` : '—'],
+    [
+      'Student',
+      state.studentLogin
+        ? `@${state.studentLogin}`
+        : state.submitter
+          ? `\`${state.submitter}\``
+          : '—',
+    ],
     ['Branch', state.branchName ? `\`${state.branchName}\`` : '—'],
     [
       'Commits assessed',
@@ -653,6 +658,7 @@ function renderDelivery(state) {
       {
         delivered: '✅ written',
         skipped: '— not configured',
+        unresolved: `⚠️ skipped — ${state.identityError}`,
         failed: `❌ failed${state.instructorError ? ` — ${state.instructorError}` : ''}`,
       }[state.instructorDelivery] ?? '—',
     ],
@@ -864,55 +870,25 @@ async function run() {
     state.branchName = branchName;
     core.info(`Branch: ${branchName}`);
 
-    // ── Resolve the student login ────────────────────────────────────────────
-    // Prefer the trusted Actions event payload (pusher), which the student cannot
-    // forge. Only fall back to walking commit authors — which are attacker-controlled
-    // strings — when the payload yields no usable login or resolves to a bot account.
-    // A manually dispatched or scheduled run always takes the fallback: its sender
-    // is whoever started the run, not the student (see resolveStudentLogin).
-    const studentResolutionSkipList = [
-      ...new Set([...STUDENT_RESOLUTION_SKIP_COMMITTERS, ...inputs.skipCommitters]),
-    ];
-    const isBotLogin = (login) =>
-      studentResolutionSkipList.some((bot) => login.toLowerCase() === bot.toLowerCase());
-
-    const payloadLogin = resolveStudentLogin(ctx);
-    let studentLogin;
-    if (payloadLogin && !isBotLogin(payloadLogin)) {
-      studentLogin = payloadLogin;
-      core.info(`Student login: ${studentLogin} (from trusted event payload)`);
-    } else {
-      // headSha may point to the action's own assessment-file commit on re-runs;
-      // walk the range to find the most recent non-bot commit, then resolve its
-      // GitHub-linked login.
-      const studentCommitSha = findStudentCommitSha(baseSha, headSha, studentResolutionSkipList);
-      const { data: studentCommitData } = await octokit.rest.repos.getCommit({
-        owner: ctx.repo.owner,
-        repo: ctx.repo.repo,
-        ref: studentCommitSha,
-      });
-      const commitLogin = studentCommitData.author?.login;
-      studentLogin = commitLogin ?? ctx.actor;
-      if (commitLogin) {
-        core.info(
-          `Student login: ${studentLogin} (resolved from commit ${studentCommitSha.substring(0, GIT_SHA_SHORT_LENGTH)})`,
-        );
-      } else {
-        core.warning(
-          `Commit ${studentCommitSha.substring(0, GIT_SHA_SHORT_LENGTH)} has no linked GitHub account, ` +
-            `so the assessment is attributed to "${ctx.actor}" — the account that started this run. ` +
-            `On a manually dispatched run that is you, not the student: the assessment will be filed ` +
-            `under your login and the instructor repository name may be wrong. This usually means the ` +
-            `student committed with an email that is not registered on their GitHub account.`,
-        );
-      }
-    }
-
-    state.studentLogin = studentLogin;
-
-    const assignmentName = await resolveAssignmentName(ctx, octokit, studentLogin);
+    // ── Resolve the submission identity ─────────────────────────────────────
+    // The assignment and submitter come from the repository name and its direct
+    // collaborators only — never from who pushed, who started the run, or who
+    // authored the commits (see submission-identity.js).
+    const identity = await resolveSubmissionIdentity({
+      octokit,
+      owner: ctx.repo.owner,
+      repo: ctx.repo.repo,
+    });
+    const { assignment: assignmentName = '', submitter = '', studentLogin = '' } = identity;
     state.assignmentName = assignmentName;
-    core.info(`Assignment name: ${assignmentName}`);
+    state.submitter = submitter;
+    state.studentLogin = studentLogin;
+    if (identity.error) {
+      state.identityError = identity.error;
+      core.info(`Submission identity unresolved: ${identity.error}.`);
+    } else {
+      core.info(`Assignment: ${assignmentName} · Submitter: ${submitter}`);
+    }
 
     // ── Collect changed files and apply filters ─────────────────────────────
     const allFiles = getChangedFiles(baseSha, headSha);
@@ -1118,12 +1094,14 @@ async function run() {
       branchName,
       assignmentContextFiles,
       contextSummary,
-      studentLogin,
+      studentLogin: submitter,
       sourceRepo,
     });
 
     // ── Generate PDF and upload to rolling release ───────────────────────────
-    const pdfFilename = `grill-my-code-${safeFilePart(assignmentName)}-${safeFilePart(studentLogin)}.pdf`;
+    // Named after the repository, which for a Classroom 50 repo already carries
+    // the assignment and student, so the asset name never depends on identity.
+    const pdfFilename = `grill-my-code-${safeFilePart(ctx.repo.repo)}.pdf`;
     let pdfUrl = null;
     let pdfBuffer = null;
     try {
@@ -1163,7 +1141,7 @@ async function run() {
       branchName,
       assignmentContextFiles,
       contextSummary,
-      studentLogin,
+      studentLogin: submitter,
       sourceRepo,
       pdfUrl,
     });
@@ -1213,6 +1191,15 @@ async function run() {
     if (!inputs.instructorRepoToken) {
       state.instructorDelivery = 'skipped';
       core.info('instructor_repo_token is not set — skipping instructor repository delivery.');
+    } else if (identity.error) {
+      // Filing under a guessed name is worse than not filing: it lands under the
+      // wrong student or creates a stray instructor repository.
+      state.instructorDelivery = 'unresolved';
+      core.warning(
+        `Instructor repository delivery skipped: ${identity.error}. ` +
+          `Delivery needs a repository created by Classroom 50 whose student is still a ` +
+          `direct collaborator on it. The student's assessment issue and PDF are unaffected.`,
+      );
     } else {
       const instructorOctokit = github.getOctokit(inputs.instructorRepoToken, {
         headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
@@ -1232,7 +1219,7 @@ async function run() {
         branchName,
         assignmentContextFiles,
         contextSummary,
-        studentLogin,
+        studentLogin: submitter,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
       });
       try {
@@ -1240,7 +1227,7 @@ async function run() {
           octokit: instructorOctokit,
           owner: ctx.repo.owner,
           instructorRepoName,
-          studentLogin,
+          studentLogin: submitter,
           content: instructorReport,
           headSha,
         });

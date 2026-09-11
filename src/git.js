@@ -69,33 +69,6 @@ function matchesSkipCommitter(commit, skipCommitters) {
 }
 
 /**
- * Returns the SHA of the most recent commit in baseSha..headSha whose author
- * is NOT matched by any entry in skipCommitters. This avoids misidentifying a
- * trailing bot commit (e.g. the action's own assessment file commit) as the
- * student's work when resolving the student's GitHub login.
- *
- * NOTE: author name/email are attacker-controlled. This is only a fallback for
- * student-login resolution; the primary path resolves the login from the
- * trusted Actions event payload (see resolveStudentLogin).
- *
- * Falls back to headSha if skipCommitters is empty or no non-bot commit exists
- * in the range (e.g. the range only contains bot commits).
- */
-export function findStudentCommitSha(baseSha, headSha, skipCommitters) {
-  if (!skipCommitters || skipCommitters.length === 0) return headSha;
-
-  // git log range notation (A..B) requires A to be a commit object.
-  // When baseSha is the empty tree, use a plain log up to headSha instead.
-  const logRange = baseSha === GIT_EMPTY_TREE_SHA ? [headSha] : [`${baseSha}..${headSha}`];
-  const commits = parseCommitLog(git('log', '--format=%H%x00%ae%x00%an', ...logRange));
-
-  // git log is newest-first; find() returns the most recent non-bot commit.
-  const studentCommit = commits.find((commit) => !matchesSkipCommitter(commit, skipCommitters));
-
-  return studentCommit?.sha ?? headSha;
-}
-
-/**
  * Returns the leading run of commits (oldest-first from baseSha towards headSha)
  * whose author name or email matches a skipCommitters substring. The walk stops
  * at the first non-matching commit, so only a consecutive leading run is

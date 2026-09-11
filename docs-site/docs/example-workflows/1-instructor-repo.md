@@ -6,11 +6,15 @@ sidebar_position: 9
 
 Automatically stores a **private, instructor-only** copy of every assessment — including both questions and answers — in a dedicated repository. Students only ever see their student-facing report; the instructor copy is written separately using a PAT that students cannot access.
 
+:::info Classroom 50 assignment repositories only
+Instructor repository delivery works only in the student repositories Classroom 50 creates when a student accepts an assignment, because the action identifies the assignment and the student from Classroom 50's repository naming. It is not available for any other repository — setting `instructor_repo_token` there only produces a warning.
+:::
+
 ## How it works
 
 When `instructor_repo_token` is provided the action:
 
-1. Resolves the assignment name from the student repo's `template_repository` field (set automatically by GitHub when the repo is created from a template — the mechanism Classroom 50 uses). For repos with no template it falls back to the source repository name.
+1. Identifies the assignment and the student from the Classroom 50 repository name (`<classroom>-<assignment>-<username>`) and the repository's direct collaborators — see [how the assignment and student are identified](../guides/instructor-setup#how-the-assignment-and-student-are-identified). A repository that doesn't follow that naming skips instructor delivery with a warning.
 2. Derives the instructor repository name as `{assignment-name}-grillmycode-instructor` in the same organisation.
 3. Creates the repository as **private** on first run if it does not already exist, commits a `generate-lms-quiz.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents.
    On every later run it re-checks both files and rewrites either one whose contents no longer match the copies shipped with the action, so a repository created by an older release picks up quiz-generation fixes on its own. Both files are owned by the action: local edits to them are replaced. If the PAT cannot write them the run logs a warning and still delivers the assessment.
@@ -76,20 +80,17 @@ jobs:
 
 ## Classroom 50 setup
 
-For a Classroom 50 classroom `cs-principles`, assignment slug `hello`, with a template repo also named `hello`:
+For a Classroom 50 classroom `cs-principles` and assignment slug `hello`:
 
 - Student repos: `your-org/cs-principles-hello-student-login`
-- Instructor repo (auto-created): `your-org/hello-grillmycode-instructor`
-- Files written per student: `student-login/questions.md`, `student-login/hello_student-login_quiz.imscc`
+- Instructor repo (auto-created): `your-org/cs-principles-hello-grillmycode-instructor`
+- Files written per student: `student-login/questions.md`, `student-login/cs-principles-hello_student-login_quiz.imscc`
 
-The assignment name is resolved automatically from the `template_repository` that Classroom 50 sets on every templated student repo — no configuration is needed beyond the token. Note that the resolved name comes from the **template repo's name**, which doesn't have to match the assignment slug (see [Instructor Setup](../guides/instructor-setup#assignment-name-vs-template-repo-name)).
+Both names are resolved automatically — no configuration is needed beyond the token, and it makes no difference whether the assignment has a template. A team-mode repository (`cs-principles-hello-group-3`) is filed under `group-3/`.
 
-## Non-classroom setup
+## Repositories not created by Classroom 50
 
-For a generic repository named `my-project`:
-
-- Instructor repo (auto-created): `your-org/my-project-grillmycode-instructor`
-- Files written per student: `student-login/questions.md`, `student-login/my-project_student-login_quiz.imscc` (student resolved from the most recent non-bot git commit author)
+Instructor delivery relies on Classroom 50's repository naming to tell the assignment and the student apart. In any other repository the action skips it with a warning; the student's assessment issue and PDF are still produced.
 
 ## Instructor report contents
 
