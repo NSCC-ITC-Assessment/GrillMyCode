@@ -115,6 +115,14 @@ export const GIT_SHA_SHORT_LENGTH = 7;
 export const EMPTY_ASSESSMENT_FILE_LIST_LIMIT = 20;
 
 /**
+ * Maximum number of rows rendered in the job summary's assessed-files and
+ * excluded-files tables. A whole excluded tree can run to hundreds of paths,
+ * and a 1 MiB summary that GitHub refuses to display helps nobody; the full
+ * list is always in the run log.
+ */
+export const SUMMARY_FILE_TABLE_LIMIT = 50;
+
+/**
  * Maximum stdout buffer size for git spawnSync calls.
  */
 export const GIT_MAX_BUFFER = 20 * 1024 * 1024; // 20 MB

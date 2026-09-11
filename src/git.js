@@ -122,3 +122,25 @@ export function getLeadingSkipCandidates(baseSha, headSha, skipCommitters) {
   }
   return run;
 }
+
+/**
+ * Returns per-file line counts for the assessed range as
+ * `[{ filepath, added, removed }]`, using `git diff --numstat`.
+ *
+ * Binary files are reported by git as `-` for both counts; they surface here as
+ * null so the caller can render them as binary rather than as "0 lines changed".
+ */
+export function getDiffStat(baseSha, headSha, files) {
+  return git('diff', '--numstat', baseSha, headSha, '--', ...files)
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [added = '', removed = '', filepath = ''] = line.split('\t');
+      return {
+        filepath,
+        added: added === '-' ? null : Number(added),
+        removed: removed === '-' ? null : Number(removed),
+      };
+    })
+    .filter((entry) => entry.filepath);
+}
