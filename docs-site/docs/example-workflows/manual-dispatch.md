@@ -105,6 +105,8 @@ Anyone who can run the workflow can set a dispatch input, and in a Classroom rep
 - **`base_sha` / `head_sha`** — a range collapsed to a single commit produces an empty diff, and the run reports it and succeeds, so nothing looks wrong at a glance.
 - **`skip_committers`** — the action verifies a commit's GitHub account login before skipping it, which stops someone impersonating a bot; it cannot stop someone naming their *own* login in the list and having their leading commits trimmed out of the assessment.
 
+`assignment_context` sits near this line and is offered, but unticked by default. Its globs are matched against the student's own working tree, so a student running the workflow could point it at a file they wrote. What it cannot do is empty the assessment — it only steers which topics the questions favour, and the action treats the files it reads as reference data that cannot override the rubric or surface answers. The paths it matched appear in the run summary, so a re-pointed glob is visible on the run page. Tick it when you want to retarget a single run at a different brief; leave it off for normal cohort runs, where it should stay fixed in the file.
+
 ## Booleans need `type: choice`
 
 A boolean setting is declared with `type: choice` and `options: ['false', 'true']` rather than `type: boolean`, and read through `github.event.inputs.*` rather than the `inputs` context.
