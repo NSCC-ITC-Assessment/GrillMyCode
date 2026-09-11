@@ -175,6 +175,8 @@ Classroom 50 names student repos `<classroom>-<assignment>-<username>` (lowercas
 
 Each run logs the name it inferred, so you can confirm it from the Actions log after the first submission — look for `Instructor repo: inferred assignment name "…"`. If the student's login is not found at the end of the repo name the strip cannot run, and the action falls back to the full repository name and raises a **workflow warning** instead; that case is worth checking, because the resulting instructor repo name may not be the one you expect.
 
+The symptom of a failed strip is a **separate instructor repository per student**, each named after a whole student repo (`…-jsmith-grillmycode-instructor`) rather than the shared assignment. If you see that, the student login the run resolved did not match the repo's suffix — look for the `Student login: …` line in the Actions log. Those extra repositories are not reused once the name resolves correctly, so delete them and re-run; the correct repository is created on the next run.
+
 For assignments without a starter repo, add the workflow file directly to each student repo (there is no template to ship it from).
 
 ## Assignment name vs. template repo name
