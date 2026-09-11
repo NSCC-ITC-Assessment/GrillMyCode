@@ -7,7 +7,11 @@
  */
 
 import * as core from '@actions/core';
-import { GIT_EMPTY_TREE_SHA, GIT_SHA_SHORT_LENGTH } from './constants.js';
+import {
+  GIT_EMPTY_TREE_SHA,
+  GIT_SHA_SHORT_LENGTH,
+  STUDENT_LOGIN_TRUSTED_EVENTS,
+} from './constants.js';
 import { getLeadingSkipCandidates, getFirstCommit } from './git.js';
 
 /**
@@ -129,17 +133,21 @@ export function sanitiseSha(sha) {
 }
 
 /**
- * Resolves the student's GitHub login from the trusted Actions event payload.
+ * Resolves the student's GitHub login from the Actions event payload.
  *
- * The event payload is populated by GitHub from the authenticated actor, so —
+ * The payload sender is populated by GitHub from the authenticated actor, so —
  * unlike commit author name/email, which the student fully controls — it cannot
- * be spoofed to misattribute the assessment to another user.
+ * be spoofed to misattribute the assessment to another user. It only names the
+ * student on the events listed in STUDENT_LOGIN_TRUSTED_EVENTS, though; on a
+ * manually dispatched or scheduled run it names whoever started the run.
  *
- * Returns an empty string when no trustworthy login is available.
+ * Returns an empty string when the event carries no login for the student, so
+ * the caller falls back to resolving it from the assessed commits.
  */
 export function resolveStudentLogin(ctx) {
+  if (!STUDENT_LOGIN_TRUSTED_EVENTS.includes(ctx.eventName)) return '';
   const payload = ctx.payload || {};
-  return payload.sender?.login || ctx.actor || '';
+  return payload.sender?.login || '';
 }
 
 /**

@@ -71,6 +71,12 @@ jobs:
           keep_comments: "${{ github.event.inputs.keep_comments || 'false' }}"
 ```
 
+:::note Who the assessment is attributed to
+A manually dispatched run is started by you, not by the student, so the action ignores the event's actor and resolves the student from the assessed commits — the newest non-bot commit in the range, using the GitHub account linked to its author. The assessment is filed under that student's login, and the assignment name (and therefore the instructor repository) resolves the same way it does on a pushed run.
+
+This needs `fetch-depth: 0` on the checkout, which the workflow above already sets. If the head commit's author email is not linked to a GitHub account the action cannot identify the student, warns, and falls back to your own login — check the run's warnings before trusting the result.
+:::
+
 ## How it works
 
 Each overridable setting appears twice.

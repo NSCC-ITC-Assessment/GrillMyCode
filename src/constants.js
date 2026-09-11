@@ -260,6 +260,20 @@ export const AI_MAX_OUTPUT_TOKENS = 16_384;
 export const STUDENT_RESOLUTION_SKIP_COMMITTERS = ['github-actions[bot]'];
 
 /**
+ * Event names whose payload `sender` is the student being assessed.
+ *
+ * On these events GitHub populates `sender` from whoever pushed the code, so it
+ * is both trustworthy and correct. On every other event it is the person who
+ * started the run — an instructor on `workflow_dispatch`, the workflow's last
+ * editor on `schedule` — and using it would attribute the assessment to them,
+ * file it under their folder, and (because the assignment name is inferred by
+ * stripping the student login from the repository name) create a separate
+ * instructor repository per student. Those events resolve the student from the
+ * assessed commits instead.
+ */
+export const STUDENT_LOGIN_TRUSTED_EVENTS = ['push', 'pull_request', 'pull_request_target'];
+
+/**
  * Maximum number of open issues to fetch when searching for predecessors.
  */
 export const ISSUES_PER_PAGE = 100;

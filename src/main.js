@@ -868,6 +868,8 @@ async function run() {
     // Prefer the trusted Actions event payload (pusher), which the student cannot
     // forge. Only fall back to walking commit authors — which are attacker-controlled
     // strings — when the payload yields no usable login or resolves to a bot account.
+    // A manually dispatched or scheduled run always takes the fallback: its sender
+    // is whoever started the run, not the student (see resolveStudentLogin).
     const studentResolutionSkipList = [
       ...new Set([...STUDENT_RESOLUTION_SKIP_COMMITTERS, ...inputs.skipCommitters]),
     ];
@@ -889,10 +891,21 @@ async function run() {
         repo: ctx.repo.repo,
         ref: studentCommitSha,
       });
-      studentLogin = studentCommitData.author?.login ?? ctx.actor;
-      core.info(
-        `Student login: ${studentLogin} (resolved from commit ${studentCommitSha.substring(0, GIT_SHA_SHORT_LENGTH)})`,
-      );
+      const commitLogin = studentCommitData.author?.login;
+      studentLogin = commitLogin ?? ctx.actor;
+      if (commitLogin) {
+        core.info(
+          `Student login: ${studentLogin} (resolved from commit ${studentCommitSha.substring(0, GIT_SHA_SHORT_LENGTH)})`,
+        );
+      } else {
+        core.warning(
+          `Commit ${studentCommitSha.substring(0, GIT_SHA_SHORT_LENGTH)} has no linked GitHub account, ` +
+            `so the assessment is attributed to "${ctx.actor}" — the account that started this run. ` +
+            `On a manually dispatched run that is you, not the student: the assessment will be filed ` +
+            `under your login and the instructor repository name may be wrong. This usually means the ` +
+            `student committed with an email that is not registered on their GitHub account.`,
+        );
+      }
     }
 
     state.studentLogin = studentLogin;
