@@ -71,6 +71,12 @@ jobs:
           keep_comments: "${{ github.event.inputs.keep_comments || 'false' }}"
 ```
 
+:::note Who the assessment is attributed to
+A manually dispatched run is started by you, not by the student, so the action ignores the event's actor and resolves the student from the assessed commits — the newest non-bot commit in the range, using the GitHub account linked to its author. The assessment is filed under that student's login, and the assignment name (and therefore the instructor repository) resolves the same way it does on a pushed run.
+
+This needs `fetch-depth: 0` on the checkout, which the workflow above already sets. If the head commit's author email is not linked to a GitHub account the action cannot identify the student, warns, and falls back to your own login — check the run's warnings before trusting the result.
+:::
+
 ## How it works
 
 Each overridable setting appears twice.
@@ -104,6 +110,8 @@ Anyone who can run the workflow can set a dispatch input, and in a Classroom rep
 - **`include_answers`** — would put a "show me the answers" button on the run form.
 - **`base_sha` / `head_sha`** — a range collapsed to a single commit produces an empty diff, and the run reports it and succeeds, so nothing looks wrong at a glance.
 - **`skip_committers`** — the action verifies a commit's GitHub account login before skipping it, which stops someone impersonating a bot; it cannot stop someone naming their *own* login in the list and having their leading commits trimmed out of the assessment.
+
+`assignment_context` sits near this line and is offered, but unticked by default. Its globs are matched against the student's own working tree, so a student running the workflow could point it at a file they wrote. What it cannot do is empty the assessment — it only steers which topics the questions favour, and the action treats the files it reads as reference data that cannot override the rubric or surface answers. The paths it matched appear in the run summary, so a re-pointed glob is visible on the run page. Tick it when you want to retarget a single run at a different brief; leave it off for normal cohort runs, where it should stay fixed in the file.
 
 ## Booleans need `type: choice`
 

@@ -5,6 +5,22 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.2.8 — 2026-09-11
+
+### What's Changed
+
+### Features
+
+- add summary file table limit and diff stat function for assessed files
+
+### Bug Fixes
+
+- improve student login resolution for assessments in various workflows
+
+### Documentation
+
+- update manual dispatch documentation and improve assignment context handling in YAML generation
+
 ## v1.2.7 — 2026-09-08
 
 ### What's Changed

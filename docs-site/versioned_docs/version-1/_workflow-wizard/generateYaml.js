@@ -3,10 +3,7 @@
  * Only emits inputs that differ from their defaults to keep output minimal.
  */
 
-import {
-  DISPATCH_OVERRIDES_BY_KEY,
-  resolveDispatchOverrides,
-} from './dispatchInputs';
+import { DISPATCH_OVERRIDES_BY_KEY, resolveDispatchOverrides } from './dispatchInputs';
 
 /**
  * Normalises a pattern string that may use commas, newlines, or a mix as
@@ -122,7 +119,7 @@ function dispatchInputLines(cfg, overrideKeys) {
   lines.push('    # shows a form pre-filled with these defaults; anything changed there');
   lines.push('    # applies to that run only. Any run that supplies no value — a cleared');
   lines.push('    # field, or any automatic trigger — uses the fallback baked into the');
-  lines.push('    # matching `${{ ... || \'...\' }}` expression below.');
+  lines.push("    # matching `${{ ... || '...' }}` expression below.");
   lines.push('    #');
   lines.push('    # Keep each default here in sync with its fallback below — they are the');
   lines.push('    # same value in two places, and if they drift, clearing a field on the');
@@ -192,7 +189,8 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   if (hasPush) {
     lines.push('  push:');
     if (!dynamicBranch) {
-      const branches = cfg.pushBranches && cfg.pushBranches.length > 0 ? cfg.pushBranches : ['main', 'master'];
+      const branches =
+        cfg.pushBranches && cfg.pushBranches.length > 0 ? cfg.pushBranches : ['main', 'master'];
       lines.push(`    branches: [${branches.map((b) => `"${b}"`).join(', ')}]`);
     }
   }
@@ -219,7 +217,9 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   lines.push('jobs:');
   lines.push('  generate-questions:');
   if (dynamicBranch) {
-    lines.push(`    if: github.event_name == 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)`);
+    lines.push(
+      `    if: github.event_name == 'workflow_dispatch' || github.ref == format('refs/heads/{0}', github.event.repository.default_branch)`,
+    );
   }
   lines.push('    runs-on: ubuntu-latest');
   lines.push('    timeout-minutes: 15');
@@ -292,9 +292,13 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   // ── Question generation ────────────────────────────────────────────────────
   pushInput('num_questions', 'numQuestions', yamlStr(cfg.numQuestions));
   pushInput('include_answers', 'includeAnswers', yamlStr(cfg.includeAnswers));
-  if (cfg.assignmentContext && differ(cfg, 'assignmentContext')) {
-    lines.push(`          assignment_context: ${yamlStr(cfg.assignmentContext)}`);
-  }
+  // Normalised on the way out like the other glob-list inputs, so a value typed
+  // with newlines emits as the comma-separated form the action parses.
+  pushInput(
+    'assignment_context',
+    'assignmentContext',
+    yamlStr(normalizePatterns(cfg.assignmentContext)),
+  );
   if (differ(cfg, 'assignmentContextMaxChars')) {
     lines.push(`          assignment_context_max_chars: ${yamlStr(cfg.assignmentContextMaxChars)}`);
   }

@@ -12,12 +12,10 @@
  * assignment are listed. Credentials (api_key, github_token,
  * instructor_repo_token) are deliberately absent — a dispatch input is typed
  * into the Actions UI in plaintext and recorded in the run's metadata, so a
- * secret must never be one. Structural inputs (ai_provider, assignment_context,
- * assignment_context_max_chars) are absent because changing them mid-assignment
- * produces results that are not comparable across students — and
- * assignment_context in particular is a glob matched against the student's own
- * working tree, so letting it be re-pointed at dispatch time would hand the
- * student a lever on what the questions focus on.
+ * secret must never be one. ai_provider and assignment_context_max_chars are
+ * absent as structural: varying them mid-assignment produces results that are
+ * not comparable across students, and neither is a setting an instructor
+ * reaches for on a re-run.
  *
  * include_answers, base_sha, head_sha and skip_committers are absent for a
  * shared reason: a dispatch input can be set by anyone who can run the
@@ -32,6 +30,20 @@
  * All four remain settable in the workflow file (base_sha/head_sha via the
  * wizard's Advanced step), where changing them takes a commit that is visible
  * in the history being assessed.
+ *
+ * assignment_context was held back on that same "the student can dispatch too"
+ * reasoning — it is a glob matched against the student's working tree, so a
+ * student could re-point it at a file they wrote. It is listed now, unticked,
+ * because that reasoning did not survive contact with the rest of the
+ * catalogue: instructor_context is exposed and ticked by default, and it steers
+ * question focus by free text that a dispatching student can equally supply.
+ * The assessed code is student-authored and reaches the prompt in full, so
+ * student-controlled text in the prompt is the tool's baseline condition rather
+ * than something this input introduces, and the prompt already treats
+ * assignment context as reference data that cannot override the rubric or
+ * surface answers. What it cannot do is what disqualified the four above —
+ * quietly empty the assessment. The paths it matched are rendered in the run
+ * summary's configuration block, so a re-pointed glob shows up on the run page.
  */
 
 /**
@@ -120,6 +132,16 @@ export const DISPATCH_OVERRIDES = [
     hint: 'Pull a file back in that the default exclusions removed.',
   },
   {
+    key: 'assignment_context',
+    cfgKey: 'assignmentContext',
+    label: 'Assignment context files',
+    type: 'string',
+    normalize: true,
+    description:
+      'Comma-separated file glob(s) whose contents are given to the AI as assignment context',
+    hint: 'Point a single run at a different brief or rubric — useful when an assignment’s instructions moved, or to test how a new brief steers the questions before committing it. Unticked by default: the globs match the student’s own working tree, and anyone who can run the workflow can set them.',
+  },
+  {
     key: 'include_initial_commit',
     cfgKey: 'includeInitialCommit',
     label: 'Include initial commit',
@@ -142,13 +164,14 @@ export const DISPATCH_OVERRIDES = [
  * settings an instructor varies between runs of the same assignment, in
  * catalogue order from num_questions through exclude_pattern_overrides.
  *
- * The two below that range stay unticked because they are situational rather
- * than routine — include_initial_commit is a per-assignment structural choice,
+ * The three below that range stay unticked because they are situational rather
+ * than routine — assignment_context re-points question focus and is best fixed
+ * for the cohort, include_initial_commit is a per-assignment structural choice,
  * and ai_temperature is best left fixed.
  */
-export const DEFAULT_DISPATCH_OVERRIDES = DISPATCH_OVERRIDES.filter(
-  (o) => o.defaultSelected,
-).map((o) => o.key);
+export const DEFAULT_DISPATCH_OVERRIDES = DISPATCH_OVERRIDES.filter((o) => o.defaultSelected).map(
+  (o) => o.key,
+);
 
 /** Lookup by action input key (e.g. 'num_questions'). */
 export const DISPATCH_OVERRIDES_BY_KEY = Object.fromEntries(
