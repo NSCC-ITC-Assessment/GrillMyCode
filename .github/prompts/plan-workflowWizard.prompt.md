@@ -39,6 +39,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   postIssue: false,
   postDiscussion: false,
   discussionCategory: 'GrillMyCode',
+  usesClassroom50: null,                     // true | false; null until answered on the Instructor step
   instructorRepoEnabled: false,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
@@ -74,7 +75,10 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 - `on:` block varies by triggerEvent
 - `api_key` always emitted — OpenRouter requires it and the action fails without it
 - `discussion_category` only emitted if postDiscussion
-- `instructor_repo_token` only emitted if instructorRepoEnabled
+- `instructor_repo_token` only emitted if `usesClassroom50 === true` and instructorRepoEnabled
+  (`instructorRepoActive`), preceded by a comment that it works in Classroom 50 assignment
+  repositories only — the action identifies the assignment and student from Classroom 50's
+  repository naming and skips instructor delivery anywhere else
 - Include inline YAML comments on non-obvious inputs
 - Secret references use `${{ secrets.SECRET_NAME }}` format
 
@@ -92,7 +96,7 @@ the shipped wizard lives.
 4. `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js`
 5. `docs-site/docs/_workflow-wizard/steps/StepQuestions.js`
 6. `docs-site/docs/_workflow-wizard/steps/StepDelivery.js`
-7. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Instructor repository delivery + token secret name
+7. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Required "created by Classroom 50?" question; only a "Yes" reveals instructor repository delivery + token secret name, and a "No" explains the feature is unavailable
 8. `docs-site/docs/_workflow-wizard/steps/StepFiles.js`
 9. `docs-site/docs/_workflow-wizard/steps/StepFileOptions.js`
 10. `docs-site/docs/_workflow-wizard/steps/StepAdvanced.js`

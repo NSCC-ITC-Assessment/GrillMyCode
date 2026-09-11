@@ -120,15 +120,15 @@ jobs:
 
           # ── Instructor repository ─────────────────────────────────────────
 
+          # Classroom 50 assignment repositories only — not available elsewhere.
           # PAT with repo scope and permission to create repositories in the
           # same organisation as the student repositories. When provided, the
           # action writes a private instructor-only report (questions AND answers)
           # to a repository named {assignment-name}-grillmycode-instructor in the same org.
           # The repository is auto-created on first run if it does not exist.
-          # The assignment name is resolved from the student repo's
-          # template_repository (set by Classroom 50 
-          # templated assignments), falling back to the source repo name
-          # otherwise.
+          # The assignment name and student folder are read from the Classroom 50
+          # repo name (<classroom>-<assignment>-<username>) and its direct
+          # collaborators; any other repo skips instructor delivery with a warning.
           # Leave empty (default) to disable instructor repository delivery.
           # instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 

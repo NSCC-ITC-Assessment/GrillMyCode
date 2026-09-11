@@ -42,7 +42,7 @@ The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` b
 
 ### How do I set up the instructor repository feature?
 
-The instructor repository feature stores a private copy of each student's questions and answers in a repository that only instructors can access. It requires a one-time org-level setup. See the [Instructor Setup guide](guides/instructor-setup.md) for step-by-step instructions.
+The instructor repository feature stores a private copy of each student's questions and answers in a repository that only instructors can access. It is available only in Classroom 50 assignment repositories — the student repositories Classroom 50 creates when a student accepts an assignment — because the action identifies the assignment and student from Classroom 50's repository naming. It requires a one-time org-level setup. See the [Instructor Setup guide](guides/instructor-setup.md) for step-by-step instructions.
 
 ---
 

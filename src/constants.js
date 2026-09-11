@@ -250,28 +250,11 @@ export const AI_TOP_P = 0.95;
 export const AI_MAX_OUTPUT_TOKENS = 16_384;
 
 /**
- * Bot account substrings that are always excluded when resolving the student
- * login from the commit history. This list is applied unconditionally,
- * regardless of the user-configured skip_committers input (which controls
- * diff-base advancement, a separate concern). It ensures that the action's
- * own assessment-file commit never gets mistaken for a student commit even
- * when skip_committers has been overridden or cleared by the user.
+ * Page size when listing a student repository's direct collaborators to resolve
+ * the submission identity. A Classroom 50 repository has one direct collaborator
+ * per student (a handful for a legacy group), so one page is the norm.
  */
-export const STUDENT_RESOLUTION_SKIP_COMMITTERS = ['github-actions[bot]'];
-
-/**
- * Event names whose payload `sender` is the student being assessed.
- *
- * On these events GitHub populates `sender` from whoever pushed the code, so it
- * is both trustworthy and correct. On every other event it is the person who
- * started the run — an instructor on `workflow_dispatch`, the workflow's last
- * editor on `schedule` — and using it would attribute the assessment to them,
- * file it under their folder, and (because the assignment name is inferred by
- * stripping the student login from the repository name) create a separate
- * instructor repository per student. Those events resolve the student from the
- * assessed commits instead.
- */
-export const STUDENT_LOGIN_TRUSTED_EVENTS = ['push', 'pull_request', 'pull_request_target'];
+export const COLLABORATORS_PER_PAGE = 100;
 
 /**
  * Maximum number of open issues to fetch when searching for predecessors.

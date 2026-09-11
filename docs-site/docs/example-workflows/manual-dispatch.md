@@ -72,9 +72,7 @@ jobs:
 ```
 
 :::note Who the assessment is attributed to
-A manually dispatched run is started by you, not by the student, so the action ignores the event's actor and resolves the student from the assessed commits — the newest non-bot commit in the range, using the GitHub account linked to its author. The assessment is filed under that student's login, and the assignment name (and therefore the instructor repository) resolves the same way it does on a pushed run.
-
-This needs `fetch-depth: 0` on the checkout, which the workflow above already sets. If the head commit's author email is not linked to a GitHub account the action cannot identify the student, warns, and falls back to your own login — check the run's warnings before trusting the result.
+The student is read from the repository, not from the run: it is the direct collaborator whose login ends the Classroom 50 repository name. Starting the run yourself, or having pushed a commit into the student's repository, has no effect on who the assessment is attributed to or which instructor repository it is filed in. See [how the assignment and student are identified](../guides/instructor-setup.md#how-the-assignment-and-student-are-identified).
 :::
 
 ## How it works

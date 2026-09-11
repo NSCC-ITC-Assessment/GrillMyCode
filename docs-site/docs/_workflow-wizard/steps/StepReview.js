@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from '../styles.module.css';
-import { generateYaml } from '../generateYaml';
+import { generateYaml, instructorRepoActive } from '../generateYaml';
 import { resolveDispatchOverrides } from '../dispatchInputs';
 
 function buildChecklist(cfg, docsBase) {
@@ -36,10 +36,10 @@ function buildChecklist(cfg, docsBase) {
     }
   }
 
-  if (cfg.instructorRepoEnabled) {
+  if (instructorRepoActive(cfg)) {
     const tokenSecret = cfg.instructorRepoTokenSecret || 'INSTRUCTOR_REPO_TOKEN';
     items.push({
-      text: `Create a Personal Access Token with "repo" and "workflow" scopes and add it as an org-level secret named "${tokenSecret}".`,
+      text: `Create a Personal Access Token with "repo" and "workflow" scopes and add it as an org-level secret named "${tokenSecret}". Instructor repository delivery works only in Classroom 50 assignment repositories.`,
       linkHref: `${docsBase}/guides/instructor-setup`,
       linkLabel: 'Instructor Setup guide',
     });

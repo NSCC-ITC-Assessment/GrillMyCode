@@ -17,7 +17,7 @@ By default (`include_initial_commit: 'false'`), the diff base is pinned to the r
 - `.github/workflows/autograde.yaml` is covered by the always-on `.github/workflows/**` exclude.
 - `.classroom50.yaml` is excluded by default.
 
-`skip_committers` (defaulting to `github-actions[bot]`) is therefore not needed for the leading setup commits at all. It still matters for the *trailing* end of the commit range, where it's used to avoid misattributing GrillMyCode's own commits to the student when resolving who to assign the assessment issue to.
+`skip_committers` (defaulting to `github-actions[bot]`) is therefore not needed for the leading setup commits at all. It remains available for any other bot account whose commits open the assessed range.
 
 ## Classroom 50's own commits
 
@@ -113,8 +113,8 @@ Because the whole class shares one key, rate limits and costs are pooled rather 
 
 ## Assessment issue assignment
 
-The assessment issue is automatically assigned to the student who authored the head commit. The action resolves the student login by walking the commit range newest-first and skipping commits from `skip_committers`.
+The assessment issue is automatically assigned to the student the repository belongs to: the direct collaborator whose login ends the repository name (see [how the assignment and student are identified](instructor-setup#how-the-assignment-and-student-are-identified)). Who pushed or who started the run makes no difference. A team-mode repository (`…-group-<n>`) has no single owner, so its issue is left unassigned.
 
 ## Private instructor repository
 
-The action can automatically store a private copy of every assessment — including both questions and answers — in a repository that only instructors can access. See the [Instructor Setup guide](instructor-setup) for step-by-step instructions on enabling this for your classroom, and the [Assignment Templates and instructor-repo naming](instructor-setup#assignments-without-a-starter-repo) notes for how the assignment name is resolved on Classroom 50's `<classroom>-<assignment>-<username>` repo naming scheme.
+The action can automatically store a private copy of every assessment — including both questions and answers — in a repository that only instructors can access. See the [Instructor Setup guide](instructor-setup) for step-by-step instructions on enabling this for your classroom, and [How the assignment and student are identified](instructor-setup#how-the-assignment-and-student-are-identified) for how both names are read from Classroom 50's `<classroom>-<assignment>-<username>` repo naming scheme.

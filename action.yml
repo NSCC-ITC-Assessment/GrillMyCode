@@ -101,11 +101,16 @@ inputs:
 
   instructor_repo_token:
     description: >
+      Classroom 50 assignment repositories only.
       Personal Access Token (PAT) with repo and workflow scopes and permission
       to create repositories in the same organisation as the student
       repositories. When provided, the action writes a private instructor-only
       assessment file (questions and answers) to a repository named
-      {assignment-name}-grillmycode-instructor in the same organisation. The repository
+      {assignment-name}-grillmycode-instructor in the same organisation, in a
+      folder named for the student. Both names are read from the Classroom 50
+      student repository's name (<classroom>-<assignment>-<username>) and its
+      direct collaborators; any other repository skips instructor delivery
+      with a warning. The repository
       is created automatically on first run if it does not already exist, and
       its quiz-generation workflow and README are refreshed on every run
       whenever they differ from the copies shipped with the action.

@@ -7,11 +7,7 @@
  */
 
 import * as core from '@actions/core';
-import {
-  GIT_EMPTY_TREE_SHA,
-  GIT_SHA_SHORT_LENGTH,
-  STUDENT_LOGIN_TRUSTED_EVENTS,
-} from './constants.js';
+import { GIT_EMPTY_TREE_SHA, GIT_SHA_SHORT_LENGTH } from './constants.js';
 import { getLeadingSkipCandidates, getFirstCommit } from './git.js';
 
 /**
@@ -133,24 +129,6 @@ export function sanitiseSha(sha) {
 }
 
 /**
- * Resolves the student's GitHub login from the Actions event payload.
- *
- * The payload sender is populated by GitHub from the authenticated actor, so —
- * unlike commit author name/email, which the student fully controls — it cannot
- * be spoofed to misattribute the assessment to another user. It only names the
- * student on the events listed in STUDENT_LOGIN_TRUSTED_EVENTS, though; on a
- * manually dispatched or scheduled run it names whoever started the run.
- *
- * Returns an empty string when the event carries no login for the student, so
- * the caller falls back to resolving it from the assessed commits.
- */
-export function resolveStudentLogin(ctx) {
-  if (!STUDENT_LOGIN_TRUSTED_EVENTS.includes(ctx.eventName)) return '';
-  const payload = ctx.payload || {};
-  return payload.sender?.login || '';
-}
-
-/**
  * Returns the branch name for the current event.
  * Falls back to parsing GITHUB_REF when context properties are absent.
  */
@@ -158,73 +136,6 @@ export function resolveBranch(ctx) {
   const ref = process.env.GITHUB_REF || ctx.ref || '';
   const match = ref.match(/^refs\/heads\/(.+)$/);
   return match ? match[1] : ref;
-}
-
-/**
- * Strips the student login suffix from a Classroom 50 repo name
- * ({classroom-slug}-{assignment-slug}-{student-login}).
- *
- * Because we have the confirmed student login we can strip it unambiguously
- * even when the login itself contains hyphens — this leaves the classroom
- * slug attached to the inferred name.
- *
- * Returns the stripped name, or the original if no match is found.
- */
-function stripStudentLoginSuffix(repoName, studentLogin) {
-  if (studentLogin && repoName.toLowerCase().endsWith('-' + studentLogin.toLowerCase())) {
-    return repoName.slice(0, -(studentLogin.length + 1));
-  }
-  return repoName;
-}
-
-/**
- * Resolves the assignment name for the instructor repository.
- *
- * Resolution order (first match wins):
- *   1. template_repository.name — set by GitHub when the assignment has a
- *      starter code repository (a Classroom 50 templated assignment
- *      populates this). This is the cleanest source.
- *   2. Strip "-{studentLogin}" suffix from the repo name — handles
- *      template-less assignments (template_repository is null in that case).
- *      Because studentLogin is already confirmed, this is unambiguous even
- *      for logins that contain hyphens.
- *   3. Full source repo name — generic fallback for non-templated repos.
- */
-export async function resolveAssignmentName(ctx, octokit, studentLogin) {
-  try {
-    const { data } = await octokit.rest.repos.get({
-      owner: ctx.repo.owner,
-      repo: ctx.repo.repo,
-    });
-    if (data.template_repository?.name) {
-      return data.template_repository.name;
-    }
-    // template_repository is null — a template-less assignment. Fall back to
-    // stripping the student login suffix.
-    // Only warn when the suffix strip doesn't match (i.e. the login wasn't found
-    // at the end of the repo name), since in that case the inferred name is the
-    // full repo name and may be wrong.
-    const inferred = stripStudentLoginSuffix(ctx.repo.repo, studentLogin);
-    if (inferred === ctx.repo.repo) {
-      core.warning(
-        `Instructor repo: could not strip student login suffix from "${ctx.repo.repo}" — ` +
-          `student login "${studentLogin}" was not found at the end of the repo name. ` +
-          `Using the full repository name as the assignment name. ` +
-          `Verify the instructor repository name is correct after the first run.`,
-      );
-    } else {
-      core.info(
-        `Instructor repo: inferred assignment name "${inferred}" by stripping student login suffix from "${ctx.repo.repo}".`,
-      );
-    }
-    return inferred;
-  } catch (err) {
-    core.warning(
-      `Could not fetch repository metadata to resolve assignment name: ${err.message}. ` +
-        `Falling back to source repository name.`,
-    );
-    return stripStudentLoginSuffix(ctx.repo.repo, studentLogin);
-  }
 }
 
 /**
