@@ -45,16 +45,13 @@ resolveSHAs()
 resolveBranch()
     │  Extracts the branch name from the event payload or GITHUB_REF
     │
-resolveStudentLogin()
-    │  On push / pull_request: the event payload sender (the pusher — unforgeable)
-    │  On workflow_dispatch, schedule and every other event the sender is whoever
-    │  started the run, not the student, so the payload is ignored and the login
-    │  is resolved from the commits instead:
-    │
-    │    repos.getCommit(findStudentCommitSha())
-    │      Newest non-bot commit in the range; takes its GitHub-linked login
-    │      Falls back to ctx.actor (and warns) if the git email is not linked
-    │      to a GitHub account
+resolveSubmissionIdentity()
+    │  Lists the repository's direct collaborators (one API call)
+    │  Student = the collaborator whose login ends the Classroom 50 repo name
+    │  (<classroom>-<assignment>-<username>); assignment = everything before it
+    │  A repo ending in -group-<n> is a team submission, filed under group-<n>
+    │  Anything else is unresolved, and instructor delivery is skipped
+    │  Never consults the event sender, run actor, commit authors or template
     │
 getChangedFiles() → filterFiles()
     │  Runs `git diff --name-only baseSha headSha`

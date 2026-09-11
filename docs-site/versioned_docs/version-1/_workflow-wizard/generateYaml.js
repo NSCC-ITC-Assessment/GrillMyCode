@@ -18,6 +18,17 @@ function normalizePatterns(value) {
     .join(', ');
 }
 
+/**
+ * Instructor repository delivery works only in Classroom 50 assignment
+ * repositories — the action identifies the assignment and student from Classroom
+ * 50's repository naming — so it counts as enabled only once the user has
+ * confirmed they use Classroom 50. This also covers ticking the checkbox and then
+ * switching that answer to "No". Shared with the Review step's checklist.
+ */
+export function instructorRepoActive(cfg) {
+  return cfg.usesClassroom50 === true && cfg.instructorRepoEnabled;
+}
+
 const DEFAULTS = {
   aiProvider: 'openrouter',
   aiModel: 'google/gemini-3.5-flash-lite',
@@ -336,8 +347,10 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   }
 
   // ── Instructor repository ──────────────────────────────────────────────────
-  if (cfg.instructorRepoEnabled) {
+  if (instructorRepoActive(cfg)) {
     const tokenSecret = cfg.instructorRepoTokenSecret || 'INSTRUCTOR_REPO_TOKEN';
+    lines.push('          # Classroom 50 assignment repositories only — any other repository');
+    lines.push('          # skips instructor repository delivery with a warning.');
     lines.push(`          instructor_repo_token: ${secretRef(tokenSecret)}`);
   }
 

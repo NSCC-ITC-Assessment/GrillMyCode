@@ -4,17 +4,16 @@ sidebar_position: 5
 
 # PDF Asset Naming
 
-GrillMyCode generates a PDF for every assessment and attaches it to a rolling GitHub Release tagged `gmc-assessments` in the student's repository. The asset filename follows the same branch-aware naming convention as the assessment issue title.
-
-On the default branch (`main`/`master`) the file is named `grill-my-code.pdf`. On any other branch the sanitised branch name is appended before the extension, so each branch produces a distinct file without collisions.
+GrillMyCode generates a PDF for every assessment and attaches it to a rolling GitHub Release tagged `gmc-assessments` in the student's repository. The asset is named after the repository — `grill-my-code-{repository}.pdf` — with any character other than a letter, digit, `-` or `_` replaced by `-`.
 
 ## Examples
 
-| Branch | PDF asset filename |
+| Repository | PDF asset filename |
 |---|---|
-| `main` | `grill-my-code.pdf` |
-| `feat/login-form` | `grill-my-code-feat-login-form.pdf` |
-| `student/a1` | `grill-my-code-student-a1.pdf` |
+| `cs-principles-lab-3-jsmith` | `grill-my-code-cs-principles-lab-3-jsmith.pdf` |
+| `my.project` | `grill-my-code-my-project.pdf` |
+
+A repository has one PDF asset, so it always holds the most recent assessment, whichever branch produced it.
 
 ## How the download URL works
 

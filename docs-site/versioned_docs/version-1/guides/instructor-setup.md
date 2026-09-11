@@ -6,6 +6,10 @@ sidebar_position: 5
 
 This page walks through everything an instructor needs to do to enable private instructor repository delivery — the feature that automatically stores a full question-and-answer assessment copy for every student in a private repository that only instructors can access.
 
+:::info Classroom 50 assignment repositories only
+Instructor repository delivery works only in the student repositories Classroom 50 creates when a student accepts an assignment. The action identifies the assignment and the student from Classroom 50's repository naming (see [how the assignment and student are identified](#how-the-assignment-and-student-are-identified)), so the feature is not available for any other repository — setting `instructor_repo_token` there only produces a warning. Everything else GrillMyCode does works the same with or without Classroom 50.
+:::
+
 Setup is split into two phases: a **one-time org setup** that you do once for your whole classroom organisation, and a **per-assignment setup** that you do once for each new assignment.
 
 ---
@@ -167,21 +171,27 @@ Re-running the action (e.g. when a student pushes more commits) overwrites the e
 
 ---
 
+## How the assignment and student are identified
+
+Classroom 50 names every student repository `<classroom>-<assignment>-<username>` (lowercased), and `gh student accept` adds the accepting student to it as a direct collaborator. The action reads both names from those two facts and nothing else:
+
+- **Student folder**: the repository's direct collaborator whose login ends the repository name. For `cs-principles-lab-3-jsmith` with direct collaborator `jsmith`, the folder is `jsmith/`.
+- **Instructor repository**: everything before that login, so `cs-principles-lab-3-grillmycode-instructor`. The classroom slug stays attached, which keeps two classrooms running the same assignment in separate instructor repositories.
+- **Team assignments**: a team-mode repository ends in `-group-<n>` rather than a login, and its assessment is filed under `group-<n>/`.
+
+Who pushed, who started the run, who authored the commits, and which template the repository came from play no part. Pushing a workflow file into a student's repository, or running the workflow by hand from the Actions tab, never changes where an assessment is filed. Each run logs what it resolved — look for `Assignment: cs-principles-lab-3 · Submitter: jsmith` in the Actions log.
+
+If a repository does not fit — it was not created by Classroom 50, the student is no longer a direct collaborator, or more than one collaborator's login ends the name — the action does not guess. It skips instructor delivery, raises a **workflow warning** giving the reason, and repeats the reason in the run summary. The student's assessment issue and PDF are produced as normal.
+
+Renaming an assignment with `gh teacher assignment rename` renames its student repositories too, so assessments made after a rename go to a new instructor repository named for the new slug.
+
+:::note Upgrading from 1.2.8 or earlier
+Earlier releases named the instructor repository after the assignment's template repository when GitHub reported one, and could file an assessment under whoever pushed or started the run. Assessments now go to `<classroom>-<assignment>-grillmycode-instructor`. Any instructor repositories named after a template, or after a whole student repository (`…-jsmith-grillmycode-instructor`), are no longer written to and can be deleted once you have kept what you need from them.
+:::
+
 ## Assignments without a starter repo
 
-If your Classroom 50 assignment is **template-less** (registered with `gh teacher assignment add` and no `--template`), GitHub does not set `template_repository` on the student's repo. The action falls back to stripping the student login suffix from the repo name to infer the assignment name.
-
-Classroom 50 names student repos `<classroom>-<assignment>-<username>` (lowercased). The login-suffix strip only removes the trailing `-<username>`, so the inferred assignment name keeps the classroom slug attached. For example, a student repo `cs-principles-lab-3-jsmith` (classroom `cs-principles`, assignment `lab-3`, student `jsmith`) produces an instructor repo named `cs-principles-lab-3-grillmycode-instructor`, not `lab-3-grillmycode-instructor`. This is expected and stays consistent across the whole classroom — it just isn't the bare assignment slug.
-
-Each run logs the name it inferred, so you can confirm it from the Actions log after the first submission — look for `Instructor repo: inferred assignment name "…"`. If the student's login is not found at the end of the repo name the strip cannot run, and the action falls back to the full repository name and raises a **workflow warning** instead; that case is worth checking, because the resulting instructor repo name may not be the one you expect.
-
-The symptom of a failed strip is a **separate instructor repository per student**, each named after a whole student repo (`…-jsmith-grillmycode-instructor`) rather than the shared assignment. If you see that, the student login the run resolved did not match the repo's suffix — look for the `Student login: …` line in the Actions log. Those extra repositories are not reused once the name resolves correctly, so delete them and re-run; the correct repository is created on the next run.
-
-For assignments without a starter repo, add the workflow file directly to each student repo (there is no template to ship it from).
-
-## Assignment name vs. template repo name
-
-For a **templated** assignment, the resolved assignment name is the **template repository's name** (`template_repository.name`), not necessarily the assignment slug students pass to `gh student accept`. Classroom 50 explicitly allows these to differ — a teacher can register a template repo called `cs50-hello-starter` under the assignment slug `hello`. In that case the instructor repo is named after the template (`cs50-hello-starter-grillmycode-instructor`), not the slug (`hello-grillmycode-instructor`). If you want the instructor repo name to match the slug students actually type, name your template repository the same as the slug.
+For an assignment registered without a template — or with `--empty-repo` — there is no template to ship the workflow from, so add the workflow file directly to each student repo. Instructor delivery works exactly as it does for a templated assignment.
 
 ---
 

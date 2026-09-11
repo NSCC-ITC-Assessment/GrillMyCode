@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.3.0 — 2026-09-11
+
+### What's Changed
+
+### Refactoring
+
+- enhance instructor repository delivery for Classroom 50 assignments
+
 ## v1.2.8 — 2026-09-11
 
 ### What's Changed
