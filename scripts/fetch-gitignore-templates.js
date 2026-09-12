@@ -10,7 +10,7 @@
 
 import { writeFileSync, mkdirSync } from 'fs';
 import { fileURLToPath } from 'url';
-import { dirname, join } from 'path';
+import { dirname, join, resolve } from 'path';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -19,7 +19,15 @@ const RAW_BASE = 'https://raw.githubusercontent.com/github/gitignore/main';
 const OUT_PATH = join(__dirname, '..', 'src', 'data', 'gitignore-templates.json');
 
 // Converts a raw .gitignore file's content into minimatch-compatible glob patterns.
-function parseGitignore(content) {
+//
+// gitignore anchoring is preserved, because dropping it is what let nested
+// vendor directories through: a separator at the beginning or in the middle of
+// a pattern anchors it to the repository root, while a pattern with no
+// separator — or only a trailing one, which merely marks a directory — matches
+// at any depth. Emitting `node_modules/**` for both collapses the distinction
+// and leaves `frontend/node_modules/**` in the assessment, so unanchored
+// patterns are emitted with an explicit `**/` prefix instead.
+export function parseGitignore(content) {
   const patterns = [];
   for (const raw of content.split('\n')) {
     const line = raw.trim();
@@ -27,23 +35,31 @@ function parseGitignore(content) {
     // which we handle separately via exclude_pattern_overrides).
     if (!line || line.startsWith('#') || line.startsWith('!')) continue;
 
-    // Strip a leading / that anchors the pattern to the repo root — our paths
-    // are already repo-relative so anchoring is unnecessary.
-    const pattern = line.startsWith('/') ? line.slice(1) : line;
+    const anchored = line.startsWith('/');
+    const isDir = line.endsWith('/');
+    // Strip the leading / that anchors the pattern and the trailing / that
+    // marks it as a directory — both are recorded above, and neither belongs
+    // in the emitted glob.
+    const body = (anchored ? line.slice(1) : line).replace(/\/+$/, '');
+    if (!body) continue;
 
-    if (pattern.endsWith('/')) {
+    // A separator left in the body is a mid-pattern separator, which anchors
+    // the pattern just as a leading one does.
+    const prefix = anchored || body.includes('/') ? '' : '**/';
+
+    if (isDir) {
       // Explicit directory marker: convert foo/ → foo/** so minimatch matches
       // all files inside the directory.
-      patterns.push(pattern.slice(0, -1) + '/**');
-    } else if (!pattern.includes('/') && !/[*?[]/.test(pattern)) {
-      // Bare name with no path separator and no glob characters — gitignore
-      // uses these to match both files and directories of that name. We emit
-      // two patterns: the bare name (matches a file called exactly this) and
-      // name/** (matches everything inside a directory of that name).
-      patterns.push(pattern);
-      patterns.push(pattern + '/**');
+      patterns.push(`${prefix}${body}/**`);
+    } else if (!/[*?[]/.test(body)) {
+      // No glob characters — gitignore uses these to match both files and
+      // directories of that name. We emit two patterns: the path itself
+      // (matches a file called exactly this) and path/** (matches everything
+      // inside a directory of that name).
+      patterns.push(`${prefix}${body}`);
+      patterns.push(`${prefix}${body}/**`);
     } else {
-      patterns.push(pattern);
+      patterns.push(`${prefix}${body}`);
     }
   }
   return patterns;
@@ -110,7 +126,11 @@ async function main() {
   );
 }
 
-main().catch((err) => {
-  console.error(err.message);
-  throw err;
-});
+// Only fetch when the script is run directly. The test suite imports this
+// module for parseGitignore and must not reach the network to do it.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  main().catch((err) => {
+    console.error(err.message);
+    throw err;
+  });
+}

@@ -11,34 +11,35 @@ import { FALLBACK_EXCLUDE_PATTERNS, GITHUB_API_VERSION } from './constants.js';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_PATH = join(__dirname, 'data', 'gitignore-templates.json');
 
-// These patterns are always excluded regardless of detected stack.
+// These patterns are always excluded regardless of detected stack. Each one
+// carries an explicit `**/` prefix so it matches at any depth — a bare
+// `node_modules/**` is root-anchored under minimatch and would leave
+// frontend/node_modules in the assessment.
 const ALWAYS_EXCLUDE = [
   // VCS / GrillMyCode internals
-  '.git/**',
-  '.gitignore',
-  '.gitattributes',
-  '.gitmodules',
-  '.mailmap',
-  '.git-blame-ignore-revs',
+  '**/.git/**',
+  '**/.gitignore',
+  '**/.gitattributes',
+  '**/.gitmodules',
+  '**/.mailmap',
+  '**/.git-blame-ignore-revs',
 
   // Classroom 50 accept-time metadata (not student-authored)
-  '.classroom50.yaml',
+  '**/.classroom50.yaml',
 
   // Lock files — always machine-generated, often enormous
   '**/*.lock',
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
-  'Pipfile.lock',
-  'poetry.lock',
+  '**/package-lock.json',
+  '**/yarn.lock',
+  '**/pnpm-lock.yaml',
+  '**/Pipfile.lock',
+  '**/poetry.lock',
 
   // Minified assets — unreadable by design
   '**/*.min.js',
   '**/*.min.css',
 
   // Environment files — may contain secrets; never relevant to assessment
-  '.env',
-  '.env.*',
   '**/.env',
   '**/.env.*',
 
@@ -47,12 +48,12 @@ const ALWAYS_EXCLUDE = [
 
   // Python tool caches not covered by the bundled Python gitignore template
   // (which already handles Django, Flask, Scrapy, Celery, etc. artifacts).
-  '.gradio/**',
-  '.dvc/cache/**',
+  '**/.gradio/**',
+  '**/.dvc/cache/**',
 
   // OS noise
-  '.DS_Store',
-  'Thumbs.db',
+  '**/.DS_Store',
+  '**/Thumbs.db',
 
   // Source maps, logs, docs, and vector assets
   '**/*.map',
