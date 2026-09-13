@@ -7,7 +7,9 @@
  * Transient failures (429, 500, 502, 503, 504, network errors) are retried
  * automatically using exponential backoff with full jitter. 429 responses
  * that include a Retry-After header have that value honoured in preference
- * to the calculated backoff delay.
+ * to the calculated backoff delay. The same status codes are retried when a
+ * 200 response carries them in an error body (a failure after generation
+ * started), as are 200 responses whose body is not valid JSON.
  */
 
 import * as core from '@actions/core';
@@ -148,33 +150,78 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       continue;
     }
 
-    const data = await response.json();
-
-    if (!data.choices || data.choices.length === 0) {
-      throw new Error('AI API returned an empty choices array — no questions were generated.');
-    }
-
-    const content = data.choices[0].message.content;
-    const finishReason = data.choices[0].finish_reason ?? 'unknown';
-
-    if (content === null || content === undefined) {
+    // A 200 whose body will not parse is almost always a transport failure — a
+    // connection dropped mid-body, or a proxy's HTML page — so it is retried
+    // like a network error.
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      lastError = parseError;
       if (attempt < retryMaxAttempts - 1) {
         const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
         core.warning(
-          `AI returned null content (finish_reason: ${finishReason}) — model may have refused or hit a quota limit. ` +
+          `AI response body was not valid JSON (${parseError.message}). ` +
             `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
         );
         await sleep(delay);
         continue;
       }
       throw new Error(
-        `AI API returned a null response content (finish_reason: ${finishReason}) — the model may have refused the request or hit a quota limit.`,
+        `AI API returned a response body that is not valid JSON: ${parseError.message}`,
+        { cause: parseError },
+      );
+    }
+
+    // OpenRouter normalises many upstream providers imperfectly, so nothing
+    // below the top level is trusted: a null choice, a streaming-shaped choice
+    // with `delta` instead of `message`, or non-string content must reach the
+    // retry path below rather than escape as a TypeError.
+    const choice = data?.choices?.[0];
+    if (!choice) {
+      // Once generation has started OpenRouter cannot change the HTTP status, so
+      // an upstream failure arrives as a 200 carrying { error: { code, message } },
+      // where code mirrors the status it would have sent. Retry it on the same
+      // codes as a real HTTP error.
+      const providerError = data?.error;
+      if (providerError) {
+        const code = Number(providerError.code);
+        const detail = `${providerError.code ?? 'no code'}: ${providerError.message ?? 'no details'}`;
+        if (AI_RETRYABLE_STATUS_CODES.includes(code) && attempt < retryMaxAttempts - 1) {
+          const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+          core.warning(
+            `AI provider reported an error during generation (${detail}). ` +
+              `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
+          );
+          await sleep(delay);
+          continue;
+        }
+        throw new Error(`AI provider reported an error during generation (${detail}).`);
+      }
+      throw new Error('AI API returned an empty choices array — no questions were generated.');
+    }
+
+    const content = choice.message?.content;
+    const finishReason = choice.finish_reason ?? 'unknown';
+
+    if (typeof content !== 'string') {
+      if (attempt < retryMaxAttempts - 1) {
+        const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+        core.warning(
+          `AI returned no text content (finish_reason: ${finishReason}) — model may have refused or hit a quota limit. ` +
+            `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
+        );
+        await sleep(delay);
+        continue;
+      }
+      throw new Error(
+        `AI API returned no text content (finish_reason: ${finishReason}) — the model may have refused the request or hit a quota limit.`,
       );
     }
 
     if (finishReason === 'error') {
       const providerMessage = data.error?.message ?? 'no details';
-      const nativeReason = data.choices[0].native_finish_reason;
+      const nativeReason = choice.native_finish_reason;
       const detail = nativeReason ? `${providerMessage}; native: ${nativeReason}` : providerMessage;
       if (attempt < retryMaxAttempts - 1) {
         const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
