@@ -7,7 +7,8 @@
  * Transient failures (429, 500, 502, 503, 504, network errors) are retried
  * automatically using exponential backoff with full jitter. 429 responses
  * that include a Retry-After header have that value honoured in preference
- * to the calculated backoff delay. The same status codes are retried when a
+ * to the calculated backoff delay, up to the same AI_RETRY_MAX_DELAY_MS cap
+ * as every other wait. The same status codes are retried when a
  * 200 response carries them in an error body (a failure after generation
  * started), as are 200 responses whose body is not valid JSON.
  */
@@ -132,19 +133,24 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       }
 
       let delay;
-      if (response.status === 429) {
-        const retryAfterMs = parseRetryAfterMs(response);
-        delay =
-          retryAfterMs !== null
-            ? retryAfterMs
-            : backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+      let cappedNote = '';
+      const retryAfterMs = response.status === 429 ? parseRetryAfterMs(response) : null;
+      if (retryAfterMs !== null) {
+        // Retry-After is capped like every other wait: an hour-long value would
+        // otherwise sleep once per remaining attempt, past the job's useful
+        // lifetime. Retrying early at worst spends the attempt budget and fails
+        // with the 429 as the diagnosis.
+        delay = Math.min(Math.max(0, retryAfterMs), AI_RETRY_MAX_DELAY_MS);
+        if (delay < retryAfterMs) {
+          cappedNote = ` (Retry-After asked for ${retryAfterMs}ms; capped)`;
+        }
       } else {
         delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
       }
 
       core.warning(
         `AI request returned ${response.status} ${response.statusText}. ` +
-          `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
+          `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms${cappedNote}…`,
       );
       await sleep(delay);
       continue;

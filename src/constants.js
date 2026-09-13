@@ -322,8 +322,8 @@ export const DEFAULT_AI_RETRY_MAX_ATTEMPTS = 5;
 export const AI_RETRY_BASE_DELAY_MS = 1000;
 
 /**
- * Maximum delay cap in milliseconds applied to retry backoff calculations.
- * Prevents runaway wait times on later retry attempts.
+ * Maximum delay cap in milliseconds applied to every AI retry wait, including
+ * a 429's Retry-After value. Prevents runaway wait times on later retry attempts.
  */
 export const AI_RETRY_MAX_DELAY_MS = 30_000;
 
