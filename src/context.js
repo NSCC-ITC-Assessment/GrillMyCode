@@ -23,11 +23,23 @@ import { getLeadingSkipCandidates, getFirstCommit } from './git.js';
  * Manual base_sha / head_sha overrides always take precedence over this flag.
  */
 export async function resolveSHAs(ctx, octokit, inputs) {
+  // Validate both overrides up front so a malformed SHA is rejected with the
+  // same message whatever the event, rather than only on the paths that happen
+  // to reach sanitiseSha.
+  const overrideHead = inputs.headSha ? sanitiseSha(inputs.headSha) : null;
+
   // Manual override: both SHAs explicitly provided — honour them as-is.
-  if (inputs.baseSha && inputs.headSha) {
+  //
+  // This is a short-circuit, not a duplicate of the tails below: with both ends
+  // named there is nothing left to detect, so we skip event parsing entirely.
+  // That is load-bearing. The event payload is not guaranteed to hold a usable
+  // SHA (workflow_dispatch on some runners leaves ctx.sha undefined, and
+  // ctx.payload.before is absent outside push), and parsing it anyway would
+  // throw before reaching an override that had already answered the question.
+  if (inputs.baseSha && overrideHead) {
     return {
       baseSha: sanitiseSha(inputs.baseSha),
-      headSha: sanitiseSha(inputs.headSha),
+      headSha: overrideHead,
     };
   }
 
@@ -35,15 +47,22 @@ export async function resolveSHAs(ctx, octokit, inputs) {
   let baseSha, headSha;
 
   // ── Determine the event-specific head SHA ────────────────────────────────
+  // A manual head_sha is resolved here rather than in a tail beside the
+  // base_sha override below, for two reasons. It keeps the event SHA
+  // unparsed — see above — and it means skip_committers walks the range the
+  // caller actually asked for instead of advancing the base against a head
+  // that is about to be discarded. base_sha cannot move up here in the same
+  // way: it is documented as taking precedence over include_initial_commit,
+  // so it has to be applied after that block has had its say.
   if (event === 'push') {
-    headSha = sanitiseSha(ctx.payload.after);
+    headSha = overrideHead ?? sanitiseSha(ctx.payload.after);
     const before = ctx.payload.before;
     // All-zero SHA means this is the very first push to a new branch.
     baseSha = /^0+$/.test(before) ? getFirstCommit() : sanitiseSha(before);
   } else {
     // workflow_dispatch and all other events: HEAD of the current branch.
     baseSha = getFirstCommit();
-    headSha = sanitiseSha(ctx.sha);
+    headSha = overrideHead ?? sanitiseSha(ctx.sha);
   }
 
   // ── Apply include_initial_commit ──────────────────────────────────────────

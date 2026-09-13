@@ -356,10 +356,13 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
 
   // ── SHA overrides ──────────────────────────────────────────────────────────
   // Deliberately not exposed as workflow_dispatch inputs — see dispatchInputs.js
-  // for why. Set on the Advanced step, they are baked into the file as a pair,
-  // which is the only form the action applies.
-  if (cfg.baseSha && cfg.headSha) {
+  // for why. Set on the Advanced step, each is emitted independently: the action
+  // applies either override on its own, so gating them as a pair silently
+  // dropped a lone base_sha or head_sha from the generated file.
+  if (cfg.baseSha) {
     lines.push(`          base_sha: ${yamlStr(cfg.baseSha)}`);
+  }
+  if (cfg.headSha) {
     lines.push(`          head_sha: ${yamlStr(cfg.headSha)}`);
   }
 

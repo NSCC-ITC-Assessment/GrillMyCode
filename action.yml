@@ -235,9 +235,9 @@ inputs:
 
   head_sha:
     description: >-
-      Override the head commit SHA for the diff. Only applied when base_sha is
-      also provided — both must be set together for the manual override to take
-      effect. Auto-detected when not provided.
+      Override the head commit SHA for the diff. Applies on its own or together
+      with base_sha; when provided it takes precedence over the SHA derived from
+      the event. Auto-detected when not provided.
     required: false
     default: ""
 
