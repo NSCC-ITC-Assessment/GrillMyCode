@@ -82,7 +82,8 @@ export default function StepAdvanced({ cfg, onChange }) {
         <label className={styles.label}>Base SHA override <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Manually override the base commit SHA for the diff. Leave empty for automatic detection
-          (recommended). Must be paired with a Head SHA for both to take effect.
+          (recommended). Takes effect on its own; the head is still auto-detected unless you
+          override it too.
         </span>
         <input
           type="text"
@@ -93,21 +94,20 @@ export default function StepAdvanced({ cfg, onChange }) {
         />
       </div>
 
-      {cfg.baseSha && (
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Head SHA override <span className={styles.optionalBadge}>optional</span></label>
-          <span className={styles.hint}>
-            The head commit SHA to diff against. Only applied when Base SHA is also provided.
-          </span>
-          <input
-            type="text"
-            className={styles.input}
-            value={cfg.headSha}
-            onChange={(e) => onChange({ headSha: e.target.value })}
-            placeholder="Leave empty for automatic detection"
-          />
-        </div>
-      )}
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Head SHA override <span className={styles.optionalBadge}>optional</span></label>
+        <span className={styles.hint}>
+          The head commit SHA to diff against. Takes effect on its own; the base is still
+          auto-detected unless you override it too.
+        </span>
+        <input
+          type="text"
+          className={styles.input}
+          value={cfg.headSha}
+          onChange={(e) => onChange({ headSha: e.target.value })}
+          placeholder="Leave empty for automatic detection"
+        />
+      </div>
     </div>
   );
 }
