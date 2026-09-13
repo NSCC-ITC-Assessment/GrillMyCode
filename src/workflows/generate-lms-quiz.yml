@@ -255,9 +255,9 @@ jobs:
           }
 
           // Builds the full question HTML (filename + colorized snippet +
-          // question text), then applies one escapeXml() pass so it can be
-          // embedded as XML text content of <mattext texttype="text/html">.
-          function buildQuestionHtml(q) {
+          // question text) as a plain HTML fragment. The Brightspace CSV uses
+          // it as-is; the QTI package wraps it in buildQuestionHtml() below.
+          function buildQuestionFragment(q) {
             const parts = [];
             if (q.filePath) {
               parts.push('<p><strong>' + escapeHtmlText(stripInlineMarkdown(q.filePath)) + '</strong></p>');
@@ -267,7 +267,13 @@ jobs:
               parts.push('<pre><code>' + highlightCode(q.snippet.join('\n'), lang) + '</code></pre>');
             }
             parts.push('<p>' + escapeHtmlText(stripInlineMarkdown(q.question)) + '</p>');
-            return escapeXml(parts.join(''));
+            return parts.join('');
+          }
+
+          // Applies one escapeXml() pass so the fragment can be embedded as XML
+          // text content of <mattext texttype="text/html">.
+          function buildQuestionHtml(q) {
+            return escapeXml(buildQuestionFragment(q));
           }
 
           // Workflow-command annotations are newline-delimited and use % as the
@@ -454,6 +460,72 @@ jobs:
             }
           }
 
+          // RFC 4180 quoting. Code snippets are full of commas, quotes and
+          // newlines; Brightspace's CSV import accepts a quoted cell spanning
+          // several lines, so the <pre> block keeps its real newlines.
+          function csvField(value) {
+            const s = String(value);
+            return /[",\r\n]/.test(s) ? '"' + s.replace(/"/g, '""') + '"' : s;
+          }
+
+          // Every row is padded to the five columns Brightspace's sample
+          // template uses, matching what Excel writes for that template.
+          function csvRow(...cells) {
+            while (cells.length < 5) cells.push('');
+            return cells.map(csvField).join(',');
+          }
+
+          // The CSV format has no equivalent of QTI's shuffle="Yes", so options
+          // are written in shuffled order instead. The shuffle is seeded from
+          // the content hash and question position, so an unchanged
+          // questions.md always yields a byte-identical file rather than a
+          // spurious diff on every regeneration. Options number in single
+          // digits, so the modulo bias from reading one hash byte is immaterial.
+          function seededShuffle(items, seed) {
+            const bytes = crypto.createHash('sha256').update(seed).digest();
+            const out = items.slice();
+            for (let i = out.length - 1; i > 0; i--) {
+              const j = bytes[i % bytes.length] % (i + 1);
+              [out[i], out[j]] = [out[j], out[i]];
+            }
+            return out;
+          }
+
+          // Brightspace's own question-import format, as an alternative to the
+          // Common Cartridge package for instructors on Brightspace. Rows whose
+          // first cell begins with // are comments to Brightspace, which is how
+          // the content hash rides along without being imported. Question text
+          // is flagged HTML so the highlighted snippet renders; option text is
+          // not, so a <div> in an option is shown as text rather than parsed.
+          // Titles name the assignment and student because CSV-imported
+          // questions land in the Question Library, where many students'
+          // questions sit side by side.
+          function buildQuizCsv(title, questions, contentHash) {
+            const lines = [csvRow('//gmc_content_hash', contentHash)];
+            questions.forEach((q, idx) => {
+              const options = seededShuffle(
+                [{ text: q.answer, weight: 100 }, ...q.incorrect.map((text) => ({ text, weight: 0 }))],
+                contentHash + ':' + idx,
+              );
+              lines.push(
+                csvRow('NewQuestion', 'MC'),
+                csvRow('Title', title + ' - Q' + (idx + 1)),
+                csvRow('QuestionText', buildQuestionFragment(q), 'HTML'),
+                csvRow('Points', '1'),
+                ...options.map((o) => csvRow('Option', o.weight, stripInlineMarkdown(o.text))),
+                csvRow(),
+              );
+            });
+            // BOM and CRLF match Excel's "CSV UTF-8", the encoding Brightspace's
+            // template asks for so non-ASCII characters survive import.
+            return '﻿' + lines.join('\r\n') + '\r\n';
+          }
+
+          function readCsvContentHash(text) {
+            const match = text.match(/^﻿?\/\/gmc_content_hash,([a-f0-9]+)/);
+            return match ? match[1] : null;
+          }
+
           // Bumped whenever the generated package changes shape — or whenever
           // the parser changes what it extracts, since that alters the quiz
           // without altering questions.md, which the hash alone cannot see.
@@ -461,7 +533,8 @@ jobs:
           // merged syntax-highlight spans.
           // v3: bold lines inside a fenced snippet are no longer read as the
           // filename header.
-          const PACKAGE_FORMAT = 'v3';
+          // v4: a Brightspace CSV is written alongside each .imscc.
+          const PACKAGE_FORMAT = 'v4';
 
           // The instructor repo is named {assignment}-grillmycode-instructor,
           // so the assignment name can be recovered from GITHUB_REPOSITORY
@@ -517,6 +590,7 @@ jobs:
                 }
 
                 const out = path.join(studentDir, assignment + '_' + student + '_quiz.imscc');
+                const csvOut = path.join(studentDir, assignment + '_' + student + '_brightspace_quiz.csv');
 
                 // Clean up the pre-rename filename so it doesn't linger as a
                 // stale duplicate once a student's package regenerates under
@@ -538,9 +612,13 @@ jobs:
                   .update(PACKAGE_FORMAT + '\n' + content)
                   .digest('hex');
 
-                if (fs.existsSync(out)) {
+                // Both files must carry the current hash to skip. Checking only
+                // the .imscc would leave a student with no CSV whenever the CSV
+                // alone is missing — deleted by hand, or lost to a failed write.
+                if (fs.existsSync(out) && fs.existsSync(csvOut)) {
                   const previousHash = await readContentHash(fs.readFileSync(out));
-                  if (previousHash === contentHash) {
+                  const previousCsvHash = readCsvContentHash(fs.readFileSync(csvOut, 'utf8'));
+                  if (previousHash === contentHash && previousCsvHash === contentHash) {
                     console.log('Unchanged, skipping: ' + out);
                     continue;
                   }
@@ -548,9 +626,10 @@ jobs:
 
                 const buffer = await buildQuizPackage(student, questions, contentHash);
                 fs.writeFileSync(out, buffer);
+                fs.writeFileSync(csvOut, buildQuizCsv(assignment + ' - ' + student, questions, contentHash));
                 const withheld = parsed.length - questions.length;
                 console.log(
-                  'Generated: ' + out + ' (' + questions.length + ' questions' +
+                  'Generated: ' + out + ' and ' + path.basename(csvOut) + ' (' + questions.length + ' questions' +
                   (withheld ? ', ' + withheld + ' withheld for missing distractors' : '') + ')',
                 );
               } catch (err) {
@@ -593,7 +672,7 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          find . -name "*_quiz.imscc" -not -path "./.git/*" | xargs -r git add --
+          find . \( -name "*_quiz.imscc" -o -name "*_quiz.csv" \) -not -path "./.git/*" | xargs -r git add --
           git add -A -- '*/brightspace_quiz.imscc' 2>/dev/null || true # pre-rename filename; errors when none exist
 
           if git diff --staged --quiet; then

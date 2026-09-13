@@ -135,12 +135,13 @@ broken, and it happens once.
 ## Operational note — regenerating an already-generated quiz
 
 `gmc_content_hash` is a hash of `PACKAGE_FORMAT` plus `questions.md`, stored
-inside the `.imscc`. Bumping `PACKAGE_FORMAT` therefore invalidates every stored
+inside the `.imscc` and on the `//gmc_content_hash` comment line of the `.csv`.
+A student is skipped only when both files exist and both carry the current hash. Bumping `PACKAGE_FORMAT` therefore invalidates every stored
 hash and forces all packages to rebuild on the next run — do that whenever the
 generated package changes shape.
 
 It does **not** cover parser changes, which alter the questions extracted from an
 unchanged `questions.md` without changing its bytes. If a quiz was generated with
 buggy parsing and `questions.md` has not changed, re-running the workflow still
-skips it (`Unchanged, skipping: …`); delete the affected `*_quiz.imscc` files
-first, then dispatch — or bump `PACKAGE_FORMAT` along with the parser fix.
+skips it (`Unchanged, skipping: …`); delete the affected `*_quiz.imscc` or
+`*_brightspace_quiz.csv` files first, then dispatch — or bump `PACKAGE_FORMAT` along with the parser fix.
