@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.5.0 — 2026-09-13
+
+### What's Changed
+
+### Features
+
+- add Brightspace CSV export option alongside IMSCC quiz package
+
 ## v1.4.0 — 2026-09-13
 
 ### What's Changed
