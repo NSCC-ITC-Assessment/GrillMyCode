@@ -5,6 +5,28 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.4.0 — 2026-09-13
+
+### What's Changed
+
+### Features
+
+- improve issue handling by ensuring exact title matches and adding duplicate deletion warnings
+- update AI retry logic to cap Retry-After at 30 seconds and enhance documentation
+- enhance AI error handling and add comprehensive tests for response validation
+- implement question counting and bolding functionality with tests
+- implement AI output post-processing functions and tests
+
+### Bug Fixes
+
+- honour head_sha without requiring base_sha
+- use null-byte sentinels in answer stripping
+- improve job summary error handling
+
+### Refactoring
+
+- minor changes
+
 ## v1.3.1 — 2026-09-13
 
 ### What's Changed

@@ -60,7 +60,7 @@ The created issue is automatically assigned to the student who authored the head
 
 ## Every push regenerates the questions
 
-Each push to the default branch triggers a full regeneration. The existing issue body is **overwritten** with the new questions — the issue number and URL stay the same, preserving comment history. Any duplicate issues are deleted. A note comment is added each time, recording when the run occurred and at which commit SHA.
+Each push to the default branch triggers a full regeneration. The existing issue body is **overwritten** with the new questions — the issue number and URL stay the same, preserving comment history. Any duplicate issues for the same branch are deleted; if the workflow token lacks permission to delete them, they are left in place with a warning in the Actions log. A note comment is added each time, recording when the run occurred and at which commit SHA.
 
 ## PDF download
 
