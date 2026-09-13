@@ -22,6 +22,12 @@ import { git } from './git.js';
  * Any file that would be excluded but matches an override pattern is re-included.
  * Overrides accept either an exact pattern from the exclude list (e.g. **\/*.md)
  * or a specific file path that would otherwise be excluded (e.g. README.md).
+ *
+ * matchBase makes a slash-free pattern match on basename alone, at any depth.
+ * The built-in patterns no longer rely on it — they carry explicit `**\/`
+ * prefixes — but it is what lets an instructor write
+ * `additional_exclude_patterns: starter.py` and have it match wherever the file
+ * sits. Patterns containing a slash are unaffected by it.
  */
 export function filterFiles(files, excludePatterns, overridePatterns = []) {
   const opts = { dot: true, matchBase: true };

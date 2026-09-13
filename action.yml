@@ -96,6 +96,9 @@ inputs:
       language and framework stack. Use this to exclude files specific to your
       assignment (e.g. provided starter files, test fixtures, data files) that
       would not normally be excluded by the auto-detected patterns.
+      A pattern containing no slash matches on file name alone, at any depth
+      (starter.py excludes src/starter.py too). Include a slash to match a
+      path exactly (src/starter.py), or lead with **/ to be explicit.
     required: false
     default: ""
 

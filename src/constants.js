@@ -12,71 +12,74 @@
  * assessments still work if the GitHub API is unreachable.
  */
 export const FALLBACK_EXCLUDE_PATTERNS = [
+  // Every directory pattern carries an explicit `**/` prefix so it matches at
+  // any depth, not only at the repository root. Without it a monorepo layout —
+  // frontend/node_modules, backend/venv — ships its whole dependency tree to
+  // the AI provider.
+
   // JavaScript / Node.js
-  'node_modules/**',
+  '**/node_modules/**',
   '**/*.lock',
-  'package-lock.json',
-  'yarn.lock',
-  'pnpm-lock.yaml',
+  '**/package-lock.json',
+  '**/yarn.lock',
+  '**/pnpm-lock.yaml',
   '**/*.min.js',
   '**/*.min.css',
 
   // Common build output
-  'dist/**',
-  'build/**',
-  'out/**',
-  'coverage/**',
-  '.nyc_output/**',
+  '**/dist/**',
+  '**/build/**',
+  '**/out/**',
+  '**/coverage/**',
+  '**/.nyc_output/**',
   // Next.js / Nuxt
-  '.next/**',
-  '.nuxt/**',
-  '.output/**',
+  '**/.next/**',
+  '**/.nuxt/**',
+  '**/.output/**',
 
   // SvelteKit / Astro / Expo / Parcel / Turborepo
-  '.svelte-kit/**',
-  '.astro/**',
-  '.expo/**',
-  '.parcel-cache/**',
-  '.turbo/**',
+  '**/.svelte-kit/**',
+  '**/.astro/**',
+  '**/.expo/**',
+  '**/.parcel-cache/**',
+  '**/.turbo/**',
 
   // Python
-  '__pycache__/**',
+  '**/__pycache__/**',
   '**/*.pyc',
-  '.venv/**',
-  'venv/**',
-  '.pytest_cache/**',
+  '**/.venv/**',
+  '**/venv/**',
+  '**/.pytest_cache/**',
   '**/*.egg-info/**',
-  '.tox/**',
+  '**/.tox/**',
 
   // Java / JVM
-  'target/**',
-  '.gradle/**',
+  '**/target/**',
+  '**/.gradle/**',
 
   // Ruby
-  '.bundle/**',
+  '**/.bundle/**',
 
   // PHP / Go / Ruby vendor
-  'vendor/**',
+  '**/vendor/**',
 
   // .NET
-  'obj/**',
+  '**/obj/**',
 
   // C / C++
-  'CMakeFiles/**',
-  'cmake-build-*/**',
-  'CMakeCache.txt',
-  'CMakeCache.txt.dir/**',
+  '**/CMakeFiles/**',
+  '**/cmake-build-*/**',
+  '**/CMakeCache.txt',
+  '**/CMakeCache.txt.dir/**',
 
   // Version control
-  '.git/**',
-  '.gitignore',
+  '**/.git/**',
+  '**/.gitignore',
 
   // Classroom 50 accept-time metadata (not student-authored)
-  '.classroom50.yaml',
+  '**/.classroom50.yaml',
 
   // Environment files — may contain secrets
-  '.env',
-  '.env.*',
   '**/.env',
   '**/.env.*',
 
@@ -84,8 +87,8 @@ export const FALLBACK_EXCLUDE_PATTERNS = [
   '**/*.tsbuildinfo',
 
   // OS noise
-  '.DS_Store',
-  'Thumbs.db',
+  '**/.DS_Store',
+  '**/Thumbs.db',
 
   // Text assets (SVG is XML, source maps and logs are plain text)
   '**/*.svg',
