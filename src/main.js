@@ -43,6 +43,7 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
   ANSWER_MARKER_LINE_RE,
   boldQuestionLines,
+  countQuestions,
   extractCorrectAnswers,
   normaliseSeparators,
   redactStudentQuestions,
@@ -761,8 +762,7 @@ async function run() {
       }
     }
     questions = normaliseSeparators(questions);
-    // Same numbered-stem heuristic the truncation and block checks above use.
-    state.questionsGenerated = (questions.match(/^\s*\d+\.\s/gm) ?? []).length;
+    state.questionsGenerated = countQuestions(questions);
 
     // ── Build base report (PDF source — no self-referencing link) ───────────
     const sourceRepo = `${ctx.repo.owner}/${ctx.repo.repo}`;
