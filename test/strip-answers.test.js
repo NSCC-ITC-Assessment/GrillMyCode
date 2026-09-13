@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { stripAnswers } from '../src/main.js';
+import { extractCorrectAnswers, redactStudentQuestions, stripAnswers } from '../src/postprocess.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -108,7 +108,7 @@ describe('stripAnswers source hygiene', () => {
   // characters went unnoticed. Pin them so a future edit cannot reintroduce a
   // printable placeholder — or a different invisible one — unremarked.
   it('uses only null-byte sentinels in the source', () => {
-    const src = readFileSync(join(__dirname, '..', 'src', 'main.js'), 'utf-8');
+    const src = readFileSync(join(__dirname, '..', 'src', 'postprocess.js'), 'utf-8');
     // No Private Use Area codepoint, and no literal control character either —
     // the sentinel must be spelled `\\0` in the source, where a reader can see it.
     // Scanned by code point rather than by regex: a character class holding
@@ -124,5 +124,76 @@ describe('stripAnswers source hygiene', () => {
       if (!/FENCE|GMC_SEP/.test(line)) continue;
       expect(line).toMatch(/\\0/);
     }
+  });
+});
+
+describe('separator preservation across answer-container removal', () => {
+  const ANSWER = 'it returns true when the coordinate has already been attacked by the player';
+  const DISTRACTORS = [
+    '**Distractors for Multiple-Choice Quiz:**',
+    `- ${ANSWER} but only on even rows`,
+  ].join('\n');
+
+  /** A well-formed question block; `innerSep` places a --- inside its container. */
+  function goodBlock({ innerSep = false } = {}) {
+    return [
+      '**a.js**',
+      '',
+      '1. **What does the helper return?**',
+      '',
+      '<!-- gmc:answer -->',
+      '**Answer:**',
+      `- ${ANSWER}`,
+      '',
+      DISTRACTORS,
+      ...(innerSep ? ['', '---'] : []),
+      '<!-- /gmc:answer -->',
+    ].join('\n');
+  }
+
+  // A drifted block of exactly the shape the structural guard exists to catch:
+  // the answer sits in a fenced block with no **Answer:** heading and no
+  // container, and the leak guard strips fenced code before it looks.
+  const driftedBlock = [
+    '**b.js**',
+    '',
+    '2. **What does this return?**',
+    '',
+    '```text',
+    ANSWER,
+    '```',
+  ].join('\n');
+
+  const blockCount = (text) => text.split(/\n-{3,}\n/).length;
+
+  it('re-emits a --- the answer container swallowed', () => {
+    const original = goodBlock({ innerSep: true });
+    expect(blockCount(stripAnswers(original))).toBe(blockCount(original));
+  });
+
+  it('leaves a report without inner separators untouched', () => {
+    const original = `${goodBlock()}\n\n---\n\n${goodBlock()}`;
+    expect(blockCount(stripAnswers(original))).toBe(blockCount(original));
+  });
+
+  // Losing a separator misaligns the student view against the answer-bearing
+  // original, and redactStudentQuestions then skips its structural guard for
+  // the whole assessment — so an unrelated question's stray --- decides whether
+  // a drifted question's answer reaches the student.
+  it.each([
+    ['no inner separator', false],
+    ['a --- inside an unrelated container', true],
+  ])('withholds a drifted question when the report has %s', (_label, innerSep) => {
+    const original = `${goodBlock({ innerSep })}\n\n---\n\n${driftedBlock}`;
+    const student = stripAnswers(original);
+    const { text, structural } = redactStudentQuestions(
+      original,
+      student,
+      extractCorrectAnswers(original),
+    );
+
+    expect(blockCount(student)).toBe(blockCount(original));
+    expect(structural).toBe(1);
+    expect(text).not.toContain(ANSWER);
   });
 });
