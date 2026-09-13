@@ -1,9 +1,11 @@
 {
   "name": "GrillMyCode",
-  "image": "mcr.microsoft.com/devcontainers/javascript-node:24",
+  // Matches the Node major in the Dockerfile, so local runs match the image.
+  "image": "mcr.microsoft.com/devcontainers/javascript-node:26",
 
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
-  "onCreateCommand": "corepack prepare pnpm@12.3.4 --activate",
+  // No corepack step: the Node 26 image does not ship corepack, and its
+  // preinstalled pnpm switches itself to the packageManager version on first use.
   "postCreateCommand": "pnpm install && git config merge.ours.driver true",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 

@@ -246,13 +246,6 @@ export const INSTRUCTOR_RATE_LIMIT_MAX_WAIT_MS = 60_000;
 export const AI_TOP_P = 0.95;
 
 /**
- * Maximum output tokens for the AI response.
- * 50 questions with code snippets + answers typically requires 12,000–16,000
- * tokens. Setting a generous limit prevents early truncation by the API.
- */
-export const AI_MAX_OUTPUT_TOKENS = 16_384;
-
-/**
  * Page size when listing a student repository's direct collaborators to resolve
  * the submission identity. A Classroom 50 repository has one direct collaborator
  * per student (a handful for a legacy group), so one page is the norm.

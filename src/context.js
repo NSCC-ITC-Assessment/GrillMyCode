@@ -158,22 +158,8 @@ export function resolveBranch(ctx) {
 }
 
 /**
- * Returns a filesystem-safe version of a branch name for use in filenames.
- * Returns an empty string for default branches (main/master) or when the
- * branch is unknown, so callers can use it as an optional suffix.
- */
-export function safeBranchName(branchName) {
-  if (!branchName || branchName === 'main' || branchName === 'master') return '';
-  return branchName
-    .replace(/[^a-zA-Z0-9_-]/g, '-')
-    .replace(/-{2,}/g, '-')
-    .replace(/^-|-$/g, '');
-}
-
-/**
  * Returns a filesystem-safe version of an arbitrary string for use as part
- * of a filename. Unlike safeBranchName, never returns an empty string for
- * specific values — all non-empty input produces non-empty output.
+ * of a filename. All non-empty input produces non-empty output.
  */
 export function safeFilePart(str) {
   if (!str) return '';

@@ -27,9 +27,15 @@ jobs:
       - name: Run ESLint
         run: pnpm lint
 
+  # Runs on both the minimum supported Node (package.json engines) and the
+  # version the Docker image ships, so runtime-only differences surface here.
   test:
-    name: Tests
+    name: Tests (Node ${{ matrix.node-version }})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: ["24", "26"]
     steps:
       - uses: actions/checkout@v6
 
@@ -37,7 +43,7 @@ jobs:
 
       - uses: actions/setup-node@v6
         with:
-          node-version: "24"
+          node-version: ${{ matrix.node-version }}
           cache: "pnpm"
 
       - name: Install dependencies

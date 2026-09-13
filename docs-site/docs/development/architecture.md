@@ -176,9 +176,9 @@ Explanations that only hold in specific circumstances are emitted conditionally:
 
 Validates that a SHA is 4–64 hex characters before passing it to a `git` command. This prevents shell injection through crafted `base_sha`/`head_sha` inputs.
 
-### `safeBranchName(branchName)`
+### `safeFilePart(str)`
 
-Returns a filesystem-safe version of a branch name for use in filenames. Returns an empty string for `main`, `master`, or unknown branches so callers can use it as an optional suffix. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename (e.g. `grill-my-code-feat-login.pdf`).
+Returns a filesystem-safe version of a string for use in filenames. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename from the repository name (e.g. `grill-my-code-assignment-1-jsmith.pdf`).
 
 ### `callAI({ provider, model, apiKey, messages, retryMaxAttempts })`
 
@@ -188,7 +188,7 @@ A thin provider abstraction over the OpenAI-compatible chat completions API. Eac
 |---|---|---|
 | `openrouter` | `openrouter.ai/api/v1/chat/completions` | `Authorization: Bearer <api_key>` |
 
-`openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `max_tokens`, `top_p`).
+`openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `top_p`). `max_tokens` is deliberately omitted: on OpenRouter it restricts routing to providers that support a response of that length, and each model's own output limit is left to apply instead.
 
 Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff, capped at the same 30-second `AI_RETRY_MAX_DELAY_MS` as every other wait so a long value cannot stall the run. Once generation has started OpenRouter can no longer change the HTTP status, so an upstream failure arrives as a `200` with an `{ error: { code, message } }` body; that is retried when `error.code` is one of the same retryable codes, and otherwise fails with the provider's message. A `200` whose body is not valid JSON (a dropped connection or a proxy error page) is retried like a network failure, as is a response whose first choice carries no text content. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
 
@@ -259,7 +259,7 @@ node:26-slim
       │
       ├── npm install -g corepack
       │   corepack enable
-      │   corepack prepare pnpm@latest --activate
+      │   ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
       │
       ├── COPY package.json pnpm-lock.yaml
       │   pnpm install --frozen-lockfile --prod --ignore-scripts
@@ -269,7 +269,7 @@ node:26-slim
       └── COPY src/ entrypoint.sh
 ```
 
-`rmcm` (the comment-stripping binary from [NSCC-ITC-Assessment/comment-remover](https://github.com/NSCC-ITC-Assessment/comment-remover)) is downloaded as a pre-built Linux x86_64 binary from a pinned GitHub release. `pnpm` is bootstrapped via `corepack` rather than being installed as a fixed package version, keeping it aligned with whatever `corepack prepare` resolves at build time.
+`rmcm` (the comment-stripping binary from [NSCC-ITC-Assessment/comment-remover](https://github.com/NSCC-ITC-Assessment/comment-remover)) is downloaded as a pre-built Linux x86_64 binary from the `grill-my-code` GitHub release. `pnpm` is bootstrapped via `corepack`, which resolves the exact version from the `packageManager` field in `package.json` when `pnpm install` runs, so the image, CI and the devcontainer all use the same pnpm.
 
 ---
 
