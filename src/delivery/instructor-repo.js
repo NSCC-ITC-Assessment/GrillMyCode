@@ -294,7 +294,9 @@ async function ensureInstructorRepo(octokit, owner, instructorRepoName) {
 
 /** Fills the instructor README template in for this repository. */
 function renderInstructorReadme(owner, instructorRepoName) {
-  const assignmentName = instructorRepoName.replace(INSTRUCTOR_REPO_SUFFIX, '');
+  const assignmentName = instructorRepoName.endsWith(INSTRUCTOR_REPO_SUFFIX)
+    ? instructorRepoName.slice(0, -INSTRUCTOR_REPO_SUFFIX.length)
+    : instructorRepoName;
   const workflowFilename = STUDENT_QUESTIONS_WORKFLOW_PATH.split('/').at(-1);
   const workflowUrl = `https://github.com/${owner}/${instructorRepoName}/actions/workflows/${workflowFilename}`;
   return INSTRUCTOR_REPO_README_TEMPLATE.replace(

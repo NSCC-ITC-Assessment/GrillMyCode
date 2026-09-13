@@ -13,7 +13,6 @@ export default [
         process: 'readonly',
         fetch: 'readonly',
         Response: 'readonly',
-        atob: 'readonly',
         console: 'readonly',
         setTimeout: 'readonly',
       },

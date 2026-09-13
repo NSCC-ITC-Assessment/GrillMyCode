@@ -23,7 +23,6 @@ export function formatReport({
   files,
   baseSha,
   headSha,
-  truncated,
   provider,
   model,
   branchName,
@@ -39,9 +38,6 @@ export function formatReport({
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const displayFiles = allChangedFiles ?? files;
   const fileList = displayFiles.map((f) => `\`${f}\``).join(', ');
-  const truncNote = truncated
-    ? '> **⚠️ Note:** The content was truncated — questions may not cover all changes.\n'
-    : '';
 
   const isDefaultBranch = !branchName || branchName === 'main' || branchName === 'master';
   const branchNote = isDefaultBranch ? '' : `> **Branch:** \`${branchName}\`\n`;
@@ -75,7 +71,6 @@ export function formatReport({
     `> **Code Files Assessed:** ${fileList}`,
     contextNote,
     instructorContextNote,
-    truncNote,
     '---',
     '',
     questions,

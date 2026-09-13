@@ -2,6 +2,7 @@
 // querying the GitHub Languages API and inspecting the repository root, then
 // maps those signals to gitignore template keys and assembles an exclude list.
 
+import { Buffer } from 'node:buffer';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
@@ -304,13 +305,24 @@ async function fetchJson(url, headers) {
   return res.json();
 }
 
+/**
+ * Decodes a GitHub contents-API payload as UTF-8. A leading byte-order mark,
+ * which some Windows editors write, is dropped: JSON.parse rejects it, and the
+ * scanners' catch would otherwise return no deps and hide the framework.
+ */
+function decodeContent(data) {
+  return Buffer.from(data.content, 'base64')
+    .toString('utf-8')
+    .replace(/^\uFEFF/, '');
+}
+
 async function fetchComposerDeps(owner, repo, headers) {
   try {
     const data = await fetchJson(
       `https://api.github.com/repos/${owner}/${repo}/contents/composer.json`,
       headers,
     );
-    const text = atob(data.content.replace(/\n/g, ''));
+    const text = decodeContent(data);
     const pkg = JSON.parse(text);
     return Object.keys({ ...pkg.require, ...pkg['require-dev'] });
   } catch {
@@ -324,7 +336,7 @@ async function fetchGemfileDeps(owner, repo, headers) {
       `https://api.github.com/repos/${owner}/${repo}/contents/Gemfile`,
       headers,
     );
-    const text = atob(data.content.replace(/\n/g, ''));
+    const text = decodeContent(data);
     // Gemfile is a Ruby DSL, not structured data — match `gem 'name'` / `gem "name"`
     // declarations. The leading `\s*` (no `#`) skips commented-out lines.
     const deps = [];
@@ -343,7 +355,7 @@ async function fetchMixDeps(owner, repo, headers) {
       `https://api.github.com/repos/${owner}/${repo}/contents/mix.exs`,
       headers,
     );
-    const text = atob(data.content.replace(/\n/g, ''));
+    const text = decodeContent(data);
     // mix.exs is Elixir code — deps are tuples like `{:phoenix, "~> 1.7"}`.
     // Match the leading atom of each tuple; unknown atoms are simply ignored.
     const deps = [];
@@ -362,7 +374,7 @@ async function fetchPackageDeps(owner, repo, headers) {
       `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
       headers,
     );
-    const text = atob(data.content.replace(/\n/g, ''));
+    const text = decodeContent(data);
     const pkg = JSON.parse(text);
     return Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
   } catch {

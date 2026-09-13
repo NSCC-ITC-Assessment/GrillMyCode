@@ -28,8 +28,12 @@ RUN apt-get update \
         -o /usr/local/bin/rmcm \
     && chmod +x /usr/local/bin/rmcm \
     && npm install -g corepack \
-    && corepack enable \
-    && corepack prepare pnpm@latest --activate
+    && corepack enable
+
+# pnpm is not activated here: corepack resolves the exact version from the
+# packageManager field in package.json when `pnpm install` runs below. The
+# prompt is disabled so that first download never waits on input.
+ENV COREPACK_ENABLE_DOWNLOAD_PROMPT=0
 
 # Use the system Chromium binary; the existing --ignore-scripts flag on pnpm
 # install already prevents Puppeteer's postinstall download, but this is

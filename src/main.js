@@ -670,8 +670,6 @@ async function run() {
       core.warning('Code content was empty after processing — falling back to raw diff.');
     }
 
-    const truncated = false;
-
     // ── Generate questions using AI ─────────────────────────────────────────
     const { content: assignmentContext, matchedFiles: assignmentContextFiles } =
       await readAssignmentContextFiles(
@@ -694,7 +692,6 @@ async function run() {
       numQuestions: inputs.numQuestions,
       instructorContext: inputs.instructorContext,
       assignmentContext,
-      truncated,
     });
     core.debug(`Prompt messages:\n${JSON.stringify(messages, null, 2)}`);
 
@@ -772,7 +769,6 @@ async function run() {
       files,
       baseSha,
       headSha,
-      truncated,
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       branchName,
@@ -819,7 +815,6 @@ async function run() {
       files,
       baseSha,
       headSha,
-      truncated,
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       branchName,
@@ -897,7 +892,6 @@ async function run() {
         files,
         baseSha,
         headSha,
-        truncated,
         provider: inputs.aiProvider,
         model: inputs.aiModel,
         branchName,
