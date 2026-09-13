@@ -126,10 +126,17 @@ export function buildCodeContent(files) {
  * the provided glob patterns. Returns their combined contents formatted as
  * headed sections, capped at the maxChars argument (default: DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS).
  *
- * Returns an empty string when no globs are provided or no files match.
+ * Always returns `{ content, matchedFiles }` — every exit, including the ones
+ * that find nothing. The caller destructures the result, so an exit returning a
+ * bare string silently hands it `undefined` for both names and takes the whole
+ * job summary down with it when something later reads `.length`.
+ *
+ * `matchedFiles` lists the files whose content actually reached `content`, not
+ * every file the globs matched: the report names these to the instructor, and
+ * naming a file that the maxChars cap dropped would be a lie.
  */
 export async function readAssignmentContextFiles(globs, maxChars) {
-  if (!globs || globs.length === 0) return '';
+  if (!globs || globs.length === 0) return { content: '', matchedFiles: [] };
 
   const workspace = process.env.GITHUB_WORKSPACE || process.cwd();
   const opts = { dot: true };
@@ -139,7 +146,7 @@ export async function readAssignmentContextFiles(globs, maxChars) {
   try {
     allFiles = fs.readdirSync(workspace, { recursive: true, encoding: 'utf-8' });
   } catch {
-    return '';
+    return { content: '', matchedFiles: [] };
   }
 
   // Keep only regular files that match at least one glob.
@@ -154,10 +161,11 @@ export async function readAssignmentContextFiles(globs, maxChars) {
     return globs.some((g) => minimatch(normalised, g, opts));
   });
 
-  if (matched.length === 0) return '';
+  if (matched.length === 0) return { content: '', matchedFiles: [] };
 
   let combined = '';
   let truncated = false;
+  const consumed = [];
 
   for (const rel of matched) {
     const normalised = rel.replace(/\\/g, '/');
@@ -182,23 +190,29 @@ export async function readAssignmentContextFiles(globs, maxChars) {
       continue;
     }
 
-    const section = `### \`${normalised}\`\n${content.trimEnd()}\n`;
+    const header = `### \`${normalised}\`\n`;
+    const section = `${header}${content.trimEnd()}\n`;
 
     if (combined.length + section.length > maxChars) {
       const remaining = maxChars - combined.length;
       if (remaining > 0) {
         combined += section.substring(0, remaining);
+        // Claim the file as context only if the cap left room past the header
+        // for some of its actual content. A fragment of the heading is not
+        // context, and the files after this one never reached the prompt at all.
+        if (remaining > header.length) consumed.push(normalised);
       }
       truncated = true;
       break;
     }
 
     combined += section + '\n';
+    consumed.push(normalised);
   }
 
   if (truncated) {
     combined += '\n[assignment context truncated due to size]';
   }
 
-  return { content: combined.trim(), matchedFiles: matched };
+  return { content: combined.trim(), matchedFiles: consumed };
 }

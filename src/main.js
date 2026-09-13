@@ -717,7 +717,10 @@ async function writeRunSummary(state) {
 
     await core.summary.addRaw(md).write();
   } catch (err) {
-    core.debug(`Could not write job summary: ${err.message}`);
+    // Never fail the run over the summary — but say so out loud. This catch
+    // once hid a TypeError that discarded the summary on every successful run,
+    // and at core.debug nobody saw it.
+    core.warning(`Could not write job summary: ${err.message}`);
   }
 }
 
