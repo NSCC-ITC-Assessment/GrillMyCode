@@ -47,6 +47,8 @@ When the action runs it performs up to seven lookups using the already-available
 
 Each detected signal is mapped to one or more [github/gitignore](https://github.com/github/gitignore) templates, or to a set of known artifact paths for frameworks that have no upstream template (e.g. SvelteKit's `.svelte-kit/`, Nuxt's `.nuxt/` and `.output/`). The action ships with all 300+ templates bundled in the Docker image (kept current via a weekly automated PR).
 
+Template patterns are emitted **depth-independently**: `node_modules/` in the upstream template becomes `**/node_modules/**`, so a nested `frontend/node_modules/` is excluded just as a root-level one is. Only patterns the upstream template anchors with a leading slash (e.g. `/build/`) stay root-anchored. The examples below name each template's patterns in their unprefixed form for brevity.
+
 **Examples:**
 
 - A **plain Node** repo → `Node` template: `node_modules/**`, `dist/**`, `coverage/**`, etc.
@@ -83,22 +85,24 @@ The following are excluded from every run regardless of detected stack:
 
 | Pattern | Reason |
 |---|---|
-| `.git/**` | Git internals |
-| `.gitignore`, `.gitattributes`, `.gitmodules`, `.mailmap`, `.git-blame-ignore-revs` | VCS config, not student code |
-| `.classroom50.yaml` | Classroom 50 accept-time metadata, written by `gh student accept` under the student's own commit identity — not student-authored code |
+| `**/.git/**` | Git internals |
+| `**/.gitignore`, `**/.gitattributes`, `**/.gitmodules`, `**/.mailmap`, `**/.git-blame-ignore-revs` | VCS config, not student code |
+| `**/.classroom50.yaml` | Classroom 50 accept-time metadata, written by `gh student accept` under the student's own commit identity — not student-authored code |
 | `.github/workflows/**` | GitHub Actions workflow files — usually not student-authored code. You can override certain files for evaluation if needed. |
-| `**/*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Pipfile.lock`, `poetry.lock` | Lock files — machine-generated, often enormous |
+| `**/*.lock`, `**/package-lock.json`, `**/yarn.lock`, `**/pnpm-lock.yaml`, `**/Pipfile.lock`, `**/poetry.lock` | Lock files — machine-generated, often enormous |
 | `**/*.min.js`, `**/*.min.css` | Minified assets — unreadable by design |
-| `.env`, `.env.*`, `**/.env`, `**/.env.*` | Environment files — may contain secrets |
+| `**/.env`, `**/.env.*` | Environment files — may contain secrets |
 | `**/*.tsbuildinfo` | TypeScript incremental build metadata |
-| `.gradio/**`, `.dvc/cache/**` | Python tool caches (Gradio, DVC) not covered by the bundled `Python` template |
-| `.DS_Store`, `Thumbs.db` | OS-generated noise |
+| `**/.gradio/**`, `**/.dvc/cache/**` | Python tool caches (Gradio, DVC) not covered by the bundled `Python` template |
+| `**/.DS_Store`, `**/Thumbs.db` | OS-generated noise |
 | `**/*.map` | Source maps (generated, not authored) |
 | `**/*.log` | Log output |
 | `**/*.md` | Markdown docs — pass assignment briefs via [`assignment_context`](../reference/inputs-outputs.md) instead |
 | `**/*.svg` | SVG assets |
 
 ## Pattern syntax
+
+This section describes the patterns **you** write in `additional_exclude_patterns` and `exclude_pattern_overrides`. The built-in and auto-detected patterns above already carry explicit `**/` prefixes, so they never depend on the `matchBase` behaviour described here.
 
 Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with two options enabled: `dot: true` (matches dotfiles) and `matchBase: true` (a pattern with no `/` matches against the filename only, regardless of directory depth).
 

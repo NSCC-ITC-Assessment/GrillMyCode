@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.3.1 — 2026-09-13
+
+### What's Changed
+
+### Refactoring
+
+- enhance file exclusion patterns and add tests for depth-independent matching
+
 ## v1.3.0 — 2026-09-11
 
 ### What's Changed
