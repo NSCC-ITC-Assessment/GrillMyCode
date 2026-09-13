@@ -45,6 +45,72 @@ const ANSWER_REGION_RE =
   /[ \t]*<!--\s*gmc:answer\s*-->[\s\S]*?<!--\s*\/gmc:answer\s*-->[ \t]*\n?/gi;
 export const ANSWER_MARKER_LINE_RE = /^[ \t]*<!--\s*\/?\s*gmc:answer\s*-->[ \t]*\n?/gim;
 
+// A fence opens on a run of 3+ backticks or tildes (a backtick info string may
+// not itself contain a backtick, or the line is inline code, not a fence). It
+// closes only on a run of the same character at least as long, with nothing
+// after it — so ~~~ inside a ``` block, or ``` inside a ```` block, is content.
+const CODE_BLOCK_OPEN_RE = /^[ \t]*(`{3,}(?=[^`]*$)|~{3,})/;
+const CODE_BLOCK_CLOSE_RE = /^[ \t]*(`{3,}|~{3,})\s*$/;
+// The opening marker must start its line, so a marker quoted mid-sentence in
+// question prose does not swallow every question after it. The closing marker
+// may trail the final bullet, so it is matched anywhere on the line.
+const ANSWER_OPEN_RE = /^[ \t]*<!--\s*gmc:answer\s*-->/i;
+const ANSWER_CLOSE_RE = /<!--\s*\/\s*gmc:answer\s*-->/i;
+
+/**
+ * Applies `transform` to each top-level line — one outside every fenced code
+ * block and every <!-- gmc:answer --> region — and returns all other lines
+ * untouched. The single notion of "top level" shared by every pass that
+ * rewrites question stems, so none of them can reach into student code or
+ * answer content.
+ *
+ * An unclosed fence or answer region runs to the end of the text: its lines are
+ * left alone rather than guessed at.
+ */
+function mapTopLevelLines(text, transform) {
+  const lines = text.split('\n');
+  const topLevel = topLevelFlags(lines);
+  return lines.map((line, i) => (topLevel[i] ? transform(line) : line)).join('\n');
+}
+
+/** Marks each line true when it is top-level, as defined by mapTopLevelLines. */
+function topLevelFlags(lines) {
+  let fence = null;
+  let inAnswer = false;
+  return lines.map((line) => {
+    if (fence) {
+      const close = line.match(CODE_BLOCK_CLOSE_RE);
+      if (close && close[1][0] === fence[0] && close[1].length >= fence.length) fence = null;
+      return false;
+    }
+    const open = line.match(CODE_BLOCK_OPEN_RE);
+    if (open) {
+      fence = open[1];
+      return false;
+    }
+    if (ANSWER_OPEN_RE.test(line)) {
+      inAnswer = !ANSWER_CLOSE_RE.test(line);
+      return false;
+    }
+    if (inAnswer) {
+      if (ANSWER_CLOSE_RE.test(line)) inAnswer = false;
+      return false;
+    }
+    return true;
+  });
+}
+
+// A numbered stem, capturing its number. `$` as well as `\s` so a bare "2." at
+// the end of a line still counts, as it did when this was a multiline regex.
+const QUESTION_STEM_RE = /^\s*(\d+)\.(?:\s|$)/;
+
+/** Counts top-level numbered question stems, ignoring code blocks and answers. */
+export function countQuestions(text) {
+  const lines = text.split('\n');
+  const topLevel = topLevelFlags(lines);
+  return lines.filter((line, i) => topLevel[i] && QUESTION_STEM_RE.test(line)).length;
+}
+
 /**
  * Renumbers the question stems sequentially from 1.
  *
@@ -58,43 +124,25 @@ export const ANSWER_MARKER_LINE_RE = /^[ \t]*<!--\s*\/?\s*gmc:answer\s*-->[ \t]*
  * <!-- gmc:answer --> regions keep whatever numbering they carry.
  */
 export function renumberQuestions(text) {
-  let inFence = false;
-  let inAnswer = false;
   let n = 0;
-  return text
-    .split('\n')
-    .map((line) => {
-      if (/^\s*(?:```|~~~)/.test(line)) {
-        inFence = !inFence;
-        return line;
-      }
-      if (inFence) return line;
-      if (/<!--\s*gmc:answer\s*-->/i.test(line)) {
-        inAnswer = true;
-        return line;
-      }
-      if (/<!--\s*\/\s*gmc:answer\s*-->/i.test(line)) {
-        inAnswer = false;
-        return line;
-      }
-      if (inAnswer || !/^\s*\d+\.\s/.test(line)) return line;
-      n += 1;
-      return line.replace(/^(\s*)\d+\./, `$1${n}.`);
-    })
-    .join('\n');
+  return mapTopLevelLines(text, (line) => {
+    if (!/^\s*\d+\.\s/.test(line)) return line;
+    n += 1;
+    return line.replace(/^(\s*)\d+\./, `$1${n}.`);
+  });
 }
 
 /**
  * Bolds the question sentence on every numbered question line. Applied in
  * post-processing so the result is deterministic regardless of whether the
  * model followed the formatting instruction. Skips lines already wrapped in
- * bold, and skips the <!-- gmc:answer --> interior so answer headings and
- * bullets are never touched.
+ * bold, fenced code blocks (student code is shown verbatim), and the
+ * <!-- gmc:answer --> interior so answer headings and bullets are never touched.
  *
  *   1. What does `x` return?   →   1. **What does `x` return?**
  */
 export function boldQuestionLines(text) {
-  return text.replace(/^(\s*\d+\. )(?!\*\*)(.+)$/gm, '$1**$2**');
+  return mapTopLevelLines(text, (line) => line.replace(/^(\s*\d+\. )(?!\*\*)(.+)$/m, '$1**$2**'));
 }
 
 /**
@@ -104,11 +152,16 @@ export function boldQuestionLines(text) {
  * Input:  1. **What does `x` return when `y` is null?**
  * Output: 1. **What does** `x` **return when** `y` **is null?**
  *
- * Only lines beginning with a question number are touched; filename headers
- * (**`file.ext`**) and answer headings (**Answer:**) are left unchanged.
+ * Only top-level lines beginning with a question number are touched; filename
+ * headers (**`file.ext`**), answer headings (**Answer:**), and anything inside
+ * a fenced code block or answer region are left unchanged.
  */
 export function splitBoldAroundCode(text) {
-  return text.replace(/^(\s*\d+\. )(\*\*.+\*\*)$/gm, (_, prefix, boldText) => {
+  return mapTopLevelLines(text, splitBoldLine);
+}
+
+function splitBoldLine(line) {
+  return line.replace(/^(\s*\d+\. )(\*\*.+\*\*)$/m, (_, prefix, boldText) => {
     if (!boldText.includes('`')) return prefix + boldText;
     const inner = boldText.slice(2, -2);
     const rebuilt = inner
@@ -351,18 +404,21 @@ export function redactStudentQuestions(originalText, studentText, correctAnswers
  *
  * If the model over-generates (e.g. produces more questions than were
  * requested because it hit the token limit), this finds the start of question
- * maxQuestions+1 and removes everything from that point onward.
+ * maxQuestions+1 and removes everything from that point onward. Only top-level
+ * stems count: a numbered line inside student code or an answer region is not a
+ * question, and must not cut the report off mid-question.
  */
 export function truncateToMaxQuestions(text, maxQuestions) {
-  // Questions are numbered: "1.", "2.", … at the start of a line (possibly
-  // preceded by whitespace). Look for the start of question maxQuestions+1.
-  const overflowPattern = new RegExp(`(?:^|\\n)(?=\\s*${maxQuestions + 1}\\.\\s)`);
-  const match = overflowPattern.exec(text);
-  if (match) {
+  const lines = text.split('\n');
+  const topLevel = topLevelFlags(lines);
+  const overflow = lines.findIndex(
+    (line, i) => topLevel[i] && line.match(QUESTION_STEM_RE)?.[1] === String(maxQuestions + 1),
+  );
+  if (overflow !== -1) {
     core.warning(
       `AI generated more than ${maxQuestions} questions — truncating to the requested count.`,
     );
-    return text.substring(0, match.index).trimEnd();
+    return lines.slice(0, overflow).join('\n').trimEnd();
   }
   return text;
 }
