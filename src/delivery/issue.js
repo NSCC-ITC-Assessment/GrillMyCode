@@ -60,8 +60,6 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
   const { owner, repo } = ctx.repo;
 
   // ── Find any existing open assessment issues for this branch ──────────────
-  const searchStr = branchName ? `GrillMyCode Questions (${branchName})` : 'GrillMyCode';
-
   const existing = await octokit.rest.issues.listForRepo({
     owner,
     repo,
@@ -70,7 +68,9 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
     per_page: ISSUES_PER_PAGE,
   });
 
-  const predecessors = existing.data.filter((i) => i.title.startsWith(searchStr));
+  // Extras are deleted below, so only an exact title match counts. A prefix
+  // match would, with an empty branch name, sweep up every branch's issue.
+  const predecessors = existing.data.filter((i) => i.title === title);
 
   // ── Update existing issue or create a new one ─────────────────────────────
   if (predecessors.length > 0) {
@@ -95,16 +95,23 @@ export async function postIssue({ octokit, ctx, report, branchName, headSha, stu
       body: `> [!NOTE]\n> The assessment questions in this issue were regenerated at commit \`${shortHead}\` and the questions have been updated. Any previous questions have been replaced.`,
     });
 
+    // Deleting duplicates is housekeeping, like pinning: the assessment has
+    // already been delivered, and deleteIssue needs admin rights the token may
+    // not carry, so a failure warns rather than failing the run.
     for (const extra of extras) {
-      await octokit.graphql(
-        `mutation($issueId: ID!) {
-          deleteIssue(input: { issueId: $issueId }) {
-            repository { id }
-          }
-        }`,
-        { issueId: extra.node_id },
-      );
-      core.info(`Deleted duplicate assessment Issue #${extra.number}`);
+      try {
+        await octokit.graphql(
+          `mutation($issueId: ID!) {
+            deleteIssue(input: { issueId: $issueId }) {
+              repository { id }
+            }
+          }`,
+          { issueId: extra.node_id },
+        );
+        core.info(`Deleted duplicate assessment Issue #${extra.number}`);
+      } catch (err) {
+        core.warning(`Could not delete duplicate Issue #${extra.number}: ${err.message}`);
+      }
     }
 
     return { number: updated.number, url: updated.url };
