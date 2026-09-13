@@ -228,8 +228,13 @@ questions **and** answers — outside the student's repository:
   (`<classroom>-<assignment>-<username>`) and its direct collaborators — never from who pushed or
   started the run — and any other repository skips instructor delivery with a warning.
 - That write triggers a bundled **Generate LMS Quiz** workflow in the instructor repository, which
-  builds an IMS Common Cartridge / QTI package per student for import into Brightspace or any other
-  Common Cartridge–compatible LMS.
+  builds an IMS Common Cartridge / QTI package (`.imscc`) per student. Common Cartridge is an open
+  standard that most major LMS platforms can import — including Brightspace, Canvas, Moodle,
+  Blackboard Learn and Sakai — so this is the quiz file for everyone.
+- **Brightspace only:** the same workflow also writes a `_brightspace_quiz.csv` per student — the
+  same questions in Brightspace's own question-import format, as an alternative to the `.imscc` for
+  Brightspace instructors who prefer importing questions that way. No other LMS can read it; if you
+  are not on Brightspace, ignore it.
 - That workflow and the instructor repository's `README.md` are owned by the action and re-synced on
   every delivery, so repositories created by an earlier release pick up quiz-generation fixes on
   their own. Local edits to either file are replaced on the next run.

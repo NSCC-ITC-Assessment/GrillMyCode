@@ -138,7 +138,7 @@ When the first student pushes to the default branch:
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.
 3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `generate-lms-quiz.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents. On every later run it refreshes both files whenever they differ from the copies shipped with the action, so existing instructor repositories receive quiz-generation fixes without any manual step. Both are action-owned — edit them in the repository and the next run puts them back.
 4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
-5. That write automatically triggers the **Generate LMS Quiz** workflow in the instructor repository, which produces an IMS Common Cartridge / QTI quiz package (`{student-login}/{assignment-name}_{student-login}_quiz.imscc`) for that student, ready to import directly into Brightspace or any other Common Cartridge / QTI-compatible LMS. Every run checks all students but skips any whose `questions.md` is unchanged since their quiz was last built, so normally only the student who just pushed gets a new file; a change to the quiz package format rebuilds every student's quiz in a single run. The workflow can also be run manually from the Actions tab to regenerate every student's quiz at once.
+5. That write automatically triggers the **Generate LMS Quiz** workflow in the instructor repository, which produces an IMS Common Cartridge / QTI quiz package (`{student-login}/{assignment-name}_{student-login}_quiz.imscc`) for that student, ready to import into any LMS that supports Common Cartridge — an open standard supported by most major platforms, including Brightspace, Canvas, Moodle, Blackboard Learn and Sakai. **Brightspace users only** also get an alternative: `{student-login}/{assignment-name}_{student-login}_brightspace_quiz.csv`, the same questions in Brightspace's own question-import format (see [Which quiz file to use](#which-quiz-file-to-use)). It works only in Brightspace — anyone on another LMS can ignore it. Every run checks all students but skips any whose `questions.md` is unchanged since their quiz was last built, so normally only the student who just pushed gets a new file; a change to the quiz package format rebuilds every student's quiz in a single run. The workflow can also be run manually from the Actions tab to regenerate every student's quiz at once.
 
 For subsequent students the repo already exists — the action just adds or updates their individual file.
 
@@ -158,7 +158,8 @@ Each student's assessment is stored in a dedicated folder:
 README.md
 {student-login}/
   questions.md
-  {assignment-name}_{student-login}_quiz.imscc
+  {assignment-name}_{student-login}_quiz.imscc              ← quiz package for any LMS
+  {assignment-name}_{student-login}_brightspace_quiz.csv    ← optional alternative, Brightspace only
 ```
 
 For example, if your org is `my-school`, your assignment is `lab-3`, and a student's login is `jsmith`:
@@ -166,8 +167,27 @@ For example, if your org is `my-school`, your assignment is `lab-3`, and a stude
 - Instructor repo: `https://github.com/my-school/lab-3-grillmycode-instructor`
 - Student file: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/questions.md`
 - Quiz package: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_quiz.imscc`
+- Brightspace-only CSV alternative: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_brightspace_quiz.csv`
 
 Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student.
+
+### Which quiz file to use
+
+The `.imscc` is the quiz file for everyone. **Common Cartridge** is an open standard from 1EdTech (formerly IMS Global), and most major LMS platforms can import it — including Brightspace, Canvas, Moodle, Blackboard Learn and Sakai. Whatever LMS you use, start with the `.imscc`.
+
+### Brightspace users: the CSV alternative
+
+**Not on Brightspace? Skip this section** — use the `.imscc` and ignore the `_brightspace_quiz.csv` file. It is in D2L Brightspace's own question-import format, which no other LMS can read.
+
+If you are on Brightspace, you can import **either** file. You only need one of them — they contain the same questions.
+
+| | `_quiz.imscc` | `_brightspace_quiz.csv` |
+| --- | --- | --- |
+| Works in | Any LMS that imports Common Cartridge, including Brightspace | Brightspace only |
+| Imports as | A ready-made quiz, titled `{assignment-name} - {student-login}`, limited to one attempt | Questions only — you add them to a quiz yourself |
+| How to import | Import the package into the course | Open a quiz and choose **Import → Upload a File**, or upload to the Question Library |
+
+Using the CSV, questions are titled `{assignment-name} - {student-login} - Q1`, `Q2`, …, and answer options are already shuffled, since the CSV format has no shuffle setting. Leave the `//gmc_content_hash` line at the top of the file in place: Brightspace ignores it, and the workflow uses it to tell whether the file is up to date.
 
 ---
 
@@ -246,7 +266,7 @@ next student push takes the "already exists" path and delivers normally.
 ### The first run after an upgrade regenerates every student's quiz
 
 Expected, once. The quiz workflow decides what to rebuild by comparing a content hash stored inside
-each `.imscc`. A repository that has just received an updated workflow has no current hashes on
+each `.imscc` and `.csv`. A repository that has just received an updated workflow has no current hashes on
 file, so a single run rebuilds the package for **every** student, serialised by the workflow's
 concurrency group. For a class of thirty that is a long run, not a broken one — subsequent pushes
 go back to rebuilding only the student who pushed.
