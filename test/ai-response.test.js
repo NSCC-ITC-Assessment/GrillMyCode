@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import * as core from '@actions/core';
 import { callAI } from '../src/ai.js';
 
 vi.mock('@actions/core', () => ({ warning: vi.fn() }));
@@ -153,5 +154,71 @@ describe('callAI unreadable bodies on a 200', () => {
     expect(error.message).toMatch(/not valid JSON/);
     expect(error.cause).toBeInstanceOf(SyntaxError);
     expect(fetch).toHaveBeenCalledTimes(2);
+  });
+});
+
+describe('callAI Retry-After on a 429', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(core.warning).mockClear();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  /** Stubs fetch to return one 429 with the given Retry-After, then a success. */
+  function rateLimitedThenOk(retryAfter) {
+    const fetch = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response('rate limited', {
+          status: 429,
+          statusText: 'Too Many Requests',
+          headers: { 'Retry-After': retryAfter },
+        }),
+      )
+      .mockResolvedValueOnce(new Response(JSON.stringify(ok), { status: 200 }));
+    vi.stubGlobal('fetch', fetch);
+    return fetch;
+  }
+
+  /** Starts callAI and returns a probe for how many requests have been sent. */
+  function start(fetch) {
+    const result = callAI({
+      provider: 'openrouter',
+      model: 'test-model',
+      apiKey: 'key',
+      messages: [],
+      retryMaxAttempts: 2,
+    });
+    return { result, calls: () => fetch.mock.calls.length };
+  }
+
+  it('honours a Retry-After below the cap exactly', async () => {
+    const fetch = rateLimitedThenOk('2');
+    const { result, calls } = start(fetch);
+    await vi.advanceTimersByTimeAsync(1_999);
+    expect(calls()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calls()).toBe(2);
+    expect(await result).toBe('1. Question?');
+    expect(core.warning).toHaveBeenCalledWith(expect.not.stringContaining('capped'));
+  });
+
+  it.each([
+    ['integer seconds', () => '3600'],
+    ['an HTTP date', () => new Date(Date.now() + 3_600_000).toUTCString()],
+  ])('caps a Retry-After given as %s at 30 seconds', async (_, header) => {
+    const fetch = rateLimitedThenOk(header());
+    const { result, calls } = start(fetch);
+    await vi.advanceTimersByTimeAsync(29_999);
+    expect(calls()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calls()).toBe(2);
+    expect(await result).toBe('1. Question?');
+    expect(core.warning).toHaveBeenCalledWith(
+      expect.stringMatching(/in 30000ms \(Retry-After .*capped\)/),
+    );
   });
 });

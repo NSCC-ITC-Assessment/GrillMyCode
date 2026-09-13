@@ -41,8 +41,9 @@ inputs:
       Total number of attempts (initial attempt plus retries) when calling the
       AI provider. Retries are triggered by transient errors: 429 (rate limit),
       500, 502, 503, 504, and network-level failures. A 429 response with a
-      Retry-After header is honoured; all other retryable errors use
-      exponential backoff with full jitter. Values below 1 are clamped to 1.
+      Retry-After header is honoured, up to 30 seconds; all other retryable
+      errors use exponential backoff with full jitter. Values below 1 are
+      clamped to 1.
     required: false
     default: "5"
 
