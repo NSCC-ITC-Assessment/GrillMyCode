@@ -14,6 +14,8 @@
 import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { minimatch } from 'minimatch';
+import { fileURLToPath } from 'url';
+import { resolve } from 'path';
 import {
   EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
   SUMMARY_FILE_TABLE_LIMIT,
@@ -177,17 +179,23 @@ function splitBoldAroundCode(text) {
  * Stray markers are always removed (so they never surface, including on the
  * keepAnswers path). Collapses any resulting triple+ blank lines to a double.
  */
-function stripAnswers(text, { keepAnswers = false } = {}) {
+export function stripAnswers(text, { keepAnswers = false } = {}) {
   let result = text;
 
   // Protect fenced code blocks so that marker strings embedded in student-
   // submitted code (e.g. const MARKER = '<!-- gmc:answer -->') are never
   // matched by the answer-region regexes and do not corrupt question output.
-  // The placeholder uses null bytes, which cannot appear in normal Markdown.
+  //
+  // The sentinels are load-bearing, and they are null bytes for a specific
+  // reason: collectRawFiles drops any file containing one, so a student cannot
+  // get the sentinel into their submission at all. The Private Use Area
+  // codepoints used previously had no such barrier — a student who pasted
+  // U+E001 into their source could have the model echo it back in question
+  // prose and hijack the restore pass below.
   const fences = [];
   result = result.replace(/^(`{3,})[^\n]*\n[\s\S]*?\n\1[ \t]*$/gm, (match) => {
     fences.push(match);
-    return `FENCE${fences.length - 1}`;
+    return `\0FENCE${fences.length - 1}\0`;
   });
 
   if (!keepAnswers) {
@@ -195,10 +203,11 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
     // Protect --- separators first: the model sometimes places them inside the
     // container (before the closing marker), and ANSWER_REGION_RE would consume
     // them along with the answer block. Placeholder round-trips them safely.
-    const SEP = 'GMC_SEP';
+    // Null-byte sentinel for the same reason as the fence placeholder above.
+    const SEP = '\0GMC_SEP\0';
     result = result.replace(/^-{3,}$/gm, SEP);
     result = result.replace(ANSWER_REGION_RE, '\n');
-    result = result.replace(/GMC_SEP/g, '---');
+    result = result.replace(/\0GMC_SEP\0/g, '---');
     // Pass 1: block-based — strip **Answer:** heading and everything below it
     // through to **Distractors for Multiple-Choice Quiz:**, covering all answer formats.
     result = result.replace(
@@ -228,8 +237,13 @@ function stripAnswers(text, { keepAnswers = false } = {}) {
       .replace(/^ {0,4}- [^\n]*/gm, '');
   }
   // Restore fenced code blocks now that all marker processing is complete.
-  result = result.replace(/FENCE(\d+)/g, (_, i) => fences[parseInt(i, 10)]);
-  return result.replace(/\n{3,}/g, '\n\n');
+  // An index outside the table cannot arise from the substitution above, so
+  // leave such a match as it stands rather than writing `undefined` into a
+  // student's question.
+  result = result.replace(/\0FENCE(\d+)\0/g, (match, i) => fences[Number(i)] ?? match);
+  // Nothing this function introduced still carries a sentinel by now, and a
+  // null byte from anywhere else has no business in a Markdown report.
+  return result.replace(/\0/g, '').replace(/\n{3,}/g, '\n\n');
 }
 
 /** Normalises text to a lowercase alphanumeric word stream for fuzzy matching. */
@@ -1253,4 +1267,9 @@ async function run() {
 
 // ─── Run ─────────────────────────────────────────────────────────────────────
 
-run();
+// Only run the pipeline when this file is the process entrypoint — entrypoint.sh
+// invokes it as `node /action/src/main.js`. The test suite imports it for
+// stripAnswers and must not kick off an assessment to do so.
+if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
+  run();
+}
