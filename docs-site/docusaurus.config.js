@@ -59,10 +59,10 @@ const config = {
   },
 
   // Set the production url of your site here
-  url: 'https://nscc-itc-assessment.github.io',
+  url: 'https://grillmycode.org',
   // Set the /<baseUrl>/ pathname under which your site is served
   // For GitHub pages deployment, it is often '/<projectName>/'
-  baseUrl: '/GrillMyCode/',
+  baseUrl: '/',
 
   // GitHub pages deployment config.
   organizationName: 'NSCC-ITC-Assessment',

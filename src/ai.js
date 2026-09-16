@@ -89,7 +89,7 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       throw new Error(
         'ai_provider "github-models" is no longer supported: GitHub permanently ' +
           'discontinued GitHub Models. Set ai_provider to "openrouter" and supply an ' +
-          'OpenRouter api_key. See https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers/openrouter',
+          'OpenRouter api_key. See https://grillmycode.org/docs/ai-providers/openrouter',
       );
 
     default:

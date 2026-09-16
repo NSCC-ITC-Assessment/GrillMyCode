@@ -1,11 +1,11 @@
 blank_issues_enabled: false
 contact_links:
   - name: Documentation
-    url: https://nscc-itc-assessment.github.io/GrillMyCode/
+    url: https://grillmycode.org/
     about: Read the docs before opening an issue — your question may already be answered.
   - name: Versioning policy
-    url: https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning
+    url: https://grillmycode.org/docs/development/versioning
     about: Understand how major/minor/patch versions work before requesting a feature.
   - name: Contributing guide
-    url: https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/contributing
+    url: https://grillmycode.org/docs/development/contributing
     about: Want to contribute a fix or feature yourself? Start here.
