@@ -5,7 +5,7 @@ body:
   - type: markdown
     attributes:
       value: |
-        Thanks for suggesting an improvement. Per the [versioning philosophy](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning), **any new functionality triggers a new major version** — consumers must explicitly update their workflow reference to adopt it. Please keep that in mind when describing your request.
+        Thanks for suggesting an improvement. Per the [versioning philosophy](https://grillmycode.org/docs/development/versioning), **any new functionality triggers a new major version** — consumers must explicitly update their workflow reference to adopt it. Please keep that in mind when describing your request.
 
   - type: dropdown
     id: feature-area

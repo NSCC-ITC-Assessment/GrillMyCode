@@ -54,10 +54,10 @@ jobs:
 
 ## Read more
 
-<https://nscc-itc-assessment.github.io/GrillMyCode/>
+<https://grillmycode.org/>
 
 > Looking for participants to pilot! DM me on Teams if interested.
 
 ---
 
-nscc-itc-assessment.github.io/GrillMyCode
+grillmycode.org

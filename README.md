@@ -9,7 +9,7 @@ A GitHub Action that analyses code changes and uses AI to generate targeted comp
 3. Sends the code to an AI provider to generate comprehension questions
 4. Creates or updates a GitHub Issue with the questions and generates a PDF
 
-See [architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/architecture) for a detailed breakdown of how the action is structured and executed.
+See [architecture](https://grillmycode.org/docs/development/architecture) for a detailed breakdown of how the action is structured and executed.
 
 ## Usage
 
@@ -21,7 +21,7 @@ See [architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/develo
 ```
 
 Question generation runs through [OpenRouter](https://openrouter.ai/), so an OpenRouter API key is
-required. See the [OpenRouter guide](https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers/openrouter)
+required. See the [OpenRouter guide](https://grillmycode.org/docs/ai-providers/openrouter)
 for one-time instructor setup.
 
 ### Inputs
@@ -37,7 +37,7 @@ for one-time instructor setup.
 | `num_questions`                | No       | `20`                           | Number of questions to generate (minimum 1, maximum 50). Supplied values above 50 are automatically capped to 50.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                   |
 | `include_answers`              | No       | `false`                        | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting.                                                                                                                                                                                                                                                                                                                                                                                          |
 | `exclude_pattern_overrides`    | No       |                                | Comma-separated entries that allow specific files through the auto-detected exclude patterns. Each entry can be an **exact pattern** (e.g. `**/*.md` — re-includes all Markdown files) or a **specific file path** (e.g. `README.md` — only that file passes through while `**/*.md` still excludes everything else).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `additional_exclude_patterns`  | No       |                                | Comma-separated globs for **extra** files to exclude on top of the auto-detected stack patterns. Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover. See [Exclude Patterns](https://nscc-itc-assessment.github.io/GrillMyCode/docs/reference/exclude-patterns).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `additional_exclude_patterns`  | No       |                                | Comma-separated globs for **extra** files to exclude on top of the auto-detected stack patterns. Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover. See [Exclude Patterns](https://grillmycode.org/docs/reference/exclude-patterns).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
 | `instructor_repo_token`        | No       |                                | **Classroom 50 assignment repositories only.** PAT with `repo` and `workflow` scopes and permission to create repositories in the same organisation. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode-instructor` in the same organisation. The repository is created automatically on first run, and its quiz-generation workflow and README are refreshed on every run whenever they differ from the copies shipped with the action. The assignment name and student folder are read from the Classroom 50 repository name (`<classroom>-<assignment>-<username>`) and its direct collaborators; any other repository skips instructor delivery with a warning. Leave empty to disable instructor repository delivery. |
 | `instructor_context`           | No       |                                | Instructor-specific instructions for this assignment. Injected at the end of the system prompt and takes precedence over any conflicting default behaviour. Supports multi-line, detailed instructions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
 | `assignment_context`           | No       |                                | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `instructor_context`. Steers which topics the questions focus on. Globs match the student's checked-out tree, so prefer instructor-maintained paths (a `docs/` directory, a PDF brief) where possible. Use `instructor_context` for instructions that must take effect regardless. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"docs/brief.pdf, instructor/rubric.docx"`.                                                                                                                                                               |
@@ -59,7 +59,7 @@ for one-time instructor setup.
 
 ## Example workflows
 
-Ready-to-use workflows for each configuration are available in the [example workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) section of the docs site. To generate a tailored workflow interactively, use the [Workflow Wizard](https://nscc-itc-assessment.github.io/GrillMyCode/workflow-wizard). Copy the relevant YAML into `.github/workflows/` in your repository.
+Ready-to-use workflows for each configuration are available in the [example workflows](https://grillmycode.org/docs/category/example-workflows) section of the docs site. To generate a tailored workflow interactively, use the [Workflow Wizard](https://grillmycode.org/workflow-wizard). Copy the relevant YAML into `.github/workflows/` in your repository.
 
 ### Push to default branch
 
@@ -107,7 +107,7 @@ jobs:
 
 `ai_model` accepts any model identifier OpenRouter supports, in `provider/model-name` format.
 See [openrouter.ai/models](https://openrouter.ai/models) for the full list and current pricing,
-and the [OpenRouter guide](https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers/openrouter)
+and the [OpenRouter guide](https://grillmycode.org/docs/ai-providers/openrouter)
 for the models tested with GrillMyCode.
 
 ```yaml
@@ -151,9 +151,9 @@ in plaintext and recorded in the run's metadata. `include_answers`, `base_sha`/`
 `skip_committers` are also best kept in the file: anyone who can run the workflow can set a dispatch
 input, and in a Classroom repository that includes the student being assessed.
 
-See [Manual Run Overrides](https://nscc-itc-assessment.github.io/GrillMyCode/docs/example-workflows/manual-dispatch)
+See [Manual Run Overrides](https://grillmycode.org/docs/example-workflows/manual-dispatch)
 for the full example, or build one with the
-[Workflow Wizard](https://nscc-itc-assessment.github.io/GrillMyCode/workflow-wizard).
+[Workflow Wizard](https://grillmycode.org/workflow-wizard).
 
 ---
 
@@ -192,7 +192,7 @@ the workflow file it maintains. See [Instructor repository delivery](#instructor
 
 ## Classroom 50
 
-This action was originally designed to work with [GitHub Classroom](https://classroom.github.com/), which GitHub is discontinuing (full shutdown August 28, 2026). It now targets [Classroom 50](https://github.com/foundation50/classroom50), the open-source replacement — see the [Classroom 50 guide](https://nscc-itc-assessment.github.io/GrillMyCode/docs/guides/classroom50) for full details.
+This action was originally designed to work with [GitHub Classroom](https://classroom.github.com/), which GitHub is discontinuing (full shutdown August 28, 2026). It now targets [Classroom 50](https://github.com/foundation50/classroom50), the open-source replacement — see the [Classroom 50 guide](https://grillmycode.org/docs/guides/classroom50) for full details.
 
 By default (`include_initial_commit: 'false'`), the diff base is pinned to the repository's very first commit — the template/starter code committed when the student accepted the assignment. This means only code written by the student after accepting the assignment is eligible for assessment, and template boilerplate is never included in the diff unless configured as such (`include_initial_commit: 'true'`).
 
@@ -243,7 +243,7 @@ questions **and** answers — outside the student's repository:
   frozen at the version it was seeded with.
 
 Add the PAT once as an **org-level** Actions secret and every student repository inherits it. Full
-walkthrough: [Instructor Setup](https://nscc-itc-assessment.github.io/GrillMyCode/docs/guides/instructor-setup).
+walkthrough: [Instructor Setup](https://grillmycode.org/docs/guides/instructor-setup).
 
 ---
 
@@ -289,13 +289,13 @@ additional_exclude_patterns: 'tests/**,docs/**'
 
 ## Further reading
 
-Full documentation is available at **https://nscc-itc-assessment.github.io/GrillMyCode/**.
+Full documentation is available at **https://grillmycode.org/**.
 
-| Page                                                                                                   | Description                                                                       |
-| ------------------------------------------------------------------------------------------------------ | --------------------------------------------------------------------------------- |
-| [AI Providers](https://nscc-itc-assessment.github.io/GrillMyCode/docs/ai-providers)                    | Supported AI providers, required inputs, secrets, and example snippets for each   |
-| [Architecture](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/architecture)        | How the Docker-based action is structured and executed                            |
-| [Example Workflows](https://nscc-itc-assessment.github.io/GrillMyCode/docs/category/example-workflows) | Copy-paste workflow files for each configuration                                  |
-| [Instructor Setup](https://nscc-itc-assessment.github.io/GrillMyCode/docs/guides/instructor-setup)     | One-time org setup for private instructor repository delivery and LMS quiz export |
-| [Contributing](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/contributing)        | Local development setup, commit conventions, and the release process              |
-| [Versioning](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning)            | Release guide — patch, minor, and major releases                                  |
+| Page                                                                         | Description                                                                       |
+| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
+| [AI Providers](https://grillmycode.org/docs/ai-providers)                    | Supported AI providers, required inputs, secrets, and example snippets for each   |
+| [Architecture](https://grillmycode.org/docs/development/architecture)        | How the Docker-based action is structured and executed                            |
+| [Example Workflows](https://grillmycode.org/docs/category/example-workflows) | Copy-paste workflow files for each configuration                                  |
+| [Instructor Setup](https://grillmycode.org/docs/guides/instructor-setup)     | One-time org setup for private instructor repository delivery and LMS quiz export |
+| [Contributing](https://grillmycode.org/docs/development/contributing)        | Local development setup, commit conventions, and the release process              |
+| [Versioning](https://grillmycode.org/docs/development/versioning)            | Release guide — patch, minor, and major releases                                  |

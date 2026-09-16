@@ -19,4 +19,4 @@ This action handles sensitive values including `GITHUB_TOKEN` and third-party AI
 
 ## Response
 
-Confirmed vulnerabilities will be patched and released as a patch version on all active major lines. See [versioning.md](https://nscc-itc-assessment.github.io/GrillMyCode/docs/development/versioning) for the release process.
+Confirmed vulnerabilities will be patched and released as a patch version on all active major lines. See [versioning.md](https://grillmycode.org/docs/development/versioning) for the release process.
