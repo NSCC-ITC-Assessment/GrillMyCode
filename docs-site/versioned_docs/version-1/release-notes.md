@@ -5,6 +5,26 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.5.1 — 2026-09-17
+
+### What's Changed
+
+### Bug Fixes
+
+- update quiz filenames to include question count for clarity and manage superseded packages
+- enhance answer stripping to prevent unintended question deletions during distractor processing
+- retain answer-container markers for instructor copy to ensure correct distractor parsing
+- clarify mandatory prompt formatting rules for quiz question outputs
+
+### Documentation
+
+- updated internal docs
+- update documentation links
+
+### Chores & Maintenance
+
+- update lint-staged to version 17.5.1 in package.json and pnpm-lock.yaml
+
 ## v1.5.0 — 2026-09-13
 
 ### What's Changed
