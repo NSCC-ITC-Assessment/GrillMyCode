@@ -224,7 +224,10 @@ questions **and** answers — outside the student's repository:
 
 - The repository is named `{assignment-name}-grillmycode-instructor` and created **private** in the
   same organisation on the first student push. Each student's copy lands at
-  `{student-login}/questions.md`. Both names come from the Classroom 50 repository name
+  `{student-login}/questions.md`, with the model's unprocessed reply filed beside it as
+  `{student-login}/raw-ai-output.md` — a diagnostic record of what the AI actually returned before
+  truncation, renumbering and formatting, which is the place to look when generated questions come
+  out wrong. Both names come from the Classroom 50 repository name
   (`<classroom>-<assignment>-<username>`) and its direct collaborators — never from who pushed or
   started the run — and any other repository skips instructor delivery with a warning.
 - That write triggers a bundled **Generate LMS Quiz** workflow in the instructor repository, which

@@ -124,6 +124,10 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │     Rewrites generate-lms-quiz.yml and README.md when they differ
                │     from the copies shipped in src/; warns (never throws) on failure
                │
+               ├── writeFileWithRetry()
+               │     Writes {studentLogin}/raw-ai-output.md — the model's reply
+               │     before postprocessing; warns (never throws) on failure
+               │
                └── writeFileWithRetry()
                      Writes {studentLogin}/questions.md, retrying on 409/422
                      conflicts and backing off on rate limits
