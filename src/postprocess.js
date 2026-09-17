@@ -12,6 +12,49 @@
 
 import * as core from '@actions/core';
 
+// The one-sentence summary the model appends after the final question (see
+// prompt.js), which becomes the Instructor Note on the report. The closing
+// marker is matched loosely — anything shaped like a closing SUMMARY comment —
+// because gemini-3.5-flash-lite has been seen closing it as
+// `<!-- /CONSAR_SUMMARY -->`. An exact matcher failed twice over on that one
+// typo: the note vanished from the report, and the region went unstripped, so
+// it rode along into the delivered Markdown where the sentence between the two
+// comments renders as stray body text in the student's issue. Neither failure
+// raised anything.
+//
+// With no closing marker at all the region ends at the blank line after the
+// summary rather than at end of input. The summary is a single sentence, so
+// that costs nothing when the marker is merely missing — while an opening
+// marker that drifted into the middle of the response would otherwise swallow
+// every question below it. Leaving one stray line is far better than silently
+// deleting questions.
+const CONTEXT_SUMMARY_RE =
+  /<!--\s*CONTEXT_SUMMARY\s*-->[ \t]*\n?([\s\S]*?)(?:\n?[ \t]*<!--\s*\/\s*[A-Z_ ]*SUMMARY[A-Z_ ]*\s*-->|(?=\n[ \t]*\n)|$)\n*/i;
+// Built from the same source so extraction and removal can never disagree about
+// where the summary ended. Only the first match is extracted, but a model that
+// emitted the markers more than once must not leave the extras behind.
+const CONTEXT_SUMMARY_RE_G = new RegExp(CONTEXT_SUMMARY_RE.source, 'gi');
+const CONTEXT_SUMMARY_CLOSE_RE = /<!--\s*\/CONTEXT_SUMMARY\s*-->/i;
+
+/**
+ * Splits the context summary out of the raw model response, returning the
+ * summary text (empty when there is none) and the response with the whole
+ * marked region removed. Drift in the closing marker is recovered from and
+ * warned about, since a recovered summary looks identical to one that never
+ * drifted and the run log is the only place the difference shows.
+ */
+export function extractContextSummary(text) {
+  const match = text.match(CONTEXT_SUMMARY_RE);
+  if (!match) return { summary: '', rest: text };
+  if (!CONTEXT_SUMMARY_CLOSE_RE.test(text)) {
+    core.warning(
+      'The context summary did not close with <!-- /CONTEXT_SUMMARY --> — recovered it from ' +
+        'the opening marker instead. Check the Instructor Note on the report.',
+    );
+  }
+  return { summary: match[1].trim(), rest: text.replace(CONTEXT_SUMMARY_RE_G, '') };
+}
+
 /**
  * Ensures a --- thematic-break separator appears between every question block.
  * A block is identified by its bold filename header (**filename.ext** or **`filename.ext`**). Separators can

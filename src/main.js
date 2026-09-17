@@ -43,6 +43,7 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
   boldQuestionLines,
   countQuestions,
+  extractContextSummary,
   extractCorrectAnswers,
   normaliseSeparators,
   redactStudentQuestions,
@@ -713,17 +714,12 @@ async function run() {
     );
 
     // Extract the AI-generated context summary (only present when instructorContext was set).
-    const contextSummaryMatch = rawQuestions.match(
-      /<!--\s*CONTEXT_SUMMARY\s*-->\n?([\s\S]*?)\n?<!--\s*\/CONTEXT_SUMMARY\s*-->/,
-    );
-    const contextSummary = contextSummaryMatch ? contextSummaryMatch[1].trim() : '';
-    const cleanedQuestions = splitBoldAroundCode(
-      boldQuestionLines(
-        rawQuestions
-          .replace(/<!--\s*CONTEXT_SUMMARY\s*-->[\s\S]*?<!--\s*\/CONTEXT_SUMMARY\s*-->\n*/g, '')
-          .trim(),
-      ),
-    );
+    // One call does both halves — reading the summary and removing its region —
+    // so a closing marker the model drifted on cannot leave the note missing
+    // and the raw block visible at the same time, which is what it did.
+    const { summary: contextSummary, rest: questionsWithoutSummary } =
+      extractContextSummary(rawQuestions);
+    const cleanedQuestions = splitBoldAroundCode(boldQuestionLines(questionsWithoutSummary.trim()));
 
     // Always strip incorrect options for quiz; also strip the correct answer when
     // include_answers is false. cleanedQuestions retains answers for the instructor copy.

@@ -90,6 +90,18 @@ re-applied without re-deriving it.
   text matches the answer (or an earlier distractor) after stripping, compared
   case-insensitively, so `entry` and entry count as one option.
 
+- **One typo in the context-summary closing marker broke two things silently.**
+  `gemini-3.5-flash-lite` closed the summary with `<!-- /CONSAR_SUMMARY -->`, and
+  both regexes in `main.js` required the exact marker: the `**Instructor Note:**`
+  line vanished from the report, and the unstripped region rode into the
+  delivered Markdown, where the sentence between the two comments renders as
+  stray body text in the student's issue. `extractContextSummary` in
+  `postprocess.js` now does both halves in one call — so they cannot disagree —
+  matches any closing marker shaped like a SUMMARY comment, falls back to the
+  blank line after the summary when there is no closer at all (never to end of
+  input, which would swallow every question below a drifted opening marker), and
+  warns when it had to recover.
+
 - **`stripAnswers` pass 1 could delete whole questions from the student copy.**
   The lazy region from `**Answer:**` had a lookahead for the bold distractor
   heading only, so a block whose heading had drifted found no match inside itself
