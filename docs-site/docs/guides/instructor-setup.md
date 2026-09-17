@@ -138,7 +138,7 @@ When the first student pushes to the default branch:
 2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.
 3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `generate-lms-quiz.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents. On every later run it refreshes both files whenever they differ from the copies shipped with the action, so existing instructor repositories receive quiz-generation fixes without any manual step. Both are action-owned — edit them in the repository and the next run puts them back.
 4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`.
-5. That write automatically triggers the **Generate LMS Quiz** workflow in the instructor repository, which produces an IMS Common Cartridge / QTI quiz package (`{student-login}/{assignment-name}_{student-login}_quiz.imscc`) for that student, ready to import into any LMS that supports Common Cartridge — an open standard supported by most major platforms, including Brightspace, Canvas, Moodle, Blackboard Learn and Sakai. **Brightspace users only** also get an alternative: `{student-login}/{assignment-name}_{student-login}_brightspace_quiz.csv`, the same questions in Brightspace's own question-import format (see [Which quiz file to use](#which-quiz-file-to-use)). It works only in Brightspace — anyone on another LMS can ignore it. Every run checks all students but skips any whose `questions.md` is unchanged since their quiz was last built, so normally only the student who just pushed gets a new file; a change to the quiz package format rebuilds every student's quiz in a single run. The workflow can also be run manually from the Actions tab to regenerate every student's quiz at once.
+5. That write automatically triggers the **Generate LMS Quiz** workflow in the instructor repository, which produces an IMS Common Cartridge / QTI quiz package (`{student-login}/{assignment-name}_{student-login}_quiz_{question-count}.imscc`) for that student, ready to import into any LMS that supports Common Cartridge — an open standard supported by most major platforms, including Brightspace, Canvas, Moodle, Blackboard Learn and Sakai. **Brightspace users only** also get an alternative: `{student-login}/{assignment-name}_{student-login}_brightspace_quiz_{question-count}.csv`, the same questions in Brightspace's own question-import format (see [Which quiz file to use](#which-quiz-file-to-use)). It works only in Brightspace — anyone on another LMS can ignore it. Every run checks all students but skips any whose `questions.md` is unchanged since their quiz was last built, so normally only the student who just pushed gets a new file; a change to the quiz package format rebuilds every student's quiz in a single run. The workflow can also be run manually from the Actions tab to regenerate every student's quiz at once.
 
 For subsequent students the repo already exists — the action just adds or updates their individual file.
 
@@ -158,18 +158,20 @@ Each student's assessment is stored in a dedicated folder:
 README.md
 {student-login}/
   questions.md
-  {assignment-name}_{student-login}_quiz.imscc              ← quiz package for any LMS
-  {assignment-name}_{student-login}_brightspace_quiz.csv    ← optional alternative, Brightspace only
+  {assignment-name}_{student-login}_quiz_{question-count}.imscc              ← quiz package for any LMS
+  {assignment-name}_{student-login}_brightspace_quiz_{question-count}.csv    ← optional alternative, Brightspace only
 ```
 
 For example, if your org is `my-school`, your assignment is `lab-3`, and a student's login is `jsmith`:
 
 - Instructor repo: `https://github.com/my-school/lab-3-grillmycode-instructor`
 - Student file: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/questions.md`
-- Quiz package: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_quiz.imscc`
-- Brightspace-only CSV alternative: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_brightspace_quiz.csv`
+- Quiz package: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_quiz_20.imscc`
+- Brightspace-only CSV alternative: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_brightspace_quiz_20.csv`
 
-Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student.
+The trailing number is how many questions the file contains — `20` above. A question whose distractors could not be read from `questions.md` is left out of the package rather than imported as a single-choice free mark, so a quiz can be shorter than its `questions.md`; the count in the filename is how you spot that without opening anything.
+
+Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student. If the question count changes, the new count appears in the filename and the file carrying the old count is removed.
 
 ### Which quiz file to use
 

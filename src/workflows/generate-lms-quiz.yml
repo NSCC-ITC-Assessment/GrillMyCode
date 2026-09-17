@@ -632,8 +632,48 @@ jobs:
                   continue;
                 }
 
-                const out = path.join(studentDir, assignment + '_' + student + '_quiz.imscc');
-                const csvOut = path.join(studentDir, assignment + '_' + student + '_brightspace_quiz.csv');
+                // The question count is carried in the filename so that a short
+                // quiz is obvious from the file listing alone. A question can be
+                // withheld for missing distractors (see the warning above), and
+                // the only other signal is a run annotation that scrolls away —
+                // whereas `…_quiz_23.imscc` next to a 30-question questions.md
+                // states the problem at a glance, months later, to whoever is
+                // importing it.
+                const out = path.join(studentDir, assignment + '_' + student + '_quiz_' + questions.length + '.imscc');
+                const csvOut = path.join(studentDir, assignment + '_' + student + '_brightspace_quiz_' + questions.length + '.csv');
+
+                // Because the count is in the name, a run that extracts a
+                // different number of questions writes a different filename, and
+                // the previous pair would otherwise sit beside the new one
+                // forever — two importable packages for one student, the stale
+                // one indistinguishable from the current except by its count.
+                // Matches this student's own packages at any count, plus the
+                // pre-count names, so the first run after this change migrates
+                // them. String tests rather than a regex: the assignment name is
+                // interpolated and would need escaping.
+                const isSupersededPackage = (name) => {
+                  for (const [prefix, ext] of [
+                    [assignment + '_' + student + '_quiz', '.imscc'],
+                    [assignment + '_' + student + '_brightspace_quiz', '.csv'],
+                  ]) {
+                    if (!name.startsWith(prefix) || !name.endsWith(ext)) continue;
+                    const middle = name.slice(prefix.length, name.length - ext.length);
+                    if (middle === '' || /^_\d+$/.test(middle)) return true;
+                  }
+                  return false;
+                };
+                const currentNames = new Set([path.basename(out), path.basename(csvOut)]);
+                // Called only once the new pair is safely on disk. Sweeping
+                // beforehand would leave a student with no package at all if the
+                // build then threw — worse than a stale one.
+                const sweepSupersededPackages = () => {
+                  for (const name of fs.readdirSync(studentDir)) {
+                    if (currentNames.has(name) || !isSupersededPackage(name)) continue;
+                    const stale = path.join(studentDir, name);
+                    fs.unlinkSync(stale);
+                    console.log('Removed superseded package: ' + stale);
+                  }
+                };
 
                 // Clean up the pre-rename filename so it doesn't linger as a
                 // stale duplicate once a student's package regenerates under
@@ -662,6 +702,10 @@ jobs:
                   const previousHash = await readContentHash(fs.readFileSync(out));
                   const previousCsvHash = readCsvContentHash(fs.readFileSync(csvOut, 'utf8'));
                   if (previousHash === contentHash && previousCsvHash === contentHash) {
+                    // Safe on this path: both current files are known to exist,
+                    // so the sweep can only remove a pair left by an earlier
+                    // count.
+                    sweepSupersededPackages();
                     console.log('Unchanged, skipping: ' + out);
                     continue;
                   }
@@ -670,6 +714,7 @@ jobs:
                 const buffer = await buildQuizPackage(student, questions, contentHash);
                 fs.writeFileSync(out, buffer);
                 fs.writeFileSync(csvOut, buildQuizCsv(assignment + ' - ' + student, questions, contentHash));
+                sweepSupersededPackages();
                 const withheld = parsed.length - questions.length;
                 console.log(
                   'Generated: ' + out + ' and ' + path.basename(csvOut) + ' (' + questions.length + ' questions' +
@@ -715,8 +760,14 @@ jobs:
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          find . \( -name "*_quiz.imscc" -o -name "*_quiz.csv" \) -not -path "./.git/*" | xargs -r git add --
-          git add -A -- '*/brightspace_quiz.imscc' 2>/dev/null || true # pre-rename filename; errors when none exist
+          # -A per pathspec, so a superseded package that the generator deleted
+          # is staged as a deletion rather than left behind in the tree. One
+          # pathspec per invocation because a single pathspec matching nothing is
+          # fatal to the whole `git add` — batching them would stage nothing at
+          # all on any run where one shape is absent, which is most runs.
+          for spec in '*_quiz_*.imscc' '*_brightspace_quiz_*.csv' '*_quiz.imscc' '*_brightspace_quiz.csv' '*/brightspace_quiz.imscc'; do
+            git add -A -- "$spec" 2>/dev/null || true # unmatched shapes are expected
+          done
 
           if git diff --staged --quiet; then
             echo "No quiz changes to commit."
