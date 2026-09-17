@@ -5,6 +5,15 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.5.2 — 2026-09-17
+
+### What's Changed
+
+### Bug Fixes
+
+- implement extractContextSummary to handle summary extraction and recovery from drifted markers
+- enhance quiz generation to handle blank options and duplicate distractors
+
 ## v1.5.1 — 2026-09-17
 
 ### What's Changed
