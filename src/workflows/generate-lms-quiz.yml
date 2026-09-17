@@ -181,7 +181,26 @@ jobs:
               }
 
               if (question && answer) {
-                results.push({ question, answer, incorrect, filePath, snippetLang, snippet: finalSnippet });
+                // A distractor identical to the correct answer is a grading trap
+                // rather than a wrong option: both render the same text, one
+                // scores 100 and the other 0, so a student picking the duplicate
+                // is marked wrong for the right answer and has no way of seeing
+                // why. Observed from gemini-3.5-flash-lite, which repeated the
+                // answer among the distractors. Compared after the stripping the
+                // packages render with, so `entry` and entry count as the same
+                // option, and case-insensitively. Duplicates among the
+                // distractors themselves go the same way. A question left with
+                // no distractors is then caught by the withhold-and-warn
+                // backstop, the same as one that never parsed any.
+                const optionKey = (text) => stripInlineMarkdown(String(text)).trim().toLowerCase();
+                const seen = new Set([optionKey(answer)]);
+                const distinct = incorrect.filter((text) => {
+                  const key = optionKey(text);
+                  if (seen.has(key)) return false;
+                  seen.add(key);
+                  return true;
+                });
+                results.push({ question, answer, incorrect: distinct, filePath, snippetLang, snippet: finalSnippet });
               }
             }
 
@@ -211,8 +230,26 @@ jobs:
           // Strips Markdown inline-code/bold markers so `identifiers` and
           // **emphasis** from questions.md don't leak as literal punctuation
           // into the plain-text quiz shown to students.
+          //
+          // The + quantifiers are load-bearing. With [^*]* the bold pattern also
+          // matched a bare run of four asterisks — ****, which is exactly what
+          // str_repeat('*', 4) prints and a perfectly ordinary correct answer —
+          // and stripped it to nothing. That produced an option with no text:
+          // Brightspace rejects the whole CSV over it ("Option element without
+          // text", the file imports as a question short), and the QTI package
+          // took it silently as a blank choice. Requiring at least one character
+          // between the markers leaves a run of markers as the literal text it is.
           function stripInlineMarkdown(str) {
-            return str.replace(/`([^`]*)`/g, '$1').replace(/\*\*([^*]*)\*\*/g, '$1');
+            return str.replace(/`([^`]+)`/g, '$1').replace(/\*\*([^*]+)\*\*/g, '$1');
+          }
+
+          // Brightspace refuses an entire CSV whose Option row carries no text,
+          // and the QTI package renders a blank choice without complaining, so a
+          // question with a blank option is withheld the same way one with no
+          // distractors is. The text is measured after stripping, because that is
+          // the form written to both packages.
+          function hasBlankOption(q) {
+            return [q.answer, ...q.incorrect].some((text) => !stripInlineMarkdown(String(text)).trim());
           }
 
           // Matches the D2L/Brightspace CC export convention: mattext content is
@@ -577,7 +614,11 @@ jobs:
           // v3: bold lines inside a fenced snippet are no longer read as the
           // filename header.
           // v4: a Brightspace CSV is written alongside each .imscc.
-          const PACKAGE_FORMAT = 'v5';
+          // v5: the <!-- gmc:answer --> container is read positionally.
+          // v6: a bare run of asterisks in an option is no longer stripped to an
+          // empty option, a question with a blank option is withheld, and a
+          // distractor that repeats the correct answer is dropped.
+          const PACKAGE_FORMAT = 'v6';
 
           // The instructor repo is named {assignment}-grillmycode-instructor,
           // so the assignment name can be recovered from GITHUB_REPOSITORY
@@ -616,13 +657,20 @@ jobs:
                 // the drift seen so far; this is the backstop for the drift that
                 // has not been seen, turning a silent wrong quiz into a visibly
                 // short one that says which question to go and fix.
-                const questions = parsed.filter((q) => q.incorrect.length > 0);
+                const questions = parsed.filter((q) => q.incorrect.length > 0 && !hasBlankOption(q));
                 for (const q of parsed) {
                   if (q.incorrect.length === 0) {
                     console.log(
                       '::warning file=' + qmd + '::No distractors parsed for question "' +
                       annotate(q.question) + '" — withheld from the quiz. Check that its ' +
                       'distractor heading and option bullets match the expected format.',
+                    );
+                  } else if (hasBlankOption(q)) {
+                    console.log(
+                      '::warning file=' + qmd + '::Blank option text for question "' +
+                      annotate(q.question) + '" — withheld from the quiz. Brightspace rejects ' +
+                      'the whole file over an Option row with no text, so one blank option ' +
+                      'would cost every question in it.',
                     );
                   }
                 }

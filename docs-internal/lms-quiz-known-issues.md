@@ -71,6 +71,25 @@ re-applied without re-deriving it.
   The container is now carried through and `parseQuestions` reads it positionally
   (first bullet correct, the rest distractors), so heading text no longer has to
   be right. `PACKAGE_FORMAT` is bumped to `v5` so every quiz rebuilds under it.
+- **A four-asterisk answer exported as an option with no text.** `stripInlineMarkdown`
+  matched `**` … `**` with `[^*]*`, which also matches the empty string, so a bare
+  `****` — the output of `str_repeat('*', 4)`, and the correct answer to a real
+  question — was read as empty bold and stripped to nothing. Brightspace refused
+  the entire CSV with _"We couldn't read everything in your file… Option element
+  without text"_ and offered to import the remaining questions; the QTI package
+  took the same option silently as a blank choice. The quantifiers are now `+`, so
+  a run of markers stays literal text, and `hasBlankOption` withholds any question
+  that still ends up with a blank option rather than letting one bad row cost the
+  whole file. `PACKAGE_FORMAT` is bumped to `v6` so every quiz rebuilds under it.
+
+- **A distractor repeating the correct answer scored 0.** In the same quiz, Q1
+  offered "Guestbook Wall" twice — once at 100 points as the answer and once at 0
+  as a distractor — because the model listed the answer among its own distractors.
+  A student picking the duplicate was marked wrong for the right answer, with
+  nothing on the page to show why. `parseQuestions` now drops any distractor whose
+  text matches the answer (or an earlier distractor) after stripping, compared
+  case-insensitively, so `entry` and entry count as one option.
+
 - **`stripAnswers` pass 1 could delete whole questions from the student copy.**
   The lazy region from `**Answer:**` had a lookahead for the bold distractor
   heading only, so a block whose heading had drifted found no match inside itself
