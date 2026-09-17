@@ -53,48 +53,96 @@ re-applied without re-deriving it.
   for one (`retry-after`, an exhausted `x-ratelimit-remaining`, or GitHub's
   limit wording); a scope failure fails fast, which matters now that a write
   needing `workflow` scope is attempted on every run.
+- **The distractor heading emitted as an HTML comment.** `gemini-3.5-flash-lite`
+  wrote `<!-- Distractors for Multiple-Choice Quiz: -->` in place of the bold
+  heading on 7 of 30 questions in one set — all of them in positions 22-30, one
+  malformed as `<!-- Distractors for Multiple-Choice Quiz:**`. The withhold-and-warn
+  backstop caught every one, so the quiz was short rather than wrong. The likely
+  cause is the prompt itself: it teaches that HTML comments are the structural
+  marker syntax (`<!-- gmc:answer -->`) and then places one directly above
+  `**Answer:**`, so the model generalised comment syntax onto the next heading.
+  The prompt now states both headings are byte-exact and lists heading-in-a-comment
+  as a rejected violation.
+- **The instructor copy threw away the one structural marker that was reliable.**
+  `main.js` stripped the `<!-- gmc:answer -->` container from the instructor copy
+  to keep the rendered Markdown clean — but the markers are HTML comments, which
+  render as nothing either way, and `generate-lms-quiz.yml` parses that exact
+  file. That left the workflow with only the literal headings to find options by.
+  The container is now carried through and `parseQuestions` reads it positionally
+  (first bullet correct, the rest distractors), so heading text no longer has to
+  be right. `PACKAGE_FORMAT` is bumped to `v5` so every quiz rebuilds under it.
+- **`stripAnswers` pass 1 could delete whole questions from the student copy.**
+  The lazy region from `**Answer:**` had a lookahead for the bold distractor
+  heading only, so a block whose heading had drifted found no match inside itself
+  and ran forward to the next block that had one, taking every question in
+  between. The lookahead is now anchored on the block separator and end-of-input
+  as well. This never fired in production — pass 0 removes the answer via the
+  container first, so it needed the markers absent _and_ the heading drifted —
+  but it also means a stray `---` inside an answer no longer costs the copy a
+  separator, which had been silently disabling `redactStudentQuestions`' structural
+  guard for the entire assessment.
 
 ---
 
-## Not addressed — the same failure mode via other formatting drift
+## Partly addressed — the same failure mode via other formatting drift
 
-The stray-marker fix listed above covers the one drift that was actually
-observed. The parser still matches every other structural marker by exact
-string, so other drift still loses questions — but since the withhold-and-warn
-backstop is now in place, a lost question is reported rather than silently
-exported as a free mark. That is what takes this off the urgent list: the
-remaining cost is questions going missing from quizzes, not questions being
-scored wrongly.
+Two changes moved most of this. `parseQuestions` now reads the
+`<!-- gmc:answer -->` container positionally when one is present — first bullet
+correct, the rest distractors — so the heading text no longer has to be right;
+and the prompt hardening listed above makes heading drift less likely to begin
+with. What stays open is drift that breaks the _question line_ or the _block
+separator_, because the container bounds only the answer section and the block
+split happens before it is ever read.
 
-Each of these was reproduced against the real parser:
+Every row was re-reproduced against the current parser, with a container
+present:
 
-| Drift in `questions.md`                                              | Result                            |
-| -------------------------------------------------------------------- | --------------------------------- |
-| `**Distractors:**` (shortened heading)                               | question withheld, warning raised |
-| `**Distractors for Multiple Choice Quiz:**` (no hyphen)              | question withheld, warning raised |
-| `**Distractors for Multiple-Choice Quiz**:` (colon outside the bold) | question withheld, warning raised |
-| A stray `---` between the answer and the distractor heading          | question withheld, warning raised |
-| `*` or `+` instead of `-` for option bullets                         | question dropped silently         |
-| An indented question line                                            | question dropped silently         |
-| CRLF line endings with multiple questions                            | all questions merge into one      |
-| `----` or `---` plus trailing space as a separator                   | two questions merge into one      |
+| Drift in `questions.md`                                              | Before                            | Now                           |
+| -------------------------------------------------------------------- | --------------------------------- | ----------------------------- |
+| `**Distractors:**` (shortened heading)                               | question withheld, warning raised | parses correctly              |
+| `**Distractors for Multiple Choice Quiz:**` (no hyphen)              | question withheld, warning raised | parses correctly              |
+| `**Distractors for Multiple-Choice Quiz**:` (colon outside the bold) | question withheld, warning raised | parses correctly              |
+| `<!-- Distractors for Multiple-Choice Quiz: -->` (comment-wrapped)   | question withheld, warning raised | parses correctly              |
+| A drifted `**Answer:**` heading (e.g. `**Correct Answer:**`)         | question dropped silently         | parses correctly              |
+| A stray `---` between the answer and the distractor heading          | question withheld, warning raised | unchanged                     |
+| `*` or `+` instead of `-` for option bullets                         | question dropped silently         | unchanged                     |
+| An indented question line                                            | question dropped silently         | unchanged                     |
+| CRLF line endings with multiple questions                            | all questions merge into one      | merge into one, **7 options** |
+| `----` or `---` plus trailing space as a separator                   | two questions merge into one      | merge into one, **7 options** |
 
-Note the split: drift that breaks the _distractor_ section is caught by the
-backstop, because the question still parses and its empty option list is
-visible. Drift that breaks the _question line or the answer_ is not — such a
-block never becomes a question at all, so there is nothing to count or warn
-about, and it disappears from the quiz without comment. The last four rows are
-therefore still silent: the two drop cases yield no question at all, and the two
-merge cases yield one question carrying both questions' options — six choices
-instead of three, which imports without complaint.
+The drifted-`**Answer:**` row is new, and was never in the table before because
+nothing could see it: the block yielded no answer, so it never became a question
+and there was nothing to count or warn about. It is the clearest demonstration
+of why the container is worth more than any number of tolerant heading regexes —
+it recovers a case that produced no signal at all.
 
-The stray-`---` case is a known model habit: `stripAnswers` in `src/main.js`
-already guards the student-facing copy against it (see the `GMC_SEP`
-placeholder), but the instructor copy is written raw, so `parseQuestions`
-splits the block there and strands the distractors.
+**The three rows that stay unchanged, and why the container cannot reach them.**
+The stray-`---` case splits the block before any of this runs, tearing the
+container in half: the opening marker and the answer land in one fragment, the
+distractors and the closing marker in the next. The first fragment holds a single
+container bullet, which by design only supplies an answer rather than overriding
+the options, so the question is still withheld and warned — the same outcome as
+before. The `*`/`+` bullet case and the indented question line are outside the
+container's remit entirely: container bullets are harvested with the same
+`startsWith('- ')` test, and the question line is matched by `/^\d+\. /` against
+the unindented line. Both still yield no question, and both are still silent.
 
-**Fix, if wanted.** Match the markers with tolerant regexes instead of exact
-strings — a heading recognised either as bolded (optionally preceded by a stray
+**The two merge rows got marginally worse.** A merged block contains two
+containers, and the harvest does not distinguish them — it collects all eight
+bullets, takes the first as the answer and the remaining seven as distractors.
+That includes the second question's _correct_ answer, so the merged item now
+offers seven options of which two are true, where before it offered six of which
+one was. Both versions are broken questions that import without complaint, so
+this is a change in degree, not in kind, but it is a regression and it is cheap
+to remove: count the `<!-- gmc:answer -->` openings in the block and fall back to
+the heading path when there is more than one.
+
+**Fix, if wanted.** The tolerant-regex work described in earlier revisions of
+this note is now mostly redundant for new files — the container covers the same
+drift more robustly — but it remains the only thing that helps a `questions.md`
+generated before the markers were carried through. Those files have no container
+at all, so they still depend entirely on literal heading matches. If it is
+wanted: a heading recognised either as bolded (optionally preceded by a stray
 marker) or as bare text terminated by a colon; bullets accepting any common
 marker; the block separator as any run of 3+ dashes with optional `\r`; and a
 separator-split fragment that starts no new question but carries answer-block
@@ -102,7 +150,12 @@ structure re-joined to the question it belongs to. This was written and passed
 13 drift cases plus 2 safety cases (an option bullet beginning `- Answer: …`
 must stay an option, not become a heading).
 
----
+**The fix that would close the whole class.** None of the above catches drift at
+generation time. `callAI` retries on HTTP status only, so a malformed response is
+accepted and surfaces hours later in the instructor repository. Running
+`parseQuestions` against the response and re-prompting when any question comes
+back with no distractors would turn every row in this table into a retry costing
+cents, and is the only approach that also covers drift nobody has thought of yet.
 
 ## Not addressed — the pre-rename workflow file is left in place
 

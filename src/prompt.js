@@ -241,12 +241,16 @@ QUESTION NUMBERING: The anatomy above shows question 1 only. Number the stems se
 
 ANSWER CONTAINER (MANDATORY): Wrap each question's answer section in a single pair of HTML-comment markers — emit <!-- gmc:answer --> on the line directly above its **Answer:** heading, and <!-- /gmc:answer --> on the line directly below its final incorrect-option bullet. Use exactly one such pair per question, and place these markers nowhere else.
 
+STRUCTURAL HEADINGS ARE LITERAL (MANDATORY): The two headings \`**Answer:**\` and \`**Distractors for Multiple-Choice Quiz:**\` are fixed byte sequences — reproduce them character for character, including the hyphen in \`Multiple-Choice\` and the colon inside the bold markers. Do not abbreviate (\`**Distractors:**\`), do not re-word (\`**Distractors for Multiple Choice Quiz:**\`), do not move the colon outside the bold (\`**Distractors for Multiple-Choice Quiz**:\`), and do not prefix either heading with a list marker (\`- **Distractors for Multiple-Choice Quiz:**\`). These headings are matched literally by a parser, not read by a human: any variation silently discards the question's options.
+
 Violations that will cause output rejection:
 - Missing the filename header or the fenced code block for any question
 - Writing \`**Answer:** &lt;plain text with no bullet&gt;\` — the correct answer MUST be a bullet, not bare inline text
 - Merging the **Answer:** and **Distractors for Multiple-Choice Quiz:** sections into a single flat list
 - Placing the correct answer directly after the \`**Answer:**\` heading on the same line without a newline
 - Skipping the blank line between the last correct-answer bullet and the \`**Distractors for Multiple-Choice Quiz:**\` heading
+- Wrapping any heading in an HTML comment. The ONLY HTML comments permitted anywhere in your output are <!-- gmc:answer --> and <!-- /gmc:answer -->. \`**Distractors for Multiple-Choice Quiz:**\` is a bold heading, never a comment — <!-- Distractors for Multiple-Choice Quiz: --> is invalid
+- Emitting any variation of the \`**Answer:**\` or \`**Distractors for Multiple-Choice Quiz:**\` headings — abbreviated, re-worded, re-punctuated, or with the colon outside the bold markers
 
 Generate exactly ${numQuestions} questions. No more, no less. Prioritize specific code-based questions grounded in the visible code. If filling all ${numQuestions} slots with code-specific questions would require asking about the same function twice or asking trivial naming questions, use a **## Broader Questions** section for the remaining slots — continuing the numbering, focusing only on concepts or patterns directly inferable from the code, and remaining comprehension-focused.
 

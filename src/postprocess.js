@@ -245,8 +245,19 @@ export function stripAnswers(text, { keepAnswers = false } = {}) {
     result = result.replace(/\0GMC_SEP\0/g, '---');
     // Pass 1: block-based — strip **Answer:** heading and everything below it
     // through to **Distractors for Multiple-Choice Quiz:**, covering all answer formats.
+    //
+    // The lookahead is anchored on the block separator and end-of-input as well
+    // as the distractor heading. Without those alternatives the lazy quantifier
+    // could not stop at the end of its own block: a block whose distractor
+    // heading the model re-worded has no match inside itself, so the region ran
+    // forward to the next block that did have one, deleting every question in
+    // between. Pass 0 normally removes the answer before this pass ever sees it,
+    // which is why the bleed stayed latent — it needs the container markers to be
+    // absent and the heading to have drifted, and it deletes neighbouring
+    // questions outright when both hold. Stopping at the separator also preserves
+    // the stray-`---`-inside-the-answer case instead of swallowing the rule.
     result = result.replace(
-      / {0,4}\*\*Answer:\*\*[\s\S]*?(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*)/g,
+      / {0,4}\*\*Answer:\*\*[\s\S]*?(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*|\n-{3,}\n|$)/g,
       '',
     );
     // Pass 2: positional fallback — if **Answer:** label was absent entirely,
