@@ -35,7 +35,7 @@ import {
 import { detectExcludePatterns } from './stack-detection.js';
 import { buildPrompt } from './prompt.js';
 import { callAI } from './ai.js';
-import { formatReport } from './report.js';
+import { formatReport, formatRawOutput } from './report.js';
 import { postIssue } from './delivery/issue.js';
 import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
 import { generatePdf } from './delivery/pdf.js';
@@ -699,19 +699,22 @@ async function run() {
       `Calling ${inputs.aiProvider} (model: ${inputs.aiModel}) to generate ${inputs.numQuestions} questions…`,
     );
 
-    const rawQuestions = truncateToMaxQuestions(
-      renumberQuestions(
-        await callAI({
-          provider: inputs.aiProvider,
-          model: inputs.aiModel,
-          apiKey: inputs.apiKey,
-          messages,
-          retryMaxAttempts: inputs.aiRetryMaxAttempts,
-          temperature: inputs.aiTemperature,
-        }),
-      ),
-      inputs.numQuestions,
-    );
+    // Held unmodified so a verbatim copy can be filed alongside the instructor
+    // assessment. Every postprocessor below is lossy — truncateToMaxQuestions
+    // deletes surplus questions outright, renumberQuestions rewrites the
+    // numbering, extractContextSummary cuts its region out — so without this
+    // variable the model's actual reply exists nowhere after this line, and
+    // diagnosing a postprocessing bug means re-running against a live model.
+    const aiOutput = await callAI({
+      provider: inputs.aiProvider,
+      model: inputs.aiModel,
+      apiKey: inputs.apiKey,
+      messages,
+      retryMaxAttempts: inputs.aiRetryMaxAttempts,
+      temperature: inputs.aiTemperature,
+    });
+
+    const rawQuestions = truncateToMaxQuestions(renumberQuestions(aiOutput), inputs.numQuestions);
 
     // Extract the AI-generated context summary (only present when instructorContext was set).
     // One call does both halves — reading the summary and removing its region —
@@ -904,6 +907,15 @@ async function run() {
         studentLogin: submitter,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
       });
+      const rawOutputCopy = formatRawOutput({
+        rawOutput: aiOutput,
+        baseSha,
+        headSha,
+        provider: inputs.aiProvider,
+        model: inputs.aiModel,
+        studentLogin: submitter,
+        sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
+      });
       try {
         await deliverToInstructorRepo({
           octokit: instructorOctokit,
@@ -912,6 +924,7 @@ async function run() {
           studentLogin: submitter,
           content: instructorReport,
           headSha,
+          rawOutput: rawOutputCopy,
         });
         state.instructorDelivery = 'delivered';
       } catch (err) {

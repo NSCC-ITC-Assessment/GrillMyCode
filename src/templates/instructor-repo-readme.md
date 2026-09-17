@@ -23,6 +23,7 @@ One folder is created per student, named after their GitHub login, and populated
 ```
 {studentLogin}/
 ├── questions.md                                                            ← AI-generated questions + answers (instructor copy)
+├── raw-ai-output.md                                                        ← the model's unprocessed reply, kept for diagnosis
 ├── {{ASSIGNMENT_NAME}}_{studentLogin}_quiz_{questionCount}.imscc              ← Common Cartridge quiz package for any LMS (auto-generated)
 └── {{ASSIGNMENT_NAME}}_{studentLogin}_brightspace_quiz_{questionCount}.csv    ← optional alternative, Brightspace only (auto-generated)
 ```
@@ -39,6 +40,18 @@ The full instructor copy of the AI-generated assessment. Unlike the student-faci
 - Incorrect distractor options for multiple-choice quiz-style delivery
 
 This file is created or updated automatically each time GrillMyCode runs against the student's repository.
+
+### `{studentLogin}/raw-ai-output.md`
+
+The AI's reply exactly as it arrived, before GrillMyCode processed it into `questions.md`. It is written on every run, and it is a diagnostic record rather than something you need to read or import — **`questions.md` is the assessment**.
+
+It is worth opening when a student's `questions.md` looks wrong, because the processing steps are lossy and this file is the only place their input survives:
+
+- **Fewer questions than you asked for.** Questions the model generated beyond `num_questions` are cut, and questions whose answer block could not be read are withheld. Both are visible here.
+- **Formatting that came out strangely.** Question numbering is rewritten and bold and code spans are adjusted, so an oddity in `questions.md` may be a processing artefact rather than something the model produced.
+- **A missing or malformed instructor note.** The context summary is lifted out of the reply into the report header; this file shows what the model actually emitted for it.
+
+Use GitHub's **Raw** view, or `git blame`, to see markers and whitespace as the model wrote them — the rendered Markdown view hides some of what makes this file useful. If you are reporting a problem with generated questions, the contents of this file is the single most useful thing to include.
 
 ### `{studentLogin}/{{ASSIGNMENT_NAME}}_{studentLogin}_quiz_{questionCount}.imscc`
 
@@ -85,7 +98,7 @@ A failure for one student never stops the others. The run finishes everyone it c
 1. A student pushes code to their assignment repository.
 2. The GrillMyCode GitHub Action runs in that repository, analyses the changed files, and calls an AI model to generate comprehension questions.
 3. The action writes a student-facing assessment (without answers, unless configured so) into the student's own repository.
-4. The action also writes this instructor copy — with answers — to this repository under `{studentLogin}/questions.md`.
+4. The action also writes this instructor copy — with answers — to this repository under `{studentLogin}/questions.md`, and files the model's unprocessed reply beside it as `{studentLogin}/raw-ai-output.md`.
 5. That write triggers the Generate LMS Quiz workflow automatically, which produces `{{ASSIGNMENT_NAME}}_{studentLogin}_quiz_{questionCount}.imscc` (plus the Brightspace-only `{{ASSIGNMENT_NAME}}_{studentLogin}_brightspace_quiz_{questionCount}.csv`) for that student. Run it manually from the Actions tab any time to regenerate every student's quiz at once.
 
 This repository is created automatically on the first assessment run and requires no manual setup beyond configuring the `instructor_repo_token` input on the GrillMyCode action.

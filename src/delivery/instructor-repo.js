@@ -10,9 +10,11 @@
  * here, so a repository created by an earlier release picks up later fixes on
  * its own rather than by hand.
  *
- * The file is written to {studentLogin}/questions.md inside the repository.
- * The repository is named {assignmentName}-grillmycode-instructor and lives in the same
- * organization as the student repositories.
+ * The file is written to {studentLogin}/questions.md inside the repository,
+ * alongside {studentLogin}/raw-ai-output.md — the model's unprocessed reply,
+ * filed for diagnosis. The repository is named
+ * {assignmentName}-grillmycode-instructor and lives in the same organization as
+ * the student repositories.
  *
  * A separate instructor PAT (instructor_repo_token) is used for all API calls
  * in this module — the student's github_token is never used here.
@@ -373,6 +375,8 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * @param {string}  params.studentLogin        - GitHub login of the assessed student.
  * @param {string}  params.content             - Markdown report content to write.
  * @param {string}  params.headSha             - Head commit SHA (used in commit message).
+ * @param {string} [params.rawOutput]          - Verbatim model reply, filed beside the
+ *                                               assessment. Omitted means no raw copy.
  */
 export async function deliverToInstructorRepo({
   octokit,
@@ -381,6 +385,7 @@ export async function deliverToInstructorRepo({
   studentLogin,
   content,
   headSha,
+  rawOutput,
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
 
@@ -391,6 +396,33 @@ export async function deliverToInstructorRepo({
   const filePath = `${studentLogin}/questions.md`;
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const message = `chore: update assessment for ${studentLogin} at ${shortHead}`;
+
+  // Before questions.md, for two reasons. The quiz workflow triggers on
+  // `*/questions.md` alone, so this commit starts nothing; landing it first
+  // keeps it clear of the quiz run that the questions.md commit kicks off and
+  // of the packages that run commits back. And a failure here must not cost
+  // the assessment, which is the write that matters — hence the warning rather
+  // than a throw, matching syncInstructorRepoFiles above.
+  if (rawOutput) {
+    const rawPath = `${studentLogin}/raw-ai-output.md`;
+    try {
+      await writeFileWithRetry({
+        octokit,
+        owner,
+        repo: instructorRepoName,
+        path: rawPath,
+        message: `chore: record raw AI output for ${studentLogin} at ${shortHead}`,
+        content: rawOutput,
+        skipIfUnchanged: true,
+      });
+      core.info(`Raw AI output written to ${owner}/${instructorRepoName}/${rawPath}`);
+    } catch (err) {
+      core.warning(
+        `Could not write the raw AI output to ${owner}/${instructorRepoName}/${rawPath}: ` +
+          `${err.message}. The assessment itself is still being written.`,
+      );
+    }
+  }
 
   // Many student runs commit to this shared branch at once; write with a
   // retry-and-refetch loop so a 409 from a racing commit doesn't drop this
