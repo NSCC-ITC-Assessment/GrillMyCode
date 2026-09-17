@@ -82,9 +82,37 @@ jobs:
               let question = null, answer = null, filePath = null, snippetLang = null;
               const incorrect = [], snippetLines = [];
               let inInc = false, inSnippet = false, inAnswer = false;
+              // Bullets collected from inside the model's
+              // <!-- gmc:answer --> … <!-- /gmc:answer --> container, in order.
+              // The container is the only answer boundary the model marks
+              // explicitly, so reading it positionally — first bullet correct,
+              // the rest distractors — survives any drift in the heading text
+              // that the literal matches below cannot. The headings remain the
+              // fallback for files generated before the markers were carried
+              // through to the instructor copy.
+              const containerBullets = [];
+              let inContainer = false;
 
               for (const line of block.split('\n')) {
                 const stripped = line.trim();
+                // Marker lines are inert in the chain below, but are consumed
+                // here so nothing downstream has to reason about them. The
+                // !inSnippet guard keeps a marker pasted into a student's own
+                // code from opening a container.
+                if (!inSnippet && /^<!--\s*gmc:answer\s*-->$/i.test(stripped)) {
+                  inContainer = true;
+                  continue;
+                }
+                if (!inSnippet && /^<!--\s*\/\s*gmc:answer\s*-->$/i.test(stripped)) {
+                  inContainer = false;
+                  continue;
+                }
+                // Deliberately not `continue`: the heading-based chain below
+                // must still see these bullets so it can act as the fallback
+                // when the container turns out to be unusable.
+                if (inContainer && !inSnippet && stripped.startsWith('- ')) {
+                  containerBullets.push(stripped.slice(2).trim());
+                }
                 // The model occasionally prefixes the distractor heading with a
                 // stray list marker (observed from gemini-3.5-flash-lite:
                 // "-- **Distractors for Multiple-Choice Quiz:**"). An exact
@@ -136,6 +164,21 @@ jobs:
               else snippetLang = lastSnippetLang;
               const finalSnippet = snippetLines.length ? snippetLines : (lastSnippet || []);
               if (snippetLines.length) lastSnippet = snippetLines;
+
+              // Two bullets is the threshold for trusting the container: a lone
+              // bullet cannot distinguish "the model wrote only a correct answer"
+              // from "the distractors drifted outside the container", and in the
+              // latter case the heading path may have found them. A single bullet
+              // is therefore used only to supply an answer the headings missed —
+              // which is what rescues a block whose **Answer:** heading drifted
+              // too, and which previously vanished with no warning at all.
+              if (containerBullets.length >= 2) {
+                answer = containerBullets[0];
+                incorrect.length = 0;
+                incorrect.push(...containerBullets.slice(1));
+              } else if (containerBullets.length === 1 && !answer) {
+                answer = containerBullets[0];
+              }
 
               if (question && answer) {
                 results.push({ question, answer, incorrect, filePath, snippetLang, snippet: finalSnippet });
@@ -534,7 +577,7 @@ jobs:
           // v3: bold lines inside a fenced snippet are no longer read as the
           // filename header.
           // v4: a Brightspace CSV is written alongside each .imscc.
-          const PACKAGE_FORMAT = 'v4';
+          const PACKAGE_FORMAT = 'v5';
 
           // The instructor repo is named {assignment}-grillmycode-instructor,
           // so the assignment name can be recovered from GITHUB_REPOSITORY

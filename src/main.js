@@ -41,7 +41,6 @@ import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
 import { generatePdf } from './delivery/pdf.js';
 import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
-  ANSWER_MARKER_LINE_RE,
   boldQuestionLines,
   countQuestions,
   extractCorrectAnswers,
@@ -884,9 +883,18 @@ async function run() {
         headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
       });
       const instructorRepoName = assignmentName + INSTRUCTOR_REPO_SUFFIX;
-      // Keep answers and distractors for the instructor copy; only drop the
-      // invisible answer-container markers so the rendered Markdown stays clean.
-      const instructorQuestions = cleanedQuestions.replace(ANSWER_MARKER_LINE_RE, '');
+      // Keep answers, distractors AND the answer-container markers for the
+      // instructor copy. The markers used to be stripped here to keep the
+      // rendered Markdown clean, but they are HTML comments — invisible in
+      // rendered Markdown either way — and generate-lms-quiz.yml parses this
+      // exact file. Stripping them left the workflow with nothing but the
+      // **Answer:**/**Distractors…** headings to find the options by, matched
+      // literally, so a single heading the model re-worded cost the question
+      // its distractors (observed: the heading emitted as
+      // `<!-- Distractors for Multiple-Choice Quiz: -->`, 7 questions withheld
+      // from one quiz). The container is the one boundary the model marks
+      // explicitly, so it is now carried through for the parser to use.
+      const instructorQuestions = cleanedQuestions;
       const instructorReport = formatReport({
         questions: instructorQuestions,
         files,
