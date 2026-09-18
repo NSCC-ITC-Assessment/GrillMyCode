@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.5.3 — 2026-09-18
+
+### What's Changed
+
+### Features
+
+- add raw AI output file for diagnostics alongside assessments
+
 ## v1.5.2 — 2026-09-17
 
 ### What's Changed
