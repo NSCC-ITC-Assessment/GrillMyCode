@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.5.4 — 2026-09-18
+
+### What's Changed
+
+### Bug Fixes
+
+- enhance separator normalization to prevent question merging in quiz generation
+- implement answer-only trimming for include_answers in stripAnswers
+
+### Refactoring
+
+- streamline answer stripping logic and enhance question redaction process
+
 ## v1.5.3 — 2026-09-18
 
 ### What's Changed
