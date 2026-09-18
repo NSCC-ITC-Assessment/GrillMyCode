@@ -99,6 +99,58 @@ const CODE_BLOCK_CLOSE_RE = /^[ \t]*(`{3,}|~{3,})\s*$/;
 // may trail the final bullet, so it is matched anywhere on the line.
 const ANSWER_OPEN_RE = /^[ \t]*<!--\s*gmc:answer\s*-->/i;
 const ANSWER_CLOSE_RE = /<!--\s*\/\s*gmc:answer\s*-->/i;
+// The same container with its interior captured, so the include_answers path
+// can trim it from the inside rather than remove it whole.
+const ANSWER_CONTAINER_RE = /(<!--\s*gmc:answer\s*-->)([\s\S]*?)(<!--\s*\/\s*gmc:answer\s*-->)/gi;
+const OPTION_BULLET_RE = /^\s*[-*+]\s/;
+const BARE_HEADING_RE = /^\s*\*\*[^*]+\*\*:?\s*$/;
+const SEPARATOR_LINE_RE = /^\s*-{3,}\s*$/;
+
+/**
+ * Cuts an answer container's interior down to the correct answer alone, for the
+ * include_answers view. Read positionally — the first answer is correct and
+ * everything after it is a distractor — which is the rule generate-lms-quiz.yml
+ * parses the same container by. Matching the distractor heading literally
+ * instead let every option through whenever the model drifted on it (observed:
+ * the heading emitted as `<!-- Distractors for Multiple-Choice Quiz: -->`), so
+ * a student shown the answers was shown the distractors beside it too.
+ *
+ * The answer ends at whichever comes first: a second bullet, a line naming the
+ * distractors in any form, a --- separator, or the first blank line after the
+ * answer content. The blank line is what stops an inline or fenced answer —
+ * neither is a bullet — from keeping the first distractor as though it were the
+ * answer. A bare bold heading such as **Answer:** is not answer content. Every
+ * stop errs towards dropping text: a truncated answer costs the student a line,
+ * a leaked distractor misleads them.
+ *
+ * A --- the model placed inside the container is re-emitted rather than dropped
+ * with the distractors, as pass 0 of stripAnswers does, so the rule between two
+ * questions survives the trim.
+ */
+function keepOnlyAnswer(inner) {
+  const lines = inner.split('\n');
+  let answered = false;
+  let bullets = 0;
+  let end = lines.length;
+  for (const [i, line] of lines.entries()) {
+    const blank = line.trim() === '';
+    const stop = OPTION_BULLET_RE.test(line)
+      ? ++bullets > 1
+      : /distractor/i.test(line) || SEPARATOR_LINE_RE.test(line) || (blank && answered);
+    if (stop) {
+      end = i;
+      break;
+    }
+    if (!blank && !BARE_HEADING_RE.test(line)) answered = true;
+  }
+  // Blank line first, so a --- under a plain-text answer is not read as a
+  // setext heading underline.
+  const separators = lines
+    .slice(end)
+    .filter((line) => SEPARATOR_LINE_RE.test(line))
+    .flatMap(() => ['', '---']);
+  return [...lines.slice(0, end), ...separators].join('\n');
+}
 
 /**
  * Applies `transform` to each top-level line — one outside every fenced code
@@ -239,6 +291,10 @@ function splitBoldLine(line) {
  *   2. Positional fallback: strips any plain-text content sitting between a question
  *      line and **Distractors for Multiple-Choice Quiz:** when the **Answer:** label was absent.
  *
+ * With keepAnswers, each marked container is instead trimmed to its correct
+ * answer by position (see keepOnlyAnswer), with a literal distractor-heading
+ * match as the fallback for answers emitted without the container.
+ *
  * Stray markers are always removed (so they never surface, including on the
  * keepAnswers path). Collapses any resulting triple+ blank lines to a double.
  */
@@ -309,11 +365,21 @@ export function stripAnswers(text, { keepAnswers = false } = {}) {
       /(\n {0,4}\d+\.[^\n]+\n)\n(?! {0,4}\*\*)[^\n]+\n(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*)/g,
       '$1\n',
     );
+  } else {
+    // include_answers: trim each marked container to its correct answer. The
+    // closing marker is put back on a line of its own so the marker sweep
+    // below removes it, whatever the trim left in front of it.
+    result = result.replace(
+      ANSWER_CONTAINER_RE,
+      (_, open, inner, close) => `${open}${keepOnlyAnswer(inner)}\n${close}`,
+    );
   }
   result = result.replace(ANSWER_MARKER_LINE_RE, '');
   if (keepAnswers) {
-    // include_answers: keep the correct-answer bullet; drop only the quiz-only
-    // distractor block — its heading plus the bullets that immediately follow.
+    // Fallback for answers the model emitted without the container: drop the
+    // distractor heading plus the bullets that immediately follow it. Matched
+    // literally, so it depends on the heading being right — the container
+    // trim above does not.
     result = result.replace(
       /^ {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*[^\n]*(?:\n {0,4}-[^\n]*)*\n?/gm,
       '',

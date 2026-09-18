@@ -197,3 +197,122 @@ describe('separator preservation across answer-container removal', () => {
     expect(text).not.toContain(ANSWER);
   });
 });
+
+describe('stripAnswers with keepAnswers trims the container by position', () => {
+  const ANSWER = 'the coordinate has already been attacked';
+  const DISTRACTORS = ['the row is out of bounds', 'the map is empty', 'the ship has sunk'];
+
+  /** One question whose container interior is the given lines. */
+  function block(inner, { n = 1 } = {}) {
+    return [
+      '**a.js**',
+      '',
+      '```js',
+      'check(x);',
+      '```',
+      '',
+      `${n}. **What does check return?**`,
+      '',
+      '   <!-- gmc:answer -->',
+      ...inner,
+      '   <!-- /gmc:answer -->',
+    ].join('\n');
+  }
+
+  const canonical = [
+    '   **Answer:**',
+    `   - ${ANSWER}`,
+    '',
+    '   **Distractors for Multiple-Choice Quiz:**',
+    ...DISTRACTORS.map((d) => `   - ${d}`),
+  ];
+
+  const expectAnswerOnly = (out) => {
+    expect(out).toContain(`- ${ANSWER}`);
+    for (const d of DISTRACTORS) expect(out).not.toContain(d);
+    expect(out).not.toMatch(/distractor/i);
+    expect(out).not.toContain('gmc:answer');
+  };
+
+  it('keeps the answer and drops the distractors in the canonical anatomy', () => {
+    const out = stripAnswers(block(canonical), { keepAnswers: true });
+    expectAnswerOnly(out);
+    expect(out).toContain('**Answer:**');
+  });
+
+  // The literal heading match let every option through on drift like this,
+  // which gemini-3.5-flash-lite has been seen to emit.
+  it.each([
+    ['comment-wrapped', '   <!-- Distractors for Multiple-Choice Quiz: -->'],
+    ['shortened', '   **Distractors:**'],
+    ['unhyphenated', '   **Distractors for Multiple Choice Quiz:**'],
+    ['colon outside the bold', '   **Distractors for Multiple-Choice Quiz**:'],
+    ['list-marker prefixed', '   - **Distractors for Multiple-Choice Quiz:**'],
+  ])('drops the distractors under a %s heading', (_label, heading) => {
+    const inner = canonical.map((line) => (/Distractors/.test(line) ? heading : line));
+    expectAnswerOnly(stripAnswers(block(inner), { keepAnswers: true }));
+  });
+
+  it('drops the distractors when the heading is missing and the list is flat', () => {
+    const inner = ['   **Answer:**', `   - ${ANSWER}`, ...DISTRACTORS.map((d) => `   - ${d}`)];
+    expectAnswerOnly(stripAnswers(block(inner), { keepAnswers: true }));
+  });
+
+  it('drops the distractors under a heading that never says "distractor"', () => {
+    const inner = canonical.map((line) =>
+      /Distractors/.test(line) ? '   **Wrong options:**' : line,
+    );
+    expectAnswerOnly(stripAnswers(block(inner), { keepAnswers: true }));
+  });
+
+  // An inline answer is not a bullet, so without the blank-line stop the first
+  // distractor bullet would be kept as though it were the answer.
+  it('does not promote a distractor when the answer is inline', () => {
+    const inner = [`   **Answer:** ${ANSWER}`, '', '   **Wrong options:**', ...canonical.slice(4)];
+    const out = stripAnswers(block(inner), { keepAnswers: true });
+    expect(out).toContain(`**Answer:** ${ANSWER}`);
+    for (const d of DISTRACTORS) expect(out).not.toContain(d);
+  });
+
+  it('handles a closing marker trailing the final bullet', () => {
+    const last = `   - ${DISTRACTORS.at(-1)}`;
+    const input = block(canonical).replace(
+      `${last}\n   <!-- /gmc:answer -->`,
+      `${last} <!-- /gmc:answer -->`,
+    );
+    expect(input).toContain(`${DISTRACTORS.at(-1)} <!-- /gmc:answer -->`);
+    expectAnswerOnly(stripAnswers(input, { keepAnswers: true }));
+  });
+
+  it('keeps an answer bullet that itself mentions distractors', () => {
+    const answer = 'distractor bullets are removed before rendering';
+    const inner = canonical.map((line) => line.replace(ANSWER, answer));
+    const out = stripAnswers(block(inner), { keepAnswers: true });
+    expect(out).toContain(`- ${answer}`);
+    for (const d of DISTRACTORS) expect(out).not.toContain(d);
+  });
+
+  it('trims each container independently and keeps the separator between them', () => {
+    const input = `${block(canonical)}\n\n---\n\n${block(canonical, { n: 2 })}`;
+    const out = stripAnswers(input, { keepAnswers: true });
+    expect(out.match(new RegExp(`- ${ANSWER}`, 'g'))).toHaveLength(2);
+    expect(out.split(/\n-{3,}\n/)).toHaveLength(2);
+    for (const d of DISTRACTORS) expect(out).not.toContain(d);
+  });
+
+  it('re-emits a --- placed inside the container', () => {
+    const input = `${block([...canonical, '', '---'])}\n\n${block(canonical, { n: 2 })}`;
+    const out = stripAnswers(input, { keepAnswers: true });
+    expect(out.split(/\n-{3,}\n/)).toHaveLength(2);
+    for (const d of DISTRACTORS) expect(out).not.toContain(d);
+  });
+
+  it('leaves a marker inside student code alone', () => {
+    const code = "const MARKER = '<!-- gmc:answer -->';";
+    const input = block(canonical).replace('check(x);', code);
+    const out = stripAnswers(input, { keepAnswers: true });
+    expect(out).toContain(code);
+    expect(out).toContain(`- ${ANSWER}`);
+    for (const d of DISTRACTORS) expect(out).not.toContain(d);
+  });
+});
