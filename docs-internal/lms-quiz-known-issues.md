@@ -113,6 +113,19 @@ re-applied without re-deriving it.
   separator, which had been silently disabling `redactStudentQuestions`' structural
   guard for the entire assessment.
 
+- **A missing or misspelled separator merged two questions into one quiz item.**
+  `generate-lms-quiz.yml` splits `questions.md` on an exact `\n---\n`, so a
+  separator the model left out, or wrote as `----` or `--- `, fused two
+  questions into one item offering both questions' options — two of them
+  correct. `normaliseSeparators` used to repair only the missing case, and only
+  in the student copy, after redaction. It now runs in `main.js` on the text
+  both copies are cut from, so `questions.md` receives the repair too. It
+  rewrites every top-level separator to exactly `---`, and inserts one before a
+  filename header only once a question stem has been seen since the last
+  separator, so a question showing two files is not cut between its snippets.
+  Well-formed output is left byte-identical, so no stored hash changes because
+  of it. `questions.md` files written before this release are not rewritten.
+
 ---
 
 ## Partly addressed — the same failure mode via other formatting drift
@@ -139,7 +152,8 @@ present:
 | `*` or `+` instead of `-` for option bullets                         | question dropped silently         | unchanged                     |
 | An indented question line                                            | question dropped silently         | unchanged                     |
 | CRLF line endings with multiple questions                            | all questions merge into one      | merge into one, **7 options** |
-| `----` or `---` plus trailing space as a separator                   | two questions merge into one      | merge into one, **7 options** |
+| `----` or `---` plus trailing space as a separator                   | two questions merge into one      | parses correctly (see below)  |
+| No `---` at all between two questions                                | two questions merge into one      | parses correctly (see below)  |
 
 The drifted-`**Answer:**` row is new, and was never in the table before because
 nothing could see it: the block yielded no answer, so it never became a question
@@ -158,7 +172,11 @@ container's remit entirely: container bullets are harvested with the same
 `startsWith('- ')` test, and the question line is matched by `/^\d+\. /` against
 the unindented line. Both still yield no question, and both are still silent.
 
-**The two merge rows got marginally worse.** A merged block contains two
+**The separator rows are now repaired upstream** by `normaliseSeparators` (see
+Fixed above), for any `questions.md` written since; the parser itself is
+unchanged, so older files and the CRLF row still merge.
+
+**The merge rows got marginally worse.** A merged block contains two
 containers, and the harvest does not distinguish them — it collects all eight
 bullets, takes the first as the answer and the remaining seven as distractors.
 That includes the second question's _correct_ answer, so the merged item now

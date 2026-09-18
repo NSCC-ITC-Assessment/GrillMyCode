@@ -721,7 +721,13 @@ async function run() {
     // and the raw block visible at the same time, which is what it did.
     const { summary: contextSummary, rest: questionsWithoutSummary } =
       extractContextSummary(rawQuestions);
-    const cleanedQuestions = splitBoldAroundCode(boldQuestionLines(questionsWithoutSummary.trim()));
+    // Separators are restored here, ahead of the split into the two copies,
+    // because both are cut on --- downstream: a missing one merges two
+    // questions into one quiz item in the instructor copy, and into one block
+    // that redactStudentQuestions can only withhold as a whole in the student's.
+    const cleanedQuestions = normaliseSeparators(
+      splitBoldAroundCode(boldQuestionLines(questionsWithoutSummary.trim())),
+    );
 
     // Distractors are always stripped from the student copy; the correct answer
     // too unless include_answers is set. cleanedQuestions retains both for the
@@ -753,7 +759,6 @@ async function run() {
         questions += `\n\n> [!NOTE]\n> ${dropped} question(s) were withheld from this report pending instructor review.`;
       }
     }
-    questions = normaliseSeparators(questions);
     state.questionsGenerated = countQuestions(questions);
 
     // ── Build base report (PDF source — no self-referencing link) ───────────
