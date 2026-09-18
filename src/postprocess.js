@@ -168,8 +168,12 @@ function mapTopLevelLines(text, transform) {
   return lines.map((line, i) => (topLevel[i] ? transform(line) : line)).join('\n');
 }
 
-/** Marks each line true when it is top-level, as defined by mapTopLevelLines. */
-function topLevelFlags(lines) {
+/**
+ * Marks each line true when it is top-level, as defined by mapTopLevelLines.
+ * With `answers: false` only fenced code counts as nested, and every line of an
+ * answer region is top-level.
+ */
+function topLevelFlags(lines, { answers = true } = {}) {
   let fence = null;
   let inAnswer = false;
   return lines.map((line) => {
@@ -183,7 +187,7 @@ function topLevelFlags(lines) {
       fence = open[1];
       return false;
     }
-    if (ANSWER_OPEN_RE.test(line)) {
+    if (answers && ANSWER_OPEN_RE.test(line)) {
       inAnswer = !ANSWER_CLOSE_RE.test(line);
       return false;
     }
@@ -286,10 +290,14 @@ function splitBoldLine(line) {
  * Removal is layered for resilience against model formatting drift:
  *   0. Container removal: strips each explicitly marked <!-- gmc:answer --> …
  *      <!-- /gmc:answer --> region as a unit — the reliable, primary path.
- *   1. Block fallback: strips **Answer:** heading + everything up to **Incorrect
- *      Options for Quiz:** for any answer the model emitted without the markers.
- *   2. Positional fallback: strips any plain-text content sitting between a question
- *      line and **Distractors for Multiple-Choice Quiz:** when the **Answer:** label was absent.
+ *   1. Block fallback: strips **Answer:** heading + everything up to
+ *      **Distractors for Multiple-Choice Quiz:** for any answer the model
+ *      emitted without the markers.
+ * An answer with neither form is not stripped at all: redactStudentQuestions
+ * withholds its question instead, which is why the student view goes through
+ * that and not through this function directly. It runs this one question block
+ * at a time, so a --- the model placed inside a container never reaches here —
+ * run over a whole report, pass 0 would remove such a --- with its container.
  *
  * With keepAnswers, each marked container is instead trimmed to its correct
  * answer by position (see keepOnlyAnswer), with a literal distractor-heading
@@ -319,29 +327,7 @@ export function stripAnswers(text, { keepAnswers = false } = {}) {
 
   if (!keepAnswers) {
     // Pass 0: container-based — remove each marked answer region as a unit.
-    // Protect --- separators first: the model sometimes places them inside the
-    // container (before the closing marker), and ANSWER_REGION_RE would consume
-    // them along with the answer block. Placeholder round-trips them safely.
-    // Null-byte sentinel for the same reason as the fence placeholder above.
-    const SEP = '\0GMC_SEP\0';
-    result = result.replace(/^-{3,}$/gm, SEP);
-    // Re-emit every separator the container swallowed. ANSWER_REGION_RE is lazy
-    // but still spans everything between the markers, so a --- the model placed
-    // inside the container goes with it — swapping it for a placeholder first
-    // does not save it, which is why this substitution sat here doing nothing.
-    //
-    // Losing one matters well beyond the missing rule: redactStudentQuestions
-    // aligns the student view against the answer-bearing original by splitting
-    // both on ---, and when the counts disagree it silently disables its
-    // structural guard for the entire assessment, not just the affected
-    // question. That guard is the only thing that catches an answer emitted
-    // inside a fenced block, because the leak guard strips fenced code before
-    // it looks.
-    result = result.replace(ANSWER_REGION_RE, (region) => {
-      const swallowed = region.match(/\0GMC_SEP\0/g)?.length ?? 0;
-      return '\n' + `${SEP}\n`.repeat(swallowed);
-    });
-    result = result.replace(/\0GMC_SEP\0/g, '---');
+    result = result.replace(ANSWER_REGION_RE, '\n');
     // Pass 1: block-based — strip **Answer:** heading and everything below it
     // through to **Distractors for Multiple-Choice Quiz:**, covering all answer formats.
     //
@@ -358,12 +344,6 @@ export function stripAnswers(text, { keepAnswers = false } = {}) {
     result = result.replace(
       / {0,4}\*\*Answer:\*\*[\s\S]*?(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*|\n-{3,}\n|$)/g,
       '',
-    );
-    // Pass 2: positional fallback — if **Answer:** label was absent entirely,
-    // strip any plain-text line between the question line and **Incorrect Options**.
-    result = result.replace(
-      /(\n {0,4}\d+\.[^\n]+\n)\n(?! {0,4}\*\*)[^\n]+\n(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*)/g,
-      '$1\n',
     );
   } else {
     // include_answers: trim each marked container to its correct answer. The
@@ -454,67 +434,80 @@ function answerLeaksInto(blockNorm, answer) {
   return false;
 }
 
-/** True if the block looks like a generated question (has a numbered stem). */
-function isQuestionBlock(block) {
-  return /^\s*\d+\.\s/m.test(block);
+/**
+ * Splits a report into question blocks at every --- line outside fenced code,
+ * so a YAML or Markdown snippet carrying its own --- stays whole. A --- inside
+ * an answer container does split: that keeps the question after it in a block
+ * of its own even when the model drops a closing marker, and the torn halves
+ * are still stripped by pass 1 and the bullet sweep.
+ */
+function splitQuestionBlocks(text) {
+  const lines = text.split('\n');
+  const outsideFence = topLevelFlags(lines, { answers: false });
+  const blocks = [[]];
+  lines.forEach((line, i) => {
+    if (outsideFence[i] && /^-{3,}$/.test(line)) blocks.push([]);
+    else blocks.at(-1).push(line);
+  });
+  return blocks.map((block) => block.join('\n'));
 }
 
 /**
- * True if the block carries a recognisable answer structure that stripAnswers can
- * reliably remove. Two forms qualify:
- *   - the **Answer:** heading, which the block/positional strip passes key on; or
- *   - a complete <!-- gmc:answer --> … <!-- /gmc:answer --> container, which the
- *     primary container-removal pass strips as a unit even when the heading inside
- *     is malformed or absent.
- * Both markers of the container must be present — a lone opening marker would not
- * be stripped by the container pass and could leave the answer in the student view,
- * so it does not count as proof. A block with neither form means the strip never
- * engaged and the leak check has no answer to verify, so the structural guard drops it.
+ * Counts the answer structures in a block that stripAnswers can reliably
+ * remove, taking whichever of the two forms is more numerous:
+ *   - the **Answer:** heading, which pass 1 keys on; or
+ *   - a complete <!-- gmc:answer --> … <!-- /gmc:answer --> container, which
+ *     pass 0 strips as a unit even when the heading inside is malformed or
+ *     absent — matched by the very regex pass 0 uses, so the two cannot
+ *     disagree. A lone opening marker is not stripped by pass 0, so it does
+ *     not count.
  */
-function hasAnswerStructure(block) {
-  return (
-    /\*\*Answer:\*\*/.test(block) ||
-    /<!--\s*gmc:answer\s*-->[\s\S]*?<!--\s*\/gmc:answer\s*-->/i.test(block)
-  );
+function countAnswerStructures(block) {
+  const headings = block.match(/\*\*Answer:\*\*/g)?.length ?? 0;
+  const containers = block.match(ANSWER_REGION_RE)?.length ?? 0;
+  return Math.max(headings, containers);
 }
 
 /**
- * Fail-closed student-facing filter. Operates per question block (aligned by the
- * `---` separators between the answer-bearing original and the stripped output)
- * and withholds a question when either guard trips:
+ * Fail-closed student-facing view of the answer-bearing report. Each question
+ * block is stripped on its own, and withheld when either guard trips:
  *
- *   1. Structural: the original question carried no recognisable answer block, so
- *      we cannot trust the stripped view to be answer-free (covers answers the
- *      model was injected into emitting inline with no **Answer:** heading).
- *   2. Leak: the correct-answer text still appears in the stripped block (covers
- *      answers echoed outside their container alongside a normal answer block).
+ *   1. Structural: the block has more question stems than answer structures,
+ *      so at least one question's answer is in a form stripAnswers does not
+ *      remove (covers answers the model was injected into emitting inline, or
+ *      in a fenced block, with no **Answer:** heading). Counted rather than
+ *      merely present, so a drifted question cannot ride through on a
+ *      well-formed neighbour when a missing separator or an unclosed fence
+ *      puts both in one block.
+ *   2. Leak: any question's correct-answer text still appears in the stripped
+ *      block (covers answers echoed outside their container alongside a normal
+ *      answer block).
  *
- * If the two views don't split into the same number of blocks, the structural
- * guard is skipped (we never mis-drop on misaligned boundaries) and only the
- * leak guard runs. Returns the surviving questions plus a per-guard breakdown
- * (`structural`, `leak`) and the total `dropped`, so callers can report which
- * guard fired.
+ * Returns the surviving questions plus a per-guard breakdown (`structural`,
+ * `leak`) and the total `dropped`, so callers can report which guard fired.
+ * Each counts questions withheld, not blocks — a withheld block takes every
+ * question in it.
  */
-export function redactStudentQuestions(originalText, studentText, correctAnswers) {
-  const origBlocks = originalText.split(/\n-{3,}\n/);
-  const studentBlocks = studentText.split(/\n-{3,}\n/);
-  const aligned = origBlocks.length === studentBlocks.length;
+export function redactStudentQuestions(originalText) {
+  const correctAnswers = extractCorrectAnswers(originalText);
   let structural = 0;
   let leak = 0;
+  const kept = [];
 
-  const kept = studentBlocks.filter((studentBlock, i) => {
-    const origBlock = aligned ? origBlocks[i] : '';
-    if (aligned && isQuestionBlock(origBlock) && !hasAnswerStructure(origBlock)) {
-      structural++;
-      return false;
+  for (const block of splitQuestionBlocks(originalText)) {
+    const stems = countQuestions(block);
+    if (stems > countAnswerStructures(block)) {
+      structural += stems;
+      continue;
     }
-    const blockNorm = normaliseForMatch(stripCodeForLeakCheck(studentBlock));
+    const stripped = stripAnswers(block);
+    const blockNorm = normaliseForMatch(stripCodeForLeakCheck(stripped));
     if (correctAnswers.some((answer) => answerLeaksInto(blockNorm, answer))) {
-      leak++;
-      return false;
+      leak += stems || 1;
+      continue;
     }
-    return true;
-  });
+    kept.push(stripped.replace(/^\n+|\n+$/g, ''));
+  }
 
   return { text: kept.join('\n\n---\n\n'), structural, leak, dropped: structural + leak };
 }

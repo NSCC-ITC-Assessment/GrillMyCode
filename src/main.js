@@ -44,7 +44,6 @@ import {
   boldQuestionLines,
   countQuestions,
   extractContextSummary,
-  extractCorrectAnswers,
   normaliseSeparators,
   redactStudentQuestions,
   renumberQuestions,
@@ -724,26 +723,24 @@ async function run() {
       extractContextSummary(rawQuestions);
     const cleanedQuestions = splitBoldAroundCode(boldQuestionLines(questionsWithoutSummary.trim()));
 
-    // Always strip incorrect options for quiz; also strip the correct answer when
-    // include_answers is false. cleanedQuestions retains answers for the instructor copy.
-    const correctAnswers = extractCorrectAnswers(cleanedQuestions);
-    let questions = stripAnswers(cleanedQuestions, { keepAnswers: inputs.includeAnswers });
-    // Fail-closed backstop: withhold any question that either lacked a
-    // recognisable answer block or whose correct-answer text survived redaction
-    // (e.g. the model was injected into echoing it), rather than risk a leak.
-    if (!inputs.includeAnswers) {
-      const { text, structural, leak, dropped } = redactStudentQuestions(
-        cleanedQuestions,
-        questions,
-        correctAnswers,
-      );
+    // Distractors are always stripped from the student copy; the correct answer
+    // too unless include_answers is set. cleanedQuestions retains both for the
+    // instructor copy.
+    let questions;
+    if (inputs.includeAnswers) {
+      questions = stripAnswers(cleanedQuestions, { keepAnswers: true });
+    } else {
+      // Fail-closed: withhold any question that lacked a recognisable answer
+      // block or whose correct-answer text survived redaction (e.g. the model
+      // was injected into echoing it), rather than risk a leak.
+      const { text, structural, leak, dropped } = redactStudentQuestions(cleanedQuestions);
       questions = text;
       state.questionsWithheld = dropped;
       if (structural > 0) {
         core.warning(
-          `Structural guard: withheld ${structural} question(s) whose original block carried no ` +
-            `recognisable **Answer:** heading, so the stripped view could not be confirmed ` +
-            `answer-free — check the submitted code for prompt injection.`,
+          `Structural guard: withheld ${structural} question(s) without a recognisable ` +
+            `**Answer:** heading or answer container, so the stripped view could not be ` +
+            `confirmed answer-free — check the submitted code for prompt injection.`,
         );
       }
       if (leak > 0) {
