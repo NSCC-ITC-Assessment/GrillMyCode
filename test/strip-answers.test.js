@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { extractCorrectAnswers, redactStudentQuestions, stripAnswers } from '../src/postprocess.js';
+import { redactStudentQuestions, stripAnswers } from '../src/postprocess.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -127,7 +127,7 @@ describe('stripAnswers source hygiene', () => {
   });
 });
 
-describe('separator preservation across answer-container removal', () => {
+describe('redactStudentQuestions', () => {
   const ANSWER = 'it returns true when the coordinate has already been attacked by the player';
   const DISTRACTORS = [
     '**Distractors for Multiple-Choice Quiz:**',
@@ -135,11 +135,11 @@ describe('separator preservation across answer-container removal', () => {
   ].join('\n');
 
   /** A well-formed question block; `innerSep` places a --- inside its container. */
-  function goodBlock({ innerSep = false } = {}) {
+  function goodBlock({ n = 1, innerSep = false } = {}) {
     return [
       '**a.js**',
       '',
-      '1. **What does the helper return?**',
+      `${n}. **What does the helper return?**`,
       '',
       '<!-- gmc:answer -->',
       '**Answer:**',
@@ -166,34 +166,88 @@ describe('separator preservation across answer-container removal', () => {
 
   const blockCount = (text) => text.split(/\n-{3,}\n/).length;
 
-  it('re-emits a --- the answer container swallowed', () => {
-    const original = goodBlock({ innerSep: true });
-    expect(blockCount(stripAnswers(original))).toBe(blockCount(original));
-  });
-
   it('leaves a report without inner separators untouched', () => {
     const original = `${goodBlock()}\n\n---\n\n${goodBlock()}`;
     expect(blockCount(stripAnswers(original))).toBe(blockCount(original));
   });
 
-  // Losing a separator misaligns the student view against the answer-bearing
-  // original, and redactStudentQuestions then skips its structural guard for
-  // the whole assessment — so an unrelated question's stray --- decides whether
-  // a drifted question's answer reaches the student.
+  it('keeps the rule between questions when a --- sits inside a container', () => {
+    const original = `${goodBlock({ innerSep: true })}\n\n${goodBlock({ n: 2 })}`;
+    const { text, dropped } = redactStudentQuestions(original);
+    expect(dropped).toBe(0);
+    expect(blockCount(text)).toBe(2);
+    expect(text).not.toContain(ANSWER);
+  });
+
+  // The student view used to be aligned against the original by splitting both
+  // on ---, and a stray --- inside a container misaligned them and switched the
+  // structural guard off for the whole assessment. Each block is now checked on
+  // its own, so an unrelated question's --- cannot decide this.
   it.each([
     ['no inner separator', false],
     ['a --- inside an unrelated container', true],
   ])('withholds a drifted question when the report has %s', (_label, innerSep) => {
     const original = `${goodBlock({ innerSep })}\n\n---\n\n${driftedBlock}`;
-    const student = stripAnswers(original);
-    const { text, structural } = redactStudentQuestions(
-      original,
-      student,
-      extractCorrectAnswers(original),
-    );
-
-    expect(blockCount(student)).toBe(blockCount(original));
+    const { text, structural } = redactStudentQuestions(original);
     expect(structural).toBe(1);
+    expect(text).not.toContain(ANSWER);
+    expect(text).toContain('1. **What does the helper return?**');
+  });
+
+  // With no separator between them, a drifted question shares a block with a
+  // well-formed one, whose answer heading must not vouch for both.
+  it('withholds a drifted question that shares a block with a good one', () => {
+    const original = `${goodBlock()}\n\n${driftedBlock}`;
+    const { text, structural } = redactStudentQuestions(original);
+    expect(structural).toBe(2);
+    expect(text).not.toContain(ANSWER);
+  });
+
+  it('withholds a question whose answer has no heading and no container', () => {
+    const noLabel = [
+      '**c.js**',
+      '',
+      '2. **What does this return?**',
+      '',
+      ANSWER,
+      '',
+      DISTRACTORS,
+    ].join('\n');
+    const { text, structural } = redactStudentQuestions(`${goodBlock()}\n\n---\n\n${noLabel}`);
+    expect(structural).toBe(1);
+    expect(text).not.toContain(ANSWER);
+  });
+
+  it('keeps the next question when a container is never closed', () => {
+    const unclosed = goodBlock().replace('\n<!-- /gmc:answer -->', '');
+    const { text, dropped } = redactStudentQuestions(
+      `${unclosed}\n\n---\n\n${goodBlock({ n: 2 })}`,
+    );
+    expect(dropped).toBe(0);
+    expect(text).toContain('2. **What does the helper return?**');
+    expect(text).not.toContain(ANSWER);
+  });
+
+  // A --- inside fenced code is content, not a separator: splitting there tore
+  // the fence, which put the snippet's list items within reach of the bullet
+  // sweep and padded its --- with blank lines.
+  it('leaves a snippet carrying its own --- intact', () => {
+    const snippet = ['```yaml', 'first: 1', '---', '- item', '```'].join('\n');
+    const original = goodBlock().replace('**a.js**\n', `**a.yml**\n\n${snippet}\n`);
+    const { text, dropped } = redactStudentQuestions(original);
+    expect(dropped).toBe(0);
+    expect(text).toContain(snippet);
+    expect(text).not.toContain(ANSWER);
+  });
+
+  it('withholds a question whose answer is echoed into the prose', () => {
+    const echoed = goodBlock({ n: 2 }).replace(
+      '**What does the helper return?**',
+      `**What does the helper return? Hint: ${ANSWER}**`,
+    );
+    const { text, leak } = redactStudentQuestions(`${goodBlock()}\n\n---\n\n${echoed}`);
+    expect(leak).toBe(1);
+    expect(text).toContain('1. **What does the helper return?**');
     expect(text).not.toContain(ANSWER);
   });
 });
