@@ -55,28 +55,63 @@ export function extractContextSummary(text) {
   return { summary: match[1].trim(), rest: text.replace(CONTEXT_SUMMARY_RE_G, '') };
 }
 
+// A question's bold filename header: **filename.ext** or **`filename.ext`**.
+const FILENAME_HEADER_RE = /^\*\*`?[^\s`*]+\.[^\s`*]+`?\*\*$/;
+const SEPARATOR_RE = /^-{3,}$/;
+// Spellings of a separator the model drifts into — `----`, or `---` with
+// stray indentation or trailing whitespace — that generate-lms-quiz.yml, which
+// splits on an exact `\n---\n`, does not recognise.
+const SEPARATOR_VARIANT_RE = /^[ \t]*-{3,}[ \t]*$/;
+
 /**
- * Ensures a --- thematic-break separator appears between every question block.
- * A block is identified by its bold filename header (**filename.ext** or **`filename.ext`**). Separators can
- * be missing either because the model drifted and omitted them, or because they
- * were consumed during answer stripping (see stripAnswers for the root-cause fix
- * that handles the container case; this is the safety net for model drift).
- * The first block header is never preceded by a separator.
+ * Restores a --- separator the model left out between two questions, by
+ * inserting one before a filename header that follows a question stem with no
+ * separator in between.
+ *
+ * Runs on the answer-bearing text before it is split into the student and
+ * instructor copies, because both are split on --- downstream: a missing one
+ * puts two questions in one block, where redactStudentQuestions can only
+ * withhold them together and generate-lms-quiz.yml merges them into a single
+ * quiz item carrying both questions' options.
+ *
+ * A header only opens a new question once a stem has been seen since the last
+ * separator. A question showing two files carries two headers ahead of its one
+ * stem, and splitting between them would cut the first file's snippet away
+ * from the question it belongs to. The same test keeps any text ahead of the
+ * first question attached to it.
+ *
+ * A --- counts wherever the downstream splits would cut — everywhere outside
+ * fenced code, including inside an answer container, so one the model placed
+ * there is not doubled up. Headers and stems count only at the top level, so a
+ * bold filename in a Markdown snippet or an answer is left alone.
+ *
+ * Every top-level separator is also rewritten to exactly `---`. The quiz parser
+ * splits on nothing else, so a `----` or a `--- ` with a trailing space merged
+ * its two questions into one item exactly as a missing one did. One inside an
+ * answer container is left as it is: rewriting it there would make the quiz
+ * parser split the container, withholding a question it currently parses.
  */
 export function normaliseSeparators(text) {
-  const lines = text.split('\n');
+  const raw = text.split('\n');
+  const topLevel = topLevelFlags(raw);
+  const outsideFence = topLevelFlags(raw, { answers: false });
+  const lines = raw.map((line, i) =>
+    topLevel[i] && SEPARATOR_VARIANT_RE.test(line) ? '---' : line,
+  );
   const out = [];
-  for (const line of lines) {
-    if (/^\*\*`?[^\s`*]+\.[^\s`*]+`?\*\*$/.test(line) && out.length > 0) {
-      let j = out.length - 1;
-      while (j >= 0 && out[j].trim() === '') j--;
-      if (j >= 0 && !/^-{3,}$/.test(out[j])) {
-        while (out.length > 0 && out[out.length - 1].trim() === '') out.pop();
-        out.push('', '---', '');
-      }
+  let stemSinceSeparator = false;
+  lines.forEach((line, i) => {
+    if (outsideFence[i] && SEPARATOR_RE.test(line)) {
+      stemSinceSeparator = false;
+    } else if (topLevel[i] && QUESTION_STEM_RE.test(line)) {
+      stemSinceSeparator = true;
+    } else if (topLevel[i] && stemSinceSeparator && FILENAME_HEADER_RE.test(line)) {
+      while (out.length > 0 && out.at(-1).trim() === '') out.pop();
+      out.push('', '---', '');
+      stemSinceSeparator = false;
     }
     out.push(line);
-  }
+  });
   return out.join('\n');
 }
 
@@ -446,7 +481,7 @@ function splitQuestionBlocks(text) {
   const outsideFence = topLevelFlags(lines, { answers: false });
   const blocks = [[]];
   lines.forEach((line, i) => {
-    if (outsideFence[i] && /^-{3,}$/.test(line)) blocks.push([]);
+    if (outsideFence[i] && SEPARATOR_RE.test(line)) blocks.push([]);
     else blocks.at(-1).push(line);
   });
   return blocks.map((block) => block.join('\n'));

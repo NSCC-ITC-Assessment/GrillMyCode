@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
+import { normaliseSeparators } from '../src/postprocess.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -142,4 +143,58 @@ describe('parseQuestions stray marker residue', () => {
     expect(q.incorrect).toHaveLength(2);
     expect(q.incorrect.join(' ')).not.toContain('--><--');
   });
+});
+
+// normaliseSeparators runs on the text that becomes questions.md, so a
+// separator the model left out no longer reaches the parser as one merged
+// item carrying both questions' options — two of them correct.
+describe('parseQuestions after normaliseSeparators', () => {
+  const containered = (n, answer) =>
+    [
+      `**\`q${n}.php\`**`,
+      '',
+      '```php',
+      '$stars = 4;',
+      '```',
+      '',
+      `${n}. **Question ${n}?**`,
+      '',
+      '   <!-- gmc:answer -->',
+      '   **Answer:**',
+      `   - ${answer}`,
+      '',
+      '   **Distractors for Multiple-Choice Quiz:**',
+      `   - wrong ${n}a`,
+      `   - wrong ${n}b`,
+      `   - wrong ${n}c`,
+      '   <!-- /gmc:answer -->',
+    ].join('\n');
+
+  const merged = `${containered(1, 'first answer')}\n\n${containered(2, 'second answer')}`;
+
+  it('merges two questions into one item without it', () => {
+    const questions = parseQuestions(merged);
+    expect(questions).toHaveLength(1);
+    expect(questions[0].incorrect).toContain('second answer');
+  });
+
+  it('parses each question with its own options once restored', () => {
+    const questions = parseQuestions(normaliseSeparators(merged));
+    expect(questions.map((q) => [q.question, q.answer, q.incorrect.length])).toEqual([
+      ['Question 1?', 'first answer', 3],
+      ['Question 2?', 'second answer', 3],
+    ]);
+  });
+
+  it.each(['----', '--- '])(
+    'parses both questions across a %j separator once rewritten',
+    (variant) => {
+      const source = `${containered(1, 'first answer')}\n\n${variant}\n\n${containered(2, 'second answer')}`;
+      expect(parseQuestions(source)).toHaveLength(1);
+      expect(parseQuestions(normaliseSeparators(source)).map((q) => q.answer)).toEqual([
+        'first answer',
+        'second answer',
+      ]);
+    },
+  );
 });
