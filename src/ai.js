@@ -11,6 +11,11 @@
  * as every other wait. The same status codes are retried when a
  * 200 response carries them in an error body (a failure after generation
  * started), as are 200 responses whose body is not valid JSON.
+ *
+ * Alongside the text, callAI returns the response metadata the provenance
+ * header of raw-ai-output.md records — above all `finish_reason`, without
+ * which a reply cut off at the output token limit is indistinguishable from a
+ * model that simply generated fewer questions.
  */
 
 import * as core from '@actions/core';
@@ -61,7 +66,30 @@ function parseRetryAfterMs(response) {
 }
 
 /**
- * Calls the configured AI provider and returns the generated questions text.
+ * Returns the token counts from a response's `usage` object, keeping only
+ * numeric fields — OpenRouter passes upstream shapes through imperfectly, and
+ * this ends up in a JSON block that nothing should have to second-guess.
+ */
+function pickUsage(usage) {
+  const count = (value) => (typeof value === 'number' && Number.isFinite(value) ? value : null);
+  if (!usage || typeof usage !== 'object') return null;
+  return {
+    promptTokens: count(usage.prompt_tokens),
+    completionTokens: count(usage.completion_tokens),
+    reasoningTokens: count(usage.completion_tokens_details?.reasoning_tokens),
+    totalTokens: count(usage.total_tokens),
+    cost: count(usage.cost),
+  };
+}
+
+/** Returns `value` if it is a non-empty string, else null. */
+function stringOrNull(value) {
+  return typeof value === 'string' && value !== '' ? value : null;
+}
+
+/**
+ * Calls the configured AI provider and returns the generated questions text
+ * together with metadata about the response that produced it.
  *
  * @param {object} opts
  * @param {string} opts.provider       - AI provider key
@@ -69,6 +97,14 @@ function parseRetryAfterMs(response) {
  * @param {string} opts.apiKey         - Provider API key
  * @param {Array}  opts.messages       - Chat messages array
  * @param {number} opts.retryMaxAttempts - Total attempts (initial + retries)
+ * @param {number} opts.temperature    - Sampling temperature
+ * @returns {Promise<{ content: string, metadata: object }>} `content` is the
+ *   trimmed reply. `metadata` holds `finishReason`, `nativeFinishReason`,
+ *   `usage` (token counts, or null if the provider sent none), `attempts`
+ *   (requests sent, so retries = attempts - 1), `durationMs` (wall time across
+ *   every attempt, backoff included), and the `generationId`, `servedModel` and
+ *   `servedProvider` OpenRouter reports — the model actually served can differ
+ *   from the one requested when routing or fallbacks are in play.
  */
 export async function callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature }) {
   let url;
@@ -104,6 +140,7 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
   });
 
   let lastError;
+  const startedAt = Date.now();
 
   for (let attempt = 0; attempt < retryMaxAttempts; attempt++) {
     let response;
@@ -250,7 +287,19 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       );
     }
 
-    return content.trim();
+    return {
+      content: content.trim(),
+      metadata: {
+        finishReason,
+        nativeFinishReason: stringOrNull(choice.native_finish_reason),
+        usage: pickUsage(data.usage),
+        attempts: attempt + 1,
+        durationMs: Date.now() - startedAt,
+        generationId: stringOrNull(data.id),
+        servedModel: stringOrNull(data.model),
+        servedProvider: stringOrNull(data.provider),
+      },
+    };
   }
 
   // Should be unreachable; satisfies linters if retryMaxAttempts is clamped to >= 1.

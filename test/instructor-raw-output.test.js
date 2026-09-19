@@ -118,4 +118,74 @@ describe('formatRawOutput', () => {
     expect(out).toContain('`aaaaaaa` → `bbbbbbb`');
     expect(out).toContain('`some/model` via openrouter');
   });
+
+  const request = {
+    numQuestions: 10,
+    temperature: 0.2,
+    topP: 0.95,
+    promptHash: 'abc123def456',
+    actionRef: 'v1',
+  };
+  const response = {
+    finishReason: 'length',
+    nativeFinishReason: 'MAX_TOKENS',
+    usage: { promptTokens: 1200, completionTokens: 4096, reasoningTokens: null },
+    attempts: 2,
+    durationMs: 12_345,
+    generationId: 'gen-1',
+    servedModel: 'some/model',
+    servedProvider: 'SomeHost',
+  };
+
+  /** Returns the parsed JSON from the gmc:provenance comment. */
+  function provenanceOf(out) {
+    const match = out.match(/<!-- gmc:provenance (.*) -->/);
+    return JSON.parse(match[1]);
+  }
+
+  it('says in plain words when a reply was cut off', () => {
+    const out = formatRawOutput({ ...opts, rawOutput: '1. Q?', request, response });
+
+    expect(out).toContain('`length` (native: `MAX_TOKENS`) — the output token limit was reached');
+    expect(out).toContain('1,200 in · 4,096 out');
+    expect(out).toContain('- **Attempts:** 2 (1 retry) · 12.3 s');
+    expect(out).toContain('10 questions requested · temperature 0.2 · prompt `abc123def456`');
+    // Only the host is worth a line when the model served is the one requested.
+    expect(out).toContain('- **Served by:** via SomeHost');
+  });
+
+  it('embeds the full record as JSON above the reply', () => {
+    const out = formatRawOutput({ ...opts, rawOutput: '1. Q?', request, response });
+    const record = provenanceOf(out);
+
+    expect(record).toMatchObject({
+      version: 1,
+      baseSha: opts.baseSha,
+      headSha: opts.headSha,
+      model: 'some/model',
+      request,
+      response,
+    });
+    expect(out.indexOf('gmc:provenance')).toBeLessThan(out.indexOf('\n---\n'));
+  });
+
+  it('cannot have its comment closed early by a value', () => {
+    const out = formatRawOutput({
+      ...opts,
+      rawOutput: '1. Q?',
+      request,
+      response: { ...response, servedProvider: 'evil --> <b>x</b>' },
+    });
+    const comment = out.match(/<!-- gmc:provenance .* -->/)[0];
+
+    expect(comment.slice(0, -3)).not.toContain('>');
+    expect(provenanceOf(out).response.servedProvider).toBe('evil --> <b>x</b>');
+  });
+
+  it('still renders without response or request metadata', () => {
+    const out = formatRawOutput({ ...opts, rawOutput: '1. Q?' });
+
+    expect(out).not.toContain('Stopped because');
+    expect(provenanceOf(out)).toMatchObject({ request: null, response: null });
+  });
 });

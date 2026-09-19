@@ -15,6 +15,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { minimatch } from 'minimatch';
 import {
+  AI_TOP_P,
   EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
   SUMMARY_FILE_TABLE_LIMIT,
   GIT_SHA_SHORT_LENGTH,
@@ -33,7 +34,7 @@ import {
   readAssignmentContextFiles,
 } from './files.js';
 import { detectExcludePatterns } from './stack-detection.js';
-import { buildPrompt } from './prompt.js';
+import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput } from './report.js';
 import { postIssue } from './delivery/issue.js';
@@ -704,7 +705,7 @@ async function run() {
     // numbering, extractContextSummary cuts its region out — so without this
     // variable the model's actual reply exists nowhere after this line, and
     // diagnosing a postprocessing bug means re-running against a live model.
-    const aiOutput = await callAI({
+    const { content: aiOutput, metadata: aiResponse } = await callAI({
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       apiKey: inputs.apiKey,
@@ -917,6 +918,14 @@ async function run() {
         model: inputs.aiModel,
         studentLogin: submitter,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
+        request: {
+          numQuestions: inputs.numQuestions,
+          temperature: inputs.aiTemperature,
+          topP: AI_TOP_P,
+          promptHash: PROMPT_TEMPLATE_HASH,
+          actionRef: process.env.GITHUB_ACTION_REF || null,
+        },
+        response: aiResponse,
       });
       try {
         await deliverToInstructorRepo({

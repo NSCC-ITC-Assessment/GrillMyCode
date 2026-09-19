@@ -175,6 +175,8 @@ The trailing number is how many questions the file contains — `20` above. A qu
 
 `raw-ai-output.md` is a diagnostic record, not something you need to read or import — **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived, before GrillMyCode renumbered the questions, cut any it generated beyond `num_questions`, lifted the instructor note out of the body and adjusted the formatting. Open it when a student's `questions.md` looks wrong: questions that were truncated or withheld, and formatting the processing steps introduced, are only visible there. Use GitHub's **Raw** view to see it as the model wrote it, and include its contents in any bug report about generated questions.
 
+The header at the top of the file records how the reply was produced: why the model stopped (a `length` stop means it hit its output limit and the reply is incomplete), how many tokens went in and out, how many attempts the request took, and the settings used — questions requested, temperature, and a short hash identifying the prompt version. The same facts, with full commit SHAs, are embedded as JSON in a `<!-- gmc:provenance … -->` comment for tooling; it is invisible in the rendered view.
+
 Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student. If the question count changes, the new count appears in the filename and the file carrying the old count is removed.
 
 ### Which quiz file to use

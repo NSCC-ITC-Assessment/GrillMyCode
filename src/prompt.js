@@ -4,8 +4,25 @@
  * Constructs the system and user messages sent to the AI provider.
  * Contains the full assessment rubric and formatting instructions.
  */
-import { randomBytes } from 'node:crypto';
-import { SHORT_ANSWER_MAX_CHARS, LONG_ANSWER_MAX_CHARS } from './constants.js';
+import { createHash, randomBytes } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { fileURLToPath } from 'node:url';
+import { SHORT_ANSWER_MAX_CHARS, LONG_ANSWER_MAX_CHARS, PROMPT_HASH_LENGTH } from './constants.js';
+
+/**
+ * Identifies the prompt template a reply was generated from, recorded in
+ * raw-ai-output.md so replies can be grouped and compared by prompt version.
+ *
+ * The rendered messages cannot be hashed for this — they embed the student's
+ * code, a per-run nonce and the run's settings, so no two would match. This
+ * module's own source is the template, so its hash is stable across students
+ * and changes whenever the prompt does. An edit to a comment here changes it
+ * too; that costs a spurious new version, never a missed one.
+ */
+export const PROMPT_TEMPLATE_HASH = createHash('sha256')
+  .update(readFileSync(fileURLToPath(import.meta.url)))
+  .digest('hex')
+  .substring(0, PROMPT_HASH_LENGTH);
 
 /**
  * Builds the [system, user] message array for the chat completions API.

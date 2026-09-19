@@ -111,6 +111,13 @@ export const MAX_QUESTIONS = 50;
 export const GIT_SHA_SHORT_LENGTH = 7;
 
 /**
+ * Number of hex characters kept from the SHA-256 of src/prompt.js recorded in
+ * raw-ai-output.md as the prompt version. Twelve is ample to tell prompt
+ * revisions apart while staying readable.
+ */
+export const PROMPT_HASH_LENGTH = 12;
+
+/**
  * Maximum number of excluded file paths listed in the job summary when a run
  * finds nothing to assess. Enough to identify the pattern at fault; the full
  * list is always in the run log.
