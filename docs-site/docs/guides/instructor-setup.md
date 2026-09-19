@@ -179,6 +179,21 @@ The header at the top of the file records how the reply was produced: why the mo
 
 Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student. If the question count changes, the new count appears in the filename and the file carrying the old count is removed.
 
+### Submission tag folders
+
+When the workflow is [triggered by submission tags](../example-workflows/tag-submission.md), each `submission_tags` pattern gets its own subfolder inside the student's folder, so a milestone's assessment is kept when the next one arrives:
+
+```
+{student-login}/
+  {tag-group}/                                                              ← e.g. phase1, complete, or submit (for submit/*)
+    questions.md
+    raw-ai-output.md
+    {assignment-name}_{student-login}_{tag-group}_quiz_{question-count}.imscc
+    {assignment-name}_{student-login}_{tag-group}_brightspace_quiz_{question-count}.csv
+```
+
+The tag group is the pattern reduced to filename-safe characters, so `submit/*` becomes `submit`. It is carried in the quiz filenames and in the quiz title shown in the LMS (`lab-3 - jsmith (phase1)`). Within one group the one-up-to-date-assessment rule above still applies: every tag matching `submit/*` replaces the previous `submit/` assessment.
+
 ### Which quiz file to use
 
 The `.imscc` is the quiz file for everyone. **Common Cartridge** is an open standard from 1EdTech (formerly IMS Global), and most major LMS platforms can import it — including Brightspace, Canvas, Moodle, Blackboard Learn and Sakai. Whatever LMS you use, start with the `.imscc`.

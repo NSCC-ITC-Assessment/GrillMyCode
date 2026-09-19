@@ -46,6 +46,8 @@ for one-time instructor setup.
 | `fail_on_empty_assessment`     | No       | `false`                        | When `true`, a run that finds nothing to assess fails instead of succeeding. Left `false` (the default) such a run reports the reason and succeeds, because both causes — an empty commit range, and every changed file being excluded — occur normally the moment an assignment is accepted. The run summary explains which one applied either way.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `include_initial_commit`       | No       | `false`                        | When `false` (default), pins the diff base to the first commit so starter/template files are excluded. When `true`, uses the empty tree as the base so the initial commit's eligible files are included in the diff regardless of event type. Set this to `true` for Classroom 50 empty-repository assignments (`--empty-repo`), whose repos are created bare — the first commit there is the student's own first push, not starter code.                                                                                                                                                                                                                                                                                                                                                                                           |
 | `skip_committers`              | No       | `github-actions[bot]`          | Comma-separated list of commit author names or email substrings. Consecutive leading commits (immediately after the base SHA) whose author matches any entry are excluded from the diff. Only a leading run is skipped — bot commits after any student commit are included. Set to `''` to disable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| `submission_tags`              | No       |                                | **Tag-triggered workflows only.** Comma- or newline-separated tag patterns that mark a submission — the same patterns as the workflow's `on.push.tags` (e.g. `complete, phase1`, or `submit/*` for Classroom 50 submit-only assignments). A run started by a tag fails unless the tag matches one of these and points at a commit on the default branch. Each pattern gets its own issue, PDF and instructor-repository folder                                                                                                                                                                                                                                                                                                                                                                                                      |
+| `tag_diff_base`                | No       | `cumulative`                   | **Tag-triggered workflows only.** `cumulative` assesses all of the student's work to date on every tag; `previous-tag` assesses only the work since the nearest earlier submission tag (falling back to `cumulative` when there is none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                            |
 | `base_sha`                     | No       |                                | Override the base commit SHA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 | `head_sha`                     | No       |                                | Override the head commit SHA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
 
@@ -102,6 +104,37 @@ jobs:
           num_questions: '20'
           instructor_context: 'Assignment 3 — Python list comprehensions'
 ```
+
+### Submission tag
+
+Generates questions only when the student says they are done, by pushing a tag you name — ordinary
+pushes do not run it. The student commits their finished work to the default branch, then runs
+`git tag complete && git push origin complete`.
+
+```yaml
+on:
+  push:
+    tags: ['complete'] # no branches: an ordinary push does not run it
+  workflow_dispatch:
+```
+
+The action step then lists the same tags in `submission_tags` — a tag that fires the workflow but is
+missing there fails the run:
+
+```yaml
+- uses: NSCC-ITC-Assessment/GrillMyCode@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
+    submission_tags: 'complete'
+```
+
+List several tags (e.g. `phase1, phase2, complete`) for milestones — each gets its own issue, PDF
+and instructor-repository folder — and set `tag_diff_base: 'previous-tag'` to assess only the work
+since the previous milestone. For Classroom 50 assignments whose submission type is _tagged commit_,
+add `submit/*`: `gh student submit` pushes one of those tags with every submission. A tag on a commit
+that is not on the default branch fails the run. See
+[Tag Submission](https://grillmycode.org/docs/example-workflows/tag-submission) for the full example.
 
 ### Choosing a different model
 

@@ -28,6 +28,21 @@ One folder is created per student, named after their GitHub login, and populated
 └── {{ASSIGNMENT_NAME}}_{studentLogin}_brightspace_quiz_{questionCount}.csv    ← optional alternative, Brightspace only (auto-generated)
 ```
 
+### Submission tag folders
+
+If the assignment's workflow is triggered by submission tags (the `submission_tags` input), each tag pattern gets its own subfolder inside the student's folder, so every milestone's assessment is kept rather than replaced by the next:
+
+```
+{studentLogin}/
+└── {tagGroup}/                                                             ← e.g. phase1, complete, or submit (for submit/*)
+    ├── questions.md
+    ├── raw-ai-output.md
+    ├── {{ASSIGNMENT_NAME}}_{studentLogin}_{tagGroup}_quiz_{questionCount}.imscc
+    └── {{ASSIGNMENT_NAME}}_{studentLogin}_{tagGroup}_brightspace_quiz_{questionCount}.csv
+```
+
+The files are the same as those described below. The tag group is carried in the quiz filenames and in the quiz title (`{{ASSIGNMENT_NAME}} - {studentLogin} ({tagGroup})`), so each milestone's quiz stays identifiable once imported into the LMS.
+
 ## Files
 
 ### `{studentLogin}/questions.md`

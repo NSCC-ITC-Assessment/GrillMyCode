@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "*/questions.md"
+      # A run started by a submission tag files under {student}/{tag group}/.
+      - "*/*/questions.md"
   workflow_dispatch:
 
 concurrency:
@@ -501,11 +503,10 @@ jobs:
           </manifest>`;
           }
 
-          // Titled with assignment + student because the filename is not
-          // visible once the package is imported — this title is what
-          // identifies the quiz in the LMS.
-          async function buildQuizPackage(student, questions, contentHash) {
-            const title = assignment + ' - ' + student;
+          // Titled with assignment + student (and tag group, if any) because
+          // the filename is not visible once the package is imported — this
+          // title is what identifies the quiz in the LMS.
+          async function buildQuizPackage(title, questions, contentHash) {
             const resourceId = newId();
             // Flat, so the package carries no directory entries and the file
             // does not land in the LMS's file manager under a meaningless
@@ -645,7 +646,14 @@ jobs:
               // that did build have been written and committed.
               try {
                 const studentDir = path.dirname(qmd);
-                const student = path.basename(studentDir);
+                // {student}/questions.md, or {student}/{tag group}/questions.md
+                // for a run started by a submission tag. The group joins the
+                // student in every name below, so each milestone's package is
+                // told apart from the student's others once out of this folder.
+                const [student, ...groupParts] = studentDir.split(path.sep);
+                const group = groupParts.join('-');
+                const quizId = group ? student + '_' + group : student;
+                const quizTitle = assignment + ' - ' + student + (group ? ' (' + group + ')' : '');
 
                 const content = fs.readFileSync(qmd, 'utf8');
                 const parsed = parseQuestions(content);
@@ -687,8 +695,8 @@ jobs:
                 // whereas `…_quiz_23.imscc` next to a 30-question questions.md
                 // states the problem at a glance, months later, to whoever is
                 // importing it.
-                const out = path.join(studentDir, assignment + '_' + student + '_quiz_' + questions.length + '.imscc');
-                const csvOut = path.join(studentDir, assignment + '_' + student + '_brightspace_quiz_' + questions.length + '.csv');
+                const out = path.join(studentDir, assignment + '_' + quizId + '_quiz_' + questions.length + '.imscc');
+                const csvOut = path.join(studentDir, assignment + '_' + quizId + '_brightspace_quiz_' + questions.length + '.csv');
 
                 // Because the count is in the name, a run that extracts a
                 // different number of questions writes a different filename, and
@@ -701,8 +709,8 @@ jobs:
                 // interpolated and would need escaping.
                 const isSupersededPackage = (name) => {
                   for (const [prefix, ext] of [
-                    [assignment + '_' + student + '_quiz', '.imscc'],
-                    [assignment + '_' + student + '_brightspace_quiz', '.csv'],
+                    [assignment + '_' + quizId + '_quiz', '.imscc'],
+                    [assignment + '_' + quizId + '_brightspace_quiz', '.csv'],
                   ]) {
                     if (!name.startsWith(prefix) || !name.endsWith(ext)) continue;
                     const middle = name.slice(prefix.length, name.length - ext.length);
@@ -759,9 +767,9 @@ jobs:
                   }
                 }
 
-                const buffer = await buildQuizPackage(student, questions, contentHash);
+                const buffer = await buildQuizPackage(quizTitle, questions, contentHash);
                 fs.writeFileSync(out, buffer);
-                fs.writeFileSync(csvOut, buildQuizCsv(assignment + ' - ' + student, questions, contentHash));
+                fs.writeFileSync(csvOut, buildQuizCsv(quizTitle, questions, contentHash));
                 sweepSupersededPackages();
                 const withheld = parsed.length - questions.length;
                 console.log(

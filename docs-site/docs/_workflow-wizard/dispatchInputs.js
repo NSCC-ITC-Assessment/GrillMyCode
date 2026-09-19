@@ -44,24 +44,35 @@
  * surface answers. What it cannot do is what disqualified the four above —
  * quietly empty the assessment. The paths it matched are rendered in the run
  * summary's configuration block, so a re-pointed glob shows up on the run page.
+ *
+ * tag_diff_base narrows what is assessed too — previous-tag assesses only the
+ * work since the last submission tag — but unlike the four above it cannot
+ * empty the assessment: the action never diffs from a tag on the assessed
+ * commit itself, so the range always holds at least that tag's commits. The
+ * mode a run used is shown in the run summary's configuration block. It is
+ * offered only for tag-triggered workflows (tagTriggerOnly), where it has an
+ * effect at all, and is unticked by default.
  */
 
 /**
  * GitHub hard-caps `workflow_dispatch` at 10 inputs; a workflow declaring more
- * fails to parse. The catalogue below holds fewer than that today, so the cap
- * cannot bite — the check stays because it is the constraint that decides
- * whether a new entry can simply be added or has to displace an existing one.
+ * fails to parse. The catalogue below holds exactly that many today, so the cap
+ * cannot bite yet — but the next entry will have to displace an existing one,
+ * which is why the check stays.
  */
 export const MAX_DISPATCH_INPUTS = 10;
 
 /**
  * `cfgKey`   — the wizard config field supplying the fallback/default value.
- * `type`     — 'boolean' renders a true/false dropdown, 'string' a text box.
+ * `type`     — 'boolean' renders a true/false dropdown, 'choice' a dropdown
+ *              of `options`, 'string' a text box.
  * `normalize`— run the value through the comma/newline pattern normaliser.
  * `envFallback`— name of a job-level env var to hold a multi-line default,
  *              used as the expression fallback instead of an inline literal.
  * `defaultSelected` — ticked when the wizard first opens (see
  *              DEFAULT_DISPATCH_OVERRIDES).
+ * `tagTriggerOnly` — offered, and emitted, only when the workflow is
+ *              triggered by submission tags; the action ignores it otherwise.
  */
 export const DISPATCH_OVERRIDES = [
   {
@@ -150,6 +161,17 @@ export const DISPATCH_OVERRIDES = [
     hint: 'Lets you recover a run where a student committed everything at once and the first-commit exclusion left nothing to assess.',
   },
   {
+    key: 'tag_diff_base',
+    cfgKey: 'tagDiffBase',
+    label: 'Tag diff base',
+    type: 'choice',
+    options: ['cumulative', 'previous-tag'],
+    tagTriggerOnly: true,
+    description:
+      'cumulative assesses all work to date; previous-tag only the work since the last submission tag',
+    hint: 'Re-run a milestone either way — for example, a cumulative assessment of phase2 when the workflow normally assesses only the work since phase1.',
+  },
+  {
     key: 'ai_temperature',
     cfgKey: 'aiTemperature',
     label: 'AI temperature',
@@ -179,15 +201,26 @@ export const DISPATCH_OVERRIDES_BY_KEY = Object.fromEntries(
 );
 
 /**
- * Returns the selected override keys in catalogue order, deduplicated, with
- * unknown keys dropped and the list truncated to GitHub's 10-input cap. Both
- * the UI and the generator go through this, so an over-long selection can never
- * reach the emitted YAML.
+ * The overrides on offer for a trigger: every entry, less the tagTriggerOnly
+ * ones unless the workflow is triggered by submission tags.
  */
-export function resolveDispatchOverrides(selected) {
+export function availableDispatchOverrides({ tagTrigger = false } = {}) {
+  return DISPATCH_OVERRIDES.filter((o) => tagTrigger || !o.tagTriggerOnly);
+}
+
+/**
+ * Returns the selected override keys in catalogue order, deduplicated, with
+ * unknown keys dropped — and tagTriggerOnly keys too, unless tagTrigger is set —
+ * and the list truncated to GitHub's 10-input cap. The UI, the generator and
+ * the review checklist all go through this, so an over-long selection, or one
+ * left over from a trigger the instructor has since switched away from, can
+ * never reach the emitted YAML.
+ */
+export function resolveDispatchOverrides(selected, { tagTrigger = false } = {}) {
   if (!Array.isArray(selected) || selected.length === 0) return [];
   const wanted = new Set(selected);
-  return DISPATCH_OVERRIDES.filter((o) => wanted.has(o.key))
+  return availableDispatchOverrides({ tagTrigger })
+    .filter((o) => wanted.has(o.key))
     .map((o) => o.key)
     .slice(0, MAX_DISPATCH_INPUTS);
 }

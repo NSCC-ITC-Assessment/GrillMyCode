@@ -332,3 +332,28 @@ export const AI_RETRY_MAX_DELAY_MS = 30_000;
  * 429 = rate-limited; 500/502/503/504 = transient server-side errors.
  */
 export const AI_RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504];
+
+/**
+ * Accepted values of the tag_diff_base input, which picks the diff base for a
+ * run started by a submission tag:
+ *   cumulative   — the same base as any other run (first commit, or the empty
+ *                  tree with include_initial_commit), so each tag assesses all
+ *                  of the student's work to date.
+ *   previous-tag — the nearest earlier submission tag, so each tag assesses
+ *                  only the work since the one before it. Falls back to the
+ *                  cumulative base when there is no earlier tag.
+ */
+export const TAG_DIFF_BASE_MODES = ['cumulative', 'previous-tag'];
+
+/**
+ * Default tag_diff_base. Cumulative keeps a tag run's range identical to a push
+ * run's, so switching an assignment from push to tag triggering changes when
+ * the assessment runs but not what it covers.
+ */
+export const DEFAULT_TAG_DIFF_BASE = 'cumulative';
+
+/**
+ * Name a tag group's PDF and instructor-repository folder are filed under when
+ * its pattern has no filename-safe characters at all (e.g. a bare `**`).
+ */
+export const SUBMISSION_TAG_GROUP_FALLBACK = 'tag';

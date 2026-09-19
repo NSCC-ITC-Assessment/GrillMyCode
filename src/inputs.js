@@ -16,7 +16,46 @@ import {
   DEFAULT_NUM_QUESTIONS,
   DEFAULT_AI_PROVIDER,
   DEFAULT_AI_MODEL,
+  DEFAULT_TAG_DIFF_BASE,
+  TAG_DIFF_BASE_MODES,
 } from './constants.js';
+import { isSafeTagPattern } from './tags.js';
+
+/**
+ * Parses submission_tags. Accepts commas, newlines or both as separators, since
+ * the natural way to write a tag list in YAML is one per line.
+ *
+ * A pattern outside the supported filter syntax is a configuration error, not
+ * something to drop quietly: this list must agree with the workflow's
+ * `on.push.tags`, and silently ignoring an entry would fail every tag run it
+ * should have matched with a less useful message.
+ */
+function readSubmissionTags() {
+  const patterns = (core.getInput('submission_tags') || '')
+    .split(/[,\r\n]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const unsafe = patterns.filter((p) => !isSafeTagPattern(p));
+  if (unsafe.length > 0) {
+    throw new Error(
+      `submission_tags contains unsupported pattern(s): ${unsafe.join(', ')}. Patterns may use ` +
+        'letters, digits and . _ / - plus the wildcards * ** ? + and [ ] character classes; ' +
+        '! negation is not supported.',
+    );
+  }
+  return patterns;
+}
+
+function readTagDiffBase() {
+  const value = (core.getInput('tag_diff_base') || DEFAULT_TAG_DIFF_BASE).trim().toLowerCase();
+  if (!TAG_DIFF_BASE_MODES.includes(value)) {
+    throw new Error(
+      `tag_diff_base must be one of ${TAG_DIFF_BASE_MODES.map((m) => `"${m}"`).join(', ')}; ` +
+        `got "${value}".`,
+    );
+  }
+  return value;
+}
 
 export function readInputs() {
   const excludeStr = core.getInput('additional_exclude_patterns');
@@ -116,6 +155,8 @@ export function readInputs() {
         .map((s) => s.trim())
         .filter(Boolean);
     })(),
+    submissionTags: readSubmissionTags(),
+    tagDiffBase: readTagDiffBase(),
     baseSha: core.getInput('base_sha') || '',
     headSha: core.getInput('head_sha') || '',
     instructorRepoToken: core.getInput('instructor_repo_token') || '',

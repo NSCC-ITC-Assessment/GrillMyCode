@@ -169,6 +169,19 @@ jobs:
           # .classroom50.yaml file is excluded by pattern instead.
           skip_committers: "github-actions[bot]"
 
+          # ── Submission tags (tag-triggered workflows only) ────────────────
+
+          # Tag patterns that mark a submission. Only used when the workflow is
+          # triggered by tags (on.push.tags) — list the same patterns there and
+          # here, or a tag run fails. Each pattern gets its own issue, PDF and
+          # instructor-repository folder. See the Tag Submission example.
+          # submission_tags: "phase1, phase2, complete"
+
+          # What a tag run assesses: "cumulative" (default) — all work to
+          # date; "previous-tag" — only the work since the nearest earlier
+          # submission tag.
+          # tag_diff_base: "cumulative"
+
           # Manually override the base and/or head commit SHA.
           # These take precedence over all automatic SHA resolution.
           # base_sha: ''

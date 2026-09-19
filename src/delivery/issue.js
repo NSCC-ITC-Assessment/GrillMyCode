@@ -1,7 +1,8 @@
 /**
  * Delivery: GitHub Issue
  *
- * Updates any existing open assessment issue for the same branch with the
+ * Updates any existing open assessment issue for the same branch — or, for a
+ * run started by a submission tag, the same submission_tags pattern — with the
  * latest report. If none exists, creates a new one.
  */
 
@@ -50,16 +51,28 @@ export function neutraliseIssueAutoLinks(markdown) {
     .join('');
 }
 
-export async function postIssue({ octokit, ctx, report, branchName, headSha, studentLogin }) {
+export async function postIssue({
+  octokit,
+  ctx,
+  report,
+  branchName,
+  tagPattern,
+  headSha,
+  studentLogin,
+}) {
   // Defang any @mentions / #refs the AI emitted before it reaches the issue.
   report = neutraliseIssueAutoLinks(report);
 
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
-  const branchPart = branchName ? ` (${branchName})` : '';
-  const title = `GrillMyCode Questions${branchPart}`;
+  // A tag run is titled by the pattern it matched, not the tag itself, so every
+  // submit/<timestamp> tag updates one issue while phase1 and phase2 each keep
+  // their own. The "tag:" prefix keeps a pattern from colliding with a branch
+  // of the same name.
+  const groupPart = tagPattern ? ` (tag: ${tagPattern})` : branchName ? ` (${branchName})` : '';
+  const title = `GrillMyCode Questions${groupPart}`;
   const { owner, repo } = ctx.repo;
 
-  // ── Find any existing open assessment issues for this branch ──────────────
+  // ── Find any existing open assessment issues for this branch or tag group ─
   const existing = await octokit.rest.issues.listForRepo({
     owner,
     repo,

@@ -47,12 +47,13 @@ function mutated(octokit, name) {
     .map(([, vars]) => vars.issueId);
 }
 
-function post(octokit, branchName) {
+function post(octokit, branchName, { tagPattern } = {}) {
   return postIssue({
     octokit,
     ctx: { repo: { owner: 'org', repo: 'student-repo' } },
     report: '1. Question?',
     branchName,
+    tagPattern,
     headSha: 'abcdef1234567890',
     studentLogin: 'student',
   });
@@ -129,5 +130,37 @@ describe('postIssue predecessor matching', () => {
     ]);
     expect(await post(octokit, 'main')).toEqual({ number: 1, url: 'https://example.test/1' });
     expect(mutated(octokit, 'deleteIssue')).toEqual([]);
+  });
+});
+
+describe('postIssue on a submission tag run', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  it('titles the issue by the matched pattern, not the tag', async () => {
+    const octokit = fakeOctokit([]);
+    await post(octokit, '', { tagPattern: 'submit/*' });
+    expect(octokit.rest.issues.create).toHaveBeenCalledWith(
+      expect.objectContaining({ title: 'GrillMyCode Questions (tag: submit/*)' }),
+    );
+  });
+
+  it("updates its own group's issue and leaves other groups and branches alone", async () => {
+    const octokit = fakeOctokit([
+      issue(1, 'GrillMyCode Questions (main)'),
+      issue(2, 'GrillMyCode Questions (tag: phase1)'),
+      issue(3, 'GrillMyCode Questions (tag: phase2)'),
+    ]);
+    expect(await post(octokit, '', { tagPattern: 'phase2' })).toEqual({
+      number: 3,
+      url: 'https://example.test/3',
+    });
+    expect(mutated(octokit, 'deleteIssue')).toEqual([]);
+  });
+
+  it('does not collide with a branch named like the pattern', async () => {
+    const octokit = fakeOctokit([issue(1, 'GrillMyCode Questions (phase1)')]);
+    await post(octokit, '', { tagPattern: 'phase1' });
+    expect(mutated(octokit, 'updateIssue')).toEqual([]);
+    expect(octokit.rest.issues.create).toHaveBeenCalled();
   });
 });

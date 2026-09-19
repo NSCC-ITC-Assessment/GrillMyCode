@@ -178,6 +178,14 @@ Use the `instructor_context` input to give the AI assignment-specific instructio
 
 You can also inject the assignment brief or rubric directly into the prompt via `assignment_context` (supports plain text, PDF, and Word files). The [Workflow Wizard](workflow-wizard.mdx) has a Questions step that walks through both of these inputs.
 
+### Which trigger should I use?
+
+Push, submission tag or manual only, depending on when you want questions generated. Push suits short assignments and practice as students work, a submission tag suits finished or staged work, and manual only suits instructor-chosen timing. See [Choosing a Trigger](guides/choosing-a-trigger.md) for a side-by-side comparison.
+
+### Can students trigger the assessment only when they are done?
+
+Yes. Trigger the workflow on a tag instead of a push: the student commits their finished work, then runs `git tag complete && git push origin complete`, and ordinary pushes never start a run. List several tags (e.g. `phase1`, `phase2`) to assess milestones separately — each gets its own issue, PDF and instructor-repository folder. See [Tag Submission](example-workflows/tag-submission.md), or choose **Submission tag or Manual** on the Workflow Wizard's Trigger step.
+
 ### How many questions are generated?
 
 The default is 20. Set `num_questions` to any value between 1 and 50.
@@ -199,7 +207,7 @@ When a new push arrives for the same branch while an earlier run is still going,
 - **A cancelled run may stop part-way.** If an earlier run is cancelled after it has already written some output, the replacement run regenerates and overwrites it, so the final state still reflects the latest push. You may briefly see a cancelled run in the **Actions** tab — this is expected.
 - **AI quota is not spent twice — but Actions minutes are.** The cancelled run stops before it finishes generating, so you are not billed by the AI provider for an assessment that gets thrown away. However, the cancelled run still consumed GitHub Actions minutes for the time it was running before cancellation, and the replacement run consumes its own minutes on top. On public repositories runner minutes are free; on private repositories (including most Classroom 50 repos) they count against your plan's allowance, so rapid repeated pushes will use more minutes than a single run. Consider this when deciding how you'll configure the triggering of your GrillMyCode runs.
 
-The grouping is per workflow **and** per branch (`github.ref`), so pushes to different branches still run independently. If you would rather let an in-progress run finish and queue the newer push instead, set `cancel-in-progress: false` — but note this assesses the older commit first and consumes AI quota for both runs.
+The grouping is per workflow **and** per branch (`github.ref`), so pushes to different branches still run independently. For a [tag-triggered workflow](example-workflows/tag-submission.md) `github.ref` is the tag, so only a re-push of the *same* tag cancels a run — `phase1` and `phase2` pushed together both finish. If you would rather let an in-progress run finish and queue the newer push instead, set `cancel-in-progress: false` — but note this assesses the older commit first and consumes AI quota for both runs.
 
 ---
 
@@ -244,6 +252,17 @@ Yes — it is designed for [Classroom 50](https://github.com/foundation50/classr
 ### What are the `[Classroom 50]` commits in my students' repositories?
 
 Classroom 50 prefixes every commit its own tooling makes with `[Classroom 50]`. In a student assignment repo you'll see the accept-time setup commit, an empty commit that opens the Feedback PR, and — if you later change the assignment's submission mode or rename it — commits authored under your own instructor account. All of them touch only files GrillMyCode already excludes, and the instructor-side ones carry `[skip ci]` so they don't trigger a run. Note that `gh student submit` also uses the prefix (`[Classroom 50] Submit <assignment>`) for the **student's own work**, so the prefix must never be treated as a "not the student" marker. See [Classroom 50's own commits](guides/classroom50.md#classroom-50s-own-commits).
+
+### Can GrillMyCode run when a student uses `gh student submit`?
+
+It depends on the assignment's Classroom 50 **submission type**. On a *tagged commit* assignment, `gh student submit` pushes a `submit/…` tag with the student's own credentials, so a GrillMyCode workflow triggered on `submit/*` runs for every submission. On an *every push* assignment it pushes no tag of its own — Classroom 50 tags the commit afterwards using `github.token`, which never starts another workflow — so trigger on the push instead, or ask students to push an instructor-named tag. See [Classroom 50 submission modes](example-workflows/tag-submission.md#classroom-50-submission-modes).
+
+### Why did my tag-triggered run fail?
+
+A run started by a tag fails, rather than assessing anything, in two cases. The run's log names which one applied:
+
+- **The tag matches nothing in `submission_tags`.** The workflow's `on.push.tags` and the `submission_tags` input have drifted apart — list the same patterns in both.
+- **The tagged commit is not on the default branch.** Merge the work into the default branch, re-tag the merged commit with `git tag -f <name>`, and push it with `git push --force origin <name>`.
 
 ### My empty-repository assignment produced no questions. Why?
 

@@ -29,6 +29,42 @@ export function instructorRepoActive(cfg) {
   return cfg.usesClassroom50 === true && cfg.instructorRepoEnabled;
 }
 
+// ── Submission tags ──────────────────────────────────────────────────────────
+
+/** Classroom 50's canonical submission tag namespace. */
+export const CLASSROOM50_SUBMIT_TAG = 'submit/*';
+
+/** True when the workflow is triggered by submission tags rather than pushes. */
+export function isTagTrigger(cfg) {
+  return cfg.triggerEvent === 'tag+workflow_dispatch';
+}
+
+/**
+ * The tag patterns the workflow fires on: the instructor's own list, then
+ * submit/* when the Classroom 50 preset is ticked. Order is kept because the
+ * action files an overlapping tag under the first pattern it matches.
+ */
+export function submissionTagList(cfg) {
+  const typed = (cfg.submissionTags || '')
+    .split(/[,\r\n]+/)
+    .map((p) => p.trim())
+    .filter(Boolean);
+  const all = cfg.classroom50SubmitTags ? [...typed, CLASSROOM50_SUBMIT_TAG] : typed;
+  return [...new Set(all)];
+}
+
+// Mirrors isSafeTagPattern in the action's src/tags.js — the action rejects
+// anything else, so the wizard must not emit it. Keep the two in step.
+const TAG_PATTERN_CHARSET_RE = /^[A-Za-z0-9._/*?+[\]-]+$/;
+const STACKED_QUANTIFIER_RE = /^[?+]|[*?+]\+/;
+
+/** Patterns from the instructor's list that the action would reject. */
+export function invalidSubmissionTags(cfg) {
+  return submissionTagList(cfg).filter(
+    (p) => !TAG_PATTERN_CHARSET_RE.test(p) || STACKED_QUANTIFIER_RE.test(p),
+  );
+}
+
 const DEFAULTS = {
   aiProvider: 'openrouter',
   aiModel: 'google/gemini-3.5-flash-lite',
@@ -45,6 +81,7 @@ const DEFAULTS = {
   includeInitialCommit: false,
   skipCommitters: 'github-actions[bot]',
   instructorRepoEnabled: false,
+  tagDiffBase: 'cumulative',
   baseSha: '',
   headSha: '',
 };
@@ -149,6 +186,10 @@ function dispatchInputLines(cfg, overrideKeys) {
       lines.push('        type: choice');
       lines.push("        options: ['false', 'true']");
       lines.push(`        default: ${yamlSingle(value === 'true' ? 'true' : 'false')}`);
+    } else if (meta.type === 'choice') {
+      lines.push('        type: choice');
+      lines.push(`        options: [${meta.options.map(yamlSingle).join(', ')}]`);
+      lines.push(`        default: ${yamlSingle(meta.options.includes(value) ? value : meta.options[0])}`);
     } else {
       lines.push('        required: false');
       lines.push(`        default: ${yamlSingle(value)}`);
@@ -160,7 +201,8 @@ function dispatchInputLines(cfg, overrideKeys) {
 export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   const lines = [];
 
-  const overrideKeys = resolveDispatchOverrides(cfg.dispatchOverrides);
+  const tagTrigger = isTagTrigger(cfg);
+  const overrideKeys = resolveDispatchOverrides(cfg.dispatchOverrides, { tagTrigger });
   const overridden = new Set(overrideKeys);
 
   /**
@@ -206,6 +248,13 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
     }
   }
 
+  if (tagTrigger) {
+    // Only tags fire the workflow — no branches: line, so an ordinary push
+    // never starts a run. Keep this list identical to submission_tags below.
+    lines.push('  push:');
+    lines.push(`    tags: [${submissionTagList(cfg).map((t) => `"${t}"`).join(', ')}]`);
+  }
+
   lines.push('  workflow_dispatch:');
   if (overrideKeys.length > 0) {
     dispatchInputLines(cfg, overrideKeys).forEach((l) => lines.push(l));
@@ -216,8 +265,13 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
   // ── concurrency ─────────────────────────────────────────────────────────────
   // Kept identical to the concurrency comment used by every workflow example in
   // the docs, so a wizard-generated file and a copied example look the same.
-  lines.push('# A new push cancels any run still in progress for the same branch,');
-  lines.push('# so only the latest commit is ever assessed (see FAQ).');
+  if (tagTrigger) {
+    lines.push('# Re-pushing a tag cancels any run still in progress for that tag,');
+    lines.push('# so only its latest commit is ever assessed (see FAQ).');
+  } else {
+    lines.push('# A new push cancels any run still in progress for the same branch,');
+    lines.push('# so only the latest commit is ever assessed (see FAQ).');
+  }
   lines.push('# Do not modify this setting unless you have a compelling reason to.');
   lines.push('concurrency:');
   lines.push('  group: grillmycode-${{ github.workflow }}-${{ github.ref }}');
@@ -352,6 +406,14 @@ export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
     lines.push('          # Classroom 50 assignment repositories only — any other repository');
     lines.push('          # skips instructor repository delivery with a warning.');
     lines.push(`          instructor_repo_token: ${secretRef(tokenSecret)}`);
+  }
+
+  // ── Submission tags ────────────────────────────────────────────────────────
+  if (tagTrigger) {
+    lines.push('          # Must list the same patterns as on.push.tags above — a tag that');
+    lines.push('          # fires the workflow but is missing here fails the run.');
+    lines.push(`          submission_tags: ${yamlStr(submissionTagList(cfg).join(', '))}`);
+    pushInput('tag_diff_base', 'tagDiffBase', yamlStr(cfg.tagDiffBase));
   }
 
   // ── SHA overrides ──────────────────────────────────────────────────────────
