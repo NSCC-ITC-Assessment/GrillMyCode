@@ -8,7 +8,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 ## Wizard Steps (7 total)
 
-1. **Trigger** — Which event triggers the workflow (pull_request, push, workflow_dispatch, or combined)
+1. **Trigger** — Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the tag names (`submissionTags`), an off-by-default Classroom 50 `submit/*` preset (`classroom50SubmitTags`), and `tagDiffBase`
 2. **AI Provider** — Provider selection + conditional API key secret name / Azure endpoint
 3. **Questions** — num_questions, include_answers, instructor_context, assignment_context
 4. **Delivery** — Post targets (PR comment, issue, discussion, instructor repo)
@@ -22,9 +22,12 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 ```
 {
-  triggerEvent: 'pull_request' | 'push' | 'workflow_dispatch' | 'push+workflow_dispatch',
+  triggerEvent: 'pull_request' | 'push' | 'workflow_dispatch' | 'push+workflow_dispatch' | 'tag+workflow_dispatch',
   prTypes: ['opened', 'synchronize'],    // pull_request only
   pushBranches: ['main'],                // push only
+  submissionTags: '',                    // tag only — comma/newline-separated patterns
+  classroom50SubmitTags: false,          // tag only — appends submit/* to the list
+  tagDiffBase: 'cumulative',             // tag only — 'cumulative' | 'previous-tag'
 
   aiProvider: 'openrouter',                  // only supported value
   aiModel: 'google/gemini-3.5-flash-lite',
@@ -73,6 +76,13 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   - `issues: write` — if postIssue
   - `discussions: write` — if postDiscussion
 - `on:` block varies by triggerEvent
+- Tag trigger (`tag+workflow_dispatch`): `on.push.tags` lists `submissionTagList(cfg)` with **no**
+  `branches:` line, and the step always emits `submission_tags` with the same list (the action fails
+  a tag run whose tag the input does not match). `tag_diff_base` is emitted only in tag mode, and
+  only when non-default or exposed as a dispatch override. Patterns are validated against the same
+  charset as the action's `isSafeTagPattern` (`src/tags.js`) before the step can be left
+- `tag_diff_base` is a `tagTriggerOnly` dispatch override (`type: 'choice'`): it is offered on the
+  Trigger step, and emitted, only in tag mode — `resolveDispatchOverrides(selected, { tagTrigger })`
 - `api_key` always emitted — OpenRouter requires it and the action fails without it
 - `discussion_category` only emitted if postDiscussion
 - `instructor_repo_token` only emitted if `usesClassroom50 === true` and instructorRepoEnabled
@@ -118,7 +128,9 @@ snapshot — never edit it directly.
 1. `cd docs-site && pnpm start` — site starts without build errors
 2. Navigate to `/workflow-wizard` — wizard renders with correct step 1
 3. Step through all 7 steps — Back/Next navigation works, progress bar updates
-4. Select each trigger type — `on:` YAML block changes correctly
+4. Select each trigger type — `on:` YAML block changes correctly; in tag mode `on.push.tags` and
+   `submission_tags` carry the same list, the step blocks with no tags or an unsupported pattern,
+   and switching back to push drops `tag_diff_base` from both the output and the override list
 5. Choose a pre-defined model, then "Own Choice" — the custom model ID field appears and validates `provider/model` format
 6. Clear the API key secret name — the step blocks with a validation message; `api_key` is always present in the output
 7. Enable discussion — discussion_category appears; enable instructor repo — instructor_repo_token appears

@@ -12,7 +12,9 @@
  *
  * The file is written to {studentLogin}/questions.md inside the repository,
  * alongside {studentLogin}/raw-ai-output.md — the model's unprocessed reply,
- * filed for diagnosis. The repository is named
+ * filed for diagnosis. A run started by a submission tag writes both one level
+ * down, in {studentLogin}/{tagGroup}/, so each milestone's assessment is kept
+ * rather than replacing the last. The repository is named
  * {assignmentName}-grillmycode-instructor and lives in the same organization as
  * the student repositories.
  *
@@ -373,6 +375,9 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * @param {string}  params.owner               - GitHub org/user owning the instructor repo.
  * @param {string}  params.instructorRepoName  - Instructor repository name (no owner prefix).
  * @param {string}  params.studentLogin        - GitHub login of the assessed student.
+ * @param {string} [params.tagGroup]           - Filename-safe submission tag group, for a
+ *                                               tag run; files the assessment in a
+ *                                               subfolder of the student's folder.
  * @param {string}  params.content             - Markdown report content to write.
  * @param {string}  params.headSha             - Head commit SHA (used in commit message).
  * @param {string} [params.rawOutput]          - Verbatim model reply, filed beside the
@@ -383,6 +388,7 @@ export async function deliverToInstructorRepo({
   owner,
   instructorRepoName,
   studentLogin,
+  tagGroup = '',
   content,
   headSha,
   rawOutput,
@@ -393,25 +399,27 @@ export async function deliverToInstructorRepo({
   // by the current workflow rather than whatever the repository was seeded with.
   await syncInstructorRepoFiles(octokit, owner, instructorRepoName);
 
-  const filePath = `${studentLogin}/questions.md`;
+  const folder = tagGroup ? `${studentLogin}/${tagGroup}` : studentLogin;
+  const label = tagGroup ? `${studentLogin} (${tagGroup})` : studentLogin;
+  const filePath = `${folder}/questions.md`;
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
-  const message = `chore: update assessment for ${studentLogin} at ${shortHead}`;
+  const message = `chore: update assessment for ${label} at ${shortHead}`;
 
   // Before questions.md, for two reasons. The quiz workflow triggers on
-  // `*/questions.md` alone, so this commit starts nothing; landing it first
+  // questions.md files alone, so this commit starts nothing; landing it first
   // keeps it clear of the quiz run that the questions.md commit kicks off and
   // of the packages that run commits back. And a failure here must not cost
   // the assessment, which is the write that matters — hence the warning rather
   // than a throw, matching syncInstructorRepoFiles above.
   if (rawOutput) {
-    const rawPath = `${studentLogin}/raw-ai-output.md`;
+    const rawPath = `${folder}/raw-ai-output.md`;
     try {
       await writeFileWithRetry({
         octokit,
         owner,
         repo: instructorRepoName,
         path: rawPath,
-        message: `chore: record raw AI output for ${studentLogin} at ${shortHead}`,
+        message: `chore: record raw AI output for ${label} at ${shortHead}`,
         content: rawOutput,
         skipIfUnchanged: true,
       });

@@ -37,13 +37,20 @@ When `main.js` runs, it follows this sequence:
 readInputs()
     │  Reads all INPUT_* environment variables set by action.yml
     │
+resolveTagName() → resolveSubmissionTag()
+    │  Only on a run started by a tag (a tag push, or a manual run on a tag)
+    │  Matches the tag against submission_tags; no match fails the run
+    │  The matched pattern names the delivery group (issue, PDF, instructor folder)
+    │
 resolveSHAs()
     │  Determines baseSha and headSha from the event context
-    │  Handles: push, workflow_dispatch
+    │  Handles: push, workflow_dispatch, and tag runs (head peeled to its commit)
     │  Applies include_initial_commit override when enabled
+    │  Applies tag_diff_base: previous-tag on a tag run
     │
-resolveBranch()
+resolveBranch()  — or, on a tag run, assertOnDefaultBranch()
     │  Extracts the branch name from the event payload or GITHUB_REF
+    │  A tag run instead fails unless the tagged commit is on the default branch
     │
 resolveSubmissionIdentity()
     │  Lists the repository's direct collaborators (one API call)
@@ -160,6 +167,8 @@ Determines the base and head SHAs for the diff. Handles two event types:
 
 After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for Classroom 50 to exclude starter template files.
 
+On a run started by a submission tag (`{ tagName }` passed as the fourth argument), the head is the tagged commit, peeled with `git rev-parse <sha>^{commit}` because an annotated tag's push names the tag object. With `tag_diff_base: previous-tag`, the base then moves to the nearest strict ancestor carrying a tag that matches any `submission_tags` pattern (`pickPreviousSubmissionTag` in `src/tags.js`); with none, the base above stands. The chosen tag is returned as `previousTag`.
+
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
 
 ### `reportEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePatterns, inputs })`
@@ -185,7 +194,7 @@ Validates that a SHA is 4–64 hex characters before passing it to a `git` comma
 
 ### `safeFilePart(str)`
 
-Returns a filesystem-safe version of a string for use in filenames. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename from the repository name (e.g. `grill-my-code-assignment-1-jsmith.pdf`).
+Returns a filesystem-safe version of a string for use in filenames. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename from the repository name (e.g. `grill-my-code-assignment-1-jsmith.pdf`), and — through `tagGroupSlug()` — a tag group's PDF suffix and instructor-repository folder from its `submission_tags` pattern (`submit/*` → `submit`).
 
 ### `callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature })`
 
@@ -205,7 +214,7 @@ Transient failures are retried automatically up to `retryMaxAttempts` total atte
 
 Uses an update-first strategy:
 
-1. List open assessment issues whose title exactly matches this branch's (`GrillMyCode Questions (<branch>)`, or `GrillMyCode Questions` when no branch is known)
+1. List open assessment issues whose title exactly matches this branch's (`GrillMyCode Questions (<branch>)`, or `GrillMyCode Questions` when no branch is known) — or, on a tag run, this tag group's (`GrillMyCode Questions (tag: <pattern>)`)
 2. If one exists, update its title and body in-place (preserving issue number, URL, and comment history). Extra duplicates are deleted via the `deleteIssue` GraphQL mutation (non-fatal — needs admin rights, so a refused delete warns and leaves the duplicate in place).
 3. If none exists, create a fresh issue, then pin it via the `pinIssue` GraphQL mutation (non-fatal — silently warns if the 3-issue pin limit is already reached).
 

@@ -26,6 +26,8 @@ export function formatReport({
   provider,
   model,
   branchName,
+  tagName,
+  previousTagName,
   assignmentContextFiles,
   contextSummary,
   studentLogin,
@@ -41,6 +43,14 @@ export function formatReport({
 
   const isDefaultBranch = !branchName || branchName === 'main' || branchName === 'master';
   const branchNote = isDefaultBranch ? '' : `> **Branch:** \`${branchName}\`\n`;
+
+  // A backtick is legal in a tag name and would close the code span early.
+  const refCode = (name) => `\`${name.replace(/`/g, "'")}\``;
+  const tagNote = tagName
+    ? `> **Submission tag:** ${refCode(tagName)}` +
+      (previousTagName ? ` (changes since ${refCode(previousTagName)})` : '') +
+      '\n'
+    : '';
 
   const contextNote =
     assignmentContextFiles && assignmentContextFiles.length > 0
@@ -68,6 +78,7 @@ export function formatReport({
     sourceRepoNote,
     `> **Commits reviewed:** \`${shortBase}\` → \`${shortHead}\``,
     branchNote,
+    tagNote,
     `> **Code Files Assessed:** ${fileList}`,
     contextNote,
     instructorContextNote,

@@ -12,7 +12,12 @@ import StepFileOptions from './steps/StepFileOptions';
 import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
 import { DEFAULT_DISPATCH_OVERRIDES } from './dispatchInputs';
-import { instructorRepoActive } from './generateYaml';
+import {
+  instructorRepoActive,
+  invalidSubmissionTags,
+  isTagTrigger,
+  submissionTagList,
+} from './generateYaml';
 
 const STEPS = [
   { label: 'AI',         title: 'Which model should GrillMyCode use?',                   subtitle: 'Select the OpenRouter model that will generate the comprehension questions.',                              Component: StepAIProvider },
@@ -30,6 +35,11 @@ const INITIAL_CONFIG = {
   triggerEvent: 'workflow_dispatch',
   branchMode: 'specify',
   pushBranches: ['main', 'master'],
+  // Tag trigger: the instructor's own tag names, the Classroom 50 submit/*
+  // preset (off by default — see StepTrigger), and the diff base for a tag run.
+  submissionTags: '',
+  classroom50SubmitTags: false,
+  tagDiffBase: 'cumulative',
   // Action inputs additionally exposed as workflow_dispatch inputs, so a manual
   // run can change them from the Actions tab. Copied, not referenced, so the
   // exported default list is never mutated through wizard state.
@@ -78,6 +88,15 @@ function getStepError(stepIndex, cfg) {
     }
     if (!cfg.apiKeySecret || !cfg.apiKeySecret.trim()) {
       return 'Please enter the name of the secret holding your OpenRouter API key.';
+    }
+  }
+  if (stepIndex === 4 && isTagTrigger(cfg)) {
+    if (submissionTagList(cfg).length === 0) {
+      return 'Please enter at least one submission tag name, or tick the Classroom 50 option, before continuing.';
+    }
+    const invalid = invalidSubmissionTags(cfg);
+    if (invalid.length > 0) {
+      return `Unsupported tag pattern(s): ${invalid.join(', ')}. Use letters, digits and . _ / - plus the wildcards * ? + and [ ].`;
     }
   }
   if (stepIndex === 6) {

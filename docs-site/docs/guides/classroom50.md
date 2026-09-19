@@ -87,6 +87,15 @@ Add this file to your Classroom 50 assignment's **template repository** (see [As
 
 The trigger fires on every push to `main` or `master` — whether the student pushes via `gh student submit` or a plain `git push`. Both paths are treated identically.
 
+## Assessing submissions instead of every push
+
+GrillMyCode can instead run only when a student says their work is done, by pushing a tag — see [Tag Submission](../example-workflows/tag-submission.md). How that fits with Classroom 50 depends on the assignment's **submission type**:
+
+- **Tagged commit** — Classroom 50 grades only when a `submit/*` tag is pushed, and `gh student submit` pushes one (`submit/<UTC-timestamp>-<short-sha>`) with every submission, using the student's own credentials. Trigger GrillMyCode on `submit/*` and list it in `submission_tags`, and every submission is assessed; all of them share one assessment issue. The Workflow Wizard's **Also run on Classroom 50 submissions** option does this for you.
+- **Every push** (the default) — Classroom 50's runner tags each graded push itself, but it pushes those tags with the workflow's `github.token`, and GitHub never starts another workflow from such a push. A GrillMyCode workflow triggered on `submit/*` therefore **never runs** on these assignments. Use the push trigger above, or ask students to push a tag you name.
+
+Classroom 50 **milestone tags** (names such as `phase1` or `complete`, set on the assignment) work with either submission type. The student pushes them with plain git — `git tag phase1 && git push origin phase1` — so if you list the same names in GrillMyCode's `on.push.tags` and `submission_tags`, one push both grades and grills that milestone, and each milestone keeps its own assessment.
+
 ## Including the initial commit
 
 Set `include_initial_commit: 'true'` to include the initial commit's eligible files in the diff — the base is pinned to the empty tree regardless of event type, so all files from the very beginning of history are eligible to be assessed.

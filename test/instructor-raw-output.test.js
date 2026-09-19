@@ -35,12 +35,13 @@ function fakeOctokit({ failPath } = {}) {
   };
 }
 
-function deliver(octokit, { rawOutput } = {}) {
+function deliver(octokit, { rawOutput, tagGroup } = {}) {
   return deliverToInstructorRepo({
     octokit,
     owner: 'org',
     instructorRepoName: 'assignment-grillmycode-instructor',
     studentLogin: 'student',
+    tagGroup,
     content: '## GrillMyCode\n\n1. Question?',
     headSha: 'abcdef1234567890',
     rawOutput,
@@ -79,6 +80,16 @@ describe('raw AI output delivery', () => {
     expect(core.warning).toHaveBeenCalledWith(
       expect.stringContaining('Could not write the raw AI output'),
     );
+  });
+
+  it("files a tag run's copies in the tag group's subfolder", async () => {
+    const octokit = fakeOctokit();
+    await deliver(octokit, { rawOutput: 'verbatim model reply', tagGroup: 'phase1' });
+
+    expect(studentWrites(octokit)).toEqual([
+      'student/phase1/raw-ai-output.md',
+      'student/phase1/questions.md',
+    ]);
   });
 
   it('propagates a failure of the assessment write itself', async () => {

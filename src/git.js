@@ -117,3 +117,61 @@ export function getDiffStat(baseSha, headSha, files) {
     })
     .filter((entry) => entry.filepath);
 }
+
+/**
+ * Resolves a SHA to the commit it names, peeling an annotated tag object to
+ * the commit it tags. A lightweight tag's SHA is already the commit and passes
+ * through unchanged.
+ */
+export function peelToCommit(sha) {
+  return git('rev-parse', '--verify', `${sha}^{commit}`).trim();
+}
+
+/**
+ * True when `ancestor` is reachable from `descendant` (a commit counts as its
+ * own ancestor). `git merge-base --is-ancestor` answers through its exit code —
+ * 1 means "no" and anything else is a real error — so it cannot go through
+ * git(), which treats every non-zero exit as a failure.
+ */
+export function isAncestor(ancestor, descendant) {
+  const result = spawnSync('git', ['merge-base', '--is-ancestor', ancestor, descendant], {
+    encoding: 'utf-8',
+  });
+  if (result.error) throw result.error;
+  if (result.status === 0) return true;
+  if (result.status === 1) return false;
+  throw new Error(`git merge-base failed:\n${result.stderr}`);
+}
+
+/** True when `ref` resolves to a commit in the local repository. */
+export function refExists(ref) {
+  const result = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], {
+    encoding: 'utf-8',
+  });
+  return result.status === 0;
+}
+
+/**
+ * Lists every tag in the repository as `[{ name, commit }]`, with annotated
+ * tags peeled to the commit they point at. `%(*objectname)` is the peeled
+ * target and is empty for a lightweight tag, whose own object is the commit.
+ */
+export function listTags() {
+  return git(
+    'for-each-ref',
+    '--format=%(refname:strip=2)%00%(objectname)%00%(*objectname)',
+    'refs/tags',
+  )
+    .split('\n')
+    .filter(Boolean)
+    .map((line) => {
+      const [name = '', object = '', peeled = ''] = line.split('\0');
+      return { name, commit: peeled || object };
+    })
+    .filter((tag) => tag.name && tag.commit);
+}
+
+/** Commits reachable from `headSha`, nearest first. */
+export function listAncestors(headSha) {
+  return git('rev-list', '--topo-order', headSha).split('\n').filter(Boolean);
+}

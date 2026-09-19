@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
 import styles from '../styles.module.css';
 import {
-  DISPATCH_OVERRIDES,
   MAX_DISPATCH_INPUTS,
+  availableDispatchOverrides,
   resolveDispatchOverrides,
 } from '../dispatchInputs';
+import { CLASSROOM50_SUBMIT_TAG, isTagTrigger } from '../generateYaml';
 
 const TRIGGERS = [
   {
@@ -13,17 +14,24 @@ const TRIGGERS = [
     description: 'Run whenever code lands on the default branch — direct push or pull request merge — and allow manual triggering from the Actions tab.',
   },
   {
+    value: 'tag+workflow_dispatch',
+    label: 'Submission tag or Manual',
+    description: 'Run only when a student pushes a tag you name (e.g. complete) to say their work is done, and allow manual triggering from the Actions tab. Ordinary pushes do not run it.',
+  },
+  {
     value: 'workflow_dispatch',
     label: 'Manual only',
     description: 'Run only when triggered manually from the Actions tab.',
   },
 ];
 
-export default function StepTrigger({ cfg, onChange }) {
+export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
   const showBranchOption = cfg.triggerEvent === 'push+workflow_dispatch';
   const branchMode = cfg.branchMode || 'specify';
+  const tagTrigger = isTagTrigger(cfg);
 
-  const selected = resolveDispatchOverrides(cfg.dispatchOverrides);
+  const catalogue = availableDispatchOverrides({ tagTrigger });
+  const selected = resolveDispatchOverrides(cfg.dispatchOverrides, { tagTrigger });
   const selectedSet = new Set(selected);
   const atCap = selected.length >= MAX_DISPATCH_INPUTS;
 
@@ -37,12 +45,19 @@ export default function StepTrigger({ cfg, onChange }) {
     const next = checked
       ? [...selected, key]
       : selected.filter((k) => k !== key);
-    onChange({ dispatchOverrides: resolveDispatchOverrides(next) });
+    onChange({ dispatchOverrides: resolveDispatchOverrides(next, { tagTrigger }) });
   }
 
   return (
     <div>
       <div className={styles.fieldGroup}>
+        <span className={styles.hint} style={{ marginBottom: '0.75rem' }}>
+          Not sure which to pick? See{' '}
+          <a href={`${docsBase}/guides/choosing-a-trigger`} target="_blank" rel="noopener noreferrer">
+            Choosing a Trigger
+          </a>{' '}
+          for when each option fits.
+        </span>
         <div className={styles.radioGroup}>
           {TRIGGERS.map((t) => (
             <label key={t.value} className={styles.radioLabel}>
@@ -124,6 +139,92 @@ export default function StepTrigger({ cfg, onChange }) {
         </div>
       )}
 
+      {tagTrigger && (
+        <div className={styles.subField}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Submission tag names</label>
+            <span className={styles.hint}>
+              One per line or comma-separated. A student submits by tagging their finished commit
+              and pushing the tag, e.g. <code>git tag complete &amp;&amp; git push origin complete</code>.
+              Each name gets its own assessment issue, PDF and instructor-repository folder, so
+              milestones such as <code>phase1</code> and <code>phase2</code> are kept apart.
+              Wildcards (<code>*</code>, <code>**</code>, <code>?</code>, <code>+</code>,{' '}
+              <code>[0-9]</code>) are allowed; every tag matching one pattern shares that
+              pattern's issue. The tagged commit must be on the default branch, or the run fails.
+            </span>
+            <textarea
+              className={styles.textarea}
+              rows={3}
+              value={cfg.submissionTags || ''}
+              onChange={(e) => onChange({ submissionTags: e.target.value })}
+              placeholder={'complete'}
+            />
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={!!cfg.classroom50SubmitTags}
+                onChange={(e) => onChange({ classroom50SubmitTags: e.target.checked })}
+              />
+              <span>
+                <strong>
+                  Also run on Classroom 50 submissions (<code>{CLASSROOM50_SUBMIT_TAG}</code>)
+                </strong>
+                <div className={styles.radioDescription}>
+                  For Classroom 50 assignments whose submission type is <em>tagged commit</em>:{' '}
+                  <code>gh student submit</code> pushes a <code>submit/…</code> tag with every
+                  submission, so each one is assessed and they all share one issue. Leave this
+                  unticked for <em>every push</em> assignments — Classroom 50 creates those
+                  tags itself, in a way that never starts another workflow, so they would not
+                  trigger GrillMyCode anyway.
+                </div>
+              </span>
+            </label>
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>What should a later tag assess?</label>
+            <div className={styles.radioGroup}>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="tagDiffBase"
+                  value="cumulative"
+                  checked={(cfg.tagDiffBase || 'cumulative') === 'cumulative'}
+                  onChange={() => onChange({ tagDiffBase: 'cumulative' })}
+                />
+                <span>
+                  <strong>All work to date</strong> <code>cumulative</code>
+                  <div className={styles.radioDescription}>
+                    Every tag assesses everything the student has written, exactly as a push-triggered
+                    run would.
+                  </div>
+                </span>
+              </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="tagDiffBase"
+                  value="previous-tag"
+                  checked={cfg.tagDiffBase === 'previous-tag'}
+                  onChange={() => onChange({ tagDiffBase: 'previous-tag' })}
+                />
+                <span>
+                  <strong>Only work since the previous tag</strong> <code>previous-tag</code>
+                  <div className={styles.radioDescription}>
+                    <code>phase2</code> assesses only what changed since <code>phase1</code> — the
+                    nearest earlier commit carrying any of the tags above. The first tag assesses
+                    all work to date.
+                  </div>
+                </span>
+              </label>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className={styles.fieldGroup} style={{ marginTop: '1.75rem' }}>
         <button
           type="button"
@@ -160,7 +261,7 @@ export default function StepTrigger({ cfg, onChange }) {
           </span>
 
           <div className={styles.checkboxGroup} style={{ marginTop: '0.75rem' }}>
-            {DISPATCH_OVERRIDES.map((o) => {
+            {catalogue.map((o) => {
               const checked = selectedSet.has(o.key);
               const disabled = !checked && atCap;
               return (
@@ -200,7 +301,7 @@ export default function StepTrigger({ cfg, onChange }) {
                 10-input cap — measuring against a number larger than the list
                 reads as though options are hidden. The cap only becomes worth
                 mentioning if the catalogue ever grows past it. */}
-            {selected.length} of {DISPATCH_OVERRIDES.length} selected.{' '}
+            {selected.length} of {catalogue.length} selected.{' '}
             {atCap ? (
               <>
                 You have reached GitHub's limit — a workflow declaring more than{' '}

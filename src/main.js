@@ -3,7 +3,7 @@
  *
  * Orchestrates the full assessment pipeline:
  *   1. Read and validate GitHub Actions inputs
- *   2. Resolve commit SHAs and branch name from the event context
+ *   2. Resolve commit SHAs and the branch or submission tag from the event context
  *   3. Collect changed files, filter them, strip comments, and build the prompt
  *   4. Call the configured AI provider to generate comprehension questions
  *   5. Generate a PDF of the assessment and attach it to the gmc-assessments release
@@ -23,7 +23,14 @@ import {
   INSTRUCTOR_REPO_SUFFIX,
 } from './constants.js';
 import { readInputs } from './inputs.js';
-import { resolveSHAs, resolveBranch, safeFilePart } from './context.js';
+import {
+  assertOnDefaultBranch,
+  resolveBranch,
+  resolveSHAs,
+  resolveSubmissionTag,
+  resolveTagName,
+  safeFilePart,
+} from './context.js';
 import { resolveSubmissionIdentity } from './submission-identity.js';
 import { getChangedFiles, getDiff, getDiffStat } from './git.js';
 import {
@@ -87,6 +94,12 @@ function createRunState() {
     studentLogin: '',
     identityError: '',
     branchName: '',
+    // Set on a run started by a submission tag: the tag itself, the
+    // submission_tags pattern it matched (which names its delivery group), and
+    // the earlier tag the diff started from under tag_diff_base: previous-tag.
+    tagName: '',
+    tagPattern: '',
+    previousTagName: '',
     baseSha: '',
     headSha: '',
 
@@ -121,6 +134,12 @@ function createRunState() {
 const fmtNum = (n) => (typeof n === 'number' ? n.toLocaleString('en-US') : '—');
 
 const shortSha = (sha) => (sha ? sha.substring(0, GIT_SHA_SHORT_LENGTH) : '');
+
+/**
+ * Renders a git ref name as an inline code span. A backtick is legal in a ref
+ * name and would close the span early, so it is swapped for a lookalike quote.
+ */
+const refCode = (name) => `\`${name.replace(/`/g, "'")}\``;
 
 /**
  * Links a SHA to its commit page. The empty tree SHA (used as the base when
@@ -192,7 +211,13 @@ function renderOverview(state) {
           ? `\`${state.submitter}\``
           : '—',
     ],
-    ['Branch', state.branchName ? `\`${state.branchName}\`` : '—'],
+    state.tagName
+      ? [
+          'Submission tag',
+          `${refCode(state.tagName)} (group ${refCode(state.tagPattern)})` +
+            (state.previousTagName ? ` · changes since ${refCode(state.previousTagName)}` : ''),
+        ]
+      : ['Branch', state.branchName ? `\`${state.branchName}\`` : '—'],
     [
       'Commits assessed',
       `${commitLink(state.repoSlug, state.baseSha)} → ${commitLink(state.repoSlug, state.headSha)}`,
@@ -296,6 +321,7 @@ function renderConfiguration(state) {
       'Initial commit assessed',
       `${i.includeInitialCommit ? '**yes**' : 'no'}${flag(i.includeInitialCommit)}`,
     ],
+    ...(state.tagName ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
     ['Manual SHA override', i.baseSha || i.headSha ? `**in effect**${flag(true)}` : 'none'],
     [
       'Exclude patterns',
@@ -542,18 +568,48 @@ async function run() {
       core.setSecret(inputs.instructorRepoToken);
     }
 
+    // ── Resolve the submission tag, if a tag started this run ───────────────
+    // A tag run files its assessment under the submission_tags pattern it
+    // matched rather than under a branch, so the pattern is settled before
+    // anything else and a mismatch fails the run before any work is done.
+    const tagName = resolveTagName(ctx);
+    let tagSlug = '';
+    if (tagName) {
+      if (ctx.eventName === 'push' && ctx.payload.deleted) {
+        // Deleting a tag is not a submission, and there is no commit to assess.
+        state.handled = true;
+        core.info(`Tag "${tagName}" was deleted — nothing to assess.`);
+        return;
+      }
+      const submissionTag = resolveSubmissionTag(tagName, inputs.submissionTags);
+      state.tagName = tagName;
+      state.tagPattern = submissionTag.pattern;
+      tagSlug = submissionTag.slug;
+      core.info(
+        `Submission tag: ${tagName} (matched submission_tags pattern ${submissionTag.pattern})`,
+      );
+    }
+
     // ── Resolve the commit range ────────────────────────────────────────────
-    const { baseSha, headSha } = await resolveSHAs(ctx, octokit, inputs);
+    const { baseSha, headSha, previousTag } = await resolveSHAs(ctx, octokit, inputs, {
+      tagName,
+    });
     state.baseSha = baseSha;
     state.headSha = headSha;
+    state.previousTagName = previousTag?.name ?? '';
     core.info(
       `Commit range: ${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)}..${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}`,
     );
 
-    // ── Resolve the branch name ─────────────────────────────────────────────
-    const branchName = resolveBranch(ctx);
+    // ── Resolve the branch name, or check the tag is on the default branch ──
+    let branchName = '';
+    if (tagName) {
+      await assertOnDefaultBranch(ctx, octokit, headSha, tagName);
+    } else {
+      branchName = resolveBranch(ctx);
+      core.info(`Branch: ${branchName}`);
+    }
     state.branchName = branchName;
-    core.info(`Branch: ${branchName}`);
 
     // ── Resolve the submission identity ─────────────────────────────────────
     // The assignment and submitter come from the repository name and its direct
@@ -773,6 +829,8 @@ async function run() {
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       branchName,
+      tagName,
+      previousTagName: state.previousTagName,
       assignmentContextFiles,
       contextSummary,
       studentLogin: submitter,
@@ -782,7 +840,9 @@ async function run() {
     // ── Generate PDF and upload to rolling release ───────────────────────────
     // Named after the repository, which for a Classroom 50 repo already carries
     // the assignment and student, so the asset name never depends on identity.
-    const pdfFilename = `grill-my-code-${safeFilePart(ctx.repo.repo)}.pdf`;
+    // A tag run adds its group, so each milestone keeps its own PDF rather than
+    // replacing the last one.
+    const pdfFilename = `grill-my-code-${safeFilePart(ctx.repo.repo)}${tagSlug ? `-${tagSlug}` : ''}.pdf`;
     let pdfUrl = null;
     let pdfBuffer = null;
     try {
@@ -819,6 +879,8 @@ async function run() {
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       branchName,
+      tagName,
+      previousTagName: state.previousTagName,
       assignmentContextFiles,
       contextSummary,
       studentLogin: submitter,
@@ -859,6 +921,7 @@ async function run() {
       ctx,
       report: safeIssueBody,
       branchName,
+      tagPattern: state.tagPattern,
       headSha,
       studentLogin,
     });
@@ -905,6 +968,8 @@ async function run() {
         provider: inputs.aiProvider,
         model: inputs.aiModel,
         branchName,
+        tagName,
+        previousTagName: state.previousTagName,
         assignmentContextFiles,
         contextSummary,
         studentLogin: submitter,
@@ -933,6 +998,7 @@ async function run() {
           owner: ctx.repo.owner,
           instructorRepoName,
           studentLogin: submitter,
+          tagGroup: tagSlug,
           content: instructorReport,
           headSha,
           rawOutput: rawOutputCopy,
