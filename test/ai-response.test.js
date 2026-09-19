@@ -14,8 +14,11 @@ function respondWith(...bodies) {
   return fetch;
 }
 
-/** Runs callAI with retry backoff sleeps fast-forwarded. */
-async function run(retryMaxAttempts) {
+/**
+ * Runs callAI with retry backoff sleeps fast-forwarded. Settles to the reply
+ * text as `value`; `full` passes callAI's whole result through instead.
+ */
+async function run(retryMaxAttempts, { full = false } = {}) {
   const result = callAI({
     provider: 'openrouter',
     model: 'test-model',
@@ -24,7 +27,7 @@ async function run(retryMaxAttempts) {
     retryMaxAttempts,
   });
   const settled = result.then(
-    (value) => ({ value }),
+    (value) => ({ value: full ? value : value.content }),
     (error) => ({ error }),
   );
   await vi.runAllTimersAsync();
@@ -75,6 +78,78 @@ describe('callAI response shape handling', () => {
     expect(error).not.toBeInstanceOf(TypeError);
     expect(error.message).toMatch(/empty choices array/);
     expect(fetch).toHaveBeenCalledTimes(1);
+  });
+});
+
+describe('callAI response metadata', () => {
+  beforeEach(() => vi.useFakeTimers());
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  it('reports the finish reason, usage and what OpenRouter served', async () => {
+    respondWith({
+      id: 'gen-123',
+      model: 'upstream/model-v2',
+      provider: 'SomeHost',
+      choices: [
+        {
+          message: { content: '1. Q?' },
+          finish_reason: 'length',
+          native_finish_reason: 'MAX_TOKENS',
+        },
+      ],
+      usage: {
+        prompt_tokens: 1200,
+        completion_tokens: 4096,
+        total_tokens: 5296,
+        completion_tokens_details: { reasoning_tokens: 300 },
+        cost: 0.0123,
+      },
+    });
+    const { value } = await run(1, { full: true });
+
+    expect(value.content).toBe('1. Q?');
+    expect(value.metadata).toMatchObject({
+      finishReason: 'length',
+      nativeFinishReason: 'MAX_TOKENS',
+      usage: {
+        promptTokens: 1200,
+        completionTokens: 4096,
+        reasoningTokens: 300,
+        totalTokens: 5296,
+        cost: 0.0123,
+      },
+      attempts: 1,
+      generationId: 'gen-123',
+      servedModel: 'upstream/model-v2',
+      servedProvider: 'SomeHost',
+    });
+    expect(value.metadata.durationMs).toBeGreaterThanOrEqual(0);
+  });
+
+  it('counts the attempts a retried reply took', async () => {
+    respondWith({ choices: [{ delta: {} }] }, { choices: [{ delta: {} }] }, ok);
+    const { value } = await run(3, { full: true });
+
+    expect(value.metadata.attempts).toBe(3);
+  });
+
+  it('records null rather than trusting a missing or malformed usage block', async () => {
+    respondWith({ ...ok, usage: { prompt_tokens: '12', completion_tokens: null } }, ok);
+    expect((await run(1, { full: true })).value.metadata.usage).toEqual({
+      promptTokens: null,
+      completionTokens: null,
+      reasoningTokens: null,
+      totalTokens: null,
+      cost: null,
+    });
+    expect((await run(1, { full: true })).value.metadata).toMatchObject({
+      usage: null,
+      nativeFinishReason: null,
+      generationId: null,
+    });
   });
 });
 
@@ -202,7 +277,7 @@ describe('callAI Retry-After on a 429', () => {
     expect(calls()).toBe(1);
     await vi.advanceTimersByTimeAsync(1);
     expect(calls()).toBe(2);
-    expect(await result).toBe('1. Question?');
+    expect((await result).content).toBe('1. Question?');
     expect(core.warning).toHaveBeenCalledWith(expect.not.stringContaining('capped'));
   });
 
@@ -216,7 +291,7 @@ describe('callAI Retry-After on a 429', () => {
     expect(calls()).toBe(1);
     await vi.advanceTimersByTimeAsync(1);
     expect(calls()).toBe(2);
-    expect(await result).toBe('1. Question?');
+    expect((await result).content).toBe('1. Question?');
     expect(core.warning).toHaveBeenCalledWith(
       expect.stringMatching(/in 30000ms \(Retry-After .*capped\)/),
     );

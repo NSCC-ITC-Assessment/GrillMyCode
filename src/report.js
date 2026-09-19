@@ -82,6 +82,31 @@ export function formatReport({
 }
 
 /**
+ * Plain-language glosses for the finish reasons worth explaining in the raw
+ * output header. Anything else is shown as the bare value.
+ */
+const FINISH_REASON_NOTES = {
+  stop: 'the model finished its reply',
+  length: 'the output token limit was reached, so the reply is incomplete',
+  content_filter: 'a content filter stopped the reply, so it may be incomplete',
+};
+
+/** Formats a count with thousands separators, or "?" when it is unknown. */
+function formatCount(value) {
+  return typeof value === 'number' ? value.toLocaleString('en-US') : '?';
+}
+
+/**
+ * Serialises the provenance record for embedding in an HTML comment. `<` and
+ * `>` are written as JSON escapes so no value — a model name, a provider's
+ * error text — can close the comment early; the result still parses as JSON.
+ */
+function provenanceComment(record) {
+  const json = JSON.stringify(record).replace(/</g, '\\u003c').replace(/>/g, '\\u003e');
+  return `<!-- gmc:provenance ${json} -->`;
+}
+
+/**
  * Assembles the verbatim copy of the model's reply, with a short provenance
  * header above it.
  *
@@ -90,6 +115,15 @@ export function formatReport({
  * own — a wrapper could be closed early by the model's own text and corrupt the
  * very copy this file exists to preserve. Verbatim bytes are the point; use
  * GitHub's raw view to see markers and whitespace as the model emitted them.
+ *
+ * The header is written twice over: readable lines for an instructor, and a
+ * `<!-- gmc:provenance {...} -->` comment holding the same facts as JSON, with
+ * full SHAs, for tooling. The comment renders as nothing. Its `version` field
+ * is bumped whenever a field changes meaning or is removed.
+ *
+ * @param {object} [opts.request]  - What was asked for: `numQuestions`,
+ *   `temperature`, `topP`, `promptHash`, `actionRef`
+ * @param {object} [opts.response] - The metadata callAI returns
  */
 export function formatRawOutput({
   rawOutput,
@@ -99,13 +133,70 @@ export function formatRawOutput({
   model,
   studentLogin,
   sourceRepo,
+  request,
+  response,
 }) {
-  const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+  const generatedAt = new Date().toISOString();
+  const date = generatedAt.replace('T', ' ').substring(0, 19) + ' UTC';
   const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
 
   const studentNote = studentLogin ? `> **Student:** \`${studentLogin}\`\n` : '';
   const sourceRepoNote = sourceRepo ? `> **Repository:** \`${sourceRepo}\`\n` : '';
+
+  const requestLines = [];
+  if (request) {
+    const settings = [`${request.numQuestions} questions requested`];
+    settings.push(`temperature ${request.temperature}`);
+    if (request.promptHash) settings.push(`prompt \`${request.promptHash}\``);
+    if (request.actionRef) settings.push(`action \`${request.actionRef}\``);
+    requestLines.push(`> - **Settings:** ${settings.join(' · ')}`);
+  }
+
+  const responseLines = [];
+  if (response) {
+    const servedParts = [];
+    if (response.servedModel && response.servedModel !== model) {
+      servedParts.push(`\`${response.servedModel}\``);
+    }
+    if (response.servedProvider) servedParts.push(`via ${response.servedProvider}`);
+    if (servedParts.length > 0) responseLines.push(`> - **Served by:** ${servedParts.join(' ')}`);
+
+    const note = FINISH_REASON_NOTES[response.finishReason];
+    const native =
+      response.nativeFinishReason && response.nativeFinishReason !== response.finishReason
+        ? ` (native: \`${response.nativeFinishReason}\`)`
+        : '';
+    responseLines.push(
+      `> - **Stopped because:** \`${response.finishReason}\`${native}${note ? ` — ${note}` : ''}`,
+    );
+
+    if (response.usage) {
+      const { promptTokens, completionTokens, reasoningTokens } = response.usage;
+      const reasoning = reasoningTokens ? ` (${formatCount(reasoningTokens)} reasoning)` : '';
+      responseLines.push(
+        `> - **Tokens:** ${formatCount(promptTokens)} in · ${formatCount(completionTokens)} out${reasoning}`,
+      );
+    }
+
+    const retries = response.attempts - 1;
+    const retryNote = retries > 0 ? ` (${retries} ${retries === 1 ? 'retry' : 'retries'})` : '';
+    const seconds = (response.durationMs / 1000).toFixed(1);
+    responseLines.push(`> - **Attempts:** ${response.attempts}${retryNote} · ${seconds} s`);
+  }
+
+  const provenance = provenanceComment({
+    version: 1,
+    generatedAt,
+    studentLogin: studentLogin ?? null,
+    sourceRepo: sourceRepo ?? null,
+    baseSha,
+    headSha,
+    provider,
+    model,
+    request: request ?? null,
+    response: response ?? null,
+  });
 
   return [
     '## GrillMyCode — Raw AI Output',
@@ -120,6 +211,13 @@ export function formatRawOutput({
     sourceRepoNote,
     `> **Commits reviewed:** \`${shortBase}\` → \`${shortHead}\``,
     `> **Model:** \`${model}\` via ${provider}`,
+    // A list, because GitHub joins consecutive quoted lines of a .md file into
+    // one paragraph and these would otherwise run together.
+    ...(responseLines.length + requestLines.length > 0 ? ['>'] : []),
+    ...responseLines,
+    ...requestLines,
+    '',
+    provenance,
     '',
     '---',
     '',

@@ -90,7 +90,8 @@ buildPrompt()
     │
 callAI()
     │  POSTs to the provider's chat completions endpoint
-    │  Returns the model's response text
+    │  Returns the model's response text plus response metadata
+    │  (finish reason, token usage, attempts, duration)
     │
 formatReport(pdfUrl: null)   ← base report (PDF source)
     │
@@ -126,7 +127,9 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │
                ├── writeFileWithRetry()
                │     Writes {studentLogin}/raw-ai-output.md — the model's reply
-               │     before postprocessing; warns (never throws) on failure
+               │     before postprocessing, under a provenance header recording
+               │     the request settings and response metadata; warns (never
+               │     throws) on failure
                │
                └── writeFileWithRetry()
                      Writes {studentLogin}/questions.md, retrying on 409/422
@@ -184,7 +187,7 @@ Validates that a SHA is 4–64 hex characters before passing it to a `git` comma
 
 Returns a filesystem-safe version of a string for use in filenames. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename from the repository name (e.g. `grill-my-code-assignment-1-jsmith.pdf`).
 
-### `callAI({ provider, model, apiKey, messages, retryMaxAttempts })`
+### `callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature })`
 
 A thin provider abstraction over the OpenAI-compatible chat completions API. Each provider maps to a base URL and authentication header:
 
@@ -195,6 +198,8 @@ A thin provider abstraction over the OpenAI-compatible chat completions API. Eac
 `openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `top_p`). `max_tokens` is deliberately omitted: on OpenRouter it restricts routing to providers that support a response of that length, and each model's own output limit is left to apply instead.
 
 Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff, capped at the same 30-second `AI_RETRY_MAX_DELAY_MS` as every other wait so a long value cannot stall the run. Once generation has started OpenRouter can no longer change the HTTP status, so an upstream failure arrives as a `200` with an `{ error: { code, message } }` body; that is retried when `error.code` is one of the same retryable codes, and otherwise fails with the provider's message. A `200` whose body is not valid JSON (a dropped connection or a proxy error page) is retried like a network failure, as is a response whose first choice carries no text content. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
+
+`callAI` returns `{ content, metadata }`. `content` is the trimmed reply; `metadata` carries the `finish_reason` (and the upstream provider's native reason), token usage, the number of attempts spent, wall time across all of them, and the generation id, model and host OpenRouter reports serving. None of it affects the run: it is written into the provenance header of `raw-ai-output.md`, where a `finish_reason` of `length` is the only way to tell a reply cut off at the output token limit from one that simply held fewer questions.
 
 ### `postIssue()`
 
