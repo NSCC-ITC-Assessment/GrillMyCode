@@ -73,7 +73,7 @@ You also choose what each later milestone covers:
 - Only the tags you name count. GrillMyCode ignores every other tag, including the `submit/…` tags Classroom 50 creates for its own grading — so on a Classroom 50 assignment, `gh student submit` alone does not generate questions.
 - Students need to know the tag commands. Put them in the assignment instructions.
 - The tagged commit must be on the default branch. A tag on any other branch fails the run, so the student can see their submission didn't count.
-- To resubmit under the same tag, the student moves it to their latest commit and pushes it again: `git tag -f complete` then `git push --force origin complete`. The new questions replace the old ones for that tag.
+- To resubmit under the same tag, the student moves it to their latest commit and pushes it again: `git tag -f complete` then `git push --force origin complete`. The new questions replace the old ones for that tag, but the resubmission is flagged to you and the replaced questions are kept ([details](instructor-setup.md#spotting-resubmissions)).
 
 See [Tag Submission](../example-workflows/tag-submission.md) for a ready-to-use workflow.
 

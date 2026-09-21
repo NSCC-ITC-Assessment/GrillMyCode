@@ -257,6 +257,10 @@ Classroom 50 prefixes every commit its own tooling makes with `[Classroom 50]`. 
 
 Only through the push trigger. Classroom 50 creates its own `submit/…` tags for grading, and GrillMyCode ignores them: a tag run happens only for a tag **you** named in `submission_tags`. So with a push-triggered workflow, `gh student submit` produces an assessment like any other push; with a tag-triggered one, students must also push your tag, e.g. `git tag complete && git push origin complete`. See [Classroom 50](guides/classroom50.md#assessing-submissions-instead-of-every-push).
 
+### Can I tell when a student resubmits under the same tag?
+
+Yes, if you use [instructor repository delivery](guides/instructor-setup.md). Each tag folder keeps a `submissions.md` log counting the student's submissions, a `history/` folder with every question set a resubmission replaced, and a header line in `questions.md` marking it as a resubmission. Resubmitting is never blocked — the point is that you can see it, and compare the question sets. See [Spotting resubmissions](guides/instructor-setup.md#spotting-resubmissions).
+
 ### Why did my tag-triggered run fail?
 
 A run started by a tag fails, rather than assessing anything, in two cases. The run's log names which one applied:

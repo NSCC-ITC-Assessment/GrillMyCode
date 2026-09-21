@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.7.0 — 2026-09-21
+
+### What's Changed
+
+### Features
+
+- flag resubmissions under the same submission tag
+
 ## v1.6.0 — 2026-09-21
 
 ### What's Changed

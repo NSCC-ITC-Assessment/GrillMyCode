@@ -74,6 +74,8 @@ git push --force origin complete
 
 The re-pushed tag runs the workflow again and updates the same assessment issue.
 
+Resubmissions are allowed but **flagged**. With instructor repository delivery configured, each resubmission is counted in `submissions.md` in the tag's folder, the question set it replaced is kept under `history/`, and the new `questions.md` says in its header that it is a resubmission. Because students see their questions, this lets you tell new work apart from an attempt to draw an easier set. See [Spotting resubmissions](../guides/instructor-setup.md#spotting-resubmissions).
+
 ## The two lists must match
 
 A tag appears twice: in `on.push.tags`, which decides whether GitHub starts the workflow at all, and in the `submission_tags` input, which tells the action which tags count as a submission. Keep them identical. If a tag fires the workflow but matches nothing in `submission_tags`, the run fails with a message saying the two lists have drifted — rather than guessing where to file the assessment.

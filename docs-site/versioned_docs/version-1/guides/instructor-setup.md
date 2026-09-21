@@ -188,11 +188,28 @@ When the workflow is [triggered by submission tags](../example-workflows/tag-sub
   {tag-group}/                                                              ← the submission tag, e.g. phase1 or complete
     questions.md
     raw-ai-output.md
+    submissions.md                                                          ← every run for this tag, with a resubmission count
+    history/                                                                ← question sets replaced by a resubmission
+      1-questions.md
     {assignment-name}_{student-login}_{tag-group}_quiz_{question-count}.imscc
     {assignment-name}_{student-login}_{tag-group}_brightspace_quiz_{question-count}.csv
 ```
 
-The tag group is the tag reduced to filename-safe characters — for a wildcard entry such as `phase*`, that is `phase`. It is carried in the quiz filenames and in the quiz title shown in the LMS (`lab-3 - jsmith (phase1)`). Within one group the one-up-to-date-assessment rule above still applies: re-pushing a tag replaces that group's assessment.
+The tag group is the tag reduced to filename-safe characters — for a wildcard entry such as `phase*`, that is `phase`. It is carried in the quiz filenames and in the quiz title shown in the LMS (`lab-3 - jsmith (phase1)`). Within one group the one-up-to-date-assessment rule above still applies: re-pushing a tag replaces that group's `questions.md` and rebuilds its quiz.
+
+### Spotting resubmissions
+
+A student can resubmit under the same tag by moving it and pushing it again. Nothing is blocked, but every resubmission is flagged, in three places:
+
+- **The assessment itself.** A resubmitted `questions.md` carries a line in its header, e.g. `Submission: ⚠️ resubmitted — this is the 3rd submission of phase1 (previous: 2026-09-18 14:03 UTC, a1b2c3d)`.
+- **`submissions.md`** in the tag folder lists every run for that tag — date, trigger (tag push or manual run), who started it and the commit — and states how many counted as student submissions.
+- **`history/`** keeps each question set a resubmission replaced, as `<#>-questions.md`, numbered by the `submissions.md` row that produced it.
+
+The history is what makes a resubmission worth a second look. Students see their questions — never the answers — so re-pushing a tag is also a way to draw a fresh set. Comparing `history/` with the current `questions.md` shows whether the student submitted new work or went looking for easier questions.
+
+**What counts as a submission:** every tag push, and every manual run started by the student themselves. A manual run started by anyone else — your own re-run from the Actions tab, for instance — is listed in `submissions.md` but not counted, and its header says so. In a team repository there is no single student to compare against, so every run counts.
+
+The record lives only in the instructor repository, so it needs `instructor_repo_token`; students cannot see or edit it, and deleting and re-pushing a tag does not reset the count. The student's run summary also mentions a resubmission, but the count there is informational — the instructor repository is the record to rely on.
 
 ### Which quiz file to use
 
