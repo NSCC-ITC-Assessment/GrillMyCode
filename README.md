@@ -262,7 +262,9 @@ questions **and** answers — outside the student's repository:
   truncation, renumbering and formatting, which is the place to look when generated questions come
   out wrong. Both names come from the Classroom 50 repository name
   (`<classroom>-<assignment>-<username>`) and its direct collaborators — never from who pushed or
-  started the run — and any other repository skips instructor delivery with a warning.
+  started the run — and any other repository skips instructor delivery with a warning. A
+  tag-triggered run files under `{student-login}/{tag}/` instead, where a `submissions.md` log and a
+  `history/` folder flag any resubmission under the same tag and keep the question sets it replaced.
 - That write triggers a bundled **Generate LMS Quiz** workflow in the instructor repository, which
   builds an IMS Common Cartridge / QTI package (`.imscc`) per student. Common Cartridge is an open
   standard that most major LMS platforms can import — including Brightspace, Canvas, Moodle,

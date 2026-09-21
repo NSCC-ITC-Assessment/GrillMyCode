@@ -244,6 +244,16 @@ Three concerns are layered inside it:
    (`Retry-After`, exhausted `x-ratelimit-remaining`, GitHub's limit wording) from a 403 raised by a
    missing scope, which fails fast rather than sitting through the full backoff budget.
 
+On a tag run a fourth concern applies: the **submission record**. Before the instructor report is
+built, `main.js` calls `readSubmissionHistory()` for `{student}/{tagGroup}/`, and the pure helpers
+in `src/submission-history.js` turn its `submissions.md` rows into this run's row and a
+resubmission note for the report header. `deliverToInstructorRepo({ submission })` then archives
+the `questions.md` being replaced to `history/<#>-questions.md`, rewrites `submissions.md` with the
+new row, and only then writes `questions.md` — so the quiz workflow's trigger is still the last
+commit. Like the raw-output copy, a failure in the record warns and never costs the assessment. A
+tag push always counts as a submission; a manual run counts only when the triggering actor is the
+student (always, in a team repo).
+
 A failure that escapes all of this is caught in `main.js` and reported with `core.error` — an
 annotation that does not fail the job, since the student-facing assessment has already been
 delivered by that point.

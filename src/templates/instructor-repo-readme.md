@@ -37,11 +37,23 @@ If the assignment's workflow is triggered by submission tags (the `submission_ta
 └── {tagGroup}/                                                             ← the submission tag, e.g. phase1 or complete
     ├── questions.md
     ├── raw-ai-output.md
+    ├── submissions.md                                                      ← every run for this tag, with a resubmission count
+    ├── history/                                                            ← question sets replaced by a resubmission
+    │   └── 1-questions.md
     ├── {{ASSIGNMENT_NAME}}_{studentLogin}_{tagGroup}_quiz_{questionCount}.imscc
     └── {{ASSIGNMENT_NAME}}_{studentLogin}_{tagGroup}_brightspace_quiz_{questionCount}.csv
 ```
 
 The files are the same as those described below. The tag group is carried in the quiz filenames and in the quiz title (`{{ASSIGNMENT_NAME}} - {studentLogin} ({tagGroup})`), so each milestone's quiz stays identifiable once imported into the LMS.
+
+#### Resubmissions
+
+A student can resubmit under the same tag by moving it and pushing it again. Each time, the new assessment replaces `questions.md`, so two more files keep track:
+
+- **`submissions.md`** lists every run for the tag — date, how it was started (tag push or manual run), who started it, and the commit — and counts how many were student submissions. A manual run started by someone other than the student, such as your own re-run from the Actions tab, is listed but not counted.
+- **`history/<#>-questions.md`** is the question set a resubmission replaced, numbered by the row in `submissions.md` that produced it. Students see their questions (never the answers), so comparing these shows whether a resubmission was new work or an attempt to draw an easier set.
+
+A resubmitted `questions.md` also says so in its header — for example `Submission: ⚠️ resubmitted — this is the 3rd submission of phase1` — so it stands out without opening the log.
 
 ## Files
 
