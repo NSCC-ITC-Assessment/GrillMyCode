@@ -62,6 +62,8 @@ The `push` trigger fires whenever a commit lands on `main` or `master` — wheth
 
 A manual run uses the settings baked into the workflow file. To change a setting for a single run — a different question count or model, a retargeted instructor context — expose it as a `workflow_dispatch` input and it becomes a form field on the **Run workflow** button. See [Manual Run Overrides](example-workflows/manual-dispatch.md).
 
+Running on every push is only one option. GrillMyCode can instead run when a student pushes a tag to mark their work as done, or only when you start it yourself. See [Choosing a Trigger](guides/choosing-a-trigger.md) for which suits your assignment.
+
 See [Example Workflows](example-workflows/pull-request) for ready-to-use files.
 
 ## Customising the questions

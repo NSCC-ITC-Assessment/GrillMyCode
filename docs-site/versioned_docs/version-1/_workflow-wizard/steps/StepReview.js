@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import styles from '../styles.module.css';
-import { generateYaml, instructorRepoActive } from '../generateYaml';
+import { generateYaml, instructorRepoActive, isTagTrigger, submissionTagList } from '../generateYaml';
 import { resolveDispatchOverrides } from '../dispatchInputs';
 
 function buildChecklist(cfg, docsBase) {
@@ -22,8 +22,25 @@ function buildChecklist(cfg, docsBase) {
     });
   }
 
+  if (isTagTrigger(cfg)) {
+    const example = submissionTagList(cfg).find((t) => !/[*?+[\]]/.test(t));
+    items.push({
+      text:
+        (example
+          ? `Tell students how to submit: commit their finished work to the default branch, then run "git tag ${example} && git push origin ${example}". `
+          : '') +
+        'Nothing runs until they push one of your tags — on a Classroom 50 assignment, "gh student submit" alone does not. ' +
+        'A tag on a commit that is not on the default branch fails the run. To resubmit under the same tag, ' +
+        'move it with "git tag -f <name>" and push it with "git push --force origin <name>".',
+      linkHref: `${docsBase}/example-workflows/tag-submission`,
+      linkLabel: 'Tag submission example',
+    });
+  }
+
   {
-    const overrides = resolveDispatchOverrides(cfg.dispatchOverrides);
+    const overrides = resolveDispatchOverrides(cfg.dispatchOverrides, {
+      tagTrigger: isTagTrigger(cfg),
+    });
     if (overrides.length > 0) {
       items.push({
         text:

@@ -13,7 +13,18 @@ GrillMyCode generates a PDF for every assessment and attaches it to a rolling Gi
 | `cs-principles-lab-3-jsmith` | `grill-my-code-cs-principles-lab-3-jsmith.pdf` |
 | `my.project` | `grill-my-code-my-project.pdf` |
 
-A repository has one PDF asset, so it always holds the most recent assessment, whichever branch produced it.
+A repository has one PDF asset for its push and manual runs, so it always holds the most recent assessment, whichever branch produced it.
+
+## Submission tag runs
+
+A run started by a [submission tag](../example-workflows/tag-submission.md) adds the tag's group — its `submission_tags` entry, reduced to the same filename-safe characters — so each milestone keeps its own PDF:
+
+| Repository | `submission_tags` entry | PDF asset filename |
+|---|---|---|
+| `cs-principles-lab-3-jsmith` | `phase1` | `grill-my-code-cs-principles-lab-3-jsmith-phase1.pdf` |
+| `cs-principles-lab-3-jsmith` | `phase*` (wildcard) | `grill-my-code-cs-principles-lab-3-jsmith-phase.pdf` |
+
+Re-pushing a tag replaces that group's PDF, and every tag matching one wildcard entry shares a single asset.
 
 ## How the download URL works
 

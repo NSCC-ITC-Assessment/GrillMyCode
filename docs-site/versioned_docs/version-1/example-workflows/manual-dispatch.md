@@ -98,6 +98,7 @@ These are the settings worth considering:
 | `additional_exclude_patterns` | Exclude a data dump you only noticed after the first run |
 | `exclude_pattern_overrides` | Pull back a file the default exclusions removed |
 | `include_initial_commit` | Recover a run where the student committed everything at once |
+| `tag_diff_base` | [Tag-triggered workflows](tag-submission.md) only — re-run a milestone cumulatively, or only since the previous tag |
 | `ai_temperature` | Rarely useful — most instructors should leave this fixed |
 
 ## Settings to keep out of the form

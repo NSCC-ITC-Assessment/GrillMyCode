@@ -5,6 +5,20 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.6.0 — 2026-09-21
+
+### What's Changed
+
+### Features
+
+- recognise only instructor-defined submission tags
+- add submission tag trigger with per-tag delivery groups
+- enhance raw AI output provenance metadata and response handling
+
+### Documentation
+
+- added internal docs
+
 ## v1.5.4 — 2026-09-18
 
 ### What's Changed
