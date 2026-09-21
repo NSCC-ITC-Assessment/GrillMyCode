@@ -89,12 +89,16 @@ The trigger fires on every push to `main` or `master` — whether the student pu
 
 ## Assessing submissions instead of every push
 
-GrillMyCode can instead run only when a student says their work is done, by pushing a tag — see [Tag Submission](../example-workflows/tag-submission.md). How that fits with Classroom 50 depends on the assignment's **submission type**:
+GrillMyCode can instead run only when a student says their work is done, by pushing a tag — see [Tag Submission](../example-workflows/tag-submission.md). The tags are **yours to name**: you list them in the workflow, and nothing else starts a run.
 
-- **Tagged commit** — Classroom 50 grades only when a `submit/*` tag is pushed, and `gh student submit` pushes one (`submit/<UTC-timestamp>-<short-sha>`) with every submission, using the student's own credentials. Trigger GrillMyCode on `submit/*` and list it in `submission_tags`, and every submission is assessed; all of them share one assessment issue. The Workflow Wizard's **Also run on Classroom 50 submissions** option does this for you.
-- **Every push** (the default) — Classroom 50's runner tags each graded push itself, but it pushes those tags with the workflow's `github.token`, and GitHub never starts another workflow from such a push. A GrillMyCode workflow triggered on `submit/*` therefore **never runs** on these assignments. Use the push trigger above, or ask students to push a tag you name.
+:::note GrillMyCode ignores Classroom 50's own `submit/…` tags
+Classroom 50 creates `submit/<UTC-timestamp>-<short-sha>` tags for its own grading and submission count. GrillMyCode deliberately takes no notice of them, so an assessment is only ever produced by a tag you defined. Two things follow:
 
-Classroom 50 **milestone tags** (names such as `phase1` or `complete`, set on the assignment) work with either submission type. The student pushes them with plain git — `git tag phase1 && git push origin phase1` — so if you list the same names in GrillMyCode's `on.push.tags` and `submission_tags`, one push both grades and grills that milestone, and each milestone keeps its own assessment.
+- On a **tagged commit** assignment, `gh student submit` grades the work but does **not** run GrillMyCode. Tell students to push your tag as well, e.g. `git tag complete && git push origin complete`.
+- On an **every push** assignment, nothing changes: Classroom 50's own tags are pushed with the workflow's `github.token`, which never starts another workflow anyway.
+:::
+
+If you set Classroom 50 **milestone tags** on the assignment (names such as `phase1` or `complete`), use the same names in GrillMyCode's `on.push.tags` and `submission_tags`. The student pushes the tag once with plain git — `git tag phase1 && git push origin phase1` — and that single push both grades the milestone and generates its questions.
 
 ## Including the initial commit
 

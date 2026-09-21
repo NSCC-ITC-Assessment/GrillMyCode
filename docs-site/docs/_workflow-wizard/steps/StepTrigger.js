@@ -5,7 +5,7 @@ import {
   availableDispatchOverrides,
   resolveDispatchOverrides,
 } from '../dispatchInputs';
-import { CLASSROOM50_SUBMIT_TAG, isTagTrigger } from '../generateYaml';
+import { isTagTrigger } from '../generateYaml';
 
 const TRIGGERS = [
   {
@@ -144,13 +144,15 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
           <div className={styles.fieldGroup}>
             <label className={styles.label}>Submission tag names</label>
             <span className={styles.hint}>
-              One per line or comma-separated. A student submits by tagging their finished commit
-              and pushing the tag, e.g. <code>git tag complete &amp;&amp; git push origin complete</code>.
+              One per line or comma-separated. These are your tags: nothing else starts a run, and
+              GrillMyCode never infers one — including the <code>submit/…</code> tags Classroom 50
+              creates for its own grading. A student submits by tagging their finished commit and
+              pushing the tag, e.g. <code>git tag complete &amp;&amp; git push origin complete</code>.
               Each name gets its own assessment issue, PDF and instructor-repository folder, so
               milestones such as <code>phase1</code> and <code>phase2</code> are kept apart.
               Wildcards (<code>*</code>, <code>**</code>, <code>?</code>, <code>+</code>,{' '}
-              <code>[0-9]</code>) are allowed; every tag matching one pattern shares that
-              pattern's issue. The tagged commit must be on the default branch, or the run fails.
+              <code>[0-9]</code>) are allowed; every tag matching one entry shares that entry's
+              issue. The tagged commit must be on the default branch, or the run fails.
             </span>
             <textarea
               className={styles.textarea}
@@ -159,29 +161,6 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
               onChange={(e) => onChange({ submissionTags: e.target.value })}
               placeholder={'complete'}
             />
-          </div>
-
-          <div className={styles.fieldGroup}>
-            <label className={styles.checkboxLabel}>
-              <input
-                type="checkbox"
-                checked={!!cfg.classroom50SubmitTags}
-                onChange={(e) => onChange({ classroom50SubmitTags: e.target.checked })}
-              />
-              <span>
-                <strong>
-                  Also run on Classroom 50 submissions (<code>{CLASSROOM50_SUBMIT_TAG}</code>)
-                </strong>
-                <div className={styles.radioDescription}>
-                  For Classroom 50 assignments whose submission type is <em>tagged commit</em>:{' '}
-                  <code>gh student submit</code> pushes a <code>submit/…</code> tag with every
-                  submission, so each one is assessed and they all share one issue. Leave this
-                  unticked for <em>every push</em> assignments — Classroom 50 creates those
-                  tags itself, in a way that never starts another workflow, so they would not
-                  trigger GrillMyCode anyway.
-                </div>
-              </span>
-            </label>
           </div>
 
           <div className={styles.fieldGroup}>

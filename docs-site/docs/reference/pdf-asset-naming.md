@@ -17,14 +17,14 @@ A repository has one PDF asset for its push and manual runs, so it always holds 
 
 ## Submission tag runs
 
-A run started by a [submission tag](../example-workflows/tag-submission.md) adds the tag's group — its `submission_tags` pattern, reduced to the same filename-safe characters — so each milestone keeps its own PDF:
+A run started by a [submission tag](../example-workflows/tag-submission.md) adds the tag's group — its `submission_tags` entry, reduced to the same filename-safe characters — so each milestone keeps its own PDF:
 
-| Repository | `submission_tags` pattern | PDF asset filename |
+| Repository | `submission_tags` entry | PDF asset filename |
 |---|---|---|
 | `cs-principles-lab-3-jsmith` | `phase1` | `grill-my-code-cs-principles-lab-3-jsmith-phase1.pdf` |
-| `cs-principles-lab-3-jsmith` | `submit/*` | `grill-my-code-cs-principles-lab-3-jsmith-submit.pdf` |
+| `cs-principles-lab-3-jsmith` | `phase*` (wildcard) | `grill-my-code-cs-principles-lab-3-jsmith-phase.pdf` |
 
-Every tag matching one pattern replaces that pattern's PDF, so all `submit/…` submissions share one asset.
+Re-pushing a tag replaces that group's PDF, and every tag matching one wildcard entry shares a single asset.
 
 ## How the download URL works
 

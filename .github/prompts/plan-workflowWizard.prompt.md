@@ -8,7 +8,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 ## Wizard Steps (7 total)
 
-1. **Trigger** — Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the tag names (`submissionTags`), an off-by-default Classroom 50 `submit/*` preset (`classroom50SubmitTags`), and `tagDiffBase`
+1. **Trigger** — Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the instructor's own tag names (`submissionTags`) and `tagDiffBase`. Tags are never inferred — there is deliberately no preset for Classroom 50's own `submit/*` tags
 2. **AI Provider** — Provider selection + conditional API key secret name / Azure endpoint
 3. **Questions** — num_questions, include_answers, instructor_context, assignment_context
 4. **Delivery** — Post targets (PR comment, issue, discussion, instructor repo)
@@ -25,8 +25,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   triggerEvent: 'pull_request' | 'push' | 'workflow_dispatch' | 'push+workflow_dispatch' | 'tag+workflow_dispatch',
   prTypes: ['opened', 'synchronize'],    // pull_request only
   pushBranches: ['main'],                // push only
-  submissionTags: '',                    // tag only — comma/newline-separated patterns
-  classroom50SubmitTags: false,          // tag only — appends submit/* to the list
+  submissionTags: '',                    // tag only — comma/newline-separated tag names
   tagDiffBase: 'cumulative',             // tag only — 'cumulative' | 'previous-tag'
 
   aiProvider: 'openrouter',                  // only supported value

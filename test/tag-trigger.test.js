@@ -61,9 +61,7 @@ afterEach(() => {
 
 describe('resolveTagName', () => {
   it('returns the tag for a tag ref, slashes included', () => {
-    expect(resolveTagName({ ref: 'refs/tags/submit/2026-09-19T14-03-22Z-a1b2c3d' })).toBe(
-      'submit/2026-09-19T14-03-22Z-a1b2c3d',
-    );
+    expect(resolveTagName({ ref: 'refs/tags/sprint/3' })).toBe('sprint/3');
   });
 
   it('returns an empty string for a branch ref', () => {
@@ -73,9 +71,9 @@ describe('resolveTagName', () => {
 
 describe('resolveSubmissionTag', () => {
   it('returns the matching pattern and its slug', () => {
-    expect(resolveSubmissionTag('submit/abc', ['phase1', 'submit/*'])).toEqual({
-      pattern: 'submit/*',
-      slug: 'submit',
+    expect(resolveSubmissionTag('sprint/abc', ['phase1', 'sprint/*'])).toEqual({
+      pattern: 'sprint/*',
+      slug: 'sprint',
     });
   });
 
@@ -91,7 +89,7 @@ describe('resolveSubmissionTag', () => {
 describe('tagGroupSlug', () => {
   it('reduces a pattern to a filename-safe name', () => {
     expect(tagGroupSlug('phase1')).toBe('phase1');
-    expect(tagGroupSlug('submit/*')).toBe('submit');
+    expect(tagGroupSlug('sprint/*')).toBe('sprint');
   });
 
   it('falls back when nothing filename-safe is left', () => {

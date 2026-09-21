@@ -250,7 +250,7 @@ export function resolveSubmissionTag(tagName, patterns) {
 /**
  * The filesystem-safe name a tag group's PDF and instructor-repository folder
  * are filed under. Derived from the pattern, not the tag, so every tag matching
- * `submit/*` shares one set of files while `phase1` and `phase2` keep their own.
+ * `phase*` shares one set of files while `phase1` and `phase2` keep their own.
  */
 export function tagGroupSlug(pattern) {
   return safeFilePart(pattern) || SUBMISSION_TAG_GROUP_FALLBACK;

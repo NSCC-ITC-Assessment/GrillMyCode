@@ -31,26 +31,22 @@ export function instructorRepoActive(cfg) {
 
 // ── Submission tags ──────────────────────────────────────────────────────────
 
-/** Classroom 50's canonical submission tag namespace. */
-export const CLASSROOM50_SUBMIT_TAG = 'submit/*';
-
 /** True when the workflow is triggered by submission tags rather than pushes. */
 export function isTagTrigger(cfg) {
   return cfg.triggerEvent === 'tag+workflow_dispatch';
 }
 
 /**
- * The tag patterns the workflow fires on: the instructor's own list, then
- * submit/* when the Classroom 50 preset is ticked. Order is kept because the
- * action files an overlapping tag under the first pattern it matches.
+ * The tag patterns the workflow fires on, in the order the instructor listed
+ * them — order is kept because the action files an overlapping tag under the
+ * first pattern it matches.
  */
 export function submissionTagList(cfg) {
   const typed = (cfg.submissionTags || '')
     .split(/[,\r\n]+/)
     .map((p) => p.trim())
     .filter(Boolean);
-  const all = cfg.classroom50SubmitTags ? [...typed, CLASSROOM50_SUBMIT_TAG] : typed;
-  return [...new Set(all)];
+  return [...new Set(typed)];
 }
 
 // Mirrors isSafeTagPattern in the action's src/tags.js — the action rejects

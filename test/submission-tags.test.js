@@ -6,7 +6,7 @@ import {
 } from '../src/tags.js';
 
 describe('isSafeTagPattern', () => {
-  it.each(['complete', 'phase1', 'submit/*', 'release/**', 'v[0-9]+', 'milestone-?', 'a.b_c'])(
+  it.each(['complete', 'phase1', 'sprint/*', 'release/**', 'v[0-9]+', 'milestone-?', 'a.b_c'])(
     'accepts %s',
     (pattern) => {
       expect(isSafeTagPattern(pattern)).toBe(true);
@@ -14,7 +14,7 @@ describe('isSafeTagPattern', () => {
   );
 
   it.each([
-    ['negation', '!submit/*'],
+    ['negation', '!sprint/*'],
     ['whitespace', 'phase 1'],
     ['a quote', 'phase"1'],
     ['a leading quantifier', '+phase'],
@@ -38,15 +38,13 @@ describe('findMatchingTagPattern', () => {
   });
 
   it('does not let * cross a slash', () => {
-    expect(findMatchingTagPattern(['submit/*'], 'submit/2026-09-19T14-03-22Z-a1b2c3d')).toBe(
-      'submit/*',
-    );
-    expect(findMatchingTagPattern(['submit/*'], 'submit/a/b')).toBeNull();
-    expect(findMatchingTagPattern(['submit/*'], 'submit')).toBeNull();
+    expect(findMatchingTagPattern(['sprint/*'], 'sprint/3')).toBe('sprint/*');
+    expect(findMatchingTagPattern(['sprint/*'], 'sprint/a/b')).toBeNull();
+    expect(findMatchingTagPattern(['sprint/*'], 'sprint')).toBeNull();
   });
 
   it('lets ** cross a slash', () => {
-    expect(findMatchingTagPattern(['submit/**'], 'submit/a/b')).toBe('submit/**');
+    expect(findMatchingTagPattern(['sprint/**'], 'sprint/a/b')).toBe('sprint/**');
   });
 
   it('supports ?, + and character classes on the preceding character', () => {
@@ -69,15 +67,15 @@ describe('findMatchingTagPattern', () => {
 describe('pickPreviousSubmissionTag', () => {
   // History, nearest first: head → c3 → c2 → c1
   const ancestors = ['head', 'c3', 'c2', 'c1'];
-  const patterns = ['phase*', 'submit/*'];
+  const patterns = ['phase*', 'sprint/*'];
 
   it('picks the nearest earlier tag matching any configured pattern', () => {
     const tags = [
       { name: 'phase1', commit: 'c1' },
-      { name: 'submit/x', commit: 'c2' },
+      { name: 'sprint/x', commit: 'c2' },
     ];
     expect(pickPreviousSubmissionTag({ tags, ancestors, patterns, headSha: 'head' })).toEqual({
-      name: 'submit/x',
+      name: 'sprint/x',
       commit: 'c2',
     });
   });
@@ -95,7 +93,7 @@ describe('pickPreviousSubmissionTag', () => {
   it('ignores tags on the head commit, including the one that started the run', () => {
     const tags = [
       { name: 'phase2', commit: 'head' },
-      { name: 'submit/y', commit: 'head' },
+      { name: 'sprint/y', commit: 'head' },
       { name: 'phase1', commit: 'c2' },
     ];
     expect(pickPreviousSubmissionTag({ tags, ancestors, patterns, headSha: 'head' })?.name).toBe(

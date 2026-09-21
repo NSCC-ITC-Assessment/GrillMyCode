@@ -35,10 +35,9 @@ const INITIAL_CONFIG = {
   triggerEvent: 'workflow_dispatch',
   branchMode: 'specify',
   pushBranches: ['main', 'master'],
-  // Tag trigger: the instructor's own tag names, the Classroom 50 submit/*
-  // preset (off by default — see StepTrigger), and the diff base for a tag run.
+  // Tag trigger: the tag names the instructor defines, and the diff base a tag
+  // run uses. Tags are never inferred — only what is listed here fires a run.
   submissionTags: '',
-  classroom50SubmitTags: false,
   tagDiffBase: 'cumulative',
   // Action inputs additionally exposed as workflow_dispatch inputs, so a manual
   // run can change them from the Actions tab. Copied, not referenced, so the
@@ -92,7 +91,7 @@ function getStepError(stepIndex, cfg) {
   }
   if (stepIndex === 4 && isTagTrigger(cfg)) {
     if (submissionTagList(cfg).length === 0) {
-      return 'Please enter at least one submission tag name, or tick the Classroom 50 option, before continuing.';
+      return 'Please enter at least one submission tag name before continuing.';
     }
     const invalid = invalidSubmissionTags(cfg);
     if (invalid.length > 0) {

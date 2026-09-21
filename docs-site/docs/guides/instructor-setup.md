@@ -185,14 +185,14 @@ When the workflow is [triggered by submission tags](../example-workflows/tag-sub
 
 ```
 {student-login}/
-  {tag-group}/                                                              ← e.g. phase1, complete, or submit (for submit/*)
+  {tag-group}/                                                              ← the submission tag, e.g. phase1 or complete
     questions.md
     raw-ai-output.md
     {assignment-name}_{student-login}_{tag-group}_quiz_{question-count}.imscc
     {assignment-name}_{student-login}_{tag-group}_brightspace_quiz_{question-count}.csv
 ```
 
-The tag group is the pattern reduced to filename-safe characters, so `submit/*` becomes `submit`. It is carried in the quiz filenames and in the quiz title shown in the LMS (`lab-3 - jsmith (phase1)`). Within one group the one-up-to-date-assessment rule above still applies: every tag matching `submit/*` replaces the previous `submit/` assessment.
+The tag group is the tag reduced to filename-safe characters — for a wildcard entry such as `phase*`, that is `phase`. It is carried in the quiz filenames and in the quiz title shown in the LMS (`lab-3 - jsmith (phase1)`). Within one group the one-up-to-date-assessment rule above still applies: re-pushing a tag replaces that group's assessment.
 
 ### Which quiz file to use
 

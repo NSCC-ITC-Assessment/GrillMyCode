@@ -138,9 +138,9 @@ describe('postIssue on a submission tag run', () => {
 
   it('titles the issue by the matched pattern, not the tag', async () => {
     const octokit = fakeOctokit([]);
-    await post(octokit, '', { tagPattern: 'submit/*' });
+    await post(octokit, '', { tagPattern: 'sprint/*' });
     expect(octokit.rest.issues.create).toHaveBeenCalledWith(
-      expect.objectContaining({ title: 'GrillMyCode Questions (tag: submit/*)' }),
+      expect.objectContaining({ title: 'GrillMyCode Questions (tag: sprint/*)' }),
     );
   });
 
