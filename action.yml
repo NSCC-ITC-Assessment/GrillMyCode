@@ -229,19 +229,19 @@ inputs:
 
   submission_tags:
     description: >
-      Tag patterns that mark a submission, for workflows triggered by a tag push
-      (on.push.tags). List the same patterns here as in the workflow's
-      on.push.tags, separated by commas or newlines — e.g. "complete, phase1",
-      or "submit/*" for Classroom 50 submit-only assignments. Patterns use
-      GitHub's filter syntax: * (not crossing /), **, ?, + and [ ] classes;
-      ! negation is not supported.
+      Tag names that mark a submission, for workflows triggered by a tag push
+      (on.push.tags). These are the tags you define for the assignment — no tag
+      is recognised unless it is listed here. Give the same entries as the
+      workflow's on.push.tags, separated by commas or newlines, e.g.
+      "complete" or "phase1, phase2, final". A wildcard entry is allowed and
+      uses GitHub's filter syntax: * (not crossing /), **, ?, + and [ ]
+      classes; ! negation is not supported.
 
       A run started by a tag (a tag push, or a manual run with a tag selected)
-      fails unless the tag matches one of these patterns and points at a commit
-      on the default branch. Each pattern is its own delivery group: every tag
-      matching it updates one assessment issue, one PDF and one instructor-repo
-      folder, so phase1 and phase2 are kept apart while every submit/* tag
-      shares one. Ignored on runs not started by a tag.
+      fails unless the tag matches one of these entries and points at a commit
+      on the default branch. Each entry is its own delivery group: it has one
+      assessment issue, one PDF and one instructor-repo folder, so phase1 and
+      phase2 are kept apart. Ignored on runs not started by a tag.
     required: false
     default: ""
 

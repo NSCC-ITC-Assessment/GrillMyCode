@@ -34,7 +34,7 @@ If the assignment's workflow is triggered by submission tags (the `submission_ta
 
 ```
 {studentLogin}/
-└── {tagGroup}/                                                             ← e.g. phase1, complete, or submit (for submit/*)
+└── {tagGroup}/                                                             ← the submission tag, e.g. phase1 or complete
     ├── questions.md
     ├── raw-ai-output.md
     ├── {{ASSIGNMENT_NAME}}_{studentLogin}_{tagGroup}_quiz_{questionCount}.imscc

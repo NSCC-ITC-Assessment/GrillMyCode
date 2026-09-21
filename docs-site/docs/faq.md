@@ -253,9 +253,9 @@ Yes — it is designed for [Classroom 50](https://github.com/foundation50/classr
 
 Classroom 50 prefixes every commit its own tooling makes with `[Classroom 50]`. In a student assignment repo you'll see the accept-time setup commit, an empty commit that opens the Feedback PR, and — if you later change the assignment's submission mode or rename it — commits authored under your own instructor account. All of them touch only files GrillMyCode already excludes, and the instructor-side ones carry `[skip ci]` so they don't trigger a run. Note that `gh student submit` also uses the prefix (`[Classroom 50] Submit <assignment>`) for the **student's own work**, so the prefix must never be treated as a "not the student" marker. See [Classroom 50's own commits](guides/classroom50.md#classroom-50s-own-commits).
 
-### Can GrillMyCode run when a student uses `gh student submit`?
+### Does `gh student submit` run GrillMyCode?
 
-It depends on the assignment's Classroom 50 **submission type**. On a *tagged commit* assignment, `gh student submit` pushes a `submit/…` tag with the student's own credentials, so a GrillMyCode workflow triggered on `submit/*` runs for every submission. On an *every push* assignment it pushes no tag of its own — Classroom 50 tags the commit afterwards using `github.token`, which never starts another workflow — so trigger on the push instead, or ask students to push an instructor-named tag. See [Classroom 50 submission modes](example-workflows/tag-submission.md#classroom-50-submission-modes).
+Only through the push trigger. Classroom 50 creates its own `submit/…` tags for grading, and GrillMyCode ignores them: a tag run happens only for a tag **you** named in `submission_tags`. So with a push-triggered workflow, `gh student submit` produces an assessment like any other push; with a tag-triggered one, students must also push your tag, e.g. `git tag complete && git push origin complete`. See [Classroom 50](guides/classroom50.md#assessing-submissions-instead-of-every-push).
 
 ### Why did my tag-triggered run fail?
 

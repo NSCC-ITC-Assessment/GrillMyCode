@@ -1,12 +1,6 @@
 import React, { useState } from 'react';
 import styles from '../styles.module.css';
-import {
-  CLASSROOM50_SUBMIT_TAG,
-  generateYaml,
-  instructorRepoActive,
-  isTagTrigger,
-  submissionTagList,
-} from '../generateYaml';
+import { generateYaml, instructorRepoActive, isTagTrigger, submissionTagList } from '../generateYaml';
 import { resolveDispatchOverrides } from '../dispatchInputs';
 
 function buildChecklist(cfg, docsBase) {
@@ -29,17 +23,13 @@ function buildChecklist(cfg, docsBase) {
   }
 
   if (isTagTrigger(cfg)) {
-    const tags = submissionTagList(cfg);
-    const named = tags.filter((t) => t !== CLASSROOM50_SUBMIT_TAG);
-    const example = named.find((t) => !/[*?+[\]]/.test(t));
+    const example = submissionTagList(cfg).find((t) => !/[*?+[\]]/.test(t));
     items.push({
       text:
         (example
           ? `Tell students how to submit: commit their finished work to the default branch, then run "git tag ${example} && git push origin ${example}". `
           : '') +
-        (tags.includes(CLASSROOM50_SUBMIT_TAG)
-          ? 'On Classroom 50 assignments whose submission type is "tagged commit", "gh student submit" pushes the submit/* tag for them. '
-          : '') +
+        'Nothing runs until they push one of your tags — on a Classroom 50 assignment, "gh student submit" alone does not. ' +
         'A tag on a commit that is not on the default branch fails the run. To resubmit under the same tag, ' +
         'move it with "git tag -f <name>" and push it with "git push --force origin <name>".',
       linkHref: `${docsBase}/example-workflows/tag-submission`,

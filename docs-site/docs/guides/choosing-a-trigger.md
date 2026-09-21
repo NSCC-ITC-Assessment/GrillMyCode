@@ -70,11 +70,12 @@ You also choose what each later milestone covers:
 
 **Keep in mind (for both kinds of tag):**
 
+- Only the tags you name count. GrillMyCode ignores every other tag, including the `submit/…` tags Classroom 50 creates for its own grading — so on a Classroom 50 assignment, `gh student submit` alone does not generate questions.
 - Students need to know the tag commands. Put them in the assignment instructions.
 - The tagged commit must be on the default branch. A tag on any other branch fails the run, so the student can see their submission didn't count.
 - To resubmit under the same tag, the student moves it to their latest commit and pushes it again: `git tag -f complete` then `git push --force origin complete`. The new questions replace the old ones for that tag.
 
-See [Tag Submission](../example-workflows/tag-submission.md) for a ready-to-use workflow, and for how tags fit with Classroom 50's own submission settings.
+See [Tag Submission](../example-workflows/tag-submission.md) for a ready-to-use workflow.
 
 ## Manual only
 
@@ -102,7 +103,7 @@ See [Manual Run Overrides](../example-workflows/manual-dispatch.md) for changing
 | An assessment at each stage of a longer project | **Submission tag**, one tag per milestone |
 | Each stage's questions to cover only that stage's new code | **Submission tag** with **only work since the previous tag** |
 | To decide the timing yourself | **Manual only** |
-| A run each time a student uses `gh student submit` on a Classroom 50 *tagged commit* assignment | **Submission tag** with `submit/*` ([details](../example-workflows/tag-submission.md#classroom-50-submission-modes)) |
+| Students to be assessed only on work they deliberately hand in | **Submission tag** |
 
 ## Can I use more than one?
 
