@@ -14,7 +14,10 @@
  * alongside {studentLogin}/raw-ai-output.md — the model's unprocessed reply,
  * filed for diagnosis. A run started by a submission tag writes both one level
  * down, in {studentLogin}/{tagGroup}/, so each milestone's assessment is kept
- * rather than replacing the last. The repository is named
+ * rather than replacing the last. That folder also carries submissions.md, a
+ * log of every run for the tag, and history/, the question sets each run
+ * replaced — so a resubmission is visible to the instructor (see
+ * submission-history.js). The repository is named
  * {assignmentName}-grillmycode-instructor and lives in the same organization as
  * the student repositories.
  *
@@ -40,6 +43,13 @@ import {
   INSTRUCTOR_RATE_LIMIT_MAX_WAIT_MS,
 } from '../constants.js';
 
+import {
+  SUBMISSION_HISTORY_DIR,
+  SUBMISSION_LOG_FILE,
+  parseSubmissionLog,
+  renderSubmissionLog,
+} from '../submission-history.js';
+
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const STUDENT_QUESTIONS_WORKFLOW = readFileSync(
   join(__dirname, '../workflows/generate-lms-quiz.yml'),
@@ -51,6 +61,14 @@ const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
 );
 
 const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/generate-lms-quiz.yml';
+
+/**
+ * The folder a student's assessment is filed in: {studentLogin}/, or
+ * {studentLogin}/{tagGroup}/ for a run started by a submission tag.
+ */
+export function assessmentFolder(studentLogin, tagGroup = '') {
+  return tagGroup ? `${studentLogin}/${tagGroup}` : studentLogin;
+}
 
 /** Resolves after `ms` milliseconds. */
 function sleep(ms) {
@@ -153,6 +171,26 @@ async function fetchFile(octokit, owner, repo, path) {
     if (err.status === 404) return {};
     throw err;
   }
+}
+
+/**
+ * Reads a tag group's submission record: the log rows so far and the
+ * questions.md the coming run will replace. A repository or folder that does
+ * not exist yet reads as an empty record — this runs before delivery creates
+ * either.
+ *
+ * Returns { entries, previousQuestions } where previousQuestions is the
+ * current questions.md content, or '' when there is none.
+ */
+export async function readSubmissionHistory({ octokit, owner, instructorRepoName, folder }) {
+  const [log, questions] = await Promise.all([
+    fetchFile(octokit, owner, instructorRepoName, `${folder}/${SUBMISSION_LOG_FILE}`),
+    fetchFile(octokit, owner, instructorRepoName, `${folder}/questions.md`),
+  ]);
+  return {
+    entries: parseSubmissionLog(log.content || ''),
+    previousQuestions: questions.content || '',
+  };
 }
 
 /**
@@ -382,6 +420,10 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * @param {string}  params.headSha             - Head commit SHA (used in commit message).
  * @param {string} [params.rawOutput]          - Verbatim model reply, filed beside the
  *                                               assessment. Omitted means no raw copy.
+ * @param {object} [params.submission]         - Tag runs only: `{ history, entry }`, the
+ *                                               record from readSubmissionHistory and this
+ *                                               run's log row. Archives the questions.md
+ *                                               being replaced and appends the row.
  */
 export async function deliverToInstructorRepo({
   octokit,
@@ -392,6 +434,7 @@ export async function deliverToInstructorRepo({
   content,
   headSha,
   rawOutput,
+  submission,
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
 
@@ -399,7 +442,7 @@ export async function deliverToInstructorRepo({
   // by the current workflow rather than whatever the repository was seeded with.
   await syncInstructorRepoFiles(octokit, owner, instructorRepoName);
 
-  const folder = tagGroup ? `${studentLogin}/${tagGroup}` : studentLogin;
+  const folder = assessmentFolder(studentLogin, tagGroup);
   const label = tagGroup ? `${studentLogin} (${tagGroup})` : studentLogin;
   const filePath = `${folder}/questions.md`;
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
@@ -432,6 +475,24 @@ export async function deliverToInstructorRepo({
     }
   }
 
+  // The submission record, ahead of questions.md for the same reason as the
+  // raw output: neither path starts the quiz workflow, and a failure here must
+  // not cost the assessment. The replaced question set is archived first, so a
+  // log row never points at an archive that failed to land.
+  if (tagGroup && submission) {
+    await recordSubmission({
+      octokit,
+      owner,
+      instructorRepoName,
+      folder,
+      studentLogin,
+      tagGroup,
+      shortHead,
+      label,
+      submission,
+    });
+  }
+
   // Many student runs commit to this shared branch at once; write with a
   // retry-and-refetch loop so a 409 from a racing commit doesn't drop this
   // student's assessment. The student folder is created implicitly by the API.
@@ -445,4 +506,62 @@ export async function deliverToInstructorRepo({
   });
 
   core.info(`Instructor assessment written to ${owner}/${instructorRepoName}/${filePath}`);
+}
+
+/**
+ * Archives the question set this run replaces and appends this run's row to
+ * submissions.md. Warns rather than throws: the record is for the instructor's
+ * benefit, and losing it must not cost the assessment itself.
+ *
+ * The archive is numbered by the log row that produced it — the last row
+ * before this run — so `history/3-questions.md` is what run #3 generated. A
+ * questions.md written before this record existed has no row, and is archived
+ * as `0-questions.md`.
+ */
+async function recordSubmission({
+  octokit,
+  owner,
+  instructorRepoName,
+  folder,
+  studentLogin,
+  tagGroup,
+  shortHead,
+  label,
+  submission,
+}) {
+  const { history, entry } = submission;
+  const location = `${owner}/${instructorRepoName}/${folder}`;
+  try {
+    if (history.previousQuestions) {
+      const lastRow = history.entries[history.entries.length - 1];
+      const archivePath = `${folder}/${SUBMISSION_HISTORY_DIR}/${lastRow ? lastRow.number : 0}-questions.md`;
+      await writeFileWithRetry({
+        octokit,
+        owner,
+        repo: instructorRepoName,
+        path: archivePath,
+        message: `chore: archive replaced assessment for ${label} at ${shortHead}`,
+        content: history.previousQuestions,
+        skipIfUnchanged: true,
+      });
+    }
+    await writeFileWithRetry({
+      octokit,
+      owner,
+      repo: instructorRepoName,
+      path: `${folder}/${SUBMISSION_LOG_FILE}`,
+      message: `chore: log submission #${entry.number} for ${label} at ${shortHead}`,
+      content: renderSubmissionLog({
+        student: studentLogin,
+        tagGroup,
+        entries: [...history.entries, entry],
+      }),
+    });
+    core.info(`Submission #${entry.number} recorded in ${location}/${SUBMISSION_LOG_FILE}`);
+  } catch (err) {
+    core.warning(
+      `Could not update the submission record in ${location}: ${err.message}. ` +
+        `The assessment itself is still being written.`,
+    );
+  }
 }

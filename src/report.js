@@ -34,6 +34,7 @@ export function formatReport({
   sourceRepo,
   allChangedFiles,
   pdfUrl,
+  submissionNote,
 }) {
   const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
   const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
@@ -60,6 +61,8 @@ export function formatReport({
   const instructorContextNote = contextSummary ? `> **Instructor Note:** ${contextSummary}\n` : '';
 
   const studentNote = studentLogin ? `\n> **Student:** \`${studentLogin}\`\n` : '';
+  // Instructor copy only: flags a resubmission under the same tag.
+  const submissionLine = submissionNote ? `> **Submission:** ${submissionNote}\n` : '';
   const sourceRepoNote = sourceRepo ? `> **Repository:** \`${sourceRepo}\`\n` : '';
 
   const pdfBadge = pdfUrl
@@ -79,6 +82,7 @@ export function formatReport({
     `> **Commits reviewed:** \`${shortBase}\` → \`${shortHead}\``,
     branchNote,
     tagNote,
+    submissionLine,
     `> **Code Files Assessed:** ${fileList}`,
     contextNote,
     instructorContextNote,

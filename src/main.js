@@ -45,7 +45,19 @@ import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput } from './report.js';
 import { postIssue } from './delivery/issue.js';
-import { deliverToInstructorRepo } from './delivery/instructor-repo.js';
+import {
+  assessmentFolder,
+  deliverToInstructorRepo,
+  readSubmissionHistory,
+} from './delivery/instructor-repo.js';
+import {
+  TRIGGER_MANUAL_RUN,
+  TRIGGER_TAG_PUSH,
+  buildSubmissionEntry,
+  ordinal,
+  submissionNote,
+  summariseSubmissions,
+} from './submission-history.js';
 import { generatePdf } from './delivery/pdf.js';
 import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
@@ -100,6 +112,13 @@ function createRunState() {
     tagName: '',
     tagPattern: '',
     previousTagName: '',
+    // Tag runs with instructor delivery: how many times the student has
+    // submitted under this tag, including this run when it counts. null when
+    // the record was unavailable. tagMoved is the push payload's own signal
+    // that an existing tag was re-pushed, used when there is no record.
+    submissionCount: null,
+    submissionCounted: true,
+    tagMoved: false,
     baseSha: '',
     headSha: '',
 
@@ -376,6 +395,16 @@ function renderDelivery(state) {
 
 function renderNotes(state) {
   const notes = [...state.diagnostics];
+  if (state.tagName && state.submissionCount !== null) {
+    if (state.submissionCounted && state.submissionCount >= 2) {
+      notes.push(
+        `This is the ${ordinal(state.submissionCount)} submission under this tag — the previous ` +
+          `questions were replaced, and the resubmission is recorded for the instructor.`,
+      );
+    }
+  } else if (state.tagMoved) {
+    notes.push('This tag had been pushed before, so this run is a resubmission.');
+  }
   if (state.questionsWithheld > 0) {
     // Count only. The guard that caught it stays out of the student's view so a
     // prompt-injection attempt gets no feedback on which attempts landed.
@@ -584,6 +613,12 @@ async function run() {
       const submissionTag = resolveSubmissionTag(tagName, inputs.submissionTags);
       state.tagName = tagName;
       state.tagPattern = submissionTag.pattern;
+      // A push that moves an existing tag carries the old target in `before`;
+      // a brand-new tag carries all zeros. Deleting and re-pushing a tag looks
+      // brand-new here, which is why the instructor-repo record is the count
+      // that matters and this is only the fallback.
+      state.tagMoved =
+        ctx.eventName === 'push' && !!ctx.payload.before && !/^0+$/.test(ctx.payload.before);
       tagSlug = submissionTag.slug;
       core.info(
         `Submission tag: ${tagName} (matched submission_tags pattern ${submissionTag.pattern})`,
@@ -960,6 +995,48 @@ async function run() {
       // from one quiz). The container is the one boundary the model marks
       // explicitly, so it is now carried through for the parser to use.
       const instructorQuestions = cleanedQuestions;
+
+      // ── Submission record (tag runs only) ─────────────────────────────────
+      // Read before the report is built so the instructor copy's header can
+      // flag a resubmission. A failed read skips the record, never the delivery.
+      let submission = null;
+      let resubmissionNote = '';
+      if (tagSlug) {
+        try {
+          const history = await readSubmissionHistory({
+            octokit: instructorOctokit,
+            owner: ctx.repo.owner,
+            instructorRepoName,
+            folder: assessmentFolder(submitter, tagSlug),
+          });
+          const entry = buildSubmissionEntry({
+            entries: history.entries,
+            trigger: ctx.eventName === 'push' ? TRIGGER_TAG_PUSH : TRIGGER_MANUAL_RUN,
+            actor: process.env.GITHUB_TRIGGERING_ACTOR || ctx.actor || '',
+            studentLogin,
+            tagName,
+            headSha,
+          });
+          const summary = summariseSubmissions(history.entries, entry);
+          resubmissionNote = submissionNote(summary, state.tagPattern, entry);
+          submission = { history, entry };
+          state.submissionCount = summary.submissions;
+          state.submissionCounted = summary.counted;
+          if (summary.counted && summary.submissions >= 2) {
+            core.warning(
+              `Resubmission: this is the ${ordinal(summary.submissions)} submission under tag ` +
+                `group "${state.tagPattern}". The replaced questions are archived in the ` +
+                `instructor repository.`,
+            );
+          }
+        } catch (err) {
+          core.warning(
+            `Could not read the submission record from the instructor repository ` +
+              `(${err.message}); this run will not be counted.`,
+          );
+        }
+      }
+
       const instructorReport = formatReport({
         questions: instructorQuestions,
         files,
@@ -974,6 +1051,7 @@ async function run() {
         contextSummary,
         studentLogin: submitter,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
+        submissionNote: resubmissionNote,
       });
       const rawOutputCopy = formatRawOutput({
         rawOutput: aiOutput,
@@ -1002,6 +1080,7 @@ async function run() {
           content: instructorReport,
           headSha,
           rawOutput: rawOutputCopy,
+          submission,
         });
         state.instructorDelivery = 'delivered';
       } catch (err) {
