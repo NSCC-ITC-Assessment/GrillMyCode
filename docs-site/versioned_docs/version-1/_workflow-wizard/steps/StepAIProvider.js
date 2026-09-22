@@ -9,7 +9,7 @@ const OPENROUTER_MODELS = [
   { label: 'Google Gemini 3.5 Flash Lite — Recommended', value: 'google/gemini-3.5-flash-lite' },
   { label: 'Deepseek V4 Flash', value: 'deepseek/deepseek-v4-flash' },
   { label: 'Minimax 2.7', value: 'minimax/minimax-m2.7' },
-  { label: 'Step 3.5 Flash', value: 'stepfun/step-3.5-flash' },
+  { label: 'Step 3.7 Flash', value: 'stepfun/step-3.7-flash' },
   { label: 'Tencent Hy3', value: 'tencent/hy3' },
   { label: 'Xiaomi Mimo V2.5 Pro', value: 'xiaomi/mimo-v2.5-pro' },
 ];

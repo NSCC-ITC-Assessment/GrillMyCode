@@ -80,7 +80,7 @@ const INITIAL_CONFIG = {
   headSha: '',
 };
 
-const OPENROUTER_MODEL_VALUES = ['google/gemini-3.5-flash-lite', 'deepseek/deepseek-v4-flash', 'minimax/minimax-m2.7', 'stepfun/step-3.5-flash', 'tencent/hy3', 'xiaomi/mimo-v2.5-pro'];
+const OPENROUTER_MODEL_VALUES = ['google/gemini-3.5-flash-lite', 'deepseek/deepseek-v4-flash', 'minimax/minimax-m2.7', 'stepfun/step-3.7-flash', 'tencent/hy3', 'xiaomi/mimo-v2.5-pro'];
 
 function getStepError(stepIndex, cfg) {
   if (stepIndex === 0) {

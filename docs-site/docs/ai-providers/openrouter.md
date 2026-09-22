@@ -52,7 +52,7 @@ The following models have been tested with GrillMyCode and are all usually under
 | **Google Gemini 3.5 Flash Lite** ⭐ **Recommended** | `google/gemini-3.5-flash-lite` *(default)* | Google's entry-level flash tier; fast, cheap, and consistent for short-form generation tasks. Of the tested models it produces the most effective distractors for multiple-choice questions, which is why it is both recommended and the default. |
 | DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | Extremely low cost; strong instruction-following for structured JSON output. A reliable alternative. |
 | Minimax M2.7 | `minimax/minimax-m2.7` | Very inexpensive; performs well on question generation with minimal prompt tuning. |
-| StepFun Step 3.5 Flash | `stepfun/step-3.5-flash` | Competitive quality-per-token ratio; tested to produce well-formed assessment questions. |
+| StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` | Competitive quality-per-token ratio; tested to produce well-formed assessment questions. |
 | Tencent Hy3 | `tencent/hy3` | Model from Tencent; cheap and functional, though output style may vary. |
 | Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` | Reasoning-optimised model from Xiaomi; good at following structured output constraints. |
 
