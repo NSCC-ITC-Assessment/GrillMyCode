@@ -60,4 +60,14 @@ jobs:
 Costs vary by orders of magnitude between models. `anthropic/claude-3-5-sonnet` is considerably more expensive per assessment than the [recommended low-cost models](../ai-providers/openrouter.md#recommended-models). Verify the current rate at [openrouter.ai/models](https://openrouter.ai/models) and check it against your class size before rolling this out.
 :::
 
+### Prioritising speed or cost
+
+Adding a routing variant to the model ID chooses **which provider** serves it. `:nitro` tries the fastest providers first, `:floor` the cheapest:
+
+```yaml
+          ai_model: "anthropic/claude-3-5-sonnet:nitro"
+```
+
+The model is the same either way, so the questions are unaffected — only generation speed and price change. `:nitro` suits the case where a model's questions are what you want but assessments are slow to arrive; check the model's per-provider pricing at [openrouter.ai/models](https://openrouter.ai/models) first, as the fastest endpoints are often the dearest. See [Model routing variants](../ai-providers/openrouter.md#model-routing-variants).
+
 For full provider documentation see [OpenRouter](../ai-providers/openrouter.md).

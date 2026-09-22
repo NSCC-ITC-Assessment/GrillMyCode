@@ -57,6 +57,11 @@ jobs:
 
           # Model identifier, in OpenRouter's provider/model-name format.
           # See https://openrouter.ai/models for the full catalogue and pricing.
+          # Optionally append a routing variant to choose which of the providers
+          # serving the model is tried first — ":nitro" for the fastest (use when
+          # the model's questions are good but assessments are slow to arrive;
+          # check pricing first, as fast endpoints can cost more), ":floor" for
+          # the cheapest. The model itself is unchanged.
           ai_model: "google/gemini-3.5-flash-lite"
 
           # Total number of attempts (initial + retries) when calling the AI provider.
