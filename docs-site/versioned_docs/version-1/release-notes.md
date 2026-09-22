@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.9.0 — 2026-09-22
+
+### What's Changed
+
+### Features
+
+- mark assessed repositories in GitHub's own metadata
+
 ## v1.8.0 — 2026-09-22
 
 ### What's Changed
