@@ -118,6 +118,10 @@ inputs:
       is created automatically on first run if it does not already exist, and
       its quiz-generation workflow and README are refreshed on every run
       whenever they differ from the copies shipped with the action.
+      Providing this also turns on multiple-choice distractor generation: the
+      three wrong options per question exist only for the quiz built from the
+      instructor copy, so without this token the action asks the model for the
+      correct answer alone.
       Leave empty to disable instructor repository delivery.
     required: false
     default: ""

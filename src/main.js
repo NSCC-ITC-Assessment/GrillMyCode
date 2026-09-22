@@ -777,12 +777,30 @@ async function run() {
     // Paths only — the contents are instructor material and never rendered.
     state.assignmentContextFiles = assignmentContextFiles;
 
+    // Distractors are stripped from every student-facing copy and are never
+    // set as an output, so the instructor repository is the only place they
+    // ever arrive — as the source the quiz workflow builds the multiple-choice
+    // package from. Without a token for that repository they would be written,
+    // paid for and discarded, so they are not asked for at all. The gate is the
+    // token alone and not whether delivery will actually succeed: identity is
+    // resolved by then, but letting a transient Collaborators API failure
+    // change what the model is asked to write would make the questions
+    // themselves depend on an unrelated API's good day.
+    const includeDistractors = Boolean(inputs.instructorRepoToken);
+    core.info(
+      includeDistractors
+        ? 'Instructor repository configured — generating multiple-choice distractors.'
+        : 'No instructor_repo_token — generating correct answers only, without ' +
+            'multiple-choice distractors (nothing downstream would consume them).',
+    );
+
     const messages = buildPrompt({
       codeContent,
       files,
       numQuestions: inputs.numQuestions,
       instructorContext: inputs.instructorContext,
       assignmentContext,
+      includeDistractors,
     });
     core.debug(`Prompt messages:\n${JSON.stringify(messages, null, 2)}`);
 
