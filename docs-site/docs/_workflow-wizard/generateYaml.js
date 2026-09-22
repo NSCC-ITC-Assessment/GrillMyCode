@@ -110,6 +110,7 @@ const DEFAULTS = {
   includeInitialCommit: false,
   skipCommitters: 'github-actions[bot]',
   instructorRepoEnabled: false,
+  repoMarker: 'off',
   tagDiffBase: 'cumulative',
   baseSha: '',
   headSha: '',
@@ -439,6 +440,16 @@ export function generateYaml(inputCfg, { actionRef = 'v1' } = {}) {
     lines.push('          # Classroom 50 assignment repositories only — any other repository');
     lines.push('          # skips instructor repository delivery with a warning.');
     lines.push(`          instructor_repo_token: ${secretRef(tokenSecret)}`);
+
+    // Emitted inside the instructor block because the marker writes to
+    // repository metadata, which is out of reach of GITHUB_TOKEN — it shares
+    // this PAT. Without instructor delivery there is no token to write with,
+    // so the input would only produce a warning on every run.
+    if (differ(cfg, 'repoMarker')) {
+      lines.push('          # Marks the student repository as assessed, so it stands out in');
+      lines.push("          # the org's repository list. Uses the PAT above, not GITHUB_TOKEN.");
+      lines.push(`          repo_marker: ${yamlStr(cfg.repoMarker)}`);
+    }
   }
 
   // ── Submission tags ────────────────────────────────────────────────────────

@@ -126,6 +126,25 @@ inputs:
     required: false
     default: ""
 
+  repo_marker:
+    description: >
+      Marks the student repository in GitHub's own metadata once questions have
+      been generated, so that assessed repositories stand out in an
+      organisation's repository list.
+      Supported values: off (default, writes nothing), topic (adds the
+      "grillmycode" topic, which also makes the repositories findable with
+      org:<org> topic:grillmycode), description (appends
+      "- GrillMyCode: N questions" to the repository description, the only
+      surface that can carry the question count), or both.
+      Requires instructor_repo_token: repository metadata is out of reach of
+      GITHUB_TOKEN, whose permissions key has no administration scope to grant.
+      Without that token the marker is skipped with a warning.
+      Existing topics are preserved, and a previously written description
+      marker is replaced rather than appended to, so repeated runs leave one
+      accurate marker. A failure here never fails the run.
+    required: false
+    default: "off"
+
   assignment_context:
     description: >
       Comma-separated file glob(s) whose contents are read from the repository

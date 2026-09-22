@@ -144,6 +144,22 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                └── writeFileWithRetry()
                      Writes {studentLogin}/questions.md, retrying on 409/422
                      conflicts and backing off on rate limits
+               │
+     applyRepoMarker()   ← only when repo_marker is not "off"
+               │  Marks the STUDENT repository, on the instructor PAT (repository
+               │  metadata is unreachable with GITHUB_TOKEN — the permissions key
+               │  has no administration scope). Runs last and never throws: the
+               │  student already has their questions by this point
+               │
+               ├── getAllTopics() → replaceAllTopics()
+               │     Reads first and writes back the union: the endpoint replaces
+               │     the whole topic set, so a blind write would delete the
+               │     instructor's own topics. Skipped when already present
+               │
+               └── repos.get() → repos.update()
+                     Strips any marker from an earlier run before appending the
+                     current one, so repeated pushes leave one accurate marker.
+                     Leaves an over-long description untouched
 ```
 
 ---
@@ -268,7 +284,7 @@ delivered by that point.
 - **Shell injection prevention:** all `git` calls use `spawnSync` with an explicit argument array — no shell string interpolation. SHAs are validated with `sanitiseSha()` before use.
 - **Secret masking:** the external API key is registered with `core.setSecret()` before any API call, preventing it from appearing in workflow logs.
 - **Minimal permissions:** the action only requests the permissions it needs for the chosen delivery method.
-- **Token separation:** the instructor PAT is used exclusively by `src/delivery/instructor-repo.js`, through its own Octokit instance. It is never passed to the student-facing delivery paths, and the student's `GITHUB_TOKEN` is never given access to the instructor repository — which is what keeps the answer key out of reach of anyone who can read the student's repository or its workflow logs.
+- **Token separation:** the instructor PAT is used only by `src/delivery/instructor-repo.js` and `src/repo-marker.js`, each through its own Octokit instance. It is never passed to the student-facing delivery paths, and the student's `GITHUB_TOKEN` is never given access to the instructor repository — which is what keeps the answer key out of reach of anyone who can read the student's repository or its workflow logs. `src/repo-marker.js` writes only repository metadata (topics, description) on the student's own repository and reads nothing from the instructor repository, so sharing the PAT widens what the token is used for without widening what a student can see.
 
 ---
 
