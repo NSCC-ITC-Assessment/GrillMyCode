@@ -94,6 +94,9 @@ buildPrompt()
     │  Constructs the system + user messages for the AI
     │  Injects assignment context (file contents) then instructor instructions
     │  AI receives comment-stripped file content, not the raw diff
+    │  Asks for multiple-choice distractors only when instructor_repo_token is
+    │  set — nothing else consumes them, so without it the model is asked for
+    │  the correct answer alone
     │
 callAI()
     │  POSTs to the provider's chat completions endpoint

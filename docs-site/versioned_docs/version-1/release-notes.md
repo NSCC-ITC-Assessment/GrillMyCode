@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.8.0 — 2026-09-22
+
+### What's Changed
+
+### Features
+
+- gate distractor generation on instructor repository token
+
+### Documentation
+
+- enhance OpenRouter integration with model routing variants
+
 ## v1.7.0 — 2026-09-21
 
 ### What's Changed

@@ -44,6 +44,10 @@ The [Workflow Wizard](workflow-wizard.mdx) generates the correct `permissions` b
 
 The instructor repository feature stores a private copy of each student's questions and answers in a repository that only instructors can access. It is available only in Classroom 50 assignment repositories — the student repositories Classroom 50 creates when a student accepts an assignment — because the action identifies the assignment and student from Classroom 50's repository naming. It requires a one-time org-level setup. See the [Instructor Setup guide](guides/instructor-setup.md) for step-by-step instructions.
 
+### Are multiple-choice distractors always generated?
+
+No — only when `instructor_repo_token` is set. The three wrong options belong to the quiz built from the instructor copy, and every student-facing report strips them out, so without an instructor repository to file them in they would be generated and thrown away. The action asks the model for the correct answer alone in that case, which makes each assessment cheaper and quicker to generate. Nothing a student sees changes either way, and adding the token brings distractors back on the next run.
+
 ---
 
 ## Workflow Wizard

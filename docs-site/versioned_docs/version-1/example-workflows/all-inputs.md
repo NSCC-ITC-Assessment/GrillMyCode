@@ -134,6 +134,10 @@ jobs:
           # The assignment name and student folder are read from the Classroom 50
           # repo name (<classroom>-<assignment>-<username>) and its direct
           # collaborators; any other repo skips instructor delivery with a warning.
+          # Also turns on multiple-choice distractor generation: the three wrong
+          # options per question are used only by the quiz built from the instructor
+          # copy (student reports always strip them), so with no token set the action
+          # asks the model for the correct answer alone — cheaper and quicker.
           # Leave empty (default) to disable instructor repository delivery.
           # instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 
