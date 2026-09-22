@@ -39,6 +39,7 @@ for one-time instructor setup.
 | `exclude_pattern_overrides`    | No       |                                | Comma-separated entries that allow specific files through the auto-detected exclude patterns. Each entry can be an **exact pattern** (e.g. `**/*.md` — re-includes all Markdown files) or a **specific file path** (e.g. `README.md` — only that file passes through while `**/*.md` still excludes everything else).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
 | `additional_exclude_patterns`  | No       |                                | Comma-separated globs for **extra** files to exclude on top of the auto-detected stack patterns. Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover. See [Exclude Patterns](https://grillmycode.org/docs/reference/exclude-patterns).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
 | `instructor_repo_token`        | No       |                                | **Classroom 50 assignment repositories only.** PAT with `repo` and `workflow` scopes and permission to create repositories in the same organisation. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode-instructor` in the same organisation. The repository is created automatically on first run, and its quiz-generation workflow and README are refreshed on every run whenever they differ from the copies shipped with the action. The assignment name and student folder are read from the Classroom 50 repository name (`<classroom>-<assignment>-<username>`) and its direct collaborators; any other repository skips instructor delivery with a warning. It also switches on multiple-choice distractor generation: the three wrong options exist only for the quiz built from this copy, so when the token is absent the action asks the model for the correct answer alone. Leave empty to disable instructor repository delivery. |
+| `repo_marker`                  | No       | `off`                          | Marks the **student repository** in GitHub's own metadata once questions exist, so assessed repositories stand out in an organisation's repository list. `topic` adds the `grillmycode` topic (which also makes them findable with `org:<org> topic:grillmycode`); `description` appends `· 🔥 GrillMyCode: N questions` to the repository description, the only surface that can carry the count; `both` does both. Requires `instructor_repo_token` — repository metadata is out of reach of `GITHUB_TOKEN`, whose `permissions` key has no `administration` scope. Existing topics are preserved and a previous description marker is replaced rather than appended to. A failure here never fails the run.                                                                                                                                                                                                                                                                                                                                           |
 | `instructor_context`           | No       |                                | Instructor-specific instructions for this assignment. Injected at the end of the system prompt and takes precedence over any conflicting default behaviour. Supports multi-line, detailed instructions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 | `assignment_context`           | No       |                                | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `instructor_context`. Steers which topics the questions focus on. Globs match the student's checked-out tree, so prefer instructor-maintained paths (a `docs/` directory, a PDF brief) where possible. Use `instructor_context` for instructions that must take effect regardless. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"docs/brief.pdf, instructor/rubric.docx"`.                                                                                                                                                                                                                                                                                                                                                                                    |
 | `assignment_context_max_chars` | No       | `20000`                        | Maximum total characters read from all `assignment_context` files combined. Prevents large files from flooding the prompt. Values below 1 are clamped to 1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
@@ -308,6 +309,42 @@ questions **and** answers — outside the student's repository:
 
 Add the PAT once as an **org-level** Actions secret and every student repository inherits it. Full
 walkthrough: [Instructor Setup](https://grillmycode.org/docs/guides/instructor-setup).
+
+---
+
+## Marking assessed repositories
+
+`repo_marker` writes a marker to the **student repository's** own GitHub metadata once questions
+have been generated, so an instructor scanning the organisation's repository list can see which
+repositories have a question set without opening any of them:
+
+```yaml
+- uses: NSCC-ITC-Assessment/GrillMyCode@v1
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
+    instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+    repo_marker: 'both'
+```
+
+- `topic` adds the `grillmycode` topic. That is the filterable surface: once set,
+  `org:<your-org> topic:grillmycode` lists exactly the assessed repositories.
+- `description` appends `· 🔥 GrillMyCode: N questions` to the repository description — the only
+  surface that can carry the question **count**, and one that renders in every repository list view.
+- `both` writes both. They are necessarily two API calls: GitHub's repository-update endpoint
+  cannot set topics.
+- It **requires `instructor_repo_token`**. Repository metadata is unreachable with `GITHUB_TOKEN` at
+  any `permissions:` setting, because that key has no `administration` scope to grant, so the marker
+  shares the instructor PAT. Set `repo_marker` without it and the run warns and writes nothing.
+- Existing topics are **preserved** — the topics endpoint replaces the whole set, so the action
+  reads the current one and writes back the union rather than clobbering topics you set by hand. A
+  description marker from an earlier run is replaced rather than appended to, and a description that
+  would exceed GitHub's 350-character limit is left untouched.
+- A marker means _questions have been generated for this repository at least once_. Nothing clears
+  it, so for live state — which repositories have an **open** question set right now — search
+  `org:<your-org> is:issue is:open label:assessment` instead, which needs no configuration at all.
+
+Full example: [Repository Marker](https://grillmycode.org/docs/example-workflows/2-repo-marker).
 
 ---
 

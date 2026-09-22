@@ -119,6 +119,95 @@ export default function StepInstructorRepo({ cfg, onChange, docsBase = '/docs' }
                   </span>
                 )}
               </div>
+
+              {/*
+                The repository marker lives here rather than on its own step
+                because it writes to repository metadata, which GITHUB_TOKEN
+                cannot reach at any permissions: setting — it shares the PAT
+                above. Offering it anywhere else would let an instructor
+                configure a marker that could never be written.
+              */}
+              <div className={styles.fieldGroup} style={{ marginTop: '1rem' }}>
+                <label className={styles.label}>
+                  Mark assessed repositories in the organisation list
+                </label>
+                <span className={styles.hint}>
+                  Once questions have been generated, the action can mark the student repository in
+                  GitHub's own metadata, so you can tell which repositories have a question set
+                  without opening them. Existing topics are kept, and the marker replaces itself on
+                  each run rather than stacking up. See the{' '}
+                  <a
+                    href={`${docsBase}/example-workflows/2-repo-marker`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    Repository Marker example
+                  </a>
+                  .
+                </span>
+                <div className={styles.radioGroup}>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="repoMarker"
+                      checked={(cfg.repoMarker || 'off') === 'off'}
+                      onChange={() => onChange({ repoMarker: 'off' })}
+                    />
+                    <span>
+                      <strong>Don't mark them</strong> (Default)
+                      <div className={styles.radioDescription}>
+                        No repository metadata is touched.
+                      </div>
+                    </span>
+                  </label>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="repoMarker"
+                      checked={cfg.repoMarker === 'topic'}
+                      onChange={() => onChange({ repoMarker: 'topic' })}
+                    />
+                    <span>
+                      <strong>Add a <code>grillmycode</code> topic</strong>
+                      <div className={styles.radioDescription}>
+                        Also makes assessed repositories filterable with{' '}
+                        <code>org:&lt;your-org&gt; topic:grillmycode</code>. Note that GitHub shows
+                        topic chips in some repository list views and not others — check it appears
+                        in the view you use.
+                      </div>
+                    </span>
+                  </label>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="repoMarker"
+                      checked={cfg.repoMarker === 'description'}
+                      onChange={() => onChange({ repoMarker: 'description' })}
+                    />
+                    <span>
+                      <strong>Append to the repository description</strong>
+                      <div className={styles.radioDescription}>
+                        Adds <code>· 🔥 GrillMyCode: N questions</code> — the only option that
+                        carries the question count, and it renders in every repository list view.
+                      </div>
+                    </span>
+                  </label>
+                  <label className={styles.radioLabel}>
+                    <input
+                      type="radio"
+                      name="repoMarker"
+                      checked={cfg.repoMarker === 'both'}
+                      onChange={() => onChange({ repoMarker: 'both' })}
+                    />
+                    <span>
+                      <strong>Both</strong>
+                      <div className={styles.radioDescription}>
+                        The topic for filtering, the description for the count.
+                      </div>
+                    </span>
+                  </label>
+                </div>
+              </div>
             </div>
           )}
         </>

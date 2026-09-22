@@ -50,6 +50,11 @@ const INITIAL_CONFIG = {
   aiModelVariant: '',
   apiKeySecret: 'OPENROUTER_API_KEY',
 
+  // Repository marker: what the action writes to the student repository's own
+  // metadata once questions exist — 'off' | 'topic' | 'description' | 'both'.
+  // Shares the instructor PAT, so the Instructor step offers it.
+  repoMarker: 'off',
+
   numQuestions: 20,
   includeAnswers: false,
   instructorContext: '',

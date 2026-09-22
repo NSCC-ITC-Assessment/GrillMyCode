@@ -2,7 +2,7 @@
 
 ## TL;DR
 
-Add a multi-step wizard React page to the existing Docusaurus docs-site that guides an instructor through all 26 action inputs and generates a copyable GitHub Actions workflow YAML. Built entirely with existing React + CSS Modules — no new dependencies.
+Add a multi-step wizard React page to the existing Docusaurus docs-site that guides an instructor through all 23 action inputs and generates a copyable GitHub Actions workflow YAML. Built entirely with existing React + CSS Modules — no new dependencies.
 
 ---
 
@@ -45,6 +45,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   usesClassroom50: null,                     // true | false; null until answered on the Instructor step
   instructorRepoEnabled: false,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
+  repoMarker: 'off',                         // 'off' | 'topic' | 'description' | 'both'
 
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
@@ -92,6 +93,12 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   (`instructorRepoActive`), preceded by a comment that it works in Classroom 50 assignment
   repositories only — the action identifies the assignment and student from Classroom 50's
   repository naming and skips instructor delivery anywhere else
+- `repo_marker` is emitted only inside the `instructorRepoActive` block, and only when non-default.
+  It writes to the student repository's topics/description, which `GITHUB_TOKEN` cannot reach at any
+  `permissions:` setting (that key has no `administration` scope), so it shares
+  `instructor_repo_token`. Offering it without that token would generate a workflow that only ever
+  warns. Its radio group lives on the Instructor step, under the token field, for the same reason —
+  it is not an Advanced-step option
 - Include inline YAML comments on non-obvious inputs
 - Secret references use `${{ secrets.SECRET_NAME }}` format
 
@@ -109,7 +116,7 @@ the shipped wizard lives.
 4. `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js`
 5. `docs-site/docs/_workflow-wizard/steps/StepQuestions.js`
 6. `docs-site/docs/_workflow-wizard/steps/StepDelivery.js`
-7. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Required "created by Classroom 50?" question; only a "Yes" reveals instructor repository delivery + token secret name, and a "No" explains the feature is unavailable
+7. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Required "created by Classroom 50?" question; only a "Yes" reveals instructor repository delivery + token secret name, and a "No" explains the feature is unavailable. Enabling delivery also reveals the `repoMarker` radio group, which shares the same PAT
 8. `docs-site/docs/_workflow-wizard/steps/StepFiles.js`
 9. `docs-site/docs/_workflow-wizard/steps/StepFileOptions.js`
 10. `docs-site/docs/_workflow-wizard/steps/StepAdvanced.js`

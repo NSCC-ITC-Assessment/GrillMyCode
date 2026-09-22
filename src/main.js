@@ -9,6 +9,7 @@
  *   5. Generate a PDF of the assessment and attach it to the gmc-assessments release
  *   6. Create or update a GitHub Issue with the assessment questions and PDF link
  *   7. Optionally write a full instructor copy (with answers) to a private instructor repo
+ *   8. Optionally mark the student repository (topic / description) as assessed
  */
 
 import * as core from '@actions/core';
@@ -45,6 +46,7 @@ import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput } from './report.js';
 import { postIssue } from './delivery/issue.js';
+import { applyRepoMarker } from './repo-marker.js';
 import {
   assessmentFolder,
   deliverToInstructorRepo,
@@ -143,6 +145,11 @@ function createRunState() {
     pdfError: '',
     instructorDelivery: 'skipped',
     instructorError: '',
+    // repo_marker outcome per surface — see src/repo-marker.js for the status
+    // values. 'skipped' covers both repo_marker: off and a missing PAT.
+    repoMarkerTopic: 'skipped',
+    repoMarkerDescription: 'skipped',
+    repoMarkerError: '',
 
     inputs: null,
     diagnostics: [],
@@ -341,6 +348,7 @@ function renderConfiguration(state) {
       `${i.includeInitialCommit ? '**yes**' : 'no'}${flag(i.includeInitialCommit)}`,
     ],
     ...(state.tagName ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
+    ...(i.repoMarker !== 'off' ? [['Repository marker', `\`${i.repoMarker}\``]] : []),
     ['Manual SHA override', i.baseSha || i.headSha ? `**in effect**${flag(true)}` : 'none'],
     [
       'Exclude patterns',
@@ -368,6 +376,29 @@ function renderConfiguration(state) {
   return details('Configuration used by this run', table(['Setting', 'Value'], rows) + note);
 }
 
+/**
+ * Renders the repo_marker outcome for the delivery table. Each surface reports
+ * separately because they are separate API calls that can disagree — a topic
+ * can be written while the description is refused — and a single combined
+ * status would hide which half of `both` actually landed.
+ */
+function renderRepoMarker(state) {
+  const label = {
+    applied: '✅ written',
+    unchanged: '✅ already current',
+    'too-long': '⚠️ skipped — description would exceed the length limit',
+    failed: `❌ failed${state.repoMarkerError ? ` — ${state.repoMarkerError}` : ''}`,
+  };
+  const parts = [];
+  if (state.repoMarkerTopic !== 'skipped') {
+    parts.push(`topic — ${label[state.repoMarkerTopic] ?? '—'}`);
+  }
+  if (state.repoMarkerDescription !== 'skipped') {
+    parts.push(`description — ${label[state.repoMarkerDescription] ?? '—'}`);
+  }
+  return parts.length > 0 ? parts.join('<br>') : '— not configured';
+}
+
 function renderDelivery(state) {
   const rows = [
     [
@@ -389,6 +420,7 @@ function renderDelivery(state) {
         failed: `❌ failed${state.instructorError ? ` — ${state.instructorError}` : ''}`,
       }[state.instructorDelivery] ?? '—',
     ],
+    ['Repository marker', renderRepoMarker(state)],
   ];
   return `### Delivery\n\n${table(['Output', 'Status'], rows)}`;
 }
@@ -1108,6 +1140,33 @@ async function run() {
           `Failed to write to instructor repository ${ctx.repo.owner}/${instructorRepoName}: ${err.message}`,
         );
       }
+    }
+
+    // ── Mark the student repository as assessed ─────────────────────────────
+    // Deliberately last. It is the only step that writes to metadata the
+    // instructor owns, and the least consequential thing in the run: the
+    // student already has their questions by this point, so nothing here is
+    // allowed to put that at risk. applyRepoMarker never throws.
+    if (inputs.repoMarker !== 'off' && !inputs.instructorRepoToken) {
+      core.warning(
+        `repo_marker is set to "${inputs.repoMarker}" but instructor_repo_token is not ` +
+          `configured, so no marker was written. Repository topics and descriptions are out of ` +
+          `reach of GITHUB_TOKEN — the permissions key has no administration scope to grant — ` +
+          `so the marker rides on the same PAT as instructor delivery.`,
+      );
+    } else if (inputs.repoMarker !== 'off') {
+      const marker = await applyRepoMarker({
+        octokit: github.getOctokit(inputs.instructorRepoToken, {
+          headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
+        }),
+        owner: ctx.repo.owner,
+        repo: ctx.repo.repo,
+        mode: inputs.repoMarker,
+        questionCount: state.questionsGenerated ?? 0,
+      });
+      state.repoMarkerTopic = marker.topic;
+      state.repoMarkerDescription = marker.description;
+      state.repoMarkerError = marker.error;
     }
   } catch (err) {
     state.failureMessage = err.message;

@@ -357,3 +357,54 @@ export const DEFAULT_TAG_DIFF_BASE = 'cumulative';
  * its pattern has no filename-safe characters at all (e.g. a bare `**`).
  */
 export const SUBMISSION_TAG_GROUP_FALLBACK = 'tag';
+
+/**
+ * Accepted values of the repo_marker input, which picks what GrillMyCode writes
+ * to the student repository's own metadata so an assessed repository is
+ * identifiable in an organisation's repository list:
+ *   off         — write nothing (default; no repository metadata is touched).
+ *   topic       — add REPO_MARKER_TOPIC to the repository's topics.
+ *   description — append the marker text to the repository description.
+ *   both        — do both, in two separate API calls (the repository-update
+ *                 endpoint cannot set topics; see src/repo-marker.js).
+ */
+export const REPO_MARKER_MODES = ['off', 'topic', 'description', 'both'];
+
+/**
+ * Default repo_marker. Off, because every other mode writes to repository
+ * metadata the instructor owns — topics they set by hand, or the description
+ * text they wrote — and a delivery feature should not start editing either
+ * without being asked. Turning it on is a deliberate choice per assignment.
+ */
+export const DEFAULT_REPO_MARKER = 'off';
+
+/**
+ * Topic added under repo_marker: topic / both. Lowercase because GitHub
+ * lowercases every topic name it stores, so any other casing would never match
+ * the value read back and the topic list would be rewritten on every run.
+ */
+export const REPO_MARKER_TOPIC = 'grillmycode';
+
+/**
+ * Separator placed between the instructor's description and the marker text.
+ * A middle dot rather than a hyphen or pipe: it reads as punctuation in the
+ * repository list and is unlikely to appear at the end of a description already.
+ */
+export const REPO_MARKER_DESCRIPTION_SEPARATOR = ' · ';
+
+/**
+ * Fixed leading text of the description marker. This is the sentinel that makes
+ * the write idempotent: before appending, any existing run of
+ * separator + sigil + trailing text is stripped, so a repository assessed ten
+ * times carries one marker with the current question count, not ten markers.
+ * Changing this value orphans markers written by earlier versions of the action.
+ */
+export const REPO_MARKER_DESCRIPTION_SIGIL = '🔥 GrillMyCode';
+
+/**
+ * Maximum length GitHub accepts for a repository description. A description
+ * that would exceed this once the marker is appended is left alone entirely —
+ * the alternative, truncating text the instructor wrote to make room for a
+ * marker, destroys more than the marker is worth.
+ */
+export const REPO_DESCRIPTION_MAX_CHARS = 350;
