@@ -18,8 +18,8 @@ const FeatureList = [
     Svg: require('@site/static/img/grillmycode-classroom.svg').default,
     description: (
       <>
-        Automatically excludes template starter code and bot commits,
-        so only the student&apos;s own work is assessed — no extra configuration required.
+        Automatically excludes the template&apos;s starter code and Classroom 50&apos;s setup files,
+        so only the student&apos;s own work is assessed.
       </>
     ),
   },

@@ -53,6 +53,15 @@ const config = {
   tagline: 'AI-powered code comprehension assessments',
   favicon: 'img/favicon.ico',
 
+  // Modern browsers prefer the crisp SVG logo; favicon.ico above stays as the
+  // fallback for browsers without SVG favicon support.
+  headTags: [
+    {
+      tagName: 'link',
+      attributes: { rel: 'icon', type: 'image/svg+xml', href: '/img/grillmycode-logo.svg' },
+    },
+  ],
+
   // Future flags, see https://docusaurus.io/docs/api/docusaurus-config#future
   future: {
     v4: true, // Improve compatibility with the upcoming Docusaurus v4
@@ -178,7 +187,7 @@ const config = {
       navbar: {
         title: 'GrillMyCode',
         logo: {
-          alt: 'GrillMyCode dinosaur mascot',
+          alt: 'GrillMyCode logo',
           src: 'img/grillmycode-logo.svg',
         },
         items: [

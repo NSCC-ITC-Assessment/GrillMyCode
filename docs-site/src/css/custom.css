@@ -4,27 +4,81 @@
  * work well for content-centric websites.
  */
 
-/* You can override the default Infima variables here. */
+/*
+ * GrillMyCode palette: "Slate + Ember".
+ * Slate carries links, navigation and structure; ember (the flame in the logo)
+ * is reserved for calls to action and the homepage hero, so it stays special.
+ * Primary ramps follow Docusaurus's own generator (HSL lightness ±10/15/30%).
+ */
 :root {
-  --ifm-color-primary: #2e8555;
-  --ifm-color-primary-dark: #29784c;
-  --ifm-color-primary-darker: #277148;
-  --ifm-color-primary-darkest: #205d3b;
-  --ifm-color-primary-light: #33925d;
-  --ifm-color-primary-lighter: #359962;
-  --ifm-color-primary-lightest: #3cad6e;
+  --ifm-color-primary: #334155;
+  --ifm-color-primary-dark: #2e3b4d;
+  --ifm-color-primary-darker: #2b3748;
+  --ifm-color-primary-darkest: #242e3b;
+  --ifm-color-primary-light: #38485e;
+  --ifm-color-primary-lighter: #3b4b62;
+  --ifm-color-primary-lightest: #42556f;
   --ifm-code-font-size: 95%;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.1);
+
+  /* Text colour for anything painted with the primary or accent colour. */
+  --gmc-on-primary: #ffffff;
+  --gmc-accent: #c2410c;
+  --gmc-accent-dark: #9a3412;
+  --gmc-on-accent: #ffffff;
+  --gmc-hero-background: #1e293b;
 }
 
 /* For readability concerns, you should choose a lighter palette in dark mode. */
 [data-theme='dark'] {
-  --ifm-color-primary: #25c2a0;
-  --ifm-color-primary-dark: #21af90;
-  --ifm-color-primary-darker: #1fa588;
-  --ifm-color-primary-darkest: #1a8870;
-  --ifm-color-primary-light: #29d5b0;
-  --ifm-color-primary-lighter: #32d8b4;
-  --ifm-color-primary-lightest: #4fddbf;
+  --ifm-color-primary: #cbd5e1;
+  --ifm-color-primary-dark: #b0bfd1;
+  --ifm-color-primary-darker: #a2b4ca;
+  --ifm-color-primary-darkest: #7a93b2;
+  --ifm-color-primary-light: #e6ebf1;
+  --ifm-color-primary-lighter: #f4f6f8;
+  --ifm-color-primary-lightest: #ffffff;
+  --ifm-background-color: #0f172a;
+  --ifm-background-surface-color: #131c31;
   --docusaurus-highlighted-code-line-bg: rgba(0, 0, 0, 0.3);
+
+  --gmc-on-primary: #0f172a;
+  --gmc-accent: #fb923c;
+  --gmc-accent-dark: #f97316;
+  --gmc-on-accent: #0f172a;
+  --gmc-hero-background: #1e293b;
+}
+
+/* Primary buttons are the calls to action, so they take the ember accent. */
+.button--primary {
+  --ifm-button-border-color: var(--gmc-accent);
+  --ifm-button-color: var(--gmc-on-accent);
+}
+
+.button--primary:not(.button--outline) {
+  --ifm-button-background-color: var(--gmc-accent);
+}
+
+.button.button--primary:not(.button--outline):hover,
+.button.button--primary.button--active {
+  --ifm-button-background-color: var(--gmc-accent-dark);
+  --ifm-button-border-color: var(--gmc-accent-dark);
+}
+
+.button--primary.button--outline {
+  --ifm-button-color: var(--gmc-accent);
+}
+
+/* A dark slate hero in both themes, so the flame logo and ember CTA stand out. */
+.hero--primary {
+  --ifm-hero-background-color: var(--gmc-hero-background);
+  --ifm-hero-text-color: #f8fafc;
+}
+
+.footer--dark {
+  --ifm-footer-background-color: #1e293b;
+}
+
+[data-theme='dark'] .footer--dark {
+  --ifm-footer-background-color: #131c31;
 }

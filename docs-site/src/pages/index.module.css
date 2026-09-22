@@ -21,3 +21,9 @@
   align-items: center;
   justify-content: center;
 }
+
+.heroLogo {
+  width: 112px;
+  height: 112px;
+  margin-bottom: 0.5rem;
+}

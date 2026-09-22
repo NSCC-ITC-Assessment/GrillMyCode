@@ -12,9 +12,18 @@
 
     <style>
       :root {
-        --accent: #f97316;
+        --accent: #fb923c;
         --accent-light: #fdba74;
-        --dim: rgba(255, 255, 255, 0.55);
+        --dim: rgba(226, 232, 240, 0.6);
+        /* Slate ground shared with the docs site (see docs-site/src/css/custom.css) */
+        --r-background-color: #0f172a;
+        --r-link-color: #fdba74;
+        --r-link-color-hover: #fb923c;
+        --r-selection-background-color: #fb923c;
+      }
+
+      .reveal-viewport {
+        background: radial-gradient(ellipse at 50% 0%, #1e293b 0%, #0f172a 70%);
       }
 
       .reveal h1,
@@ -99,7 +108,7 @@
       /* Provider table */
       .provider-table { width: 100%; border-collapse: collapse; font-size: 0.68em; }
       .provider-table th {
-        background: rgba(249,115,22,0.25);
+        background: rgba(251,146,60,0.22);
         color: var(--accent-light);
         padding: 0.3em 0.6em;
         text-align: left;
@@ -120,7 +129,18 @@
       .footnote { font-size: 0.6em; color: var(--dim); margin-top: 1.2em; }
 
       /* Title slide */
-      .title-logo { font-size: 3.5em; margin-bottom: 0.1em; }
+      /* .reveal section img (reveal's theme) sets a left-hugging margin, so the
+         centring needs this selector's higher specificity to win. */
+      .reveal section img.title-logo {
+        display: block;
+        width: 150px;
+        height: 150px;
+        margin: 0 auto 0.2em;
+        border: 0;
+        box-shadow: none;
+        background: none;
+      }
+      .inline-logo { width: 1.15em; height: 1.15em; vertical-align: -0.2em; margin: 0 !important; border: 0 !important; box-shadow: none !important; background: none !important; }
 
       /* Progress dots override */
       .reveal .progress { color: var(--accent); }
@@ -152,7 +172,7 @@
 
         <!-- ── 1. Title ─────────────────────────────────────────────── -->
         <section class="center-slide" data-auto-animate>
-          <div class="title-logo">🔥</div>
+          <img class="title-logo" src="../img/grillmycode-logo.svg" alt="GrillMyCode logo" />
           <h1><span class="accent">GrillMyCode</span></h1>
           <p style="font-size:1.1em; color:var(--dim); margin-top:-0.2em;">
             AI‑powered code comprehension assessments for GitHub
@@ -198,12 +218,12 @@
             <div class="feature-card">
               <div class="icon">⚡</div>
               <strong>Zero setup for students</strong>
-              Runs automatically on every push or PR
+              Runs on every push, on a submission tag, or when you click Run
             </div>
             <div class="feature-card">
               <div class="icon">🎓</div>
               <strong>Built for Classroom 50</strong>
-              Skips template & bot-committed starter files
+              Skips template starter code &amp; Classroom 50 setup files
             </div>
             <div class="feature-card">
               <div class="icon">🔌</div>
@@ -220,7 +240,7 @@
           <ul class="step-list">
             <li>
               <span class="step-num">1</span>
-              <div><strong>Detect the commit range</strong><br /><span class="dim">Reads the triggering event (push, pull request, etc.) to determine which commits to assess</span></div>
+              <div><strong>Detect the commit range</strong><br /><span class="dim">Reads the triggering event (push, submission tag or manual run) to determine which commits to assess</span></div>
             </li>
             <li>
               <span class="step-num">2</span>
@@ -232,16 +252,43 @@
             </li>
             <li>
               <span class="step-num">4</span>
-              <div><strong>Generate questions via AI</strong><br /><span class="dim">Sends the cleaned code to the configured AI provider with a structured prompt</span></div>
+              <div><strong>Generate questions via AI</strong><br /><span class="dim">Sends the cleaned code to the chosen model on OpenRouter with a structured prompt</span></div>
             </li>
             <li>
               <span class="step-num">5</span>
-              <div><strong>Deliver the assessment</strong><br /><span class="dim">Creates a GitHub Issue assigned to the student, generates a PDF, and posts a link comment on the PR</span></div>
+              <div><strong>Deliver the assessment</strong><br /><span class="dim">Creates or updates a GitHub Issue assigned to the student, attaches a PDF, and (optionally) files a private instructor copy with answers</span></div>
             </li>
           </ul>
         </section>
 
-        <!-- ── 5. Architecture ────────────────────────────────────── -->
+        <!-- ── 5. When it runs ──────────────────────────────────────── -->
+        <section data-auto-animate>
+          <h2>When It Runs</h2>
+          <hr class="divider" />
+          <p style="font-size:0.82em; color:var(--dim);">
+            You choose the trigger. Whichever you pick, you can also start a run yourself from the repository's Actions tab.
+          </p>
+          <div class="delivery-row">
+            <div class="delivery-card">
+              <div class="dicon">⬆️</div>
+              <strong>Push</strong>
+              <span>Fresh questions on every push to <span class="mono">main</span>. Best for short assignments and practice while students work.</span>
+            </div>
+            <div class="delivery-card">
+              <div class="dicon">🏷️</div>
+              <strong>Submission tag</strong>
+              <span>Runs only when the student pushes a tag you named, such as <span class="mono">complete</span> or <span class="mono">phase1</span>. One assessment per milestone.</span>
+            </div>
+            <div class="delivery-card">
+              <div class="dicon">▶️</div>
+              <strong>Manual only</strong>
+              <span>Runs when you click <strong style="display:inline; color:inherit;">Run workflow</strong>, e.g. once after the deadline.</span>
+            </div>
+          </div>
+          <p class="footnote">Resubmitting under the same tag replaces the questions, but the resubmission is flagged and the earlier set is kept for the instructor.</p>
+        </section>
+
+        <!-- ── 6. Architecture ────────────────────────────────────── -->
         <section data-auto-animate>
           <h2>Architecture</h2>
           <hr class="divider" />
@@ -266,7 +313,7 @@ action.yml  ──► pulls Docker image from ghcr.io
           </p>
         </section>
 
-        <!-- ── 6. Comment Stripping ───────────────────────────────── -->
+        <!-- ── 7. Comment Stripping ───────────────────────────────── -->
         <section data-auto-animate>
           <h2>Comment Stripping</h2>
           <hr class="divider" />
@@ -285,7 +332,7 @@ def add(a, b):
             </div>
           </div>
           <p style="font-size:0.8em; margin-top:0.8em;">
-            The <span class="mono">rmcm</span> binary removes comments before sending to the AI.
+            Comments are removed before sending to the AI.
             This forces questions to target the <span class="accent">logic</span>, not hints left
             by the student in their comments.
           </p>
@@ -294,38 +341,38 @@ def add(a, b):
           </p>
         </section>
 
-        <!-- ── 7. Delivery Options ───────────────────────────────── -->
+        <!-- ── 8. Delivery Options ───────────────────────────────── -->
         <section data-auto-animate>
           <h2>Delivery Options</h2>
           <hr class="divider" />
           <p style="font-size:0.82em; color:var(--dim);">
-            A GitHub Issue is always created. The PDF and PR link comment are automatic; the instructor repo requires a token.
+            The GitHub Issue and PDF are automatic. The instructor copy and LMS quizzes need an <span class="mono">instructor_repo_token</span>.
           </p>
           <div class="delivery-row">
             <div class="delivery-card">
               <div class="dicon">🐛</div>
               <strong>GitHub Issue</strong>
-              <span>Primary delivery — always created. Auto-assigned to the student. Updated in place on re-runs.</span>
-            </div>
-            <div class="delivery-card">
-              <div class="dicon">💬</div>
-              <strong>PR Link Comment</strong>
-              <span>Posted automatically on pull request events — links to the Issue rather than repeating the full assessment.</span>
+              <span>Assigned to the student and pinned. Updated in place on every re-run, so the URL never changes.</span>
             </div>
             <div class="delivery-card">
               <div class="dicon">📄</div>
               <strong>PDF Report</strong>
-              <span>Generated for every assessment and uploaded to a GitHub Release asset. Linked from the Issue.</span>
+              <span>Attached to the rolling <span class="mono">gmc-assessments</span> release, with a download link at the top of the Issue.</span>
             </div>
             <div class="delivery-card">
               <div class="dicon">🔒</div>
               <strong>Instructor Repo</strong>
-              <span>Full Q+A copy written to a private instructor repository. Requires <span class="mono">instructor_repo_token</span>.</span>
+              <span>Full Q+A copy for every student in a private repository, created automatically. Classroom 50 repos only.</span>
+            </div>
+            <div class="delivery-card">
+              <div class="dicon">🧮</div>
+              <strong>LMS Quiz</strong>
+              <span>Multiple-choice quiz package (Common Cartridge) for Brightspace, Canvas, Moodle and more, plus a Brightspace CSV.</span>
             </div>
           </div>
         </section>
 
-        <!-- ── 8. AI Provider ────────────────────────────────────── -->
+        <!-- ── 9. AI Provider ────────────────────────────────────── -->
         <section data-auto-animate>
           <h2>AI Provider</h2>
           <hr class="divider" />
@@ -350,7 +397,7 @@ def add(a, b):
           <p class="footnote">OpenRouter is a gateway, not a single vendor — switching between Anthropic, Google, DeepSeek, Meta and others is an <span class="mono">ai_model</span> change only.</p>
         </section>
 
-        <!-- ── 9. Classroom 50 Integration ──────────────────── -->
+        <!-- ── 10. Classroom 50 Integration ──────────────────── -->
         <section data-auto-animate>
           <h2>Classroom 50 Integration</h2>
           <hr class="divider" />
@@ -360,18 +407,18 @@ def add(a, b):
           </p>
           <ul style="font-size:0.8em; line-height:1.85;">
             <li>
-              <strong>Skips starter/template files</strong> — pins the diff base to the first student commit so instructor-provided boilerplate is never assessed, unless overridden
+              <strong>Skips starter/template files</strong> — measures changes from the repository's first commit (the template copy), so instructor-provided boilerplate is never assessed. Empty-repo assignments set <span class="mono">include_initial_commit: 'true'</span> instead
             </li>
             <li>
               <strong>Assignment context</strong> — pass the brief, rubric, or README as <span class="mono">assignment_context</span> so the AI asks questions relevant to the assignment goals
             </li>
             <li>
-              <strong>Auto-assigns issues</strong> — GitHub Issues are assigned directly to the student who authored the head commit
+              <strong>Auto-assigns issues</strong> — each Issue is assigned to the student, identified from the Classroom 50 repository name
             </li>
           </ul>
         </section>
 
-        <!-- ── 10. Customisation ─────────────────────────────────── -->
+        <!-- ── 11. Customisation ─────────────────────────────────── -->
         <section data-auto-animate>
           <h2>Key Customisation Inputs</h2>
           <hr class="divider" />
@@ -385,35 +432,37 @@ def add(a, b):
                 <tr><td><span class="mono">assignment_context</span></td><td>—</td><td>Globs for brief/rubric files to inject into the prompt</td></tr>
                 <tr><td><span class="mono">additional_exclude_patterns</span></td><td>—</td><td>Extra globs to exclude on top of auto-detected stack patterns</td></tr>
                 <tr><td><span class="mono">exclude_pattern_overrides</span></td><td>—</td><td>Re-include specific files that auto-detection would exclude</td></tr>
-                <tr><td><span class="mono">ai_temperature</span></td><td>0.5</td><td>Randomness of generated questions (0 = deterministic)</td></tr>
+                <tr><td><span class="mono">submission_tags</span></td><td>—</td><td>Only run when the student pushes one of these tags</td></tr>
+                <tr><td><span class="mono">instructor_repo_token</span></td><td>—</td><td>Enables the private instructor copy and LMS quiz packages</td></tr>
               </tbody>
             </table>
           </div>
         </section>
 
-        <!-- ── 11. Quick Start ───────────────────────────────────── -->
+        <!-- ── 12. Quick Start ───────────────────────────────────── -->
         <section data-auto-animate>
           <h2>Quick Start</h2>
           <hr class="divider" />
-          <p style="font-size:0.82em; color:var(--dim);">Add this file to the student repository — no secrets needed.</p>
+          <p style="font-size:0.82em; color:var(--dim);">Add this file to the assignment's starter repository. One org-level secret: <span class="mono">OPENROUTER_API_KEY</span>.</p>
           <pre><code class="language-yaml"># .github/workflows/grill-my-code.yml
 name: GrillMyCode
 on:
-  pull_request:
-    types: [opened, synchronize]
-
+  push:
+    branches: ["main", "master"]
+  workflow_dispatch:
+concurrency:             # only the latest push is assessed
+  group: grillmycode-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
 jobs:
   generate-questions:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      pull-requests: write   # post the PR link comment
-      issues: write          # create / update the assessment issue
+      contents: write    # gmc-assessments release + PDF asset
+      issues: write      # create / update the assessment issue
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0     # full history required for diff resolution
-
       - uses: NSCC-ITC-Assessment/GrillMyCode@v1
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -421,7 +470,7 @@ jobs:
           instructor_context: 'Assignment 3 – Python list comprehensions'</code></pre>
         </section>
 
-        <!-- ── 12. What the student sees ────────────────────────── -->
+        <!-- ── 13. What the student sees ────────────────────────── -->
         <section data-auto-animate>
           <h2>What the Student Sees</h2>
           <hr class="divider" />
@@ -429,41 +478,41 @@ jobs:
             <div>
               <p style="font-size:0.82em;">A GitHub Issue is created and assigned to the student:</p>
               <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:1em; font-size:0.75em; line-height:1.7;">
-                <p style="color:var(--accent-light); font-weight:700; margin:0 0 0.5em;">🔥 GrillMyCode</p>
+                <p style="color:var(--accent-light); font-weight:700; margin:0 0 0.5em;"><img class="inline-logo" src="../img/grillmycode-logo.svg" alt="" /> GrillMyCode Questions</p>
                 <p style="margin:0 0 0.3em;"><strong>1.</strong> Your <span class="mono">add()</span> function uses positional parameters — what would happen if a caller passed keyword arguments in the wrong order?</p>
                 <p style="margin:0 0 0.3em;"><strong>2.</strong> The loop on line 12 iterates over a list. Why did you choose a <span class="mono">for</span> loop rather than a <span class="mono">while</span> loop here?</p>
                 <p style="margin:0;"><strong>3.</strong> …</p>
               </div>
             </div>
             <div>
-              <p style="font-size:0.82em;">On pull request events, a link comment is posted:</p>
+              <p style="font-size:0.82em;">When they push again, the same Issue is updated and a note is added:</p>
               <div style="background:rgba(255,255,255,0.06); border:1px solid rgba(255,255,255,0.12); border-radius:8px; padding:0.7em 1em; font-size:0.75em; line-height:1.6;">
-                <p style="margin:0;">ℹ️ GrillMyCode has generated assessment questions for this pull request. <span style="color:var(--accent-light);">View questions →</span></p>
+                <p style="margin:0;">ℹ️ The assessment questions in this issue were regenerated at commit <span class="mono">a1b2c3d</span> and the questions have been updated. Any previous questions have been replaced.</p>
               </div>
               <p style="font-size:0.78em; color:var(--dim); margin-top:0.5em;">
-                A PDF is also generated and uploaded as a release asset, linked from the Issue.
+                A PDF is also attached to the <span class="mono">gmc-assessments</span> release, linked from the top of the Issue.
               </p>
             </div>
           </div>
         </section>
 
-        <!-- ── 13. Summary ───────────────────────────────────────── -->
+        <!-- ── 14. Summary ───────────────────────────────────────── -->
         <section class="center-slide" data-auto-animate>
-          <div style="font-size:2.5em; margin-bottom:0.2em;">🔥</div>
+          <img class="title-logo" src="../img/grillmycode-logo.svg" alt="GrillMyCode logo" style="width:110px; height:110px;" />
           <h2 style="font-size:1.8em; color:white;">GrillMyCode</h2>
           <p style="font-size:0.88em; color:var(--dim); max-width:600px; margin:0 auto 1.2em;">
-            Drop-in GitHub Action that turns every student submission into a personalised comprehension quiz — automatically, at zero cost.
+            Drop-in GitHub Action that turns every student submission into a personalised comprehension quiz — automatically, usually for under a cent per assessment on the recommended models.
           </p>
           <hr class="divider" style="width:40%; margin:0 auto 1em;" />
           <div style="display:flex; justify-content:center; gap:2em; font-size:0.82em;">
             <div>📦 <span class="accent">GitHub Action</span></div>
             <div>🤖 <span class="accent">AI-powered</span></div>
             <div>🎓 <span class="accent">Classroom-ready</span></div>
-            <div>🆓 <span class="accent">Free by default</span></div>
+            <div>🪙 <span class="accent">Low cost</span></div>
           </div>
           <p class="footnote" style="text-align:center; margin-top:1.5em;">
             Full documentation at
-            <a href="https://nscc-itc-assessment.github.io/GrillMyCode/" style="color:var(--accent-light);">nscc-itc-assessment.github.io/GrillMyCode</a>
+            <a href="https://grillmycode.org/" style="color:var(--accent-light);">grillmycode.org</a>
           </p>
         </section>
 

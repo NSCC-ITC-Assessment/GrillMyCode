@@ -55,8 +55,8 @@
 
 .btnStart {
   padding: 0.75rem 2.25rem;
-  background: var(--ifm-color-primary);
-  color: #fff;
+  background: var(--gmc-accent);
+  color: var(--gmc-on-accent);
   border: none;
   border-radius: var(--ifm-global-radius);
   font-size: 1rem;
@@ -66,7 +66,7 @@
 }
 
 .btnStart:hover {
-  background: var(--ifm-color-primary-dark);
+  background: var(--gmc-accent-dark);
   transform: translateY(-1px);
 }
 
@@ -118,12 +118,12 @@
 
 .stepDotActive {
   background: var(--ifm-color-primary);
-  color: #fff;
+  color: var(--gmc-on-primary);
 }
 
 .stepDotDone {
   background: var(--ifm-color-primary);
-  color: #fff;
+  color: var(--gmc-on-primary);
 }
 
 .stepLabel {
@@ -339,8 +339,8 @@
 
 .btnPrimary {
   padding: 0.55rem 1.5rem;
-  background: var(--ifm-color-primary);
-  color: #fff;
+  background: var(--gmc-accent);
+  color: var(--gmc-on-accent);
   border: none;
   border-radius: var(--ifm-global-radius);
   font-size: 0.9rem;
@@ -350,7 +350,7 @@
 }
 
 .btnPrimary:hover {
-  background: var(--ifm-color-primary-dark);
+  background: var(--gmc-accent-dark);
 }
 
 .btnSecondary {
@@ -397,7 +397,7 @@
   font-size: 0.75rem;
   font-weight: 600;
   background: var(--ifm-color-primary);
-  color: #fff;
+  color: var(--gmc-on-primary);
   border: none;
   border-radius: var(--ifm-global-radius);
   cursor: pointer;
@@ -432,7 +432,7 @@
 
 .secondaryBtn:hover {
   background: var(--ifm-color-primary);
-  color: #fff;
+  color: var(--gmc-on-primary);
 }
 
 .checklist {
