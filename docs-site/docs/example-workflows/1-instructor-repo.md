@@ -23,6 +23,10 @@ When `instructor_repo_token` is provided the action:
 
 The student-facing report is unaffected — whether it includes answers is still controlled by the existing `include_answers` input.
 
+:::note Distractors are generated only when this is set
+The three wrong options each question needs for the quiz are written for the instructor copy alone — every student-facing report strips them. Without `instructor_repo_token` there is nowhere for them to go, so the action asks the model for the correct answer only. That makes an assessment noticeably cheaper and quicker to generate, and changes nothing a student sees. Add the token and distractors come back automatically on the next run; no other input controls this.
+:::
+
 ## Prerequisites
 
 See the **[Instructor Setup guide](../guides/instructor-setup)** for full step-by-step instructions, including how to create the PAT and add it as an org-level secret so all student repositories inherit it automatically.

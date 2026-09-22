@@ -142,6 +142,10 @@ When the first student pushes to the default branch:
 
 For subsequent students the repo already exists — the action just adds or updates their individual file.
 
+:::note The token is also what asks for distractors
+Each question's three wrong multiple-choice options are generated for `questions.md` alone — the student's report strips them out before it is posted. Runs that have no `INSTRUCTOR_REPO_TOKEN` therefore ask the model for the correct answer only, which is cheaper and quicker. Once the token is in place every run generates distractors again, so a class that adds it mid-semester does not need to change anything else; assessments produced before it was added have no options to build a quiz from, and re-running the workflow on those repositories regenerates them.
+:::
+
 ---
 
 ## Accessing the instructor repository

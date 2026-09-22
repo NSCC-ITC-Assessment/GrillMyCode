@@ -80,6 +80,12 @@ export default function StepInstructorRepo({ cfg, onChange, docsBase = '/docs' }
                   org, containing questions <em>and</em> answers for every student. Students never see
                   this. Requires a Personal Access Token with <code>repo</code> and{' '}
                   <code>workflow</code> scopes.
+                  <div style={{ marginTop: '0.4rem' }}>
+                    This is also what asks the AI for multiple-choice distractors. They are used only
+                    by the quiz built from the instructor copy — student reports always strip them —
+                    so leaving this off generates the correct answer alone, which costs less per
+                    assessment.
+                  </div>
                 </div>
               </span>
             </label>
