@@ -46,6 +46,8 @@ const INITIAL_CONFIG = {
 
   aiProvider: 'openrouter',
   aiModel: 'google/gemini-3.5-flash-lite',
+  // OpenRouter routing variant appended to the model ID: '', 'nitro' or 'floor'.
+  aiModelVariant: '',
   apiKeySecret: 'OPENROUTER_API_KEY',
 
   numQuestions: 20,

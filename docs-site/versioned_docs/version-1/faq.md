@@ -115,6 +115,12 @@ The default model is `google/gemini-3.5-flash-lite` on OpenRouter. It is inexpen
 
 Yes. Supply any model from the OpenRouter catalogue in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`) via `ai_model`. Check pricing at [openrouter.ai/models](https://openrouter.ai/models) before deploying to a class — costs vary by orders of magnitude between models.
 
+### Can I make assessments generate faster, or more cheaply?
+
+Yes, without changing model. Most models are served by several providers at different speeds and prices, and appending a routing variant to `ai_model` says which to try first: `:nitro` for the fastest (`google/gemini-3.5-flash-lite:nitro`) or `:floor` for the cheapest.
+
+`:nitro` is worth considering when you are happy with a model's questions but assessments take an unreasonably long time to come back. Review that model's per-provider pricing at [openrouter.ai/models](https://openrouter.ai/models) before rolling it out to a class, because the fastest endpoints are often more expensive. `:floor` trades the other way: cheapest first, with a chance of queuing when providers are busy. See [Model routing variants](./ai-providers/openrouter#model-routing-variants).
+
 ### Students are hitting rate limits. What can I do?
 
 Rate limits on OpenRouter apply to the API key, not to individual students, so a whole class pushing at once shares one budget. If you see 429 errors, check that your OpenRouter account has a positive credit balance (free-tier keys are rate-limited far more aggressively than funded ones), and consider raising `ai_retry_max_attempts` so transient limits are retried for longer. Switching to a less congested model also helps — see [recommended models](./ai-providers/openrouter#recommended-models).

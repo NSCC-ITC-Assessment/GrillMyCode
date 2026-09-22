@@ -9,7 +9,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 ## Wizard Steps (7 total)
 
 1. **Trigger** — Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the instructor's own tag names (`submissionTags`) and `tagDiffBase`. Tags are never inferred — there is deliberately no preset for Classroom 50's own `submit/*` tags
-2. **AI Provider** — Provider selection + conditional API key secret name / Azure endpoint
+2. **AI Provider** — Model selection, OpenRouter model routing variant (`aiModelVariant`, appended to the model ID), and the API key secret name
 3. **Questions** — num_questions, include_answers, instructor_context, assignment_context
 4. **Delivery** — Post targets (PR comment, issue, discussion, instructor repo)
 5. **File Filters** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides, exclude_workflow_files, keep_comments, include_initial_commit, skip_committers
@@ -30,6 +30,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
   aiProvider: 'openrouter',                  // only supported value
   aiModel: 'google/gemini-3.5-flash-lite',
+  aiModelVariant: '',                        // OpenRouter routing variant: '' | 'nitro' (fastest) | 'floor' (cheapest)
   apiKeySecret: 'OPENROUTER_API_KEY',        // required
 
   numQuestions: 5,
@@ -66,6 +67,9 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 ## YAML Generation Rules (generateYaml.js)
 
 - Only emit inputs that differ from defaults (keeps output minimal and readable)
+- `ai_model` is emitted as `effectiveAiModel(cfg)` — the chosen model with `aiModelVariant` appended
+  as a `:suffix`. The variant is never a separate action input, and is only appended while
+  `aiProvider` is `openrouter`, so a future provider is unaffected
 - Exception: `ai_model` is always shown. At the default it is emitted **commented out**, with a
   pointer to https://openrouter.ai/models, so instructors can switch models by uncommenting one
   line rather than discovering the input name from the docs

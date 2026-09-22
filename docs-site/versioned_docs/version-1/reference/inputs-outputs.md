@@ -14,7 +14,7 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 |---|---|---|---|
 | `github_token` | Yes | `${{ github.token }}` | GitHub token for API access — issues, releases, and repository metadata. Not used for question generation |
 | `ai_provider` | No | `openrouter` | AI provider. `openrouter` is the only supported value, so this can be omitted |
-| `ai_model` | No | `google/gemini-3.5-flash-lite` | Model identifier in OpenRouter `provider/model-name` format. See [openrouter.ai/models](https://openrouter.ai/models) |
+| `ai_model` | No | `google/gemini-3.5-flash-lite` | Model identifier in OpenRouter `provider/model-name` format. See [openrouter.ai/models](https://openrouter.ai/models) May end with an OpenRouter routing variant — `:nitro` (fastest providers first) or `:floor` (cheapest providers first). See [Model routing variants](../ai-providers/openrouter.md#model-routing-variants) |
 | `ai_retry_max_attempts` | No | `5` | Total number of attempts (initial + retries) when calling the AI provider. Retries are triggered by transient errors: 429 (rate limit), 500, 502, 503, 504, and network-level failures. Values below 1 are clamped to 1 |
 | `ai_temperature` | No | `0.5` | Controls the randomness of the AI's output (0.0 = fully deterministic, 1.0 = most random). Lower values produce more consistent questions; higher values produce more varied output |
 | `api_key` | Yes | | OpenRouter API key. Required — `github_token` cannot be used for question generation, and the action fails immediately if this is empty. Create one at [openrouter.ai/keys](https://openrouter.ai/keys) |

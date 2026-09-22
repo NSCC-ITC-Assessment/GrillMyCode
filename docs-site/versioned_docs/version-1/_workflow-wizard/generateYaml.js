@@ -19,6 +19,36 @@ function normalizePatterns(value) {
 }
 
 /**
+ * OpenRouter's routing variants: a suffix on the model ID that changes which of
+ * the providers serving that model is tried first, without changing the model
+ * itself. `nitro` sorts the endpoints by throughput and lets priority-tier
+ * endpoints compete; `floor` sorts by price and lets discounted flex-tier
+ * endpoints compete. Both keep OpenRouter's normal fallbacks.
+ *
+ * They are an OpenRouter feature, carried in the model ID rather than in an
+ * action input, so a future non-OpenRouter provider is unaffected: the suffix is
+ * only ever appended while ai_provider is openrouter.
+ * https://openrouter.ai/docs/guides/routing/model-variants/overview
+ */
+export const MODEL_ROUTING_VARIANTS = ['nitro', 'floor'];
+
+/**
+ * The model ID as the workflow should request it: the chosen model plus the
+ * routing variant, if any.
+ *
+ * A model the instructor typed with a variant already on it is left alone —
+ * OpenRouter would let the last sorting suffix win, but `model:nitro:floor`
+ * reads like a mistake in a workflow file someone else has to maintain.
+ */
+export function effectiveAiModel(cfg) {
+  const model = (cfg.aiModel || '').trim();
+  const variant = cfg.aiModelVariant || '';
+  if (!model || !variant || cfg.aiProvider !== 'openrouter') return model;
+  if (MODEL_ROUTING_VARIANTS.some((v) => model.endsWith(`:${v}`))) return model;
+  return `${model}:${variant}`;
+}
+
+/**
  * Instructor repository delivery works only in Classroom 50 assignment
  * repositories — the action identifies the assignment and student from Classroom
  * 50's repository naming — so it counts as enabled only once the user has
@@ -63,7 +93,10 @@ export function invalidSubmissionTags(cfg) {
 
 const DEFAULTS = {
   aiProvider: 'openrouter',
+  // Compared against the resolved model (base + routing variant), so choosing a
+  // variant on the default model counts as a change and emits the input.
   aiModel: 'google/gemini-3.5-flash-lite',
+  aiModelVariant: '',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   numQuestions: 20,
@@ -194,7 +227,11 @@ function dispatchInputLines(cfg, overrideKeys) {
   return lines;
 }
 
-export function generateYaml(cfg, { actionRef = 'v1' } = {}) {
+export function generateYaml(inputCfg, { actionRef = 'v1' } = {}) {
+  // The routing variant is part of the model ID everywhere it is emitted — the
+  // input, the commented-out default and the dispatch-input default — so it is
+  // folded in once, here, rather than at each use.
+  const cfg = { ...inputCfg, aiModel: effectiveAiModel(inputCfg) };
   const lines = [];
 
   const tagTrigger = isTagTrigger(cfg);
