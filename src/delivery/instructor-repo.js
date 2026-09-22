@@ -5,10 +5,10 @@
  * a private instructor-only repository using the GitHub Contents API. The
  * repository is created automatically if it does not already exist.
  *
- * The quiz-generation workflow and the README that documents it are owned by
- * this action: every delivery brings both into line with the copies shipped
- * here, so a repository created by an earlier release picks up later fixes on
- * its own rather than by hand.
+ * The quiz-generation workflow, the marker-reconciliation workflow and the
+ * README that documents them are owned by this action: every delivery brings
+ * them into line with the copies shipped here, so a repository created by an
+ * earlier release picks up later fixes on its own rather than by hand.
  *
  * The file is written to {studentLogin}/questions.md inside the repository,
  * alongside {studentLogin}/raw-ai-output.md — the model's unprocessed reply,
@@ -60,7 +60,13 @@ const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
   'utf-8',
 );
 
+const RECONCILE_MARKERS_WORKFLOW = readFileSync(
+  join(__dirname, '../workflows/reconcile-repo-markers.yml'),
+  'utf-8',
+);
+
 const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/generate-lms-quiz.yml';
+const RECONCILE_MARKERS_WORKFLOW_PATH = '.github/workflows/reconcile-repo-markers.yml';
 
 /**
  * The folder a student's assessment is filed in: {studentLogin}/, or
@@ -348,9 +354,10 @@ function renderInstructorReadme(owner, instructorRepoName) {
 }
 
 /**
- * Brings the two action-managed files — the student-questions workflow and the
- * README describing it — into line with the copies shipped in this action,
- * committing each only when its content differs from what the repository has.
+ * Brings the action-managed files — the student-questions workflow, the README
+ * describing it, and the marker-reconciliation workflow when repo_marker is in
+ * use — into line with the copies shipped in this action, committing each only
+ * when its content differs from what the repository has.
  *
  * This runs on every delivery rather than only at creation. A repository
  * created by an earlier release would otherwise keep that release's workflow
@@ -365,7 +372,7 @@ function renderInstructorReadme(owner, instructorRepoName) {
  * next and needs no such scope, would be a far worse outcome than running one
  * more time on a stale workflow. The next run retries the sync.
  */
-async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
+async function syncInstructorRepoFiles(octokit, owner, instructorRepoName, repoMarker = 'off') {
   const files = [
     {
       path: STUDENT_QUESTIONS_WORKFLOW_PATH,
@@ -378,6 +385,30 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
       message: 'docs: sync instructor repository README [skip ci]',
     },
   ];
+
+  // The reconciliation sweep is written only for an assignment that actually
+  // uses repo_marker. Seeding it everywhere would put a scheduled job — one
+  // that writes to student repositories — into every instructor repository,
+  // including those of instructors who never asked for a marker at all.
+  //
+  // It is also re-synced when it is already there and the mode is now off, so
+  // that turning repo_marker off disarms the sweep in place (MARKER_MODE
+  // renders to off and the job exits immediately) rather than leaving a live
+  // sweeper behind, reconciling markers nobody is writing any more.
+  const reconcileExists =
+    repoMarker === 'off'
+      ? Boolean(
+          (await fetchFile(octokit, owner, instructorRepoName, RECONCILE_MARKERS_WORKFLOW_PATH))
+            .sha,
+        )
+      : false;
+  if (repoMarker !== 'off' || reconcileExists) {
+    files.push({
+      path: RECONCILE_MARKERS_WORKFLOW_PATH,
+      content: RECONCILE_MARKERS_WORKFLOW.replace(/\{\{MARKER_MODE\}\}/g, repoMarker),
+      message: 'chore: sync reconcile-repo-markers workflow [skip ci]',
+    });
+  }
 
   // Independently guarded: a workflow-scope rejection on the first file must
   // not stop the second, which any `repo`-scoped token can write.
@@ -435,12 +466,13 @@ export async function deliverToInstructorRepo({
   headSha,
   rawOutput,
   submission,
+  repoMarker = 'off',
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
 
   // Before the questions.md write below, so that the push it makes is handled
   // by the current workflow rather than whatever the repository was seeded with.
-  await syncInstructorRepoFiles(octokit, owner, instructorRepoName);
+  await syncInstructorRepoFiles(octokit, owner, instructorRepoName, repoMarker);
 
   const folder = assessmentFolder(studentLogin, tagGroup);
   const label = tagGroup ? `${studentLogin} (${tagGroup})` : studentLogin;

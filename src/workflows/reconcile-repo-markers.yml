@@ -1,0 +1,285 @@
+name: Reconcile Repository Markers
+
+# Brings the repo_marker topic/description on this assignment's student
+# repositories back into line with what they actually hold right now.
+#
+# The action writes a marker when it generates an assessment, and it only runs
+# on a push, a tag or a manual dispatch — so nothing ever clears one. Without
+# this workflow a marker means "questions were generated here at least once",
+# which drifts from "currently has a question set" the moment a student closes
+# their assessment issue or an instructor deletes it. This job closes that gap
+# on a schedule by reading the live state and writing the difference.
+#
+# The open issue labelled `assessment` is the source of truth, because that is
+# what the action creates and updates for every assessment and what a student
+# actually reads. A repository with one should carry the marker; a repository
+# without one should not.
+#
+# This file is owned by GrillMyCode and re-synced on every delivery — local
+# edits are replaced. It is written into the instructor repository only while
+# repo_marker is enabled; setting repo_marker back to "off" re-syncs it with
+# MARKER_MODE below set to off, after which it exits immediately.
+
+on:
+  schedule:
+    # Daily, deliberately off the top of the hour: scheduled jobs queued on the
+    # hour contend with everyone else's and can be delayed by many minutes.
+    - cron: "17 5 * * *"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Report what would change without writing anything"
+        type: boolean
+        default: false
+
+concurrency:
+  group: reconcile-repo-markers
+  cancel-in-progress: false
+
+jobs:
+  reconcile:
+    name: Reconcile markers for this assignment
+    runs-on: ubuntu-latest
+    steps:
+      - name: Reconcile repository markers
+        env:
+          # The same PAT instructor delivery uses. Repository metadata is out of
+          # reach of GITHUB_TOKEN — the workflow permissions key has no
+          # administration scope to grant — so this job cannot run without it.
+          # Store it as an organisation-level secret visible to private
+          # repositories and every instructor repository inherits it.
+          GMC_TOKEN: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+          # Rendered by the action from the repo_marker input at sync time.
+          MARKER_MODE: "{{MARKER_MODE}}"
+          DRY_RUN: ${{ inputs.dry_run }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          node <<'JSEOF'
+          const token = process.env.GMC_TOKEN;
+          const mode = (process.env.MARKER_MODE || 'off').trim();
+          const dryRun = process.env.DRY_RUN === 'true';
+          const [owner, instructorRepo] = process.env.GITHUB_REPOSITORY.split('/');
+
+          // Keep these three in step with src/constants.js in the action. The
+          // action's test suite asserts that this file still carries the
+          // current values, so a change there fails CI rather than silently
+          // orphaning markers written by earlier runs.
+          const MARKER_TOPIC = 'grillmycode';
+          const DESCRIPTION_SEPARATOR = ' · ';
+          const DESCRIPTION_SIGIL = '🔥 GrillMyCode';
+          const INSTRUCTOR_SUFFIX = '-grillmycode-instructor';
+          const ASSESSMENT_LABEL = 'assessment';
+
+          const summary = [];
+          function note(line) {
+            console.log(line);
+            summary.push(line);
+          }
+
+          async function finish(body) {
+            const fs = require('fs');
+            if (process.env.GITHUB_STEP_SUMMARY) {
+              fs.appendFileSync(process.env.GITHUB_STEP_SUMMARY, body);
+            }
+          }
+
+          // Wrapped rather than run at top level: this script reaches node on
+          // stdin, which is parsed as CommonJS, so `require` works but a
+          // top-level `await` is a syntax error. Same shape as
+          // generate-lms-quiz.yml.
+          (async () => {
+          if (mode === 'off' || mode === '' || mode.startsWith('{{')) {
+            // An unrendered placeholder means this file was copied by hand
+            // rather than synced by the action; treat it as disabled rather
+            // than guessing a mode and writing to student repositories.
+            note('repo_marker is off for this assignment — nothing to reconcile.');
+            await finish('### Reconcile Repository Markers\n\nrepo_marker is **off** for this assignment, so no repositories were examined.\n');
+            return;
+          }
+
+          if (!token) {
+            console.error('::error::INSTRUCTOR_REPO_TOKEN is not available to this repository. Repository topics and descriptions cannot be written with GITHUB_TOKEN, so this job cannot run. Add the PAT as an organisation-level Actions secret visible to private repositories, or as a repository secret here.');
+            process.exit(1);
+          }
+
+          async function api(path, options = {}) {
+            const res = await fetch(`https://api.github.com${path}`, {
+              ...options,
+              headers: {
+                Authorization: `Bearer ${token}`,
+                Accept: 'application/vnd.github+json',
+                'X-GitHub-Api-Version': '2026-03-10',
+                'Content-Type': 'application/json',
+                ...(options.headers || {}),
+              },
+            });
+            if (!res.ok) {
+              const text = await res.text();
+              const err = new Error(`${options.method || 'GET'} ${path} → ${res.status} ${text.slice(0, 300)}`);
+              err.status = res.status;
+              throw err;
+            }
+            return res.status === 204 ? null : res.json();
+          }
+
+          // The assignment is this repository's name without the suffix the
+          // action appends, and every student repository for it is named
+          // <assignment>-<student-login>.
+          const assignment = instructorRepo.endsWith(INSTRUCTOR_SUFFIX)
+            ? instructorRepo.slice(0, -INSTRUCTOR_SUFFIX.length)
+            : instructorRepo;
+          const prefix = `${assignment}-`;
+
+          // One paginated listing carries each repository's name, topics and
+          // description, so the whole cohort's current marker state costs a
+          // handful of calls rather than three per repository.
+          const repos = [];
+          for (let page = 1; ; page++) {
+            let batch;
+            try {
+              batch = await api(`/orgs/${owner}/repos?per_page=100&page=${page}&type=all`);
+            } catch (err) {
+              if (err.status === 404) {
+                console.error(`::error::${owner} is not an organisation, or the token cannot list its repositories. Instructor delivery and this sweep both assume an organisation-owned assignment.`);
+                process.exit(1);
+              }
+              throw err;
+            }
+            repos.push(...batch);
+            if (batch.length < 100) break;
+          }
+
+          const candidates = repos.filter(
+            (r) => r.name.toLowerCase().startsWith(prefix.toLowerCase()) && r.name !== instructorRepo && !r.archived,
+          );
+
+          note(`Assignment: ${assignment}`);
+          note(`Mode: ${mode}${dryRun ? ' (dry run — nothing will be written)' : ''}`);
+          note(`Candidate repositories: ${candidates.length}`);
+
+          /** True when the repository has an open, action-created assessment issue. */
+          async function hasLiveAssessment(repo) {
+            const issues = await api(
+              `/repos/${owner}/${repo}/issues?state=open&labels=${ASSESSMENT_LABEL}&per_page=10`,
+            );
+            // The issues endpoint returns pull requests too; a PR carrying the
+            // label would otherwise count as an assessment.
+            return issues.some((issue) => !issue.pull_request);
+          }
+
+          function stripDescriptionMarker(description) {
+            const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            const re = new RegExp(`(?:${esc(DESCRIPTION_SEPARATOR)})?${esc(DESCRIPTION_SIGIL)}:[\\s\\S]*$`, 'u');
+            return String(description ?? '').replace(re, '').trimEnd();
+          }
+
+          const wantsTopic = mode === 'topic' || mode === 'both';
+          const wantsDescription = mode === 'description' || mode === 'both';
+          const changes = [];
+          let failures = 0;
+
+          for (const repo of candidates) {
+            let live;
+            try {
+              live = await hasLiveAssessment(repo.name);
+            } catch (err) {
+              console.log(`::warning::Could not read issues for ${repo.name} (${err.message}) — skipping it.`);
+              failures++;
+              continue;
+            }
+
+            // `topics` is present on the listing, but fall back rather than
+            // assume: an empty array and an absent field mean different things,
+            // and writing the union of the wrong one clears real topics.
+            let topics = repo.topics;
+            if (!Array.isArray(topics)) {
+              try {
+                topics = (await api(`/repos/${owner}/${repo.name}/topics`)).names;
+              } catch (err) {
+                console.log(`::warning::Could not read topics for ${repo.name} (${err.message}) — skipping it.`);
+                failures++;
+                continue;
+              }
+            }
+
+            const hasTopic = topics.some((t) => String(t).toLowerCase() === MARKER_TOPIC);
+            const actions = [];
+
+            if (wantsTopic && live && !hasTopic) {
+              actions.push({
+                what: 'add topic',
+                run: () => api(`/repos/${owner}/${repo.name}/topics`, {
+                  method: 'PUT',
+                  body: JSON.stringify({ names: [...topics, MARKER_TOPIC] }),
+                }),
+              });
+            } else if (!live && hasTopic) {
+              // Cleared whatever the mode is: a marker that no longer reflects
+              // reality is worse than no marker, and a mode change should not
+              // strand the markers written under the previous one.
+              actions.push({
+                what: 'remove topic',
+                run: () => api(`/repos/${owner}/${repo.name}/topics`, {
+                  method: 'PUT',
+                  body: JSON.stringify({ names: topics.filter((t) => String(t).toLowerCase() !== MARKER_TOPIC) }),
+                }),
+              });
+            }
+
+            // Description markers are only ever cleared here, never re-added:
+            // the marker carries a question count, and this job has no reliable
+            // way to recover it. The action re-adds it on the student's next
+            // push, with a count it actually knows.
+            const stripped = stripDescriptionMarker(repo.description);
+            const hasDescriptionMarker = stripped !== String(repo.description ?? '').trimEnd();
+            if (!live && hasDescriptionMarker) {
+              actions.push({
+                what: 'strip description marker',
+                run: () => api(`/repos/${owner}/${repo.name}`, {
+                  method: 'PATCH',
+                  body: JSON.stringify({ description: stripped }),
+                }),
+              });
+            }
+
+            if (actions.length === 0) continue;
+
+            for (const action of actions) {
+              if (dryRun) {
+                changes.push([repo.name, action.what, 'would change']);
+                continue;
+              }
+              try {
+                await action.run();
+                changes.push([repo.name, action.what, 'done']);
+              } catch (err) {
+                console.log(`::warning::Could not ${action.what} on ${repo.name}: ${err.message}`);
+                changes.push([repo.name, action.what, `failed — ${err.message.slice(0, 120)}`]);
+                failures++;
+              }
+            }
+          }
+
+          note(`Repositories changed: ${new Set(changes.map((c) => c[0])).size}`);
+          if (failures > 0) note(`Repositories skipped or failed: ${failures}`);
+
+          const table = changes.length
+            ? ['| Repository | Change | Result |', '| --- | --- | --- |',
+               ...changes.map(([r, w, s]) => `| \`${r}\` | ${w} | ${s} |`)].join('\n') + '\n'
+            : '_Every repository already matched its live state — nothing to do._\n';
+
+          await finish(
+            `### Reconcile Repository Markers\n\n` +
+            summary.map((l) => `- ${l}`).join('\n') + '\n\n' + table +
+            `\n<sub>The open issue labelled \`${ASSESSMENT_LABEL}\` is the source of truth. ` +
+            `Description markers are cleared here but re-added by the action on the next push, ` +
+            `because only it knows the question count.</sub>\n`,
+          );
+          })().catch((err) => {
+            // A marker sweep is housekeeping, but a silent failure would let
+            // markers drift indefinitely with nothing to notice it, so this
+            // fails the run loudly rather than exiting 0.
+            console.error(`::error::Marker reconciliation failed: ${err.message}`);
+            process.exit(1);
+          });
+          JSEOF
