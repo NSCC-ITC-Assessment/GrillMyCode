@@ -1,71 +1,73 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-label="A dinosaur mascot reviews a grid of student repositories through a magnifying glass, with template and bot commits greyed out">
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 480 300" role="img" aria-label="The GrillMyCode flame reviews a grid of student repositories through a magnifying glass, with template and bot commits greyed out">
+  <style>
+    .cardBg{fill:#F8FAFC;stroke:#0F172A;stroke-opacity:.08;stroke-width:2;}
+  </style>
   <defs>
-    <style>
-      .cardBg{fill:#F7F9FB;stroke:#1A2421;stroke-opacity:.08;stroke-width:2;}
-    </style>
+    <linearGradient id="gmc-classroom-braces" x1="0" y1="78" x2="0" y2="318" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FD840D"/><stop offset="0.5" stop-color="#F54719"/><stop offset="1" stop-color="#C4142C"/>
+    </linearGradient>
+    <linearGradient id="gmc-classroom-flame" x1="205" y1="60" x2="120" y2="295" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FA7A18"/><stop offset="0.45" stop-color="#F13B1F"/><stop offset="1" stop-color="#C8142E"/>
+    </linearGradient>
+    <linearGradient id="gmc-classroom-core" x1="0" y1="140" x2="0" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC53A"/><stop offset="1" stop-color="#FB8420"/>
+    </linearGradient>
+    <mask id="gmc-classroom-hole" maskUnits="userSpaceOnUse" x="6" y="11" width="350" height="350">
+      <rect x="6" y="11" width="350" height="350" fill="#fff"/>
+      <path d="M171 230C160 246 154 262 154 280V312H204V296C202 272 190 248 171 230Z" fill="#000"/>
+    </mask>
   </defs>
+  <g transform="translate(2,96) scale(0.42)">
+    <g fill="none" stroke="url(#gmc-classroom-braces)" stroke-width="27">
+      <path d="M118 91H96Q66 91 66 121V162Q66 196 20 196Q66 196 66 230V271Q66 301 96 301H118"/>
+      <path d="M244 91H266Q296 91 296 121V162Q296 196 342 196Q296 196 296 230V271Q296 301 266 301H244"/>
+    </g>
+    <g mask="url(#gmc-classroom-hole)">
+      <path fill="url(#gmc-classroom-flame)" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+      <path fill="url(#gmc-classroom-core)" d="M188 138C186 170 184 196 192 214C214 228 223 248 221 266C219 284 210 294 204 298H156C142 290 129 272 129 250C129 212 170 176 188 138Z"/>
+    </g>
+  </g>
 
-  <circle cx="350" cy="150" r="150" fill="#25C2A0" opacity=".07"/>
+  <circle cx="350" cy="150" r="150" fill="#F97316" opacity=".07"/>
 
   <!-- repo grid -->
-  <rect x="230" y="92" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="260" y="92" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="290" y="92" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="320" y="92" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="350" y="92" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="380" y="92" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="410" y="92" width="24" height="24" rx="6" fill="#B9C2C8"/><path d="M417,99 l10,10 M427,99 l-10,10" stroke="#8A949B" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="440" y="92" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="230" y="122" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="260" y="122" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="290" y="122" width="24" height="24" rx="6" fill="#B9C2C8"/><path d="M297,129 l10,10 M307,129 l-10,10" stroke="#8A949B" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="320" y="122" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="350" y="122" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="380" y="122" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="410" y="122" width="24" height="24" rx="6" fill="#38CC6C"/><rect x="408" y="120" width="28" height="28" rx="7" fill="none" stroke="#FFE477" stroke-width="3"/><path d="M416,135 l5,6 l11,-13" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
-  <rect x="440" y="122" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="230" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="260" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="290" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="320" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="350" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="380" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="410" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="440" y="152" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="230" y="182" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="260" y="182" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="290" y="182" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="320" y="182" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="350" y="182" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="380" y="182" width="24" height="24" rx="6" fill="#B9C2C8"/><path d="M387,189 l10,10 M397,189 l-10,10" stroke="#8A949B" stroke-width="2.5" stroke-linecap="round"/>
-  <rect x="410" y="182" width="24" height="24" rx="6" fill="#25C2A0"/>
-  <rect x="440" y="182" width="24" height="24" rx="6" fill="#25C2A0"/>
-
-  <!-- dino, holding a magnifying glass toward the grid -->
-  <g transform="translate(24,92) scale(1.05)">
-    <path d="M28,142 Q2,150 6,178 Q24,168 40,146 Z" fill="#229953"/>
-    <ellipse cx="50" cy="166" rx="17" ry="11" fill="#229953"/>
-    <ellipse cx="98" cy="166" rx="17" ry="11" fill="#229953"/>
-    <path d="M75,14 C42,14 20,42 18,80 C16,118 34,156 75,162 C116,156 134,118 132,80 C130,42 108,14 75,14 Z" fill="#38CC6C"/>
-    <ellipse cx="75" cy="112" rx="30" ry="36" fill="#FFE477"/>
-    <ellipse cx="18" cy="106" rx="13" ry="10" fill="#38CC6C" transform="rotate(-20 18 106)"/>
-    <ellipse cx="124" cy="94" rx="15" ry="12" fill="#7EE39D"/>
-    <circle cx="130" cy="90" r="1.8" fill="#1A2421"/>
-    <polygon points="52,20 60,2 66,20" fill="#229953"/>
-    <polygon points="68,16 76,-2 82,16" fill="#229953"/>
-    <polygon points="84,20 92,4 98,20" fill="#229953"/>
-    <circle cx="98" cy="72" r="14" fill="#FFFFFF"/>
-    <circle cx="102" cy="72" r="6.5" fill="#1A2421"/>
-    <circle cx="104.5" cy="68" r="2" fill="#FFFFFF"/>
-    <path d="M104,104 Q112,110 121,102" fill="none" stroke="#1A2421" stroke-width="2.5" stroke-linecap="round"/>
-    <!-- raised arm holding magnifying glass -->
-    <ellipse cx="128" cy="128" rx="12" ry="9" fill="#38CC6C" transform="rotate(55 128 128)"/>
-  </g>
+  <rect x="230" y="92" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="260" y="92" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="290" y="92" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="320" y="92" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="350" y="92" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="380" y="92" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="410" y="92" width="24" height="24" rx="6" fill="#CBD5E1"/><path d="M417,99 l10,10 M427,99 l-10,10" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="440" y="92" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="230" y="122" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="260" y="122" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="290" y="122" width="24" height="24" rx="6" fill="#CBD5E1"/><path d="M297,129 l10,10 M307,129 l-10,10" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="320" y="122" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="350" y="122" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="380" y="122" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="410" y="122" width="24" height="24" rx="6" fill="#C2410C"/><rect x="408" y="120" width="28" height="28" rx="7" fill="none" stroke="#FFC53A" stroke-width="3"/><path d="M416,135 l5,6 l11,-13" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="440" y="122" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="230" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="260" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="290" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="320" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="350" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="380" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="410" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="440" y="152" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="230" y="182" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="260" y="182" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="290" y="182" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="320" y="182" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="350" y="182" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="380" y="182" width="24" height="24" rx="6" fill="#CBD5E1"/><path d="M387,189 l10,10 M397,189 l-10,10" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+  <rect x="410" y="182" width="24" height="24" rx="6" fill="#475569"/>
+  <rect x="440" y="182" width="24" height="24" rx="6" fill="#475569"/>
 
   <!-- magnifying glass held up toward the grid -->
   <g transform="translate(0,-6)">
-    <line x1="182" y1="176" x2="205" y2="153" stroke="#229953" stroke-width="9" stroke-linecap="round"/>
-    <circle cx="200" cy="122" r="26" fill="#F7F9FB" stroke="#25C2A0" stroke-width="7"/>
-    <circle cx="200" cy="122" r="18" fill="none" stroke="#25C2A0" stroke-width="2" opacity=".5"/>
+    <line x1="182" y1="176" x2="205" y2="153" stroke="#1E293B" stroke-width="9" stroke-linecap="round"/>
+    <circle cx="200" cy="122" r="26" fill="#F8FAFC" stroke="#334155" stroke-width="7"/>
+    <circle cx="200" cy="122" r="18" fill="none" stroke="#334155" stroke-width="2" opacity=".5"/>
   </g>
 </svg>
