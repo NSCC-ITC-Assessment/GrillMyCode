@@ -1,4 +1,4 @@
-# {{ASSIGNMENT_NAME}} — GrillMyCode Instructor Repository
+# <img src="{{LOGO_URL}}" alt="" height="{{LOGO_HEIGHT}}" align="absmiddle"> {{ASSIGNMENT_NAME}} — GrillMyCode Instructor Repository
 
 This is a **private** repository created and managed by [GrillMyCode](https://github.com/NSCC-ITC-Assessment/GrillMyCode). It collects AI-generated code comprehension assessments — including answer keys — for every student in the **{{ASSIGNMENT_NAME}}** assignment.
 

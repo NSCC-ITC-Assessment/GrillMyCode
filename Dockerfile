@@ -11,8 +11,8 @@
 #   3. Dependencies  — Production-only Node dependencies installed via pnpm
 #                      with a frozen lockfile so the image is fully reproducible.
 #   4. Source code   — The action's src/ directory (including the committed
-#                      gitignore-templates.json) and the entrypoint shell script
-#                      are copied in and made executable.
+#                      gitignore-templates.json), the logo used in the PDF
+#                      header, and the entrypoint shell script are copied in.
 #
 # The container is invoked by GitHub Actions via the ENTRYPOINT defined in
 # action.yml, which calls /entrypoint.sh → node src/main.js.
@@ -48,6 +48,9 @@ RUN pnpm install --frozen-lockfile --prod --ignore-scripts
 
 # Copy source code
 COPY src/ ./src/
+# The PDF page header embeds the logo; keep its repo-relative path so
+# src/delivery/pdf.js finds it the same way locally and in the image.
+COPY docs-site/static/img/grillmycode-logo.svg ./docs-site/static/img/
 COPY entrypoint.sh /entrypoint.sh
 RUN chmod +x /entrypoint.sh
 

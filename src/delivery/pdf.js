@@ -6,8 +6,38 @@
  */
 
 import { Buffer } from 'node:buffer';
+import { readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
+import { fileURLToPath } from 'node:url';
 import * as core from '@actions/core';
 import { mdToPdf } from 'md-to-pdf';
+import { LOGO_PDF_HEADER_HEIGHT_PX } from '../constants.js';
+
+/**
+ * The page header carries the logo, since the sanitiser below strips the one
+ * beside the report heading. Chromium does not fetch resources for header
+ * templates, so the SVG is inlined as a data URI. The Dockerfile copies the
+ * file to the same relative path inside the image. If it cannot be read, the
+ * PDF is still produced, just without a logo.
+ */
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const LOGO_PATH = join(__dirname, '../../docs-site/static/img/grillmycode-logo.svg');
+
+function buildHeaderTemplate() {
+  let logo = '';
+  try {
+    const svg = readFileSync(LOGO_PATH).toString('base64');
+    logo =
+      `<img src="data:image/svg+xml;base64,${svg}" alt="" ` +
+      `style="height:${LOGO_PDF_HEADER_HEIGHT_PX}px;width:${LOGO_PDF_HEADER_HEIGHT_PX}px;margin-right:4px">`;
+  } catch (err) {
+    core.debug(`PDF: logo not found at ${LOGO_PATH} (${err.message}); header has no logo`);
+  }
+  return (
+    '<div style="font-size:9px;width:100%;margin:0 1cm;display:flex;align-items:center;' +
+    `color:#aaa;font-family:sans-serif">${logo}<span>GrillMyCode</span></div>`
+  );
+}
 
 /**
  * marked renderer overrides that neutralise the prompt-injection → HTML render
@@ -61,7 +91,7 @@ export async function generatePdf(markdownContent) {
         margin: { top: '1.5cm', right: '1cm', bottom: '2cm', left: '1cm' },
         printBackground: true,
         displayHeaderFooter: true,
-        headerTemplate: '<span></span>',
+        headerTemplate: buildHeaderTemplate(),
         footerTemplate:
           '<div style="font-size:9px;width:100%;text-align:center;color:#aaa;font-family:sans-serif">' +
           '<span class="pageNumber"></span> / <span class="totalPages"></span>' +

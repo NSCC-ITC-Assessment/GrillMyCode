@@ -1,4 +1,4 @@
-# GrillMyCode
+# <img src="docs-site/static/img/grillmycode-logo.svg" alt="" height="40" align="absmiddle"> GrillMyCode
 
 GrillMyCode writes questions about each student's own code, so you can check that they understand the work they hand in.
 

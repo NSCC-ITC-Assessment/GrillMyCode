@@ -510,3 +510,17 @@ export const REPO_DESCRIPTION_MAX_CHARS = 350;
  * A manual run ignores this: an instructor who presses Run wants it to run.
  */
 export const REPO_MARKER_SWEEP_IDLE_DAYS = 10;
+
+/**
+ * Public URL of the GrillMyCode logo, shown beside the heading of the issue
+ * report and the instructor repository README. Those are rendered on GitHub
+ * inside other people's repositories, so a repo-relative path would not
+ * resolve; the docs site serves the same file from docs-site/static/img/.
+ */
+export const LOGO_URL = 'https://grillmycode.org/img/grillmycode-logo.svg';
+
+/** Height in pixels of the logo beside a report or README heading. */
+export const LOGO_HEADING_HEIGHT_PX = 28;
+
+/** Height in pixels of the logo in the PDF page header. */
+export const LOGO_PDF_HEADER_HEIGHT_PX = 16;
