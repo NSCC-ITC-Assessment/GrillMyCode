@@ -41,6 +41,8 @@ import {
   INSTRUCTOR_WRITE_MAX_DELAY_MS,
   INSTRUCTOR_RATE_LIMIT_FALLBACK_MS,
   INSTRUCTOR_RATE_LIMIT_MAX_WAIT_MS,
+  LOGO_HEADING_HEIGHT_PX,
+  LOGO_URL,
 } from '../constants.js';
 
 import {
@@ -347,10 +349,10 @@ function renderInstructorReadme(owner, instructorRepoName) {
     : instructorRepoName;
   const workflowFilename = STUDENT_QUESTIONS_WORKFLOW_PATH.split('/').at(-1);
   const workflowUrl = `https://github.com/${owner}/${instructorRepoName}/actions/workflows/${workflowFilename}`;
-  return INSTRUCTOR_REPO_README_TEMPLATE.replace(
-    /\{\{ASSIGNMENT_NAME\}\}/g,
-    assignmentName,
-  ).replace(/\{\{WORKFLOW_URL\}\}/g, workflowUrl);
+  return INSTRUCTOR_REPO_README_TEMPLATE.replace(/\{\{ASSIGNMENT_NAME\}\}/g, assignmentName)
+    .replace(/\{\{WORKFLOW_URL\}\}/g, workflowUrl)
+    .replace(/\{\{LOGO_URL\}\}/g, LOGO_URL)
+    .replace(/\{\{LOGO_HEIGHT\}\}/g, String(LOGO_HEADING_HEIGHT_PX));
 }
 
 /**

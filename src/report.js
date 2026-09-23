@@ -5,7 +5,14 @@
  * returns the final report string. No side effects, no I/O.
  */
 
-import { GIT_SHA_SHORT_LENGTH } from './constants.js';
+import { GIT_SHA_SHORT_LENGTH, LOGO_HEADING_HEIGHT_PX, LOGO_URL } from './constants.js';
+
+/**
+ * Logo beside the report heading. The report is also the PDF source, where
+ * pdf.js drops all raw HTML, so the PDF heading falls back to plain text and
+ * carries the logo in its page header instead.
+ */
+const LOGO_IMG = `<img src="${LOGO_URL}" alt="" height="${LOGO_HEADING_HEIGHT_PX}" align="absmiddle">`;
 
 /**
  * Assembles the full Markdown assessment report.
@@ -73,7 +80,7 @@ export function formatReport({
     : [];
 
   return [
-    '## GrillMyCode',
+    `## ${LOGO_IMG} GrillMyCode`,
     '',
     ...pdfBadge,
     `> **Generated:** ${date}`,

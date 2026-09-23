@@ -27,7 +27,7 @@ The issue is pinned the first time it is created, so students find it at the top
 
 ### What the body contains
 
-A **Download as PDF** button, then a header:
+A **GrillMyCode** heading with the logo, a **Download as PDF** button, then a header:
 
 | Line | Shown |
 |---|---|
@@ -61,6 +61,10 @@ GitHub caps an issue body at 65,536 characters. If the report is longer than 65,
 ## The PDF
 
 The PDF is attached to a rolling GitHub release tagged `gmc-assessments` in the student's repository, and linked from the top of the issue.
+
+### What the PDF contains
+
+The same report as the issue body, with the GrillMyCode logo and name at the top of every page and page numbers at the bottom. Any images or HTML in the report are left out of the PDF, so nothing in it is loaded from the web.
 
 ### File name
 
