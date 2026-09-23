@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.10.3 — 2026-09-23
+
+### What's Changed
+
+### Documentation
+
+- reorganize docs site into gentle guides and technical reference
+
 ## v1.10.2 — 2026-09-23
 
 ### What's Changed

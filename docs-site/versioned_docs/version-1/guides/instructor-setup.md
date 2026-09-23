@@ -1,349 +1,99 @@
 ---
-sidebar_position: 5
+sidebar_position: 8
+sidebar_label: Keeping a private answer key
 ---
 
-# Instructor Setup
+# Keeping a private answer key
 
-This page walks through everything an instructor needs to do to enable private instructor repository delivery — the feature that automatically stores a full question-and-answer assessment copy for every student in a private repository that only instructors can access.
+Students only ever see questions. With a little extra setup, GrillMyCode also keeps a copy of every student's questions **with the answers**, in a private repository that only instructors can see. It also builds a multiple-choice quiz for each student that you can import into your LMS.
 
-:::info Classroom 50 assignment repositories only
-Instructor repository delivery works only in the student repositories Classroom 50 creates when a student accepts an assignment. The action identifies the assignment and the student from Classroom 50's repository naming (see [how the assignment and student are identified](#how-the-assignment-and-student-are-identified)), so the feature is not available for any other repository — setting `instructor_repo_token` there only produces a warning. Everything else GrillMyCode does works the same with or without Classroom 50.
+This page shows how to set it up. It takes about 10 minutes once, and one extra line in each assignment's workflow.
+
+## What you get
+
+For each assignment, GrillMyCode creates a private repository in your classroom's organization, named after the assignment. For example, `cs-principles-lab-3-grillmycode-instructor`. Inside, each student has a folder containing:
+
+- **`questions.md`**: their questions and answers. This is the file to read.
+- **A quiz file** (`.imscc`), ready to import into Brightspace, Canvas, Moodle or most other LMSs. See [Importing quizzes into your LMS](lms-quizzes.md).
+- **A Brightspace-only alternative** (`.csv`), which you can ignore on any other LMS.
+- **`raw-ai-output.md`**: the AI's reply before GrillMyCode tidied it. You only need it when something looks wrong.
+
+Every new run for a student replaces their files, so each folder always holds exactly one up-to-date assessment. Students can't see this repository.
+
+![Top: the private instructor repository web101-lab-3-grillmycode-instructor, with a .github/workflows folder and one folder per student. Bottom: one student's folder, containing the Brightspace CSV quiz, the .imscc quiz, questions.md and raw-ai-output.md.](/img/screenshots/instructor-repository.png)
+
+## One-time setup
+
+### Create an access token
+
+GrillMyCode needs permission to create repositories in your organization and write to them. You give it that with a **personal access token**: a password tied to your GitHub account, limited to specific permissions.
+
+Use an account that can create repositories in the organization; an organization owner can.
+
+1. On GitHub, go to **Settings → Developer settings → Personal access tokens → Tokens (classic)**. This is your own account's settings, not the organization's.
+2. Select **Generate new token (classic)**.
+3. Give it a name, such as `GrillMyCode answer key`, and an expiry date that suits you, such as one year.
+4. Tick the **`repo`** scope *and* the **`workflow`** scope. Both are needed.
+5. Select **Generate token** and copy it straight away. GitHub shows it only once.
+
+:::tip[Want tighter permissions?]
+A *fine-grained* token works too. See [Tokens, secrets and permissions](../reference/permissions.md) for the exact permissions it needs.
 :::
 
-Setup is split into two phases: a **one-time org setup** that you do once for your whole classroom organisation, and a **per-assignment setup** that you do once for each new assignment.
+### Save it as an organization secret
 
----
+This is the same process as for [the OpenRouter key](../getting-started/openrouter-key.md#save-the-key-in-your-github-organization).
 
-## Phase 1 — One-time org setup
+1. Open your classroom's organization and go to **Settings → Secrets and variables → Actions**.
+2. Select **New organization secret**.
+3. For **Name**, enter `INSTRUCTOR_REPO_TOKEN`.
+4. For **Value**, paste the token.
+5. Under **Repository access**, choose **All repositories**, or **Private repositories**.
+6. Select **Add secret**.
 
-Do this once. Every assignment you create afterwards picks it up automatically.
+When the token expires, generate a new one and replace the secret's value. Until you do, answer keys stop arriving; see [Troubleshooting](../troubleshooting.md#private-answer-key-instructor-repository).
 
-### Step 1 — Create an instructor PAT
+## For each assignment
 
-Create a Personal Access Token that the action will use to create and write to the private instructor repository. The token must belong to an account that has permission to create repositories in the organisation (an org owner, or a member if the org allows member repo creation).
+In the [Workflow Wizard](../workflow-wizard.mdx)'s **Instructor** step, answer **Yes** to the Classroom 50 question and leave **Write to a private instructor repository** ticked. Both are the defaults. Then commit the workflow to the template as usual.
 
-#### Classic PAT (recommended — simplest option)
-
-1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**.
-2. Click **Generate new token (classic)**.
-3. Give it a descriptive name, e.g. `GrillMyCode instructor delivery`.
-4. Set an expiry that suits your retention policy (e.g. 1 year).
-5. Select the **`repo`** scope (the full checkbox — this covers creating private org repos and reading/writing file contents) and the **`workflow`** scope (required to commit GitHub Actions workflow files into the instructor repository, and to keep them up to date afterwards).
-6. Click **Generate token** and copy the value immediately.
-
-#### Fine-grained PAT (more restrictive)
-
-1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Fine-grained tokens**.
-2. Click **Generate new token**.
-3. Set **Resource owner** to your organisation.
-4. Under **Organisation permissions**, grant **Administration: Read and Write** (required to create new repositories).
-5. Under **Repository permissions**, grant **Contents: Read and Write** (required to write assessment files) and **Workflows: Read and Write** (required to commit GitHub Actions workflow files into the instructor repository, and to keep them up to date afterwards).
-6. Click **Generate token** and copy the value.
-
-:::note
-Fine-grained tokens require the organisation to allow them. Check **Org → Settings → Personal access tokens → Allow access via fine-grained personal access tokens**.
-:::
-
-:::caution Already have an instructor PAT?
-Tokens created before the `workflow` scope became a requirement need updating. Every delivery now
-rewrites `.github/workflows/generate-lms-quiz.yml` when the action ships a newer copy, and GitHub
-refuses any write under `.github/workflows/` from a token without that scope — so a `repo`-only
-token produces a `Could not update .github/workflows/generate-lms-quiz.yml …` warning on **every
-student push**, and the instructor repository stays on its original quiz-generation code.
-
-Assessments are still delivered — the sync warns rather than fails — but the fixes never arrive.
-To fix it, edit the existing classic token (**Settings → Developer settings → Tokens (classic) →
-your token → Regenerate/Edit**) and tick **`workflow`** alongside **`repo`**, or add
-**Workflows: Read and Write** to a fine-grained token. Update the `INSTRUCTOR_REPO_TOKEN` org
-secret if regenerating produced a new value.
-:::
-
----
-
-### Step 2 — Add the token as an org-level Actions secret
-
-Adding the secret at the organisation level means every student repository inherits it automatically — you never need to add it manually to individual repos.
-
-1. Go to your **organisation → Settings → Secrets and variables → Actions**.
-2. Click **New organisation secret**.
-3. Name: **`INSTRUCTOR_REPO_TOKEN`**
-4. Value: paste the PAT you created in Step 1.
-5. Repository access: choose **All repositories** (or **Private repositories** if you prefer narrower scope).
-6. Click **Add secret**.
-
----
-
-## Phase 2 — Per-assignment setup
-
-Do this once each time you create a new Classroom 50 assignment. It takes about one minute.
-
-### Step 3 — Add the workflow to the assignment's starter repo
-
-Open the **starter/template repository** for the assignment (the repo registered with `gh teacher assignment add --template <owner>/<repo>`). Add the following file:
-
-**`.github/workflows/grill-my-code.yml`**
+If you already have a workflow file, add this line under `with:` instead:
 
 ```yaml
-name: GrillMyCode
-
-on:
-  push:
-    branches: ["main", "master"]
-  workflow_dispatch:
-
-# A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
-# Do not modify this setting unless you have a compelling reason to.
-concurrency:
-  group: grillmycode-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
-
-jobs:
-  generate-questions:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: write  # gmc-assessments release + PDF asset
-      issues: write    # assessment issue
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0    # full history required for diff resolution
-
-      - uses: NSCC-ITC-Assessment/GrillMyCode@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          # If desired, uncomment this input and edit to use a different one —
-          # any model from https://openrouter.ai/models (provider/model-name).
-          # ai_model: "google/gemini-3.5-flash-lite"
-          num_questions: "20"
-          instructor_context: |
-            Assignment 1 — Python functions. Prioritize conceptual
-            questions about parameter design and return values, and at
-            least one error identification question about what happens
-            when an invalid argument is passed.
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 ```
 
-That's it. Every student repo created by `gh student accept` from this template receives this workflow file, since it's a copy of the template at accept time. The org-level secret (`INSTRUCTOR_REPO_TOKEN`) is available to all of them automatically.
+That's all. The private repository is created automatically when the first student's questions are generated.
 
----
+### Assignments without a starter repo
 
-## What happens on the first submission
+An assignment created without a template, or with `--empty-repo`, has nowhere to ship the workflow from. Add the workflow file to each student's repository directly. The answer key works the same way.
 
-When the first student pushes to the default branch:
+## Where to find it
 
-1. The action runs in the student's repository using `GITHUB_TOKEN` (the student's built-in token) for all student-facing operations.
-2. It uses `INSTRUCTOR_REPO_TOKEN` to check whether the instructor repository (`{assignment-name}-grillmycode-instructor`) exists in your org.
-3. If it does not exist yet, the action **creates it automatically as a private repository**, commits a `generate-lms-quiz.yml` GitHub Actions workflow into it, and writes a descriptive `README.md` explaining the repository structure and contents. On every later run it refreshes those files whenever they differ from the copies shipped with the action, so existing instructor repositories receive quiz-generation fixes without any manual step. A third file, `reconcile-repo-markers.yml`, is added when [`repo_marker`](../example-workflows/2-repo-marker.md) is enabled. All are action-owned — edit them in the repository and the next run puts them back.
-4. It creates a `{student-login}/` folder in the instructor repo and writes the full Q+A assessment to `{student-login}/questions.md`, plus the AI's unprocessed reply to `{student-login}/raw-ai-output.md`.
-5. That write automatically triggers the **Generate LMS Quiz** workflow in the instructor repository, which produces an IMS Common Cartridge / QTI quiz package (`{student-login}/{assignment-name}_{student-login}_quiz_{question-count}.imscc`) for that student, ready to import into any LMS that supports Common Cartridge — an open standard supported by most major platforms, including Brightspace, Canvas, Moodle, Blackboard Learn and Sakai. **Brightspace users only** also get an alternative: `{student-login}/{assignment-name}_{student-login}_brightspace_quiz_{question-count}.csv`, the same questions in Brightspace's own question-import format (see [Which quiz file to use](#which-quiz-file-to-use)). It works only in Brightspace — anyone on another LMS can ignore it. Every run checks all students but skips any whose `questions.md` is unchanged since their quiz was last built, so normally only the student who just pushed gets a new file; a change to the quiz package format rebuilds every student's quiz in a single run. The workflow can also be run manually from the Actions tab to regenerate every student's quiz at once.
-
-For subsequent students the repo already exists — the action just adds or updates their individual file.
-
-:::note The token is also what asks for distractors
-Each question's three wrong multiple-choice options are generated for `questions.md` alone — the student's report strips them out before it is posted. Runs that have no `INSTRUCTOR_REPO_TOKEN` therefore ask the model for the correct answer only, which is cheaper and quicker. Once the token is in place every run generates distractors again, so a class that adds it mid-semester does not need to change anything else; assessments produced before it was added have no options to build a quiz from, and re-running the workflow on those repositories regenerates them.
-:::
-
----
-
-## Accessing the instructor repository
-
-After the first student submission, find the instructor repository at:
+After the first student's run, open:
 
 ```
-https://github.com/{your-org}/{assignment-name}-grillmycode-instructor
+https://github.com/{your-organization}/{assignment-name}-grillmycode-instructor
 ```
 
-Each student's assessment is stored in a dedicated folder:
+The repository is also listed with your organization's other repositories.
 
-```
-README.md
-{student-login}/
-  questions.md
-  raw-ai-output.md                                                          ← the AI's unprocessed reply, for diagnosis
-  {assignment-name}_{student-login}_quiz_{question-count}.imscc              ← quiz package for any LMS
-  {assignment-name}_{student-login}_brightspace_quiz_{question-count}.csv    ← optional alternative, Brightspace only
-```
+## Good to know
 
-For example, if your org is `my-school`, your assignment is `lab-3`, and a student's login is `jsmith`:
-
-- Instructor repo: `https://github.com/my-school/lab-3-grillmycode-instructor`
-- Student file: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/questions.md`
-- Quiz package: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_quiz_20.imscc`
-- Brightspace-only CSV alternative: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/lab-3_jsmith_brightspace_quiz_20.csv`
-- Raw AI output: `https://github.com/my-school/lab-3-grillmycode-instructor/blob/main/jsmith/raw-ai-output.md`
-
-The trailing number is how many questions the file contains — `20` above. A question whose distractors could not be read from `questions.md` is left out of the package rather than imported as a single-choice free mark, so a quiz can be shorter than its `questions.md`; the count in the filename is how you spot that without opening anything.
-
-`raw-ai-output.md` is a diagnostic record, not something you need to read or import — **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived, before GrillMyCode renumbered the questions, cut any it generated beyond `num_questions`, lifted the instructor note out of the body, restored any code fence the model left unopened and adjusted the formatting. Open it when a student's `questions.md` looks wrong: questions that were truncated, withheld, or dropped for naming a file outside the assessment, and formatting the processing steps introduced, are only visible there. Use GitHub's **Raw** view to see it as the model wrote it, and include its contents in any bug report about generated questions.
-
-The header at the top of the file records how the reply was produced: why the model stopped (a `length` stop means it hit its output limit and the reply is incomplete), how many tokens went in and out, how many attempts the request took, and the settings used — questions requested, temperature, and a short hash identifying the prompt version. The same facts, with full commit SHAs, are embedded as JSON in a `<!-- gmc:provenance … -->` comment for tooling; it is invisible in the rendered view.
-
-Re-running the action (e.g. when a student pushes more commits) overwrites the existing file — there is always exactly one up-to-date assessment per student. If the question count changes, the new count appears in the filename and the file carrying the old count is removed.
-
-### Submission tag folders
-
-When the workflow is [triggered by submission tags](../example-workflows/tag-submission.md), each `submission_tags` pattern gets its own subfolder inside the student's folder, so a milestone's assessment is kept when the next one arrives:
-
-```
-{student-login}/
-  {tag-group}/                                                              ← the submission tag, e.g. phase1 or complete
-    questions.md
-    raw-ai-output.md
-    submissions.md                                                          ← every run for this tag, with a resubmission count
-    history/                                                                ← question sets replaced by a resubmission
-      1-questions.md
-    {assignment-name}_{student-login}_{tag-group}_quiz_{question-count}.imscc
-    {assignment-name}_{student-login}_{tag-group}_brightspace_quiz_{question-count}.csv
-```
-
-The tag group is the tag reduced to filename-safe characters — for a wildcard entry such as `phase*`, that is `phase`. It is carried in the quiz filenames and in the quiz title shown in the LMS (`lab-3 - jsmith (phase1)`). Within one group the one-up-to-date-assessment rule above still applies: re-pushing a tag replaces that group's `questions.md` and rebuilds its quiz.
-
-### Spotting resubmissions
-
-A student can resubmit under the same tag by moving it and pushing it again. Nothing is blocked, but every resubmission is flagged, in three places:
-
-- **The assessment itself.** A resubmitted `questions.md` carries a line in its header, e.g. `Submission: ⚠️ resubmitted — this is the 3rd submission of phase1 (previous: 2026-09-18 14:03 UTC, a1b2c3d)`.
-- **`submissions.md`** in the tag folder lists every run for that tag — date, trigger (tag push or manual run), who started it and the commit — and states how many counted as student submissions.
-- **`history/`** keeps each question set a resubmission replaced, as `<#>-questions.md`, numbered by the `submissions.md` row that produced it.
-
-The history is what makes a resubmission worth a second look. Students see their questions — never the answers — so re-pushing a tag is also a way to draw a fresh set. Comparing `history/` with the current `questions.md` shows whether the student submitted new work or went looking for easier questions.
-
-**What counts as a submission:** every tag push, and every manual run started by the student themselves. A manual run started by anyone else — your own re-run from the Actions tab, for instance — is listed in `submissions.md` but not counted, and its header says so. In a team repository there is no single student to compare against, so every run counts.
-
-The record lives only in the instructor repository, so it needs `instructor_repo_token`; students cannot see or edit it, and deleting and re-pushing a tag does not reset the count. The student's run summary also mentions a resubmission, but the count there is informational — the instructor repository is the record to rely on.
-
-### Which quiz file to use
-
-The `.imscc` is the quiz file for everyone. **Common Cartridge** is an open standard from 1EdTech (formerly IMS Global), and most major LMS platforms can import it — including Brightspace, Canvas, Moodle, Blackboard Learn and Sakai. Whatever LMS you use, start with the `.imscc`.
-
-### Brightspace users: the CSV alternative
-
-**Not on Brightspace? Skip this section** — use the `.imscc` and ignore the `_brightspace_quiz.csv` file. It is in D2L Brightspace's own question-import format, which no other LMS can read.
-
-If you are on Brightspace, you can import **either** file. You only need one of them — they contain the same questions.
-
-| | `_quiz.imscc` | `_brightspace_quiz.csv` |
-| --- | --- | --- |
-| Works in | Any LMS that imports Common Cartridge, including Brightspace | Brightspace only |
-| Imports as | A ready-made quiz, titled `{assignment-name} - {student-login}`, limited to one attempt | Questions only — you add them to a quiz yourself |
-| How to import | Import the package into the course | Open a quiz and choose **Import → Upload a File**, or upload to the Question Library |
-
-Using the CSV, questions are titled `{assignment-name} - {student-login} - Q1`, `Q2`, …, and answer options are already shuffled, since the CSV format has no shuffle setting. Leave the `//gmc_content_hash` line at the top of the file in place: Brightspace ignores it, and the workflow uses it to tell whether the file is up to date.
-
----
-
-## How the assignment and student are identified
-
-Classroom 50 names every student repository `<classroom>-<assignment>-<username>` (lowercased), and `gh student accept` adds the accepting student to it as a direct collaborator. The action reads both names from those two facts and nothing else:
-
-- **Student folder**: the repository's direct collaborator whose login ends the repository name. For `cs-principles-lab-3-jsmith` with direct collaborator `jsmith`, the folder is `jsmith/`.
-- **Instructor repository**: everything before that login, so `cs-principles-lab-3-grillmycode-instructor`. The classroom slug stays attached, which keeps two classrooms running the same assignment in separate instructor repositories.
-- **Team assignments**: a team-mode repository ends in `-group-<n>` rather than a login, and its assessment is filed under `group-<n>/`.
-
-Who pushed, who started the run, who authored the commits, and which template the repository came from play no part. Pushing a workflow file into a student's repository, or running the workflow by hand from the Actions tab, never changes where an assessment is filed. Each run logs what it resolved — look for `Assignment: cs-principles-lab-3 · Submitter: jsmith` in the Actions log.
-
-If a repository does not fit — it was not created by Classroom 50, the student is no longer a direct collaborator, or more than one collaborator's login ends the name — the action does not guess. It skips instructor delivery, raises a **workflow warning** giving the reason, and repeats the reason in the run summary. The student's assessment issue and PDF are produced as normal.
-
-Renaming an assignment with `gh teacher assignment rename` renames its student repositories too, so assessments made after a rename go to a new instructor repository named for the new slug.
-
-:::note Upgrading from 1.2.8 or earlier
-Earlier releases named the instructor repository after the assignment's template repository when GitHub reported one, and could file an assessment under whoever pushed or started the run. Assessments now go to `<classroom>-<assignment>-grillmycode-instructor`. Any instructor repositories named after a template, or after a whole student repository (`…-jsmith-grillmycode-instructor`), are no longer written to and can be deleted once you have kept what you need from them.
-:::
-
-## Assignments without a starter repo
-
-For an assignment registered without a template — or with `--empty-repo` — there is no template to ship the workflow from, so add the workflow file directly to each student repo. Instructor delivery works exactly as it does for a templated assignment.
-
----
-
-## Troubleshooting
-
-Instructor repository delivery reports through **annotations on the student's GrillMyCode run**
-(Actions → the run → the summary page). The quiz workflow's own annotations are described in the
-instructor repository's `README.md`, under "Reading a run's annotations".
-
-### The run is green but nothing arrived in the instructor repository
-
-**This is the one to watch for.** A delivery failure is raised as an *error annotation* — `Failed to
-write to instructor repository {org}/{assignment-name}-grillmycode-instructor: …` — but it does
-**not** fail the job. The student's assessment issue and PDF are produced normally, so the run
-finishes successfully and no red X appears in the Actions list.
-
-The reasoning is that a student should never see a failed assessment because of an instructor-side
-delivery problem. The trade-off is that the failure is easy to miss: open the run summary and read
-the annotations rather than trusting the green tick. The message names the underlying GitHub error
-— most often a token that has expired, lost access to the org, or cannot create repositories there.
-
-Delivery is not retried out of band, but nothing is lost permanently: the next push from that
-student re-delivers their assessment in full.
-
-### `Could not update .github/workflows/generate-lms-quiz.yml in …`
-
-The PAT cannot write under `.github/workflows/`, which needs the `workflow` scope (classic) or
-Workflows: Read and Write (fine-grained). The assessment itself still lands — only the sync of the
-action-owned files is skipped — so the repository keeps working with whatever version of the quiz
-workflow it was seeded with, and never receives later fixes. See
-[Already have an instructor PAT?](#step-1--create-an-instructor-pat) above for how to fix it.
-
-The same warning naming `README.md` instead means a broader permission problem, since that file
-needs no special scope.
-
-### `… was rate limited (403)` / `… hit a concurrent-write conflict (409)`
-
-Both are expected when a whole class pushes at once — every student's run commits to the same
-branch of the same repository. Each write is retried up to five times: conflicts re-fetch the file
-and retry with jittered backoff, rate limits wait for `Retry-After`/`X-RateLimit-Reset` (capped at
-60 seconds per wait). A run that logs these warnings and then finishes has delivered successfully.
-
-Only if all five attempts are exhausted does it become the error annotation described above — and
-the student's next push retries from scratch.
-
-### `Timed out waiting for … default branch to initialise`
-
-Raised while creating a brand-new instructor repository, when GitHub's initial commit has not
-appeared after ten one-second polls. Rare, and self-correcting: the repository now exists, so the
-next student push takes the "already exists" path and delivers normally.
-
-### The first run after an upgrade regenerates every student's quiz
-
-Expected, once. The quiz workflow decides what to rebuild by comparing a content hash stored inside
-each `.imscc` and `.csv`. A repository that has just received an updated workflow has no current hashes on
-file, so a single run rebuilds the package for **every** student, serialised by the workflow's
-concurrency group. For a class of thirty that is a long run, not a broken one — subsequent pushes
-go back to rebuilding only the student who pushed.
-
-### An older instructor repository has two quiz workflows
-
-Repositories created before the workflow was renamed still contain
-`.github/workflows/generate-brightspace-quizzes.yml` alongside the `generate-lms-quiz.yml` the sync
-now adds. The sync never deletes files, so the old one stays.
-
-It is harmless where it sits — it has no `push:` trigger, so it never runs on its own (which is why
-those repositories generated nothing on a student push before the sync existed). Dispatching it by
-hand from the Actions tab, though, runs the old generator without any of the current fixes. Delete
-it from the repository if you would rather not have it there; nothing in the action re-creates it.
-
-### The instructor repository is never created (personal accounts)
-
-Automatic creation uses GitHub's *create an organisation repository* endpoint, so the owner of the
-student repositories must be an **organisation**. Under a personal account the creation call fails
-and the delivery is reported as the error annotation above.
-
-To use the feature there anyway, create the repository by hand — named exactly
-`{assignment-name}-grillmycode-instructor`, private, initialised with a README so it has a default
-branch — and grant the PAT access to it. The action creates a repository only when one does not
-already exist, so every later run writes to yours and syncs the workflow into it as normal.
-
----
+- **It's for Classroom 50 repositories only.** GrillMyCode works out the assignment and the student from the way Classroom 50 names repositories. In any other repository, it skips the answer key and adds a warning to the run.
+- **It changes the questions slightly.** With the token in place, the AI also writes three wrong answers per question for the multiple-choice quiz. Students never see them, but each assessment costs a little more. Without the token, only the correct answers are generated.
+- **Check the run, not just the tick.** If the answer key can't be written, for example because the token has expired, the run still succeeds, because the student's questions were delivered fine. The problem shows as an error message on the run's summary page. See [Troubleshooting](../troubleshooting.md#the-run-is-green-but-nothing-arrived-in-the-instructor-repository).
 
 ## Setup summary
 
 | What | When | Where |
 |---|---|---|
-| Create instructor PAT | Once per org | GitHub → Settings → Developer settings |
-| Add `INSTRUCTOR_REPO_TOKEN` org secret | Once per org | Org → Settings → Secrets and variables → Actions |
-| Add workflow file with `instructor_repo_token` | Once per assignment | Assignment's starter/template repo |
-| Instructor repo created | Automatically on first student submission | `{org}/{assignment-name}-grillmycode-instructor` |
+| Create an access token | Once | Your GitHub account → Settings → Developer settings |
+| Add the `INSTRUCTOR_REPO_TOKEN` organization secret | Once | Organization → Settings → Secrets and variables → Actions |
+| Add the token line to the workflow | Once per assignment | The Wizard's **Instructor** step, or the template's workflow file |
+| The private repository is created | Automatically, on the first run | `{organization}/{assignment-name}-grillmycode-instructor` |
+
+---
+
+**Go deeper:** [Instructor repository internals](../reference/instructor-repository.md): folder layout, file formats, how students are identified · [Tracking assessed repositories](tracking-repositories.md): resubmissions and repository markers · Recipe: [Private answer key](../example-workflows/1-instructor-repo.md)

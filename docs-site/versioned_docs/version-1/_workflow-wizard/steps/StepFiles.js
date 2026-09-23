@@ -17,7 +17,7 @@ export default function StepFiles({ cfg, onChange }) {
         <a href="https://github.com/github/gitignore" target="_blank" rel="noopener noreferrer">
           github/gitignore
         </a>{' '}
-        templates — covering build artefacts, dependency directories, IDE files, and more for every
+        templates — covering build artifacts, dependency directories, IDE files, and more for every
         detected language and framework. You only need to add patterns below for files specific to
         your assignment.
       </div>

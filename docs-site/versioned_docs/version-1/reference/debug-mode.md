@@ -1,10 +1,11 @@
 ---
-sidebar_position: 7
+sidebar_position: 10
+sidebar_label: Debug mode
 ---
 
-# Debug Mode
+# Debug mode
 
-GrillMyCode supports GitHub Actions' built-in debug logging mechanism. When enabled, the action emits two additional log entries that show exactly what was resolved and what was sent to the AI provider — useful for troubleshooting unexpected assessment results or verifying that context inputs are being picked up correctly.
+GrillMyCode supports GitHub Actions' built-in debug logging mechanism. When enabled, the action emits extra log entries that show exactly what was resolved and what was sent to the AI provider — useful for troubleshooting unexpected assessment results or verifying that context inputs are being picked up correctly.
 
 ## What gets logged
 
@@ -19,7 +20,7 @@ GrillMyCode supports GitHub Actions' built-in debug logging mechanism. When enab
 
 ## How to enable it
 
-Set the `ACTIONS_STEP_DEBUG` secret (or variable) to `true` in your repository or organisation settings.
+Set the `ACTIONS_STEP_DEBUG` secret (or variable) to `true` in your repository or organization settings.
 
 1. Go to **Settings → Secrets and variables → Actions**
 2. Under **Secrets**, add a new secret:
@@ -44,6 +45,6 @@ This enables `ACTIONS_STEP_DEBUG` only for that run, with no permanent repositor
 
 ## What it does not log
 
-- The raw AI response (only the structured questions output is retained)
+- The raw AI response. When the [instructor repository](instructor-repository.md#raw-ai-outputmd) is configured, it is saved there as `raw-ai-output.md` on every run, debug mode or not
 - Git diff content (already visible in `core.info` output under normal logging)
 - Code content before comment stripping

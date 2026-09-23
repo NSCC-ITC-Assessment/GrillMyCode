@@ -5,64 +5,48 @@ sidebar_label: OpenRouter
 
 # OpenRouter
 
-[OpenRouter](https://openrouter.ai/) is a unified API gateway that gives you access to hundreds of AI models — from providers like Anthropic, Google, Meta, Mistral, DeepSeek, and more — through a single API key and a single billing account. Instead of signing up separately with each AI provider and managing multiple API keys, you create one OpenRouter account, fund it with a prepaid balance, and then specify which model you want to use at request time.
+[OpenRouter](https://openrouter.ai/) is a gateway to hundreds of AI models, from Anthropic, Google, DeepSeek, Meta, Mistral and others, through one API key and one prepaid account. It is GrillMyCode's **only supported provider**, and the default, so `ai_provider` can be left out. The model is chosen with `ai_model`.
 
-OpenRouter is the **only supported provider** in GrillMyCode, and the default — you can omit `ai_provider` entirely. Because OpenRouter is a gateway rather than a single vendor, you still choose freely between models from Anthropic, Google, DeepSeek, Meta, Mistral, and others — the choice is made in `ai_model`, not by swapping providers.
+To create an account and key, see [Get started: Set up an OpenRouter key](../getting-started/openrouter-key.md). To choose a model and understand the cost, see [Choosing a model and managing cost](../guides/choosing-a-model.md).
 
 :::info[An API key is required]
-OpenRouter cannot authenticate with the built-in `GITHUB_TOKEN`. Every GrillMyCode workflow must supply `api_key`. The action fails immediately with a setup message if it is missing.
+OpenRouter can't be reached with the built-in `GITHUB_TOKEN`. Every workflow must supply `api_key`, and the action fails immediately with a setup message if it is missing.
 
-Migrating a workflow that used to work and no longer does? See the [FAQ](../faq.md#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why).
+Upgrading a workflow that used GitHub Models? See [Upgrade notes](../reference/upgrade-notes.md#github-models-was-discontinued).
 :::
-
-## Instructor setup guide
-
-To use OpenRouter with GrillMyCode, an instructor needs to perform the following steps **once**:
-
-1. **Create an OpenRouter account** — Go to [openrouter.ai](https://openrouter.ai/) and sign up (Google, GitHub, or email).
-2. **Add credit** — Navigate to [openrouter.ai/credits](https://openrouter.ai/credits) and add a prepaid balance. Many of the recommended models below cost fractions of a cent per call, so $5–10 will last a large class for an entire semester.
-3. **Generate an API key** — Go to [openrouter.ai/keys](https://openrouter.ai/keys) and create a new key. Copy it immediately — you won't be able to view it again.
-4. **Store the key as an organisation-level GitHub secret** — Go to your GitHub organisation's **Settings → Secrets and variables → Actions** and create a new secret named `OPENROUTER_API_KEY` with the key from Step 3. This makes the key available to all student repositories for that classroom automatically without any per-repo configuration.
-5. **Configure the workflow** — Pass the key as `api_key` and choose a model via `ai_model` (see the tables below for recommended options). `ai_provider` can be omitted, since `openrouter` is the default.
-
-:::tip[Classroom tip]
-For a Classroom 50 setup the secret should **always** be added at the organization level. This ensures every student repo has access to the key from the moment it is created, with no extra setup required from students.
-:::
-
-## Required secrets
-
-| Secret name | Description |
-|---|---|
-| `OPENROUTER_API_KEY` | Your OpenRouter API key |
 
 ## Inputs
 
 | Input | Value |
 |---|---|
-| `ai_provider` | `openrouter` (the default — may be omitted) |
-| `api_key` | `${{ secrets.OPENROUTER_API_KEY }}` — **required** |
-| `ai_model` | Any model identifier supported by OpenRouter, in `provider/model-name` format. Defaults to `google/gemini-3.5-flash-lite`. See the [OpenRouter model list](https://openrouter.ai/models). Examples: `openai/gpt-4o`, `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct` Optionally ends with a routing variant, e.g. `google/gemini-3.5-flash-lite:nitro` — see [Model routing variants](#model-routing-variants) |
+| `api_key` | `${{ secrets.OPENROUTER_API_KEY }}`. **Required** |
+| `ai_model` | Any OpenRouter model ID, in `provider/model-name` format. Defaults to `google/gemini-3.5-flash-lite`. May end with a [routing variant](#model-routing-variants), such as `:nitro` |
+| `ai_provider` | `openrouter`, the default. May be left out |
+| `ai_temperature` | Randomness of the output, from `0.0` to `1.0`. Default `0.5` |
+| `ai_retry_max_attempts` | Total attempts per request, including the first. Default `5` |
+
+Model IDs must match OpenRouter's catalogue exactly; see [openrouter.ai/models](https://openrouter.ai/models). For example: `anthropic/claude-sonnet-5`, `openai/gpt-5-mini`, `meta-llama/llama-3.1-70b-instruct`.
 
 ## Recommended models
 
-The following models have been tested with GrillMyCode and are all usually under **1 cent per API call** at typical classroom scale. They are the options pre-loaded in the [workflow wizard](../workflow-wizard).
+These have been tested with GrillMyCode and usually cost under **one cent per assessment**. They are the options pre-loaded in the [Workflow Wizard](../workflow-wizard.mdx).
 
-| Model | `ai_model` value | Notes |
-|---|---|---|
-| **Google Gemini 3.5 Flash Lite** ⭐ **Recommended** | `google/gemini-3.5-flash-lite` *(default)* | Google's entry-level flash tier; fast, cheap, and consistent for short-form generation tasks. Of the tested models it produces the most effective distractors for multiple-choice questions, which is why it is both recommended and the default. |
-| DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | Extremely low cost; strong instruction-following for structured JSON output. A reliable alternative. |
-| Minimax M2.7 | `minimax/minimax-m2.7` | Very inexpensive; performs well on question generation with minimal prompt tuning. |
-| StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` | Competitive quality-per-token ratio; tested to produce well-formed assessment questions. |
-| Tencent Hy3 | `tencent/hy3` | Model from Tencent; cheap and functional, though output style may vary. |
-| Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` | Reasoning-optimised model from Xiaomi; good at following structured output constraints. |
+| Model | `ai_model` |
+|---|---|
+| Google Gemini 3.5 Flash Lite (default) | `google/gemini-3.5-flash-lite` |
+| DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` |
+| Minimax M2.7 | `minimax/minimax-m2.7` |
+| StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` |
+| Tencent Hy3 | `tencent/hy3` |
+| Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` |
 
-All six are in the "free-or-near-free" tier on OpenRouter, making them suitable for deployments where many students submit simultaneously. If you want higher output quality and are willing to pay more, you can use any other OpenRouter model via the **Own Choice** option — just verify pricing at [openrouter.ai/models](https://openrouter.ai/models) first.
+Of those tested, the default writes the most effective multiple-choice distractors, which is why it is the default. See [Choosing a model and managing cost](../guides/choosing-a-model.md#the-recommended-models) for notes on each. Any other model works too; check its price at [openrouter.ai/models](https://openrouter.ai/models) first, because costs vary by orders of magnitude.
 
 ## Model routing variants
 
 Most models on OpenRouter are served by **several providers**, which differ in speed and price for the same model. By default OpenRouter chooses among them for you, weighing price and recent reliability.
 
-Appending a **routing variant** to the model ID tells it what to prioritise instead. The variant is part of the `ai_model` value — there is no separate input:
+Appending a **routing variant** to the model ID tells it what to prioritize instead. The variant is part of the `ai_model` value — there is no separate input:
 
 | `ai_model` value | Effect | Reach for it when |
 |---|---|---|
@@ -83,7 +67,7 @@ Things worth knowing before you use one:
 - **The model does not change.** A variant only changes which provider runs it, so the questions are generated by the same model and their quality is unaffected.
 - **Fallbacks still apply.** If the first provider is unavailable, OpenRouter moves to the next one in the sorted order.
 - **Check pricing before using `:nitro`.** Billing follows the provider that actually served the request, so a priority-tier endpoint is billed at its own, higher rate — and the fastest provider is rarely the cheapest. Per-provider prices are on each model's page at [openrouter.ai/models](https://openrouter.ai/models). The same applies in reverse to `:floor`: a request served on a flex tier is billed at the flex rate.
-- **Try a different model before reaching for `:nitro`.** If assessments are slow *and* the questions are mediocre, another model is the better fix — see [recommended models](#recommended-models) above. `:nitro` is for when the model is right and only the wait is wrong.
+- **Try a different model before reaching for `:nitro`.** If assessments are slow *and* the questions are mediocre, another model is the better fix — see [Recommended models](#recommended-models). `:nitro` is for when the model is right and only the wait is wrong.
 - **Models with a single provider are unaffected**, because there is nothing to sort.
 - **One variant at a time.** `:nitro` and `:floor` are opposites; OpenRouter lets the last one in the ID win, but a workflow file should carry only one.
 
@@ -95,6 +79,14 @@ In the [Workflow Wizard](../workflow-wizard.mdx) this is the **Model routing** s
 OpenRouter also has suffixes that select a *different* model entry rather than a different provider, such as `:free`. Those are outside what the Wizard offers, but `ai_model` accepts any model string OpenRouter does. See OpenRouter's [model variants](https://openrouter.ai/docs/guides/routing/model-variants/overview) documentation.
 :::
 
+## Retries and rate limits
+
+A request is retried on `429` (rate limit), `500`, `502`, `503` and `504` responses, and on network failures, up to `ai_retry_max_attempts` attempts in total. The wait between attempts grows each time, and a `Retry-After` header on a `429` is honoured. No single wait is longer than 30 seconds.
+
+Rate limits apply to the API key, so a whole class submitting at once shares one budget. Accounts with no credit are limited far more strictly than funded ones. If 429 errors persist, check the account's balance, raise `ai_retry_max_attempts`, or try a less busy model.
+
+For the `404` "No endpoints available matching your guardrail restrictions and data policy" error, see [Troubleshooting](../troubleshooting.md).
+
 ## Example
 
 ```yaml
@@ -105,4 +97,4 @@ OpenRouter also has suffixes that select a *different* model entry rather than a
     ai_model: 'google/gemini-3.5-flash-lite'
 ```
 
-To pin the provider explicitly — harmless, but unnecessary — add `ai_provider: 'openrouter'`.
+Setting `ai_provider: 'openrouter'` explicitly is harmless but unnecessary.

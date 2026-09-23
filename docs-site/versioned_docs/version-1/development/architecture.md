@@ -175,7 +175,7 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
 
 ### `readInputs()`
 
-Reads and normalises every `INPUT_*` environment variable. Responsible for:
+Reads and normalizes every `INPUT_*` environment variable. Responsible for:
 
 - Parsing comma-separated glob lists into arrays
 - Parsing `additional_exclude_patterns` into an array (stack-based patterns are resolved separately in `stack-detection.js` at runtime)
@@ -256,7 +256,7 @@ the student's `github_token` is never used here.
 Three concerns are layered inside it:
 
 1. **Repository lifecycle.** `ensureInstructorRepo()` creates the repository private via
-   `repos.createInOrg` when `repos.get` 404s — so the owner must be an organisation — and then
+   `repos.createInOrg` when `repos.get` 404s — so the owner must be an organization — and then
    polls for the `auto_init` commit so the first write has a branch to land on. A 422 from a racing
    run that created it first is treated as success.
 2. **File ownership.** `syncInstructorRepoFiles()` brings `.github/workflows/generate-lms-quiz.yml`

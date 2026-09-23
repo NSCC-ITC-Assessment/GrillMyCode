@@ -1,14 +1,15 @@
 ---
-sidebar_position: 3
+sidebar_position: 9
+sidebar_label: Using the action's outputs
 ---
 
-# Assessment Issue & PDF
+# Using the action's outputs
 
-GrillMyCode always delivers the assessment as a GitHub Issue with a PDF download link — no inputs are required to enable this. This page describes how the delivery works and how to use the action outputs.
+**Use this when** a later step in your workflow needs the results, for example to post the issue link somewhere else or keep a copy of the questions.
 
-Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
+Give the GrillMyCode step an `id`, then read its outputs as `steps.<id>.outputs.<name>`:
 
-```yaml
+```yaml title=".github/workflows/grill-my-code.yml"
 name: GrillMyCode
 
 on:
@@ -17,7 +18,7 @@ on:
   workflow_dispatch:
 
 # A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
+# so only the latest commit is ever assessed.
 # Do not modify this setting unless you have a compelling reason to.
 concurrency:
   group: grillmycode-${{ github.workflow }}-${{ github.ref }}
@@ -40,28 +41,33 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          # If desired, uncomment this input and edit to use a different one —
-          # any model from https://openrouter.ai/models (provider/model-name).
-          # ai_model: "google/gemini-3.5-flash-lite"
-          num_questions: "20"
-          instructor_context: |
-            Assignment 2 — Linked lists. Prioritize execution flow
-            questions that trace pointer state after insertion or
-            deletion, and at least one error identification question
-            about empty or single-node edge cases.
 
-      - name: Print issue link
-        run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"
+      - name: Print the assessment links
+        env:
+          ISSUE_URL: ${{ steps.assess.outputs.issue_url }}
+          PDF_URL: ${{ steps.assess.outputs.pdf_url }}
+        run: |
+          echo "Issue: $ISSUE_URL"
+          echo "PDF:   $PDF_URL"
 ```
 
-## Issue assignment
+## The outputs
 
-The created issue is automatically assigned to the student who authored the head commit.
+| Output | Contains |
+|---|---|
+| `issue_url` | URL of the assessment issue |
+| `issue_number` | Number of the assessment issue |
+| `pdf_url` | Download URL of the PDF; empty if PDF generation failed |
+| `questions` | The questions as text, without the instructor note |
+| `code_before_strip` | All assessed code, before comments were removed |
+| `code_after_strip` | All assessed code, after comments were removed |
 
-## Every push regenerates the questions
+## Good to know
 
-Each push to the default branch triggers a full regeneration. The existing issue body is **overwritten** with the new questions — the issue number and URL stay the same, preserving comment history. Any duplicate issues for the same branch are deleted; if the workflow token lacks permission to delete them, they are left in place with a warning in the Actions log. A note comment is added each time, recording when the run occurred and at which commit SHA.
+- Pass outputs to a script through `env:`, as above, rather than writing `${{ … }}` directly inside `run:`. The questions and code contain student-written text, and putting that straight into a shell command can break the script or run something unintended.
+- `questions` has no answers unless `include_answers` is on.
+- A run with nothing to assess ends early, and its outputs are empty.
 
-## PDF download
+## Related
 
-The PDF is attached to a rolling GitHub Release tagged `gmc-assessments` and linked from the issue body. The download URL is stable — re-running the action replaces the asset while keeping the same URL. The `pdf_url` output exposes it for use in downstream steps.
+[Inputs and outputs](../reference/inputs-outputs.md#outputs) · [The assessment issue and PDF](../reference/assessment-output.md)

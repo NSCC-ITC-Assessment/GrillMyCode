@@ -231,7 +231,7 @@ pnpm docusaurus docs:version N
 - New AI provider (e.g. adding `anthropic` or `google-gemini`)
 - New optional input (e.g. `question-style`, `language`)
 - New output (e.g. `question-count`, `truncated`)
-- New delivery mechanism (e.g. Teams/Slack webhook, workflow artefact)
+- New delivery mechanism (e.g. Teams/Slack webhook, workflow artifact)
 - New event support (e.g. `workflow_run`, `schedule`)
 
 ### Major — breaking change (existing workflow files would stop working)
