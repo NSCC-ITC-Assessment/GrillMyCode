@@ -19,14 +19,18 @@ import {
   submissionTagList,
 } from './generateYaml';
 
+// Order follows .github/prompts/plan-workflowWizard.prompt.md: the trigger is
+// the first real decision, and the file-handling steps most readers can leave
+// at their defaults come last. getStepError keys on `label`, not position, so
+// reordering this list cannot move a validation check onto the wrong step.
 const STEPS = [
+  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
   { label: 'AI',         title: 'Which model should GrillMyCode use?',                   subtitle: 'Select the OpenRouter model that will generate the comprehension questions.',                              Component: StepAIProvider },
   { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions GrillMyCode should generate and what context the chosen AI receives.',             Component: StepQuestions },
+  { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Students always get a GitHub issue and a PDF. There is nothing to configure here.',                             Component: StepDelivery },
+  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository. Available for Classroom 50 assignment repositories only.', Component: StepInstructorRepo },
   { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff that\'s sent to the AI.',                    Component: StepFiles },
   { label: 'File opts',  title: 'File handling options',                 subtitle: 'Configure how the diff is built — what to skip, how comments are handled, and which commits count.', Component: StepFileOptions },
-  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
-  { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Choose one or more destinations for the generated questions.',                             Component: StepDelivery },
-  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository. Available for Classroom 50 assignment repositories only.', Component: StepInstructorRepo },
   { label: 'Advanced',   title: 'Advanced settings',                    subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
   { label: 'Review',     title: 'Your workflow is ready',               subtitle: 'Copy the generated YAML into your assignment repository.',                                Component: StepReview },
 ];
@@ -83,7 +87,8 @@ const INITIAL_CONFIG = {
 const OPENROUTER_MODEL_VALUES = ['google/gemini-3.5-flash-lite', 'deepseek/deepseek-v4-flash', 'minimax/minimax-m2.7', 'stepfun/step-3.7-flash', 'tencent/hy3', 'xiaomi/mimo-v2.5-pro'];
 
 function getStepError(stepIndex, cfg) {
-  if (stepIndex === 0) {
+  const label = STEPS[stepIndex]?.label;
+  if (label === 'AI') {
     if (!OPENROUTER_MODEL_VALUES.includes(cfg.aiModel)) {
       if (!cfg.aiModel || !cfg.aiModel.trim()) {
         return 'Please enter a model ID for OpenRouter before continuing.';
@@ -96,7 +101,7 @@ function getStepError(stepIndex, cfg) {
       return 'Please enter the name of the secret holding your OpenRouter API key.';
     }
   }
-  if (stepIndex === 4 && isTagTrigger(cfg)) {
+  if (label === 'Trigger' && isTagTrigger(cfg)) {
     if (submissionTagList(cfg).length === 0) {
       return 'Please enter at least one submission tag name before continuing.';
     }
@@ -105,7 +110,7 @@ function getStepError(stepIndex, cfg) {
       return `Unsupported tag pattern(s): ${invalid.join(', ')}. Use letters, digits and . _ / - plus the wildcards * ? + and [ ].`;
     }
   }
-  if (stepIndex === 6) {
+  if (label === 'Instructor') {
     if (cfg.usesClassroom50 === null) {
       return 'Please say whether your student repositories are created by Classroom 50 before continuing.';
     }

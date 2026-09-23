@@ -1,8 +1,9 @@
 {
-  "label": "Example Workflows",
-  "position": 6,
+  "label": "Workflow recipes",
+  "position": 7,
   "link": {
     "type": "generated-index",
-    "description": "Ready-to-use workflow files. Copy the relevant file to .github/workflows/grill-my-code.yml in the student repository. Or use the [Workflow Wizard](/workflow-wizard) to build a custom workflow interactively."
+    "description": "Ready-made workflow files for common setups. Each one is short: when to use it, the YAML, and which lines to change. To build a custom workflow instead, use the Workflow Wizard.",
+    "slug": "/category/example-workflows"
   }
 }

@@ -1,18 +1,15 @@
 ---
-sidebar_position: 2
+sidebar_position: 4
+sidebar_label: Manual run overrides
 ---
 
-# Manual Run Overrides
+# Manual run overrides
 
-Settings you choose in a workflow file are fixed until you edit and commit the file again. Exposing them as `workflow_dispatch` inputs adds a form to the **Run workflow** button in the Actions tab, so you can change them for a single manual run — a different question count, a different model, a retargeted instructor context — without touching the repository.
+**Use this when** you want to change a setting for a single run, such as a different number of questions or a different model, from the **Run workflow** form in the Actions tab, without editing the file.
 
-This workflow runs on manual dispatch only. To also run automatically, add the `push:` trigger from [Push to Default Branch](pull-request.md); the overrides work the same way, and pushed runs simply use each input's default.
+This workflow runs only when started by hand. To also run on every push, add the `push:` trigger from [Push to default branch](pull-request.md); automatic runs then use each setting's default.
 
-:::tip
-The [Workflow Wizard](../workflow-wizard.mdx) builds this for you. On the **Trigger** step, expand **Manual run overrides** and tick the settings you want on the form.
-:::
-
-```yaml
+```yaml title=".github/workflows/grill-my-code.yml"
 name: GrillMyCode
 
 on:
@@ -71,77 +68,20 @@ jobs:
           keep_comments: "${{ github.event.inputs.keep_comments || 'false' }}"
 ```
 
-:::note Who the assessment is attributed to
-The student is read from the repository, not from the run: it is the direct collaborator whose login ends the Classroom 50 repository name. Starting the run yourself, or having pushed a commit into the student's repository, has no effect on who the assessment is attributed to or which instructor repository it is filed in. See [how the assignment and student are identified](../guides/instructor-setup.md#how-the-assignment-and-student-are-identified).
-:::
+## Change these
 
-## How it works
+- **Which settings are on the form.** Each one appears **twice**: under `on.workflow_dispatch.inputs` (the form field) and under `with:` (reading the field, with a fallback). Add or remove both together.
+- **The defaults.** When you change one, change it in **both** places, or a run with the form left untouched stops matching an automatic run.
 
-Each overridable setting appears twice.
+## Good to know
 
-The entry under `on.workflow_dispatch.inputs` defines the form field: its label, its type, and the value the box is pre-filled with. The expression under `with:` reads that field and falls back to the same value when nothing was supplied — which is what happens on an automatic run, where the field does not exist at all.
+- GitHub allows at most 10 fields on the form.
+- Anyone who can run the workflow can fill in the form, including the student. Never put secrets, `include_answers`, `base_sha`/`head_sha` or `skip_committers` on it.
+- True/false settings use `type: choice` with `'false'` and `'true'`, not `type: boolean`.
+- The form can't hold multi-line text; keep a multi-line `instructor_context` in an `env` block.
 
-Because the two must agree, **edit both when you change a default**. If they drift, a manual run with the form left untouched stops matching what an automatic run does.
+The Wizard builds this for you: on the **Trigger** step, expand **Manual run overrides**.
 
-## Choosing which settings to expose
+## Related
 
-GitHub allows at most **10** `workflow_dispatch` inputs; a workflow declaring more fails to parse. Expose only what you expect to vary between runs — a form with four fields is easier to use than one with ten.
-
-These are the settings worth considering:
-
-| Input | Why expose it |
-| --- | --- |
-| `num_questions` | Re-run with a shorter or longer question set |
-| `ai_model` | Try a different model when one produces weak questions |
-| `instructor_context` | Retarget the questions for one run |
-| `keep_comments` | Assess a submission where the comments are themselves the work |
-| `additional_exclude_patterns` | Exclude a data dump you only noticed after the first run |
-| `exclude_pattern_overrides` | Pull back a file the default exclusions removed |
-| `include_initial_commit` | Recover a run where the student committed everything at once |
-| `tag_diff_base` | [Tag-triggered workflows](tag-submission.md) only — re-run a milestone cumulatively, or only since the previous tag |
-| `ai_temperature` | Rarely useful — most instructors should leave this fixed |
-
-## Settings to keep out of the form
-
-Anyone who can run the workflow can set a dispatch input, and in a Classroom repository that includes the student whose work is being assessed. Some inputs should therefore stay in the file, where changing them takes a commit that is visible in the history being assessed:
-
-- **`api_key`, `github_token`, `instructor_repo_token`** — a dispatch input is typed in plaintext and recorded in the run's metadata. Never expose a secret this way.
-- **`include_answers`** — would put a "show me the answers" button on the run form.
-- **`base_sha` / `head_sha`** — a range collapsed to a single commit produces an empty diff, and the run reports it and succeeds, so nothing looks wrong at a glance.
-- **`skip_committers`** — the action verifies a commit's GitHub account login before skipping it, which stops someone impersonating a bot; it cannot stop someone naming their *own* login in the list and having their leading commits trimmed out of the assessment.
-
-`assignment_context` sits near this line and is offered, but unticked by default. Its globs are matched against the student's own working tree, so a student running the workflow could point it at a file they wrote. What it cannot do is empty the assessment — it only steers which topics the questions favour, and the action treats the files it reads as reference data that cannot override the rubric or surface answers. The paths it matched appear in the run summary, so a re-pointed glob is visible on the run page. Tick it when you want to retarget a single run at a different brief; leave it off for normal cohort runs, where it should stay fixed in the file.
-
-## Booleans need `type: choice`
-
-A boolean setting is declared with `type: choice` and `options: ['false', 'true']` rather than `type: boolean`, and read through `github.event.inputs.*` rather than the `inputs` context.
-
-With a real boolean, `inputs.keep_comments` is the value `false`, and `false || 'true'` evaluates to the fallback — silently discarding a choice the instructor made. `github.event.inputs.*` always returns a string, and GitHub casts the non-empty string `'false'` to true, so the `||` fallback fires only when the field genuinely was not supplied.
-
-## Multi-line instructor context
-
-GitHub has no multi-line dispatch input, so the form gives `instructor_context` a single-line text box.
-
-If your context spans several lines, keep the full version in a job-level `env` block — the `env` context is available in a step's `with:`, so automatic runs and any run that clears the field get it with its formatting intact:
-
-```yaml
-jobs:
-  generate-questions:
-    runs-on: ubuntu-latest
-    env:
-      GMC_DEFAULT_INSTRUCTOR_CONTEXT: |
-        Assignment 3 — Python loops.
-        Prioritize execution flow questions that trace what a loop produces.
-        Include at least one question about off-by-one errors.
-    steps:
-      # ...
-      - uses: NSCC-ITC-Assessment/GrillMyCode@v1
-        with:
-          instructor_context: '${{ github.event.inputs.instructor_context || env.GMC_DEFAULT_INSTRUCTOR_CONTEXT }}'
-```
-
-The single-line limit belongs to the web form, not to the input itself — the API accepts newlines, so the CLI can pass multi-line text on a manual run:
-
-```bash
-gh workflow run grill-my-code.yml -f instructor_context="$(cat docs/brief.md)"
-```
+[Running it yourself](../guides/running-manually.md) · [Triggers in depth](../reference/triggers.md#overrides-on-the-run-form), including why each rule above exists

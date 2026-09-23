@@ -22,8 +22,8 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 | `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting |
 | `exclude_pattern_overrides` | No | | Comma-separated entries to re-include files excluded by auto-detection or `additional_exclude_patterns`. Each entry can be an exact pattern (e.g. `**/*.md`) to re-include all files of that type, or a specific file path (e.g. `README.md`) to allow only that file through. Note: binary files are **always** skipped regardless of overrides |
 | `additional_exclude_patterns` | No | | Comma-separated globs for **extra** files to exclude on top of the [auto-detected stack patterns](exclude-patterns.md). Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover |
-| `instructor_repo_token` | No | | **Classroom 50 assignment repositories only.** PAT with `repo` and `workflow` scopes and permission to create repositories in the same organisation. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode-instructor` in the same organisation. The repository is created automatically on first run, and its quiz-generation workflow, README and (when `repo_marker` is enabled) marker-reconciliation workflow are refreshed on every run whenever they differ from the copies shipped with the action. The assignment name and the student's folder are read from the Classroom 50 repository name (`<classroom>-<assignment>-<username>`) and the repository's direct collaborators — see [how the assignment and student are identified](../guides/instructor-setup.md#how-the-assignment-and-student-are-identified). Any other repository skips instructor delivery with a warning. It also switches on multiple-choice distractor generation: the three wrong options exist only for the quiz built from this copy, so when the token is absent the action asks the model for the correct answer alone. Leave empty to disable instructor repository delivery |
-| `repo_marker` | No | `off` | Marks the **student repository** in GitHub's own metadata once an assessment exists, so assessed repositories are identifiable in an organisation's repository list. `topic` adds the `grillmycode` topic, which also makes them filterable with `org:<org> topic:grillmycode`; `description` appends `· 🔥 GrillMyCode: N questions` to the repository description, the only surface that can carry the question count; `both` writes both, in two separate API calls. Requires `instructor_repo_token` — see [Repository Marker](../example-workflows/2-repo-marker.md). Existing topics are preserved, and a marker written by an earlier run is replaced rather than appended to. Never fails the run |
+| `instructor_repo_token` | No | | **Classroom 50 assignment repositories only.** PAT with `repo` and `workflow` scopes and permission to create repositories in the same organization. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode-instructor` in the same organization. The repository is created automatically on first run, and its quiz-generation workflow, README and (when `repo_marker` is enabled) marker-reconciliation workflow are refreshed on every run whenever they differ from the copies shipped with the action. The assignment name and the student's folder are read from the Classroom 50 repository name (`<classroom>-<assignment>-<username>`) and the repository's direct collaborators — see [how the assignment and student are identified](instructor-repository.md#how-the-assignment-and-student-are-identified). Any other repository skips instructor delivery with a warning. It also switches on multiple-choice distractor generation: the three wrong options exist only for the quiz built from this copy, so when the token is absent the action asks the model for the correct answer alone. Leave empty to disable instructor repository delivery |
+| `repo_marker` | No | `off` | Marks the **student repository** in GitHub's own metadata once an assessment exists, so assessed repositories are identifiable in an organization's repository list. `topic` adds the `grillmycode` topic, which also makes them filterable with `org:<org> topic:grillmycode`; `description` appends `· 🔥 GrillMyCode: N questions` to the repository description, the only surface that can carry the question count; `both` writes both, in two separate API calls. Requires `instructor_repo_token` — see [Tracking assessed repositories](../guides/tracking-repositories.md) and [Repository marker internals](repository-marker.md). Existing topics are preserved, and a marker written by an earlier run is replaced rather than appended to. Never fails the run |
 | `instructor_context` | No | | Instructor-specific instructions for this assignment. Injected into the system prompt and takes precedence over default behaviour. Supports multi-line instructions. When set, the AI also generates a one-sentence summary of the question focus, shown as an **Instructor Note** in the report header |
 | `assignment_context` | No | | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `instructor_context`. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"README.md, docs/brief.pdf, rubric.docx"` |
 | `assignment_context_max_chars` | No | `20000` | Maximum total characters read from all `assignment_context` files combined. Prevents large files from flooding the prompt. Values below 1 are clamped to 1 |
@@ -31,7 +31,7 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 | `fail_on_empty_assessment` | No | `false` | When `true`, a run that finds nothing to assess fails instead of succeeding. Both causes (empty commit range; every changed file excluded) occur normally at assignment-accept time, so this is opt-in. The run summary explains the reason either way |
 | `include_initial_commit` | No | `false` | When `false` (default), pins the diff base to the first commit so starter/template files are excluded. When `true`, uses the empty tree as the base so the initial commit's eligible files are included in the diff. Set `true` for Classroom 50 empty-repository assignments — see the [Classroom 50 guide](../guides/classroom50.md#empty-repository-assignments) |
 | `skip_committers` | No | `github-actions[bot]` | Comma-separated list of commit author names or email substrings. Leading bot commits after the base SHA are excluded from the diff. Classroom 50's accept-time setup commit is authored under the student's own identity, not a bot, so this input has no leading commit to match there (see [Classroom 50](../guides/classroom50.md)); its `.classroom50.yaml` file is excluded by pattern instead. Set to `''` to disable |
-| `submission_tags` | No | | **Tag-triggered workflows only.** Comma- or newline-separated tag names that mark a submission — the tags you define for the assignment, listed exactly as in the workflow's `on.push.tags` (e.g. `complete`, or `phase1, phase2, final`). No tag is recognised unless it is listed here. A wildcard entry is allowed, using GitHub's filter syntax: `*` (not crossing `/`), `**`, `?`, `+` and `[ ]` classes; `!` negation is not supported. A run started by a tag fails unless the tag matches one of these entries **and** points at a commit on the default branch. Each entry is its own delivery group — one issue, one PDF, one instructor-repository folder — so `phase1` and `phase2` are kept apart. Ignored on runs not started by a tag. See [Tag Submission](../example-workflows/tag-submission.md) |
+| `submission_tags` | No | | **Tag-triggered workflows only.** Comma- or newline-separated tag names that mark a submission — the tags you define for the assignment, listed exactly as in the workflow's `on.push.tags` (e.g. `complete`, or `phase1, phase2, final`). No tag is recognized unless it is listed here. A wildcard entry is allowed, using GitHub's filter syntax: `*` (not crossing `/`), `**`, `?`, `+` and `[ ]` classes; `!` negation is not supported. A run started by a tag fails unless the tag matches one of these entries **and** points at a commit on the default branch. Each entry is its own delivery group — one issue, one PDF, one instructor-repository folder — so `phase1` and `phase2` are kept apart. Ignored on runs not started by a tag. See [Triggers in depth](triggers.md#submission-tags) |
 | `tag_diff_base` | No | `cumulative` | **Tag-triggered workflows only.** `cumulative` uses the same diff base as any other run, so each tag assesses all of the student's work to date. `previous-tag` starts the diff at the nearest earlier commit carrying a `submission_tags` tag, so each tag assesses only the work since the one before it; with no earlier tag it falls back to `cumulative`. `base_sha` takes precedence over both |
 | `base_sha` | No | | Override the base commit SHA |
 | `head_sha` | No | | Override the head commit SHA |
@@ -49,7 +49,9 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 
 ## Using outputs in subsequent steps
 
-Give the action step an `id`, then reference its outputs with `steps.<id>.outputs.<name>`:
+Give the action step an `id`, then reference its outputs with `steps.<id>.outputs.<name>`.
+
+Pass outputs into a script through `env:`, never by writing `${{ … }}` directly inside `run:`. `questions`, `code_before_strip` and `code_after_strip` contain student-written text. GitHub pastes an expression into the script *before* the shell runs it, so a crafted value could break the script or run commands of the student's choosing.
 
 ```yaml
 - uses: NSCC-ITC-Assessment/GrillMyCode@v1
@@ -58,14 +60,21 @@ Give the action step an `id`, then reference its outputs with `steps.<id>.output
     github_token: ${{ secrets.GITHUB_TOKEN }}
     api_key: ${{ secrets.OPENROUTER_API_KEY }}
 
-- name: Print issue link
-  run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"
-
-- name: Print questions
-  run: echo "${{ steps.assess.outputs.questions }}"
+- name: Print issue link and questions
+  env:
+    ISSUE_URL: ${{ steps.assess.outputs.issue_url }}
+    QUESTIONS: ${{ steps.assess.outputs.questions }}
+  run: |
+    echo "Assessment issue $ISSUE_URL"
+    printf '%s\n' "$QUESTIONS"
 
 - name: Comment character count
+  env:
+    CODE_BEFORE: ${{ steps.assess.outputs.code_before_strip }}
+    CODE_AFTER: ${{ steps.assess.outputs.code_after_strip }}
   run: |
-    echo "Code before stripping: $(echo "${{ steps.assess.outputs.code_before_strip }}" | wc -c) chars"
-    echo "Code after stripping:  $(echo "${{ steps.assess.outputs.code_after_strip }}" | wc -c) chars"
+    echo "Code before stripping: ${#CODE_BEFORE} chars"
+    echo "Code after stripping:  ${#CODE_AFTER} chars"
 ```
+
+See also the [Using the action's outputs](../example-workflows/post-to-issues.md) recipe.

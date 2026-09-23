@@ -26,19 +26,48 @@ const releasedVersions = JSON.parse(
 const latestVersion = releasedVersions[0];
 const latestVersionPath = `/docs/v${latestVersion}`;
 
-// Whether the latest release snapshot still contains the removed GitHub Models
-// provider page. The release workflow regenerates versioned_docs from docs/ on
-// every tag, so this flips to false on the next release and the redirect below
-// takes over. See the redirects block for why this has to be conditional.
-const githubModelsPageInLatestVersion = fs.existsSync(
-  path.join(
-    docsSiteDir,
-    'versioned_docs',
-    `version-${latestVersion}`,
-    'ai-providers',
-    'github-models.md',
-  ),
-);
+// ── Redirects for removed doc pages ───────────────────────────────────────────
+// The release workflow regenerates versioned_docs from docs/ on every tag, so a
+// page removed from docs/ stays in the latest release snapshot until the next
+// tag. Redirecting a path that still exists there would duplicate a `from` and
+// fail the build, so each redirect is only claimed once the snapshot has
+// dropped the page. Likewise, a redirect target is used for the latest release
+// only once that snapshot contains it; until then `fallbackTo` (a page that
+// does exist there) is used, or no redirect at all.
+/** @param {string} docPath e.g. 'reference/pdf-asset-naming' (no extension, no #anchor) */
+function existsInLatestVersion(docPath) {
+  const base = path.join(docsSiteDir, 'versioned_docs', `version-${latestVersion}`, docPath);
+  return ['.md', '.mdx'].some((ext) => fs.existsSync(base + ext));
+}
+
+const removedPages = [
+  // Removed when GitHub discontinued GitHub Models.
+  {
+    path: 'ai-providers/github-models',
+    to: 'reference/upgrade-notes#github-models-was-discontinued',
+    fallbackTo:
+      'faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why',
+  },
+  // Merged into "The assessment issue and PDF" in the docs reorganization.
+  { path: 'reference/pdf-asset-naming', to: 'reference/assessment-output#the-pdf' },
+];
+
+function removedPageRedirects() {
+  const redirects = [];
+  for (const { path: docPath, to, fallbackTo } of removedPages) {
+    // /docs/next is always current, so it is safe to redirect unconditionally.
+    redirects.push({ from: `/docs/next/${docPath}`, to: `/docs/next/${to}` });
+    if (existsInLatestVersion(docPath)) continue;
+    const target = existsInLatestVersion(to.split('#')[0]) ? to : fallbackTo;
+    if (!target) continue;
+    // The unversioned /docs/* alias is normally produced by createRedirects
+    // below, but only for paths that exist in the latest release.
+    for (const from of [`${latestVersionPath}/${docPath}`, `/docs/${docPath}`]) {
+      redirects.push({ from, to: `${latestVersionPath}/${target}` });
+    }
+  }
+  return redirects;
+}
 
 const docsVersions = {
   current: { label: 'Next (unreleased)', path: 'next', banner: 'unreleased' },
@@ -134,30 +163,7 @@ const config = {
             from: '/workflow-wizard',
             to: `${latestVersionPath}/workflow-wizard`,
           },
-          // The GitHub Models provider page was removed when GitHub discontinued
-          // the service. Send its former URLs to the FAQ entry that explains why.
-          // /docs/next is always current, so it is safe to redirect unconditionally.
-          {
-            from: '/docs/next/ai-providers/github-models',
-            to: '/docs/next/faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why',
-          },
-          // The unversioned /docs/* alias is normally produced by createRedirects
-          // below, for every path that still exists in the latest release. While
-          // that snapshot still contains the page, adding it here too would be a
-          // duplicate `from` and fail the build — so only claim it once the
-          // release snapshot has dropped the page.
-          ...(githubModelsPageInLatestVersion
-            ? []
-            : [
-                {
-                  from: '/docs/ai-providers/github-models',
-                  to: `${latestVersionPath}/faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why`,
-                },
-                {
-                  from: `${latestVersionPath}/ai-providers/github-models`,
-                  to: `${latestVersionPath}/faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why`,
-                },
-              ]),
+          ...removedPageRedirects(),
         ],
         // Redirect bare /docs and every unversioned /docs/* path to the current
         // released version. Target is derived from latestVersion, so it follows
@@ -228,15 +234,15 @@ const config = {
             title: 'Docs',
             items: [
               {
-                label: 'Getting Started',
+                label: 'Get started',
                 to: `${latestVersionPath}/getting-started`,
               },
               {
-                label: 'AI Providers',
+                label: 'AI provider',
                 to: `${latestVersionPath}/ai-providers`,
               },
               {
-                label: 'Inputs & Outputs',
+                label: 'Inputs and outputs',
                 to: `${latestVersionPath}/reference/inputs-outputs`,
               },
             ],
@@ -249,8 +255,8 @@ const config = {
                 to: `${latestVersionPath}/guides/classroom50`,
               },
               {
-                label: 'Example Workflows',
-                to: `${latestVersionPath}/example-workflows/pull-request`,
+                label: 'Workflow recipes',
+                to: `${latestVersionPath}/category/example-workflows`,
               },
               {
                 label: 'Architecture',

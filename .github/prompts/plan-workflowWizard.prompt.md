@@ -6,15 +6,17 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 ---
 
-## Wizard Steps (7 total)
+## Wizard Steps (9 total)
 
 1. **Trigger** — Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the instructor's own tag names (`submissionTags`) and `tagDiffBase`. Tags are never inferred — there is deliberately no preset for Classroom 50's own `submit/*` tags
 2. **AI Provider** — Model selection, OpenRouter model routing variant (`aiModelVariant`, appended to the model ID), and the API key secret name
 3. **Questions** — num_questions, include_answers, instructor_context, assignment_context
-4. **Delivery** — Post targets (PR comment, issue, discussion, instructor repo)
-5. **File Filters** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides, exclude_workflow_files, keep_comments, include_initial_commit, skip_committers
-6. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, output_file, SHA overrides)
-7. **Review** — Generated YAML in styled code block with one-click copy button + checklist of prerequisites
+4. **Delivery** — Informational only: the assessment issue and PDF are always delivered, so there is nothing to choose
+5. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `repoMarker`
+6. **Files** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides
+7. **File opts** — keep_comments, include_initial_commit, skip_committers
+8. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, SHA overrides)
+9. **Review** — Generated YAML in styled code block with one-click copy button + checklist of prerequisites
 
 ---
 
@@ -111,7 +113,7 @@ the pages that link to it. Do not add it under `docs-site/src/components/` — t
 the shipped wizard lives.
 
 1. `docs-site/docs/workflow-wizard.mdx` — Docs page that imports and renders the wizard
-2. `docs-site/docs/_workflow-wizard/index.js` — Wizard orchestrator: step state, navigation, config state
+2. `docs-site/docs/_workflow-wizard/index.js` — Wizard orchestrator: step state, navigation, config state. `STEPS` follows the step order above, and `getStepError` keys each validation check on the step's `label`, never its index, so reordering `STEPS` cannot move a check onto the wrong step
 3. `docs-site/docs/_workflow-wizard/steps/StepTrigger.js`
 4. `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js`
 5. `docs-site/docs/_workflow-wizard/steps/StepQuestions.js`

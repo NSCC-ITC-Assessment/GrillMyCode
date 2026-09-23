@@ -160,7 +160,7 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
                 }}
               >
                 Model ID must be in <code>provider/model</code> format (e.g.{' '}
-                <code>anthropic/claude-3-5-sonnet</code>).
+                <code>anthropic/claude-sonnet-5</code>).
               </span>
             )}
           </>

@@ -1,14 +1,15 @@
 ---
-sidebar_position: 7
+sidebar_position: 10
+sidebar_label: Every input, annotated
 ---
 
-# All Inputs
+# Every input, annotated
 
-A fully annotated workflow showing every available input. Inputs that are optional are commented out with an explanation of when they would be used.
+**Use this when** you want to see every setting in one place. Each input has a comment explaining it, and optional ones are commented out. Delete what you don't need.
 
-Copy this file to `.github/workflows/grill-my-code.yml` in the student repository and remove or adjust inputs as needed.
+For full details of each input, see [Inputs and outputs](../reference/inputs-outputs.md).
 
-```yaml
+```yaml title=".github/workflows/grill-my-code.yml"
 name: GrillMyCode
 
 on:
@@ -17,7 +18,7 @@ on:
   workflow_dispatch:
 
 # A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
+# so only the latest commit is ever assessed.
 # Do not modify this setting unless you have a compelling reason to.
 concurrency:
   group: grillmycode-${{ github.workflow }}-${{ github.ref }}
@@ -126,8 +127,8 @@ jobs:
           # ── Instructor repository ─────────────────────────────────────────
 
           # Classroom 50 assignment repositories only — not available elsewhere.
-          # PAT with repo scope and permission to create repositories in the
-          # same organisation as the student repositories. When provided, the
+          # PAT with the repo AND workflow scopes, from an account that can create
+          # repositories in the same organisation as the student repositories. When provided, the
           # action writes a private instructor-only report (questions AND answers)
           # to a repository named {assignment-name}-grillmycode-instructor in the same org.
           # The repository is auto-created on first run if it does not exist.

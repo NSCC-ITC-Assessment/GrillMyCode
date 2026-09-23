@@ -1,28 +1,22 @@
 ---
-sidebar_position: 8
+sidebar_position: 5
+sidebar_label: Assignment brief as context
 ---
 
-# Assignment Context
+# Assignment brief as context
 
-Automatically injects assignment files (README, brief, rubric, style guide, etc.) into the AI prompt so questions are targeted to the specific requirements of the assignment — without manually copying content into `instructor_context`.
+**Use this when** you want the questions to follow what the assignment asked for. GrillMyCode reads your brief, rubric or requirements from the repository and gives them to the AI along with the student's code.
 
-:::note Globs match the student's checked-out files
-`assignment_context` globs are matched against the **student's checked-out working tree**. A path like `README.md` or `**/*.md` may pick up files the student has edited, which affects which topics the questions focus on. Prefer instructor-maintained paths (a `docs/` directory, a PDF brief, a file only the instructor commits) where possible, and use [`instructor_context`](../reference/inputs-outputs.md) for any instruction that must take effect regardless.
-:::
-
-Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
-
-```yaml
+```yaml title=".github/workflows/grill-my-code.yml"
 name: GrillMyCode
 
 on:
   push:
-    branches-ignore:
-      - main
-      - master
+    branches: ["main", "master"]
+  workflow_dispatch:
 
 # A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
+# so only the latest commit is ever assessed.
 # Do not modify this setting unless you have a compelling reason to.
 concurrency:
   group: grillmycode-${{ github.workflow }}-${{ github.ref }}
@@ -44,22 +38,24 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          # If desired, uncomment this input and edit to use a different one —
-          # any model from https://openrouter.ai/models (provider/model-name).
-          # ai_model: "google/gemini-3.5-flash-lite"
           num_questions: "20"
-          # Read files from the repository and inject their contents into the
-          # AI prompt automatically. Globs are matched against the full relative
-          # path from the repo root, so subdirectory paths and wildcards work.
-          # Prefer instructor-maintained paths — see the note above.
-          assignment_context: "docs/assignment.md, docs/rubric.md"
+          # Files read from the student's repository and added to the prompt.
+          # Comma-separated globs, matched against the path from the repo root.
+          # Prefer files students have no reason to edit.
+          assignment_context: "docs/brief.pdf, docs/rubric.docx"
 ```
 
-## Notes
+## Change these
 
-- `assignment_context` accepts a comma-separated list of glob patterns — all matching files are concatenated and injected before `instructor_context` in the prompt
-- Supported file types: plain text and source files (any UTF-8 text), PDF (`.pdf` — text layer only, images ignored), Microsoft Word (`.doc`/`.docx` — text content only, images ignored)
-- If a file cannot be read or parsed, a workflow warning is emitted for that file and the action continues with the remaining files
-- Combined file contents are capped at `assignment_context_max_chars` characters (default `20000`) to prevent extremely large files from flooding the prompt
-- Common files to include: an assignment brief, rubric, or any instructor-maintained requirements document — prefer paths the student hasn't edited
-- Assignment context only influences which topics the questions target. For instructions that must take effect regardless, use `instructor_context`
+- **`assignment_context`:** the paths to your files. Plain text, PDF (`.pdf`, text only) and Word (`.doc`/`.docx`, text only) are supported.
+
+## Good to know
+
+- **It reads the student's copy.** A student who edits a listed file changes what the questions focus on. Keep these files somewhere students don't work, such as a `docs/` folder in your template.
+- **It steers topics; it doesn't give orders.** Put anything that must happen in `instructor_context`, which takes precedence.
+- Files are read in full up to 20,000 characters in total. Raise `assignment_context_max_chars` for longer documents.
+- A file that can't be read produces a warning, and the run carries on without it. The files used are listed at the top of the student's issue.
+
+## Related
+
+[Tailoring the questions](../guides/tailoring-questions.md#share-the-assignment-brief-or-rubric) · [Inputs and outputs](../reference/inputs-outputs.md)

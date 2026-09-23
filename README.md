@@ -1,72 +1,27 @@
 # GrillMyCode
 
-A GitHub Action that analyses code changes and uses AI to generate targeted comprehension questions for conversational or written assessments.
+GrillMyCode writes questions about each student's own code, so you can check that they understand the work they hand in.
+
+It's a GitHub Action. When a student pushes their work, it picks out the code they wrote and has an AI model write questions about it. The questions arrive as an issue in the student's repository, with a PDF copy, ready for a short conversation or written check (a _code viva_). It doesn't grade anything: it does the preparation, and you have the conversation.
+
+It's built for [Classroom 50](https://github.com/foundation50/classroom50) assignments, and with the recommended models an assessment usually costs less than one cent.
+
+**Full documentation: [grillmycode.org](https://grillmycode.org/)**
 
 ## How it works
 
-1. Detects the commit range from the triggering event (push or manual dispatch)
-2. Collects the git diff of changed files, applying include/exclude filters
-3. Sends the code to an AI provider to generate comprehension questions
-4. Creates or updates a GitHub Issue with the questions and generates a PDF
+1. **Something starts a run:** a push, a submission tag the student pushes, or you.
+2. **GrillMyCode finds the student's own code.** Your starter code, setup files, generated files and comments are left out.
+3. **An AI model writes the questions**, guided by your instructions and, optionally, the assignment brief. It goes through [OpenRouter](https://openrouter.ai/), using one key for the whole class.
+4. **The student gets their questions** as a GitHub issue and a PDF. Optionally, you get every student's questions _with answers_ in a private repository, plus a quiz file for your LMS.
 
-See [architecture](https://grillmycode.org/docs/development/architecture) for a detailed breakdown of how the action is structured and executed.
+More: [How it works](https://grillmycode.org/docs/how-it-works) · [Architecture](https://grillmycode.org/docs/development/architecture)
 
-## Usage
+## Quick start
 
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    api_key: ${{ secrets.OPENROUTER_API_KEY }}
-```
-
-Question generation runs through [OpenRouter](https://openrouter.ai/), so an OpenRouter API key is
-required. See the [OpenRouter guide](https://grillmycode.org/docs/ai-providers/openrouter)
-for one-time instructor setup.
-
-### Inputs
-
-| Input                          | Required | Default                        | Description                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| ------------------------------ | -------- | ------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `github_token`                 | Yes      | `${{ github.token }}`          | GitHub token for API access (issues, releases, repository metadata). Not used for AI generation                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
-| `ai_provider`                  | No       | `openrouter`                   | AI provider. `openrouter` is the only supported value                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `ai_model`                     | No       | `google/gemini-3.5-flash-lite` | Model identifier in OpenRouter `provider/model-name` format. May end with an OpenRouter routing variant — `:nitro` (fastest providers first) or `:floor` (cheapest providers first)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `ai_retry_max_attempts`        | No       | `5`                            | Total number of attempts (initial + retries) when calling the AI provider. Retries are triggered by transient errors: 429 (rate limit), 500, 502, 503, 504, and network-level failures. A 429 with a `Retry-After` header has that value honoured, up to 30 seconds. Values below 1 are clamped to 1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `ai_temperature`               | No       | `0.5`                          | Controls the randomness of the AI's output (0.0 = fully deterministic, 1.0 = most random). Lower values produce more predictable, consistent questions; higher values produce more varied output. Most users should leave this at the default.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `api_key`                      | Yes      |                                | OpenRouter API key. Required — `github_token` cannot be used for question generation. Create one at [openrouter.ai/keys](https://openrouter.ai/keys)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `num_questions`                | No       | `20`                           | Number of questions to generate (minimum 1, maximum 50). Supplied values above 50 are automatically capped to 50.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                        |
-| `include_answers`              | No       | `false`                        | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `exclude_pattern_overrides`    | No       |                                | Comma-separated entries that allow specific files through the auto-detected exclude patterns. Each entry can be an **exact pattern** (e.g. `**/*.md` — re-includes all Markdown files) or a **specific file path** (e.g. `README.md` — only that file passes through while `**/*.md` still excludes everything else).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `additional_exclude_patterns`  | No       |                                | Comma-separated globs for **extra** files to exclude on top of the auto-detected stack patterns. Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover. See [Exclude Patterns](https://grillmycode.org/docs/reference/exclude-patterns).                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `instructor_repo_token`        | No       |                                | **Classroom 50 assignment repositories only.** PAT with `repo` and `workflow` scopes and permission to create repositories in the same organisation. When provided, the action writes a private instructor-only assessment file (questions **and** answers) to a repository named `{assignment-name}-grillmycode-instructor` in the same organisation. The repository is created automatically on first run, and its quiz-generation workflow, README and (when `repo_marker` is enabled) marker-reconciliation workflow are refreshed on every run whenever they differ from the copies shipped with the action. The assignment name and student folder are read from the Classroom 50 repository name (`<classroom>-<assignment>-<username>`) and its direct collaborators; any other repository skips instructor delivery with a warning. It also switches on multiple-choice distractor generation: the three wrong options exist only for the quiz built from this copy, so when the token is absent the action asks the model for the correct answer alone. Leave empty to disable instructor repository delivery. |
-| `repo_marker`                  | No       | `off`                          | Marks the **student repository** in GitHub's own metadata once questions exist, so assessed repositories stand out in an organisation's repository list. `topic` adds the `grillmycode` topic (which also makes them findable with `org:<org> topic:grillmycode`); `description` appends `· 🔥 GrillMyCode: N questions` to the repository description, the only surface that can carry the count; `both` does both. Requires `instructor_repo_token` — repository metadata is out of reach of `GITHUB_TOKEN`, whose `permissions` key has no `administration` scope. Existing topics are preserved and a previous description marker is replaced rather than appended to. A failure here never fails the run.                                                                                                                                                                                                                                                                                                                                                                                                           |
-| `instructor_context`           | No       |                                | Instructor-specific instructions for this assignment. Injected at the end of the system prompt and takes precedence over any conflicting default behaviour. Supports multi-line, detailed instructions.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
-| `assignment_context`           | No       |                                | Comma-separated file glob(s) read from the repository and injected into the AI prompt before `instructor_context`. Steers which topics the questions focus on. Globs match the student's checked-out tree, so prefer instructor-maintained paths (a `docs/` directory, a PDF brief) where possible. Use `instructor_context` for instructions that must take effect regardless. Supported file types: plain text / source files (UTF-8), PDF (`.pdf` — text layer only), Microsoft Word (`.doc`/`.docx` — text only). If no files match, a workflow warning is emitted and the action continues without context. Example: `"docs/brief.pdf, instructor/rubric.docx"`.                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
-| `assignment_context_max_chars` | No       | `20000`                        | Maximum total characters read from all `assignment_context` files combined. Prevents large files from flooding the prompt. Values below 1 are clamped to 1.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
-| `keep_comments`                | No       | `false`                        | When `false` (default), inline and block comments are stripped from the submitted code before it is sent to the AI. Set to `"true"` to preserve comments exactly as written.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `fail_on_empty_assessment`     | No       | `false`                        | When `true`, a run that finds nothing to assess fails instead of succeeding. Left `false` (the default) such a run reports the reason and succeeds, because both causes — an empty commit range, and every changed file being excluded — occur normally the moment an assignment is accepted. The run summary explains which one applied either way.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                     |
-| `include_initial_commit`       | No       | `false`                        | When `false` (default), pins the diff base to the first commit so starter/template files are excluded. When `true`, uses the empty tree as the base so the initial commit's eligible files are included in the diff regardless of event type. Set this to `true` for Classroom 50 empty-repository assignments (`--empty-repo`), whose repos are created bare — the first commit there is the student's own first push, not starter code.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                |
-| `skip_committers`              | No       | `github-actions[bot]`          | Comma-separated list of commit author names or email substrings. Consecutive leading commits (immediately after the base SHA) whose author matches any entry are excluded from the diff. Only a leading run is skipped — bot commits after any student commit are included. Set to `''` to disable.                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                      |
-| `submission_tags`              | No       |                                | **Tag-triggered workflows only.** Comma- or newline-separated tag names that mark a submission — the tags you define for the assignment, listed exactly as in the workflow's `on.push.tags` (e.g. `complete`, or `phase1, phase2, final`). No tag is recognised unless it is listed here; a wildcard entry such as `phase*` is allowed. A run started by a tag fails unless the tag matches one of these and points at a commit on the default branch. Each entry gets its own issue, PDF and instructor-repository folder                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
-| `tag_diff_base`                | No       | `cumulative`                   | **Tag-triggered workflows only.** `cumulative` assesses all of the student's work to date on every tag; `previous-tag` assesses only the work since the nearest earlier submission tag (falling back to `cumulative` when there is none)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
-| `base_sha`                     | No       |                                | Override the base commit SHA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-| `head_sha`                     | No       |                                | Override the head commit SHA                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                             |
-
-### Outputs
-
-| Output              | Description                                                      |
-| ------------------- | ---------------------------------------------------------------- |
-| `questions`         | The raw generated questions as a string                          |
-| `code_before_strip` | Full code content of all assessed files before comment stripping |
-| `code_after_strip`  | Full code content of all assessed files after comment stripping  |
-
-## Example workflows
-
-Ready-to-use workflows for each configuration are available in the [example workflows](https://grillmycode.org/docs/category/example-workflows) section of the docs site. To generate a tailored workflow interactively, use the [Workflow Wizard](https://grillmycode.org/workflow-wizard). Copy the relevant YAML into `.github/workflows/` in your repository.
-
-### Push to default branch
-
-Generates questions whenever a commit lands on `main` or `master` — whether pushed directly or merged via a pull request.
+1. **Create an OpenRouter key** and save it as the organization secret `OPENROUTER_API_KEY`. See [Set up an OpenRouter key](https://grillmycode.org/docs/getting-started/openrouter-key).
+2. **Build your workflow** with the [Workflow Wizard](https://grillmycode.org/workflow-wizard), or use the minimal one below.
+3. **Commit it** to the assignment's template repository as `.github/workflows/grill-my-code.yml`.
 
 ```yaml
 name: GrillMyCode
@@ -77,7 +32,7 @@ on:
   workflow_dispatch:
 
 # A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
+# so only the latest commit is ever assessed.
 # Do not modify this setting unless you have a compelling reason to.
 concurrency:
   group: grillmycode-${{ github.workflow }}-${{ github.ref }}
@@ -102,318 +57,80 @@ jobs:
           # If desired, uncomment this input and edit to use a different one —
           # any model from https://openrouter.ai/models (provider/model-name).
           # ai_model: "google/gemini-3.5-flash-lite"
-          num_questions: '20'
-          instructor_context: 'Assignment 3 — Python list comprehensions'
 ```
 
-### Submission tag
+The full walkthrough, including how to check the first run, is in [Get started](https://grillmycode.org/docs/getting-started).
 
-Generates questions only when the student says they are done, by pushing a tag you name — ordinary
-pushes do not run it. The student commits their finished work to the default branch, then runs
-`git tag complete && git push origin complete`.
+## Choosing when it runs
 
-```yaml
-on:
-  push:
-    tags: ['complete'] # no branches: an ordinary push does not run it
-  workflow_dispatch:
-```
+| Trigger            | Runs when…                                           | Best for                                                 |
+| ------------------ | ---------------------------------------------------- | -------------------------------------------------------- |
+| **Push**           | a student pushes to the default branch               | Short assignments, and practice while students work      |
+| **Submission tag** | a student pushes a tag you named, such as `complete` | Assessing finished work once, or a project in stages     |
+| **Manual only**    | you select **Run workflow**                          | Choosing the timing yourself, such as after the deadline |
 
-The action step then lists the same tags in `submission_tags` — a tag that fires the workflow but is
-missing there fails the run:
+See [Choosing a trigger](https://grillmycode.org/docs/guides/choosing-a-trigger).
 
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    api_key: ${{ secrets.OPENROUTER_API_KEY }}
-    submission_tags: 'complete'
-```
+## Documentation
 
-Only the tags you list are recognised — GrillMyCode never infers one, including the `submit/…` tags
-Classroom 50 creates for its own grading. List several tags (e.g. `phase1, phase2, complete`) for
-milestones: each gets its own issue, PDF and instructor-repository folder, and
-`tag_diff_base: 'previous-tag'` assesses only the work since the previous milestone. A tag on a
-commit that is not on the default branch fails the run. See
-[Tag Submission](https://grillmycode.org/docs/example-workflows/tag-submission) for the full example.
+|                 |                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                    |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Get started** | [Overview](https://grillmycode.org/docs/getting-started) · [Workflow Wizard](https://grillmycode.org/workflow-wizard)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                              |
+| **Guides**      | [Tailoring the questions](https://grillmycode.org/docs/guides/tailoring-questions) · [Choosing which files are assessed](https://grillmycode.org/docs/guides/choosing-files) · [Choosing a model and managing cost](https://grillmycode.org/docs/guides/choosing-a-model) · [What your students see](https://grillmycode.org/docs/guides/what-students-see) · [Using with Classroom 50](https://grillmycode.org/docs/guides/classroom50) · [Keeping a private answer key](https://grillmycode.org/docs/guides/instructor-setup) · [Importing quizzes into your LMS](https://grillmycode.org/docs/guides/lms-quizzes) · [Tracking assessed repositories](https://grillmycode.org/docs/guides/tracking-repositories) |
+| **Recipes**     | [Ready-made workflow files](https://grillmycode.org/docs/category/example-workflows)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| **Help**        | [Troubleshooting](https://grillmycode.org/docs/troubleshooting) · [FAQ](https://grillmycode.org/docs/faq) · [Upgrade notes](https://grillmycode.org/docs/reference/upgrade-notes)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| **Reference**   | [Inputs and outputs](https://grillmycode.org/docs/reference/inputs-outputs) · [What code is assessed](https://grillmycode.org/docs/reference/code-selection) · [File filtering](https://grillmycode.org/docs/reference/exclude-patterns) · [Triggers in depth](https://grillmycode.org/docs/reference/triggers) · [Tokens, secrets and permissions](https://grillmycode.org/docs/reference/permissions) · [OpenRouter](https://grillmycode.org/docs/ai-providers/openrouter)                                                                                                                                                                                                                                       |
+| **Development** | [Architecture](https://grillmycode.org/docs/development/architecture) · [Contributing](https://grillmycode.org/docs/development/contributing) · [Versioning](https://grillmycode.org/docs/development/versioning)                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
 
-### Choosing a different model
+## Inputs
 
-`ai_model` accepts any model identifier OpenRouter supports, in `provider/model-name` format.
-See [openrouter.ai/models](https://openrouter.ai/models) for the full list and current pricing,
-and the [OpenRouter guide](https://grillmycode.org/docs/ai-providers/openrouter)
-for the models tested with GrillMyCode.
+Only `api_key` needs setting; everything else has a sensible default. Full details for each input are in [Inputs and outputs](https://grillmycode.org/docs/reference/inputs-outputs).
 
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    api_key: ${{ secrets.OPENROUTER_API_KEY }}
-    ai_model: 'deepseek/deepseek-v4-flash'
-    num_questions: '8'
-    instructor_context: 'Web Development — REST API design with Express.js'
-```
+| Input                          | Required | Default                        | Description                                                                                                                                                                                                                                                                                                                                          |
+| ------------------------------ | -------- | ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `github_token`                 | Yes      | `${{ github.token }}`          | GitHub token for the issue, the PDF release and repository metadata. Not used to generate questions                                                                                                                                                                                                                                                  |
+| `api_key`                      | Yes      |                                | OpenRouter API key. Create one at [openrouter.ai/keys](https://openrouter.ai/keys)                                                                                                                                                                                                                                                                   |
+| `ai_provider`                  | No       | `openrouter`                   | AI provider. `openrouter` is the only supported value                                                                                                                                                                                                                                                                                                |
+| `ai_model`                     | No       | `google/gemini-3.5-flash-lite` | OpenRouter model ID (`provider/model-name`), optionally with a routing variant: `:nitro` (fastest) or `:floor` (cheapest)                                                                                                                                                                                                                            |
+| `ai_retry_max_attempts`        | No       | `5`                            | Total attempts per AI request, retrying on 429, 5xx and network errors. Each wait is capped at 30 seconds                                                                                                                                                                                                                                            |
+| `ai_temperature`               | No       | `0.5`                          | Randomness of the output, from `0.0` to `1.0`. Most users should leave this alone                                                                                                                                                                                                                                                                    |
+| `num_questions`                | No       | `20`                           | Number of questions, from 1 to 50                                                                                                                                                                                                                                                                                                                    |
+| `include_answers`              | No       | `false`                        | Show answers in the **student's** report. This defeats the purpose; leave it off. The instructor repository always has answers                                                                                                                                                                                                                       |
+| `instructor_context`           | No       |                                | Your instructions for the AI, such as the topic and what to focus on. Takes precedence over default behaviour                                                                                                                                                                                                                                        |
+| `assignment_context`           | No       |                                | Comma-separated globs of files (text, PDF, Word) read from the repository and given to the AI, such as a brief or rubric. Matches the student's copy, so prefer files students don't edit                                                                                                                                                            |
+| `assignment_context_max_chars` | No       | `20000`                        | Maximum characters read from all `assignment_context` files combined                                                                                                                                                                                                                                                                                 |
+| `keep_comments`                | No       | `false`                        | Keep code comments instead of removing them before the AI sees the code                                                                                                                                                                                                                                                                              |
+| `additional_exclude_patterns`  | No       |                                | Comma-separated globs for extra files to leave out, on top of the [automatic exclusions](https://grillmycode.org/docs/reference/exclude-patterns)                                                                                                                                                                                                    |
+| `exclude_pattern_overrides`    | No       |                                | Comma-separated globs or paths to bring back files that would otherwise be excluded. Binary files are always excluded                                                                                                                                                                                                                                |
+| `include_initial_commit`       | No       | `false`                        | Include the repository's first commit. Set `true` for Classroom 50 `--empty-repo` assignments, where the first commit is the student's own                                                                                                                                                                                                           |
+| `fail_on_empty_assessment`     | No       | `false`                        | Fail, instead of succeed, when there's nothing to assess. Both causes are normal at assignment-accept time, so this is opt-in                                                                                                                                                                                                                        |
+| `skip_committers`              | No       | `github-actions[bot]`          | Comma-separated accounts whose **leading** commits are skipped, matched on the GitHub-verified login. `''` turns it off                                                                                                                                                                                                                              |
+| `instructor_repo_token`        | No       |                                | **Classroom 50 repositories only.** A PAT (`repo` and `workflow` scopes) that enables the [private answer key](https://grillmycode.org/docs/guides/instructor-setup): a private `{assignment}-grillmycode-instructor` repository with every student's questions and answers, and LMS quiz files. Also turns on multiple-choice distractor generation |
+| `repo_marker`                  | No       | `off`                          | Mark assessed student repositories: `topic`, `description`, `both` or `off`. Needs `instructor_repo_token`. See [Tracking assessed repositories](https://grillmycode.org/docs/guides/tracking-repositories)                                                                                                                                          |
+| `submission_tags`              | No       |                                | **Tag-triggered workflows only.** The tags that count as a submission, matching `on.push.tags` exactly. Wildcards allowed. Each gets its own issue, PDF and folder                                                                                                                                                                                   |
+| `tag_diff_base`                | No       | `cumulative`                   | **Tag-triggered workflows only.** `cumulative` assesses all work to date; `previous-tag` only the work since the previous submission tag                                                                                                                                                                                                             |
+| `base_sha`                     | No       |                                | Override the base commit SHA                                                                                                                                                                                                                                                                                                                         |
+| `head_sha`                     | No       |                                | Override the head commit SHA                                                                                                                                                                                                                                                                                                                         |
 
-### Prioritising speed or cost
+## Outputs
 
-Most OpenRouter models are served by several providers at different speeds and prices. Adding a
-routing variant to `ai_model` says which to try first — `:nitro` for the fastest, `:floor` for the
-cheapest. The model itself is unchanged, so question quality is unaffected.
+| Output              | Description                                                        |
+| ------------------- | ------------------------------------------------------------------ |
+| `issue_url`         | URL of the assessment issue                                        |
+| `issue_number`      | Number of the assessment issue                                     |
+| `pdf_url`           | Download URL of the assessment PDF; empty if PDF generation failed |
+| `questions`         | The generated questions as text                                    |
+| `code_before_strip` | Full content of all assessed files, before comments were removed   |
+| `code_after_strip`  | Full content of all assessed files, after comments were removed    |
 
-`:nitro` is the one to reach for when a model's questions are good but assessments take far too long
-to arrive. Check the model's per-provider pricing at [openrouter.ai/models](https://openrouter.ai/models)
-first: the fastest endpoints can cost more than the ones OpenRouter would pick on its own.
-
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    api_key: ${{ secrets.OPENROUTER_API_KEY }}
-    ai_model: 'google/gemini-3.5-flash-lite:nitro'
-```
-
-See [Model routing variants](https://grillmycode.org/docs/ai-providers/openrouter#model-routing-variants)
-for how billing and fallbacks work.
-
-### Manual run overrides
-
-Settings in a workflow file are fixed until you edit and commit the file again. Exposing one as a
-`workflow_dispatch` input adds it as a form field on the **Run workflow** button, so you can change it
-for a single manual run:
-
-```yaml
-on:
-  workflow_dispatch:
-    inputs:
-      num_questions:
-        description: 'num_questions - Number of comprehension questions to generate (1-50)'
-        required: false
-        default: '20'
-
-# ...
-      - uses: NSCC-ITC-Assessment/GrillMyCode@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          num_questions: "${{ github.event.inputs.num_questions || '20' }}"
-```
-
-The `||` fallback is what an automatic run uses, where the field does not exist — so keep it in sync
-with the `default:` above it. GitHub allows at most 10 `workflow_dispatch` inputs.
-
-Never expose `api_key`, `github_token` or `instructor_repo_token` this way — a dispatch input is typed
-in plaintext and recorded in the run's metadata. `include_answers`, `base_sha`/`head_sha` and
-`skip_committers` are also best kept in the file: anyone who can run the workflow can set a dispatch
-input, and in a Classroom repository that includes the student being assessed.
-
-See [Manual Run Overrides](https://grillmycode.org/docs/example-workflows/manual-dispatch)
-for the full example, or build one with the
-[Workflow Wizard](https://grillmycode.org/workflow-wizard).
-
----
-
-## When nothing is assessed
-
-A run can finish without generating anything, for one of two reasons:
-
-- **The commit range contains no changed files** — base and head resolved to the same commit, so the
-  exclude patterns were never involved. Usually `include_initial_commit`, or a `base_sha`/`head_sha`
-  override.
-- **Every changed file was removed by the exclude patterns** — recover what you need with
-  `exclude_pattern_overrides`.
-
-Either way the run writes a job summary naming the reason and what to check. By default it still
-**succeeds**, because both cases happen normally the moment an assignment is accepted — a template
-repository's only commit is its starter code, and a Classroom 50 setup commit contains only the
-excluded `.classroom50.yaml`. Failing by default would mark every student repository red at creation.
-
-Once students have started work, set `fail_on_empty_assessment: 'true'` so an unassessed repository
-shows as a failed run rather than a green one you have to open to notice.
-
----
+Outputs can contain student-written text, so pass them to scripts through `env:` rather than inside `run:`. See [Using the action's outputs](https://grillmycode.org/docs/example-workflows/post-to-issues).
 
 ## Permissions
 
-| Permission        | Why                                                     |
-| ----------------- | ------------------------------------------------------- |
-| `contents: write` | Create and update the `gmc-assessments` release and PDF |
-| `issues: write`   | Create and update the assessment issue                  |
-
-Instructor repository delivery adds nothing to this block — it runs entirely on the
-`instructor_repo_token` PAT, whose own scopes (`repo` + `workflow`) cover repository creation and
-the workflow file it maintains. See [Instructor repository delivery](#instructor-repository-delivery).
-
----
-
-## Classroom 50
-
-This action was originally designed to work with [GitHub Classroom](https://classroom.github.com/), which GitHub is discontinuing (full shutdown August 28, 2026). It now targets [Classroom 50](https://github.com/foundation50/classroom50), the open-source replacement — see the [Classroom 50 guide](https://grillmycode.org/docs/guides/classroom50) for full details.
-
-By default (`include_initial_commit: 'false'`), the diff base is pinned to the repository's very first commit — the template/starter code committed when the student accepted the assignment. This means only code written by the student after accepting the assignment is eligible for assessment, and template boilerplate is never included in the diff unless configured as such (`include_initial_commit: 'true'`).
-
-Classroom 50's accept-time setup commit (which writes `.classroom50.yaml` and the autograde workflow shim) is authored under the student's own identity rather than a bot, so there's no leading bot commit for `skip_committers` to advance past — its `.classroom50.yaml` metadata file is excluded by pattern instead. `skip_committers` (defaulting to `github-actions[bot]`) remains available for any other bot-authored commits that land at the start of the assessed range.
-
-Set `include_initial_commit: 'true'` to include the initial commit's eligible files in the diff — the base is pinned to the empty tree regardless of event type, so all files from the very beginning of history are eligible to be assessed. To include truly everything (bot-committed starter files as well), also set `skip_committers: ''` to prevent the base from being advanced past those initial bot commits.
-
-Set it to `'true'` for Classroom 50 **empty-repository** assignments (`gh teacher assignment add --empty-repo`). Those student repos are created bare — no template, no README, no commits — so the repository's first commit is the student's own first push. With the default the whole of that first push is excluded, and a student who commits everything at once gets no assessment at all.
-
----
-
-## Instructor repository delivery
-
-> [!IMPORTANT]
-> Available only in **Classroom 50 assignment repositories** — the student repositories Classroom 50
-> creates when a student accepts an assignment. The feature is not available for any other repository:
-> setting `instructor_repo_token` there only produces a warning.
-
-Setting `instructor_repo_token` stores a private, instructor-only copy of every assessment —
-questions **and** answers — outside the student's repository:
-
 ```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    api_key: ${{ secrets.OPENROUTER_API_KEY }}
-    instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+permissions:
+  contents: write # gmc-assessments release + PDF asset
+  issues: write # assessment issue
 ```
 
-- The repository is named `{assignment-name}-grillmycode-instructor` and created **private** in the
-  same organisation on the first student push. Each student's copy lands at
-  `{student-login}/questions.md`, with the model's unprocessed reply filed beside it as
-  `{student-login}/raw-ai-output.md` — a diagnostic record of what the AI actually returned before
-  truncation, renumbering and formatting, which is the place to look when generated questions come
-  out wrong. Both names come from the Classroom 50 repository name
-  (`<classroom>-<assignment>-<username>`) and its direct collaborators — never from who pushed or
-  started the run — and any other repository skips instructor delivery with a warning. A
-  tag-triggered run files under `{student-login}/{tag}/` instead, where a `submissions.md` log and a
-  `history/` folder flag any resubmission under the same tag and keep the question sets it replaced.
-- That write triggers a bundled **Generate LMS Quiz** workflow in the instructor repository, which
-  builds an IMS Common Cartridge / QTI package (`.imscc`) per student. Common Cartridge is an open
-  standard that most major LMS platforms can import — including Brightspace, Canvas, Moodle,
-  Blackboard Learn and Sakai — so this is the quiz file for everyone.
-- **Brightspace only:** the same workflow also writes a `_brightspace_quiz.csv` per student — the
-  same questions in Brightspace's own question-import format, as an alternative to the `.imscc` for
-  Brightspace instructors who prefer importing questions that way. No other LMS can read it; if you
-  are not on Brightspace, ignore it.
-- That workflow and the instructor repository's `README.md` are owned by the action and re-synced on
-  every delivery, so repositories created by an earlier release pick up quiz-generation fixes on
-  their own. Local edits to either file are replaced on the next run.
-- The PAT needs the `repo` **and** `workflow` scopes. The `workflow` scope is what allows the sync;
-  without it the assessment is still delivered but every run warns and the quiz workflow stays
-  frozen at the version it was seeded with.
-- Setting the token is also what turns on **distractor generation**. The three wrong options each
-  question needs for the quiz are written for this copy alone — every student-facing report strips
-  them — so with no instructor repository to file them in, the action asks the model for the correct
-  answer only. That makes an assessment cheaper and quicker to generate and changes nothing a
-  student sees; add the token and distractors come back on the next run.
-
-Add the PAT once as an **org-level** Actions secret and every student repository inherits it. Full
-walkthrough: [Instructor Setup](https://grillmycode.org/docs/guides/instructor-setup).
-
----
-
-## Marking assessed repositories
-
-`repo_marker` writes a marker to the **student repository's** own GitHub metadata once questions
-have been generated, so an instructor scanning the organisation's repository list can see which
-repositories have a question set without opening any of them:
-
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    api_key: ${{ secrets.OPENROUTER_API_KEY }}
-    instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
-    repo_marker: 'both'
-```
-
-- `topic` adds the `grillmycode` topic. That is the filterable surface: once set,
-  `org:<your-org> topic:grillmycode` lists exactly the assessed repositories.
-- `description` appends `· 🔥 GrillMyCode: N questions` to the repository description — the only
-  surface that can carry the question **count**, and one that renders in every repository list view.
-- `both` writes both. They are necessarily two API calls: GitHub's repository-update endpoint
-  cannot set topics.
-- It **requires `instructor_repo_token`**. Repository metadata is unreachable with `GITHUB_TOKEN` at
-  any `permissions:` setting, because that key has no `administration` scope to grant, so the marker
-  shares the instructor PAT. Set `repo_marker` without it and the run warns and writes nothing.
-- Existing topics are **preserved** — the topics endpoint replaces the whole set, so the action
-  reads the current one and writes back the union rather than clobbering topics you set by hand. A
-  description marker from an earlier run is replaced rather than appended to, and a description that
-  would exceed GitHub's 350-character limit is left untouched.
-- Enabling it also installs **`reconcile-repo-markers.yml`** into the assignment's instructor
-  repository. The action only runs when a student pushes, so on its own it can never _clear_ a
-  marker — a marker would mean "questions were generated here at least once" rather than "currently
-  has a question set". The sweep runs daily, treats the open issue labelled `assessment` as the
-  source of truth, and adds or removes markers to match. Run it manually with **Report what would
-  change** ticked to preview it. Description markers are cleared by the sweep but re-added only by
-  the action, which is the only thing that knows the question count.
-- A scheduled sweep stands down after **10 days** with no delivery, so a finished assignment stops
-  sweeping on a version no later fix can reach; it resumes by itself when a student pushes again,
-  and a manual run ignores the check entirely.
-- The sweep needs the instructor PAT visible to the instructor repository as
-  `INSTRUCTOR_REPO_TOKEN`. An org-level secret visible to private repositories covers it with no
-  extra setup. Setting `repo_marker` back to `off` re-syncs the sweep into a no-op rather than
-  leaving it running.
-- If you would rather not run a sweep at all, `org:<your-org> is:issue is:open label:assessment`
-  reads live state directly and needs no configuration.
-
-Full example: [Repository Marker](https://grillmycode.org/docs/example-workflows/2-repo-marker).
-
----
-
-## Using action outputs
-
-The action exposes several outputs for use in later steps:
-
-```yaml
-- uses: NSCC-ITC-Assessment/GrillMyCode@v1
-  id: assess
-  with:
-    github_token: ${{ secrets.GITHUB_TOKEN }}
-    api_key: ${{ secrets.OPENROUTER_API_KEY }}
-
-- name: Print issue link
-  run: echo "Assessment issue ${{ steps.assess.outputs.issue_url }}"
-
-- name: Print questions
-  run: echo "${{ steps.assess.outputs.questions }}"
-```
-
----
-
-## Exclude patterns behaviour
-
-When the action runs it automatically detects your stack using up to seven signals and applies the relevant [github/gitignore](https://github.com/github/gitignore) templates — covering build artifacts, dependency directories, lock files, IDE files, and more. No configuration is needed for standard stacks.
-
-1. **GitHub Languages API** — identifies all languages in the repository.
-2. **Repository root inspection** — checks for well-known config files and directories (`Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `project.godot`, `firebase.json`, `angular.json`, etc.).
-3. **Root filename suffix scan** — detects frameworks with variable-name project files (`.xcodeproj` → Xcode, `.uproject` → Unreal Engine, `.ipynb` → Jupyter Notebooks, etc.).
-4. **`package.json` dependency scan** _(JS/TS repos only)_ — reads `dependencies` and `devDependencies` to identify the exact framework (`next`, `svelte`, `vue`, `@angular/core`, etc.) rather than guessing from config filenames.
-5. **`composer.json` dependency scan** _(PHP repos only)_ — reads `require` and `require-dev` to identify the exact framework (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `yiisoft/yii2`, etc.) rather than guessing from config filenames.
-6. **`Gemfile` dependency scan** _(Ruby repos only)_ — reads `gem` declarations to identify the exact framework (`rails`, `jekyll`, `nanoc`) more reliably than inferring it from a `Rakefile`.
-7. **`mix.exs` dependency scan** _(Elixir repos only)_ — reads dependency tuples (e.g. `{:phoenix, ...}`) to add Phoenix web artifacts on top of the base Elixir excludes.
-
-Some files are excluded on every run, whatever the stack, at any depth: editor and IDE settings (`.vscode/`, `.idea/`, `*.iml`, Eclipse's `.project`/`.settings/`, `.cursor/`, `.editorconfig`, `.devcontainer/`, Vim/Emacs swap files, and more), diagrams (`.drawio`, `.excalidraw`, `.bpmn`, `.puml`, `.mmd`) and CSV/TSV data. Re-include any of them with `exclude_pattern_overrides`.
-
-As a backstop, any generated question whose filename header doesn't match an assessed file — for example a question about an `assignment_context` file — is dropped and the rest are renumbered.
-
-To exclude additional files specific to your assignment (starter code, fixtures, data files):
-
-```yaml
-additional_exclude_patterns: 'tests/**,docs/**'
-```
-
----
-
-## Further reading
-
-Full documentation is available at **https://grillmycode.org/**.
-
-| Page                                                                         | Description                                                                       |
-| ---------------------------------------------------------------------------- | --------------------------------------------------------------------------------- |
-| [AI Providers](https://grillmycode.org/docs/ai-providers)                    | Supported AI providers, required inputs, secrets, and example snippets for each   |
-| [Architecture](https://grillmycode.org/docs/development/architecture)        | How the Docker-based action is structured and executed                            |
-| [Example Workflows](https://grillmycode.org/docs/category/example-workflows) | Copy-paste workflow files for each configuration                                  |
-| [Instructor Setup](https://grillmycode.org/docs/guides/instructor-setup)     | One-time org setup for private instructor repository delivery and LMS quiz export |
-| [Contributing](https://grillmycode.org/docs/development/contributing)        | Local development setup, commit conventions, and the release process              |
-| [Versioning](https://grillmycode.org/docs/development/versioning)            | Release guide — patch, minor, and major releases                                  |
+These are the same for every configuration. See [Tokens, secrets and permissions](https://grillmycode.org/docs/reference/permissions).

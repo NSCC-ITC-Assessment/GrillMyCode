@@ -1,19 +1,13 @@
 ---
-sidebar_position: 5
+sidebar_position: 6
+sidebar_label: A more capable model
 ---
 
-# Choosing a Specific Model
+# A more capable model
 
-Every GrillMyCode workflow runs through [OpenRouter](https://openrouter.ai/), which routes requests to models from a wide range of providers (Anthropic, Google, Meta, Mistral, and more) through a single API key. This example shows a workflow pinned to a specific, higher-capability model rather than the default `google/gemini-3.5-flash-lite` — useful when you want stronger reasoning on complex assignments and are willing to pay more per assessment.
+**Use this when** the default model's questions aren't sharp enough for complex code, and you're willing to pay more per assessment for a stronger model.
 
-### Setup
-
-1. **Create an OpenRouter account** at [openrouter.ai](https://openrouter.ai/) and add a prepaid credit balance. Suggested start amount - $5
-2. **Generate an API key** at [openrouter.ai/keys](https://openrouter.ai/keys).
-3. **Store the key as an organisation-level GitHub secret** — Go to your GitHub organisation's **Settings → Secrets and variables → Actions** and create a secret named `OPENROUTER_API_KEY`. This makes the key available to all student repositories for that classroom automatically without any per-repo configuration.
-
-Then copy the workflow file below to `.github/workflows/grill-my-code.yml` in the student repository.
-```yaml
+```yaml title=".github/workflows/grill-my-code.yml"
 name: GrillMyCode
 
 on:
@@ -22,7 +16,7 @@ on:
   workflow_dispatch:
 
 # A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
+# so only the latest commit is ever assessed.
 # Do not modify this setting unless you have a compelling reason to.
 concurrency:
   group: grillmycode-${{ github.workflow }}-${{ github.ref }}
@@ -44,7 +38,8 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          ai_model: "anthropic/claude-3-5-sonnet"
+          # Any model ID from https://openrouter.ai/models
+          ai_model: "anthropic/claude-sonnet-5"
           num_questions: "8"
           instructor_context: |
             Web Development — REST API with Express.js. Prioritize
@@ -54,20 +49,19 @@ jobs:
             about missing error-handling middleware.
 ```
 
-`ai_provider` is omitted here because `openrouter` is the default. Models are specified in `provider/model-name` format (e.g. `anthropic/claude-3-5-sonnet`, `meta-llama/llama-3.1-70b-instruct`) — see the [OpenRouter model list](https://openrouter.ai/models) for what is available and what it costs.
+## Change these
 
-:::warning[Check pricing before deploying to a class]
-Costs vary by orders of magnitude between models. `anthropic/claude-3-5-sonnet` is considerably more expensive per assessment than the [recommended low-cost models](../ai-providers/openrouter.md#recommended-models). Verify the current rate at [openrouter.ai/models](https://openrouter.ai/models) and check it against your class size before rolling this out.
+- **`ai_model`:** any model ID from [OpenRouter's catalogue](https://openrouter.ai/models), copied exactly.
+
+:::warning[Check the price first]
+A capable model can cost 10 to 100 times as much per assessment as the [recommended models](../ai-providers/openrouter.md#recommended-models). Check its rate at [openrouter.ai/models](https://openrouter.ai/models), and multiply by your class size and how often the workflow runs.
 :::
 
-### Prioritising speed or cost
+## Good to know
 
-Adding a routing variant to the model ID chooses **which provider** serves it. `:nitro` tries the fastest providers first, `:floor` the cheapest:
+- To make the same model faster or cheaper, add a routing variant: `anthropic/claude-sonnet-5:nitro` tries the fastest providers first, and `:floor` the cheapest. The questions are unchanged. See [Model routing variants](../ai-providers/openrouter.md#model-routing-variants).
+- `ai_provider` isn't needed; OpenRouter is the default and only provider.
 
-```yaml
-          ai_model: "anthropic/claude-3-5-sonnet:nitro"
-```
+## Related
 
-The model is the same either way, so the questions are unaffected — only generation speed and price change. `:nitro` suits the case where a model's questions are what you want but assessments are slow to arrive; check the model's per-provider pricing at [openrouter.ai/models](https://openrouter.ai/models) first, as the fastest endpoints are often the dearest. See [Model routing variants](../ai-providers/openrouter.md#model-routing-variants).
-
-For full provider documentation see [OpenRouter](../ai-providers/openrouter.md).
+[Choosing a model and managing cost](../guides/choosing-a-model.md) · [OpenRouter](../ai-providers/openrouter.md)

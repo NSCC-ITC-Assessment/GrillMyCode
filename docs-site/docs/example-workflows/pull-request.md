@@ -1,14 +1,13 @@
 ---
 sidebar_position: 1
+sidebar_label: Push to default branch
 ---
 
-# Push to Default Branch
+# Push to default branch
 
-Generates assessment questions whenever a commit lands on the default branch (`main` or `master`) — whether pushed directly or merged in via a pull request. A GitHub Issue is created with the full questions and a PDF download link.
+**Use this when** you want fresh questions every time a student pushes to their main branch. It's the simplest setup, and a good first choice.
 
-Copy this file to `.github/workflows/grill-my-code.yml` in the student repository.
-
-```yaml
+```yaml title=".github/workflows/grill-my-code.yml"
 name: GrillMyCode
 
 on:
@@ -17,7 +16,7 @@ on:
   workflow_dispatch:
 
 # A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
+# so only the latest commit is ever assessed.
 # Do not modify this setting unless you have a compelling reason to.
 concurrency:
   group: grillmycode-${{ github.workflow }}-${{ github.ref }}
@@ -50,19 +49,18 @@ jobs:
             off-by-one errors or incorrect loop bounds.
 ```
 
-## How it works
+## Change these
 
-When a commit lands on `main` or `master`, GrillMyCode:
+- **`instructor_context`:** describe your assignment. See [Tailoring the questions](../guides/tailoring-questions.md#tell-the-ai-about-the-assignment).
+- **`num_questions`:** anywhere from 1 to 50.
 
-1. Creates or updates the assessment **GitHub Issue** (assigned to the student)
-2. Generates a **PDF** and attaches it to the `gmc-assessments` release
+## Good to know
 
-Both a direct push and a pull request merge trigger identically — the assessed diff is always the student's full work history on the default branch.
+- A pull request merged into `main` counts as a push.
+- Every run assesses all of the student's work so far and replaces the questions in the same issue.
+- `workflow_dispatch:` adds a **Run workflow** button for manual runs.
+- A student who pushes 20 times gets 20 runs. To assess finished work once, use a [submission tag](tag-submission.md) instead.
 
-## Every push regenerates the questions
+## Related
 
-Each push to the default branch triggers a full regeneration. The existing assessment issue body is **overwritten** with the new questions — the issue number and URL stay the same, but the previous questions are replaced. The PDF asset is also replaced at the same stable URL. A note comment is posted to the issue recording when the questions were regenerated and at which commit SHA.
-
-## Manual re-run
-
-To regenerate questions without pushing a new commit, trigger a run from the **Actions** tab — the `workflow_dispatch:` trigger in the workflow enables this.
+[Choosing a trigger](../guides/choosing-a-trigger.md) · [Triggers in depth](../reference/triggers.md#push)
