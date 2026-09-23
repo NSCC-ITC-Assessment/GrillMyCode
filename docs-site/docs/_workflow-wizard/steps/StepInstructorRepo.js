@@ -135,7 +135,10 @@ export default function StepInstructorRepo({ cfg, onChange, docsBase = '/docs' }
                   Once questions have been generated, the action can mark the student repository in
                   GitHub's own metadata, so you can tell which repositories have a question set
                   without opening them. Existing topics are kept, and the marker replaces itself on
-                  each run rather than stacking up. See the{' '}
+                  each run rather than stacking up. Choosing anything but the default also installs a
+                  daily workflow in the instructor repository that clears markers from repositories
+                  whose assessment issue has since been closed, so they keep tracking live state. See
+                  the{' '}
                   <a
                     href={`${docsBase}/example-workflows/2-repo-marker`}
                     target="_blank"

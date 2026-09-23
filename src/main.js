@@ -1131,6 +1131,7 @@ async function run() {
           headSha,
           rawOutput: rawOutputCopy,
           submission,
+          repoMarker: inputs.repoMarker,
         });
         state.instructorDelivery = 'delivered';
       } catch (err) {
