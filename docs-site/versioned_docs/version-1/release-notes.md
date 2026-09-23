@@ -5,6 +5,20 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.10.0 — 2026-09-23
+
+### What's Changed
+
+### Features
+
+- stand the marker sweep down after 10 days without a delivery
+- reconcile repository markers against live assessment state
+
+### Documentation
+
+- update StepFun model version from 3.5 to 3.7
+- rebrand docs site
+
 ## v1.9.0 — 2026-09-22
 
 ### What's Changed

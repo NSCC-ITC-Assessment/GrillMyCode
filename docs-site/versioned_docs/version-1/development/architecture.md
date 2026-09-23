@@ -133,7 +133,14 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │
                ├── syncInstructorRepoFiles()
                │     Rewrites generate-lms-quiz.yml and README.md when they differ
-               │     from the copies shipped in src/; warns (never throws) on failure
+               │     from the copies shipped in src/; warns (never throws) on failure.
+               │     Adds reconcile-repo-markers.yml, with repo_marker rendered
+               │     into it, while the marker is enabled — and re-syncs it with
+               │     mode off, if already present, once the marker is turned off,
+               │     so disabling disarms the sweep rather than stranding it.
+               │     That sweep runs daily but is only refreshed here, so it
+               │     stands itself down after REPO_MARKER_SWEEP_IDLE_DAYS with
+               │     no delivery rather than running on a version no fix reaches
                │
                ├── writeFileWithRetry()
                │     Writes {studentLogin}/raw-ai-output.md — the model's reply
