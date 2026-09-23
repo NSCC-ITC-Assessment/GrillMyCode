@@ -15,6 +15,12 @@ name: Reconcile Repository Markers
 # actually reads. A repository with one should carry the marker; a repository
 # without one should not.
 #
+# The sweep winds itself down after SWEEP_IDLE_DAYS without a delivery. It runs
+# on a schedule but is only re-synced when a student pushes, so an assignment
+# nobody submits to any more would otherwise sweep forever on a version no fix
+# could ever reach. It resumes on its own the next time a student pushes, and a
+# manual run ignores the idle check entirely.
+#
 # This file is owned by GrillMyCode and re-synced on every delivery — local
 # edits are replaced. It is written into the instructor repository only while
 # repo_marker is enabled; setting repo_marker back to "off" re-syncs it with
@@ -53,6 +59,7 @@ jobs:
           MARKER_MODE: "{{MARKER_MODE}}"
           DRY_RUN: ${{ inputs.dry_run }}
           GITHUB_REPOSITORY: ${{ github.repository }}
+          GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           node <<'JSEOF'
           const token = process.env.GMC_TOKEN;
@@ -69,6 +76,7 @@ jobs:
           const DESCRIPTION_SIGIL = '🔥 GrillMyCode';
           const INSTRUCTOR_SUFFIX = '-grillmycode-instructor';
           const ASSESSMENT_LABEL = 'assessment';
+          const SWEEP_IDLE_DAYS = 10;
 
           const summary = [];
           function note(line) {
@@ -120,6 +128,26 @@ jobs:
               throw err;
             }
             return res.status === 204 ? null : res.json();
+          }
+
+          // Checked before anything else is read, so a wound-down assignment
+          // costs exactly one API call a day. The instructor repository's last
+          // push advances on every delivery and on nothing this job does, so it
+          // is a true measure of whether students are still submitting.
+          if (process.env.GITHUB_EVENT_NAME !== 'workflow_dispatch') {
+            const self = await api(`/repos/${owner}/${instructorRepo}`);
+            const idleMs = Date.now() - new Date(self.pushed_at).getTime();
+            const idleDays = Math.floor(idleMs / 86400000);
+            if (idleDays >= SWEEP_IDLE_DAYS) {
+              note(`No assessment has been delivered for ${idleDays} days — this assignment looks finished, so the sweep is standing down.`);
+              await finish(
+                `### Reconcile Repository Markers\n\nNo assessment has been delivered to this ` +
+                `repository for **${idleDays} days**, so the scheduled sweep stood down without ` +
+                `examining anything. It resumes automatically the next time a student pushes. ` +
+                `To run it now regardless, start it from the Actions tab.\n`,
+              );
+              return;
+            }
           }
 
           // The assignment is this repository's name without the suffix the

@@ -9,6 +9,7 @@ import {
   REPO_MARKER_TOPIC,
   INSTRUCTOR_REPO_SUFFIX,
   GITHUB_API_VERSION,
+  REPO_MARKER_SWEEP_IDLE_DAYS,
 } from '../src/constants.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), warning: vi.fn(), error: vi.fn() }));
@@ -40,6 +41,10 @@ describe('shipped workflow matches the action constants', () => {
   it('carries the current instructor repository suffix and API version', () => {
     expect(WORKFLOW_SOURCE).toContain(`const INSTRUCTOR_SUFFIX = '${INSTRUCTOR_REPO_SUFFIX}';`);
     expect(WORKFLOW_SOURCE).toContain(`'X-GitHub-Api-Version': '${GITHUB_API_VERSION}'`);
+  });
+
+  it('carries the current idle stand-down threshold', () => {
+    expect(WORKFLOW_SOURCE).toContain(`const SWEEP_IDLE_DAYS = ${REPO_MARKER_SWEEP_IDLE_DAYS};`);
   });
 
   it('keys on the same issue label the action applies to assessment issues', () => {

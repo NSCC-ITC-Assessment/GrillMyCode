@@ -118,6 +118,16 @@ Run the workflow manually from the instructor repository's Actions tab with **Re
 
 The same PAT as instructor delivery, visible to the instructor repository as `INSTRUCTOR_REPO_TOKEN`. If you followed the [Instructor Setup guide](../guides/instructor-setup.md) and added the PAT as an **organisation-level** secret visible to private repositories, the instructor repository already inherits it and there is nothing to do. If your secret is scoped to selected repositories, add the instructor repository to that list — otherwise the job fails with a message saying exactly that.
 
+### It winds down on its own
+
+The sweep runs on a schedule, but the action only re-syncs it when a student pushes. An assignment nobody submits to any more would therefore keep sweeping every day on whatever version it last received — with no way for a later fix to reach it.
+
+So a scheduled run first checks when the instructor repository was last written to. **After 10 days with no delivery** it stands down without examining anything, at a cost of one API call, and says so in the job summary. It resumes by itself the next time a student pushes; nothing needs re-enabling.
+
+A **manual run ignores this entirely** — if you press Run, it runs, however long the assignment has been quiet. That is the way to reconcile a finished assignment one last time.
+
+(GitHub separately disables scheduled workflows in a repository after about 60 days of inactivity, and in archived repositories. The stand-down above is the deliberate version of the same idea, and it takes effect far sooner.)
+
 ### Turning it off
 
 Set `repo_marker` back to `off`. The next delivery re-syncs the workflow with its mode set to `off`, after which it exits immediately without examining anything — so disabling the marker disarms the sweep rather than leaving a scheduled job reconciling markers nothing writes any more.

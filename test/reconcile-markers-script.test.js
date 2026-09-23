@@ -7,6 +7,7 @@ import { Buffer } from 'node:buffer';
 import {
   REPO_MARKER_DESCRIPTION_SEPARATOR,
   REPO_MARKER_DESCRIPTION_SIGIL,
+  REPO_MARKER_SWEEP_IDLE_DAYS,
 } from '../src/constants.js';
 
 /**
@@ -45,12 +46,20 @@ const repo = (name, extra = {}) => ({
   ...extra,
 });
 const OPEN_ASSESSMENT = { number: 1, title: 'GrillMyCode Questions' };
+const INSTRUCTOR_REPO = 'nscc/appd5000-lab3-grillmycode-instructor';
 
 /**
  * Runs the extracted script with a stubbed fetch, returning every API call it
  * made and the job summary it wrote.
  */
-async function runSweep({ mode, dryRun = false, repos = [], issues = {} }) {
+async function runSweep({
+  mode,
+  dryRun = false,
+  repos = [],
+  issues = {},
+  idleDays = 0,
+  eventName = 'schedule',
+}) {
   const calls = [];
   const reply = (data, status = 200) => ({
     ok: status < 400,
@@ -66,6 +75,10 @@ async function runSweep({ mode, dryRun = false, repos = [], issues = {} }) {
 
     if (path.startsWith('/orgs/') && path.includes('/repos?')) {
       return reply(path.includes('page=1') ? repos : []);
+    }
+    // The instructor repository's own metadata, read for the idle check.
+    if (method === 'GET' && path === `/repos/${INSTRUCTOR_REPO}`) {
+      return reply({ pushed_at: new Date(Date.now() - idleDays * 86400000).toISOString() });
     }
     const issueMatch = path.match(/^\/repos\/[^/]+\/([^/?]+)\/issues\?/);
     if (issueMatch) return reply(issues[issueMatch[1]] || []);
@@ -88,7 +101,8 @@ async function runSweep({ mode, dryRun = false, repos = [], issues = {} }) {
         GMC_TOKEN: 'test-token',
         MARKER_MODE: mode,
         DRY_RUN: String(dryRun),
-        GITHUB_REPOSITORY: 'nscc/appd5000-lab3-grillmycode-instructor',
+        GITHUB_REPOSITORY: `nscc/${INSTRUCTOR_REPO.split('/')[1]}`,
+        GITHUB_EVENT_NAME: eventName,
         GITHUB_STEP_SUMMARY: '/dev/null',
       },
       exit: (code) => {
@@ -124,6 +138,48 @@ describe('reconciliation sweep: disabled states', () => {
     // A file copied by hand instead of synced by the action must not start
     // writing to student repositories on a guess.
     const { calls } = await runSweep({ mode: '{{MARKER_MODE}}' });
+    expect(calls).toEqual([]);
+  });
+});
+
+describe('reconciliation sweep: winding down when an assignment finishes', () => {
+  // The sweep runs on a schedule but is only re-synced when a student pushes,
+  // so a finished assignment would otherwise sweep forever on a version no fix
+  // could reach.
+  it('stands down on a schedule once the assignment has been quiet', async () => {
+    const { calls, summary } = await runSweep({
+      mode: 'both',
+      idleDays: REPO_MARKER_SWEEP_IDLE_DAYS,
+      repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
+    });
+    // One call — its own metadata — and nothing else is even listed.
+    expect(calls).toHaveLength(1);
+    expect(calls[0].path).toBe(`/repos/${INSTRUCTOR_REPO}`);
+    expect(summary).toContain('stood down');
+  });
+
+  it('still runs the day before the threshold', async () => {
+    const { calls } = await runSweep({
+      mode: 'both',
+      idleDays: REPO_MARKER_SWEEP_IDLE_DAYS - 1,
+      repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
+    });
+    expect(topicWrite(calls)).toBeDefined();
+  });
+
+  it('ignores the idle check on a manual run, however long it has been quiet', async () => {
+    // An instructor who presses Run wants it to run.
+    const { calls } = await runSweep({
+      mode: 'both',
+      eventName: 'workflow_dispatch',
+      idleDays: REPO_MARKER_SWEEP_IDLE_DAYS * 3,
+      repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
+    });
+    expect(topicWrite(calls)).toBeDefined();
+  });
+
+  it('does not read its own metadata at all when the mode is off', async () => {
+    const { calls } = await runSweep({ mode: 'off', idleDays: 99 });
     expect(calls).toEqual([]);
   });
 });

@@ -22,6 +22,8 @@ Present only when the assignment's workflow sets `repo_marker`. GrillMyCode mark
 
 Nothing in the assessment run ever _clears_ a marker, because the action only runs when a student pushes. `reconcile-repo-markers.yml` closes that gap: once a day it compares every repository in this assignment against the live state — an open issue labelled `assessment` is the source of truth — and adds or removes markers to match. Run it from the Actions tab with **Report what would change** ticked to preview it without writing anything.
 
+A scheduled run stands down after 10 days with no delivery to this repository — an assignment that is over stops sweeping on its own, and resumes if a student pushes again. Starting it manually from the Actions tab ignores that check, which is how to reconcile a finished assignment one last time.
+
 It needs the same PAT as instructor delivery, read from an `INSTRUCTOR_REPO_TOKEN` secret this repository can see. An organisation-level secret visible to private repositories covers it with no per-assignment setup; without the secret the job fails with a message saying so. Description markers are cleared by the sweep but never re-added, because only the action knows the question count.
 
 ## Repository Structure

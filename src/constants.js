@@ -408,3 +408,19 @@ export const REPO_MARKER_DESCRIPTION_SIGIL = '🔥 GrillMyCode';
  * marker, destroys more than the marker is worth.
  */
 export const REPO_DESCRIPTION_MAX_CHARS = 350;
+
+/**
+ * Days of assignment inactivity after which the marker-reconciliation sweep
+ * stops doing work on its schedule.
+ *
+ * The sweep is seeded into the instructor repository and runs daily, but the
+ * action only re-syncs it when a student pushes. An assignment nobody submits
+ * to any more would therefore keep sweeping on whatever version it last
+ * received, indefinitely and unfixably. Measured against the instructor
+ * repository's own last push, which advances on every delivery and on nothing
+ * the sweep itself does, so a quiet assignment winds down on its own and
+ * resumes the moment a student pushes again.
+ *
+ * A manual run ignores this: an instructor who presses Run wants it to run.
+ */
+export const REPO_MARKER_SWEEP_IDLE_DAYS = 10;

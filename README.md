@@ -347,6 +347,9 @@ repositories have a question set without opening any of them:
   source of truth, and adds or removes markers to match. Run it manually with **Report what would
   change** ticked to preview it. Description markers are cleared by the sweep but re-added only by
   the action, which is the only thing that knows the question count.
+- A scheduled sweep stands down after **10 days** with no delivery, so a finished assignment stops
+  sweeping on a version no later fix can reach; it resumes by itself when a student pushes again,
+  and a manual run ignores the check entirely.
 - The sweep needs the instructor PAT visible to the instructor repository as
   `INSTRUCTOR_REPO_TOKEN`. An org-level secret visible to private repositories covers it with no
   extra setup. Setting `repo_marker` back to `off` re-syncs the sweep into a no-op rather than
