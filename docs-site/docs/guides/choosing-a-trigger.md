@@ -1,8 +1,8 @@
 ---
-sidebar_position: 2
+sidebar_position: 1
 ---
 
-# Choosing a Trigger
+# Choosing a trigger
 
 The trigger decides **when** GrillMyCode runs and generates questions for a student. There are three options. Whichever you pick, you can also start a run yourself at any time from the repository's **Actions** tab.
 
@@ -29,7 +29,7 @@ Every time a student pushes to the default branch, GrillMyCode generates a fresh
 - Students see the questions before they finish, so they have time to prepare their answers. That's good for practice, less so for a surprise oral check.
 - A student who pushes 20 times gets 20 runs, so it costs more than the other two options on busy repositories. (If a student pushes again while a run is still going, the older run is cancelled.)
 
-See [Push to Default Branch](../example-workflows/pull-request.md) for a ready-to-use workflow.
+Recipe: [Push to default branch](../example-workflows/pull-request.md).
 
 ## Submission tag
 
@@ -73,9 +73,9 @@ You also choose what each later milestone covers:
 - Only the tags you name count. GrillMyCode ignores every other tag, including the `submit/…` tags Classroom 50 creates for its own grading — so on a Classroom 50 assignment, `gh student submit` alone does not generate questions.
 - Students need to know the tag commands. Put them in the assignment instructions.
 - The tagged commit must be on the default branch. A tag on any other branch fails the run, so the student can see their submission didn't count.
-- To resubmit under the same tag, the student moves it to their latest commit and pushes it again: `git tag -f complete` then `git push --force origin complete`. The new questions replace the old ones for that tag, but the resubmission is flagged to you and the replaced questions are kept ([details](instructor-setup.md#spotting-resubmissions)).
+- To resubmit under the same tag, the student moves it to their latest commit and pushes it again: `git tag -f complete` then `git push --force origin complete`. The new questions replace the old ones for that tag, but the resubmission is flagged to you and the replaced questions are kept ([details](tracking-repositories.md#spotting-resubmissions)).
 
-See [Tag Submission](../example-workflows/tag-submission.md) for a ready-to-use workflow.
+Recipes: [Submission tag](../example-workflows/tag-submission.md) · [Milestone tags](../example-workflows/3-milestone-tags.md).
 
 ## Manual only
 
@@ -92,7 +92,7 @@ GrillMyCode never runs by itself. You start each run from the repository's **Act
 - Runs are started one repository at a time, which takes a while for a large class.
 - Nothing happens unless you remember to start it.
 
-See [Manual Run Overrides](../example-workflows/manual-dispatch.md) for changing settings on a single manual run.
+To change settings for a single run, see [Running it yourself](running-manually.md).
 
 ## Quick decision guide
 
@@ -109,8 +109,10 @@ See [Manual Run Overrides](../example-workflows/manual-dispatch.md) for changing
 
 **Manual runs** work alongside any trigger.
 
-**Push and submission tag** don't mix well in one workflow: a student who pushes and then tags would be assessed twice for the same work, which is why the Workflow Wizard offers one or the other. If you really want both, for example practice questions on every push plus a formal assessment at the end, keep two separate workflow files, each with its own settings.
+**Push and submission tag** don't mix well in one workflow: a student who pushes and then tags would be assessed twice for the same work, which is why the Workflow Wizard offers one or the other (*Push, PR Merge, or Manual* or *Submission tag or Manual*). If you really want both, for example practice questions on every push plus a formal assessment at the end, keep two separate workflow files, each with its own settings.
 
 :::tip
 The [Workflow Wizard](../workflow-wizard.mdx) asks which trigger you want on its **Trigger** step and builds the workflow for you.
 :::
+
+**Go deeper:** [Triggers in depth](../reference/triggers.md)

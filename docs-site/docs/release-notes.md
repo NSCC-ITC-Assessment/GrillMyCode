@@ -1,6 +1,6 @@
 ---
 sidebar_label: Release Notes
-sidebar_position: 99
+sidebar_position: 12
 toc_max_heading_level: 2
 ---
 

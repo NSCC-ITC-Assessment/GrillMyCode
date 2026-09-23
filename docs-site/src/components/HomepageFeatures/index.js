@@ -4,12 +4,12 @@ import styles from './styles.module.css';
 
 const FeatureList = [
   {
-    title: 'One-Time Setup',
+    title: 'Set up once',
     Svg: require('@site/static/img/grillmycode-setup.svg').default,
     description: (
       <>
-        Add one <code>OPENROUTER_API_KEY</code> secret at the organisation level and every
-        student repository inherits it. After that, each assignment just needs the workflow file.
+        Save one OpenRouter key in your classroom&apos;s organization and every student repository
+        can use it. After that, each assignment needs just one workflow file.
       </>
     ),
   },
@@ -24,12 +24,12 @@ const FeatureList = [
     ),
   },
   {
-    title: 'Flexible Delivery',
+    title: 'Questions, and answers',
     Svg: require('@site/static/img/grillmycode-delivery.svg').default,
     description: (
       <>
-        Assessment questions are posted as a GitHub Issue and a downloadable PDF.
-        Questions are generated through OpenRouter, so you can pick any model it offers.
+        Each student gets questions about their own code, as a GitHub issue and a PDF. You can
+        also keep a private answer key, with a quiz ready to import into your LMS.
       </>
     ),
   },

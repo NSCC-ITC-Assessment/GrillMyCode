@@ -129,7 +129,7 @@ export default function StepInstructorRepo({ cfg, onChange, docsBase = '/docs' }
               */}
               <div className={styles.fieldGroup} style={{ marginTop: '1rem' }}>
                 <label className={styles.label}>
-                  Mark assessed repositories in the organisation list
+                  Mark assessed repositories in the organization list
                 </label>
                 <span className={styles.hint}>
                   Once questions have been generated, the action can mark the student repository in
@@ -140,7 +140,7 @@ export default function StepInstructorRepo({ cfg, onChange, docsBase = '/docs' }
                   whose assessment issue has since been closed, so they keep tracking live state. See
                   the{' '}
                   <a
-                    href={`${docsBase}/example-workflows/2-repo-marker`}
+                    href={`${docsBase}/example-workflows/repo-marker`}
                     target="_blank"
                     rel="noopener noreferrer"
                   >

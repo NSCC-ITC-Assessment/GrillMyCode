@@ -1,70 +1,36 @@
 ---
 sidebar_position: 1
+sidebar_label: Welcome
 slug: /
 ---
 
-# Introduction
+# Welcome to GrillMyCode
 
-**GrillMyCode** is a GitHub Action that analyses code changes and uses AI to generate targeted comprehension questions for conversational or written assessments.
+GrillMyCode writes questions about each student's own code, so you can check that they understand the work they hand in.
 
-## How it works
+When a student pushes their work, GrillMyCode reads the code they wrote and has an AI model write questions about it: why they made a choice, what a line does, what would change if the input were different. A few minutes later the questions appear in the student's repository, ready for a short conversation or a written check (often called a *code viva*).
 
-1. Detects the commit range from the triggering event (push or manual dispatch)
-2. Collects the git diff of changed files, applying include/exclude filters
-3. Strips inline and block comments from the code before sending it to the AI
-4. Sends the code to an AI provider to generate comprehension questions
-5. Creates or updates a GitHub Issue with the questions and generates a PDF
+GrillMyCode does not grade anything. It does the preparation, and you have the conversation.
 
-## Quick start
+![An assessment issue in a student's repository: the GrillMyCode header with a Download as PDF button, then questions that each quote a snippet of the student's own PHP code.](/img/screenshots/assessment-issue.png)
 
-Add this to `.github/workflows/grill-my-code.yml` in the student repository:
+## How it fits into your course
 
-```yaml
-name: GrillMyCode
+1. **You add GrillMyCode to an assignment once.** One file goes into the assignment's template repository, and every student who accepts the assignment gets a copy.
+2. **Students work as usual.** There is nothing for them to install or learn.
+3. **Each student gets their own questions.** They appear as a GitHub issue in the student's repository, with a PDF copy. You choose when: on every push, when the student says they're done, or only when you start it.
+4. **You can also get the answers.** An optional private repository, which only instructors can see, holds every student's questions with answers, plus a quiz file you can import into your LMS.
 
-on:
-  push:
-    branches: ["main", "master"]
-  workflow_dispatch:
+With the recommended AI models, an assessment usually costs less than one cent.
 
-# A new push cancels any run still in progress for the same branch,
-# so only the latest commit is ever assessed (see FAQ).
-# Do not modify this setting unless you have a compelling reason to.
-concurrency:
-  group: grillmycode-${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: true
+## Built for Classroom 50
 
-jobs:
-  generate-questions:
-    runs-on: ubuntu-latest
-    timeout-minutes: 15
-    permissions:
-      contents: write  # gmc-assessments release + PDF asset
-      issues: write    # assessment issue
-    steps:
-      - uses: actions/checkout@v6
-        with:
-          fetch-depth: 0    # full history required for diff resolution
+GrillMyCode is designed for [Classroom 50](https://github.com/foundation50/classroom50) assignments. It knows which code came from your starter template and leaves it out, so the questions are only about what the student wrote.
 
-      - uses: NSCC-ITC-Assessment/GrillMyCode@v1
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          # If desired, uncomment this input and edit to use a different one —
-          # any model from https://openrouter.ai/models (provider/model-name).
-          # ai_model: "google/gemini-3.5-flash-lite"
-```
+Not using Classroom 50? Most of GrillMyCode still works; see [What code is assessed](reference/code-selection.md).
 
-One secret is needed: `OPENROUTER_API_KEY`. Questions are generated through [OpenRouter](./ai-providers/openrouter.md), which requires its own API key. Add it once at the organisation level and every student repository inherits it.
+## Where to next
 
-## What you get
-
-- **GitHub Issue** — one per branch, automatically created and assigned to the student. The issue body is overwritten with new questions on every push — the issue number and URL stay stable. Pinned in the repository on first create.
-- **PDF download** — a PDF of the assessment is generated and attached to a rolling `gmc-assessments` release. A download link appears at the top of the issue.
-- **Instructor copy** (optional) — a private instructor-only repository receives the full assessment including answers.
-
-## Designed for Classroom 50
-
-GrillMyCode was originally built for [GitHub Classroom](https://classroom.github.com/), which GitHub is discontinuing (full shutdown August 28, 2026). It now targets [Classroom 50](https://github.com/foundation50/classroom50), the open-source replacement. The default configuration excludes template/starter code and setup files, so only code written by the student after accepting the assignment is eligible for assessment.
-
-See the [Classroom 50 guide](./guides/classroom50.md) for details.
+- **New here?** Read [How it works](how-it-works.md). It takes five minutes.
+- **Ready to set it up?** Go to [Get started](getting-started/index.md). It takes about 15 minutes.
+- **Wondering whether it's worth it?** Read [Why GrillMyCode?](rationale.md)

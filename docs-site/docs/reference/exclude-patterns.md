@@ -1,10 +1,11 @@
 ---
 sidebar_position: 3
+sidebar_label: File filtering
 ---
 
-# Exclude Patterns
+# File filtering
 
-GrillMyCode automatically detects your repository's language and framework stack and applies the appropriate exclude patterns at runtime — no manual configuration required in most cases.
+GrillMyCode detects each repository's languages and frameworks and excludes the files they generate, with no configuration needed in most cases. This page lists every rule and how patterns are matched. For a plain-language overview, see [Choosing which files are assessed](../guides/choosing-files.md).
 
 :::info[Binary files are never assessed]
 
@@ -227,14 +228,6 @@ Use `exclude_pattern_overrides` to widen what gets assessed (re-include somethin
 
 GitHub Actions workflow files (`.github/workflows/**`) are always excluded. This prevents questions from being generated about the GrillMyCode workflow file itself.
 
-## Questions about files outside the assessment
-
-The AI also sees material that isn't being assessed — [`assignment_context`](inputs-outputs.md) files and `instructor_context`. Occasionally it writes a question about one of those files, or names a file that doesn't exist. Every question starts with the name of the file it's about, so GrillMyCode checks that name against the assessed files and drops any question that doesn't match. The remaining questions are renumbered, so a report can hold fewer than `num_questions`.
-
-A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. Dropped questions are logged as a warning and listed in the run summary. If every question would be dropped, none are, and a warning asks you to check the filename headers in `raw-ai-output.md`.
-
-This check can't catch a file that *is* being assessed but shouldn't be — a file type none of the patterns above knows about. Add such files to `additional_exclude_patterns`.
-
 ## Confirming what was applied
 
 The action logs the full exclude list on every run. Look for these lines in the workflow step output:
@@ -256,27 +249,3 @@ Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 The `Scanned …` line reflects whichever manifest matched your stack — `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — and `Using gitignore templates:` lists the resolved templates accordingly (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`).
 
 If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded — the logged pattern list shows exactly which patterns are active so you can identify the culprit and decide whether to add an override.
-
-## Troubleshooting
-
-**A file I want assessed isn't showing up.**
-
-Check the `Exclude patterns applied` list in the log. Find the pattern that matches your file and either:
-- Add it to `exclude_pattern_overrides` if you want just that file through.
-- Add the specific pattern to `exclude_pattern_overrides` if you want all files of that type through.
-
-**More files are being assessed than I want.**
-
-Add the unwanted files or directories to `additional_exclude_patterns`.
-
-**The auto-detected language looks wrong.**
-
-The Languages API reflects GitHub's language detection, which is based on file extensions and heuristics. If the wrong templates are applied you can verify by checking the `Using gitignore templates:` log line. Use `additional_exclude_patterns` to fill any gaps, or `exclude_pattern_overrides` to recover files incorrectly excluded by a mismatched template.
-
-**No files are being assessed at all.**
-
-When every changed file is removed by the patterns, the run reports `All N changed file(s) were removed by the exclude patterns` and writes a job summary listing the excluded files. Identify the over-broad pattern in the `Exclude patterns applied` log line, then use `exclude_pattern_overrides` to recover the files you need.
-
-If the summary instead says the **commit range contains no changed files**, the patterns are not the cause — nothing was compared in the first place. See [the FAQ entry](../faq.md#the-run-succeeded-but-no-questions-were-generated) for that case.
-
-By default such a run still succeeds. Set [`fail_on_empty_assessment`](inputs-outputs.md) to `'true'` to have it fail instead.
