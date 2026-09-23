@@ -70,6 +70,7 @@ import {
   normaliseSeparators,
   redactStudentQuestions,
   renumberQuestions,
+  repairOrphanFences,
   splitBoldAroundCode,
   stripAnswers,
   truncateToMaxQuestions,
@@ -856,7 +857,22 @@ async function run() {
       temperature: inputs.aiTemperature,
     });
 
-    const rawQuestions = truncateToMaxQuestions(renumberQuestions(aiOutput), inputs.numQuestions);
+    // An opening fence the model left out would otherwise hide the stem and
+    // answer below it inside "code", beyond every pass that follows.
+    const { text: fencedOutput, repaired: fencesRepaired } = repairOrphanFences(aiOutput);
+    if (fencesRepaired > 0) {
+      core.warning(
+        `Restored ${fencesRepaired} missing opening code fence(s) in the AI output — ` +
+          `check those snippets in the report against the raw AI output.`,
+      );
+      state.diagnostics.push(
+        `${fencesRepaired} code snippet(s) were missing their opening fence and had one restored.`,
+      );
+    }
+    const rawQuestions = truncateToMaxQuestions(
+      renumberQuestions(fencedOutput),
+      inputs.numQuestions,
+    );
 
     // Extract the AI-generated context summary (only present when instructorContext was set).
     // One call does both halves — reading the summary and removing its region —

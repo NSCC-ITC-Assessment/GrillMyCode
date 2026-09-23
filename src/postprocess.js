@@ -115,6 +115,57 @@ export function normaliseSeparators(text) {
   return out.join('\n');
 }
 
+/**
+ * Restores an opening fence the model left out of a code snippet, by inserting
+ * one after the filename header when the snippet below it ends in a bare
+ * closing fence that nothing opened.
+ *
+ * Runs first, ahead of every pass that decides what is top level. Left alone,
+ * the orphaned closing fence is read as an opening one, so everything up to the
+ * next bare fence — the question's stem, its answer container, the --- and the
+ * next question's header — counts as code: renumbering skips the stem, and the
+ * guards in redactStudentQuestions, which do not look inside code, let the
+ * answer through to the student.
+ *
+ * A header is repaired only when the lines after it, up to that bare fence,
+ * look like a snippet: no fence with an info string, stem, separator, answer
+ * marker or further header in between. Anything less clear-cut is left as the
+ * model wrote it, for redactStudentQuestions to withhold if it must.
+ *
+ * Returns `{ text, repaired }`, where `repaired` counts the fences inserted.
+ */
+export function repairOrphanFences(text) {
+  const lines = text.split('\n');
+  let topLevel = topLevelFlags(lines);
+  let repaired = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (!topLevel[i] || !FILENAME_HEADER_RE.test(lines[i].trim())) continue;
+    let start = i + 1;
+    while (start < lines.length && lines[start].trim() === '') start++;
+    if (start >= lines.length || CODE_BLOCK_OPEN_RE.test(lines[start])) continue;
+    for (let j = start; j < lines.length; j++) {
+      const close = lines[j].match(CODE_BLOCK_CLOSE_RE);
+      if (close) {
+        lines.splice(start, 0, close[1]);
+        topLevel = topLevelFlags(lines);
+        repaired += 1;
+        break;
+      }
+      const line = lines[j];
+      if (
+        CODE_BLOCK_OPEN_RE.test(line) ||
+        QUESTION_STEM_RE.test(line) ||
+        SEPARATOR_VARIANT_RE.test(line) ||
+        ANSWER_OPEN_RE.test(line) ||
+        FILENAME_HEADER_RE.test(line.trim())
+      ) {
+        break;
+      }
+    }
+  }
+  return { text: lines.join('\n'), repaired };
+}
+
 // Markers the model wraps each answer block in (see prompt.js). They give the
 // student-facing redaction an explicit region to remove rather than inferring
 // answer boundaries from headings, and let the instructor copy drop just the
@@ -503,6 +554,14 @@ function countAnswerStructures(block) {
   return Math.max(headings, containers);
 }
 
+// An answer heading, distractor heading or answer marker starting a line. Any
+// of these left in a block after stripAnswers means some answer escaped it —
+// typically one an unbalanced fence hid inside what looked like code, where
+// neither the stem count nor the leak check looks. Anchored to the start of a
+// line so a marker quoted inside a line of student code does not trip it.
+const ANSWER_RESIDUE_RE =
+  /^[ \t]*(?:<!--\s*\/?\s*gmc:answer\s*-->|\*\*(?:Answer|Distractors for Multiple-Choice Quiz):\*\*)/im;
+
 /**
  * Fail-closed student-facing view of the answer-bearing report. Each question
  * block is stripped on its own, and withheld when either guard trips:
@@ -514,6 +573,11 @@ function countAnswerStructures(block) {
  *      merely present, so a drifted question cannot ride through on a
  *      well-formed neighbour when a missing separator or an unclosed fence
  *      puts both in one block.
+ *      It also trips when an answer heading, distractor heading or answer
+ *      marker is still there after stripping — which happens when an
+ *      unbalanced fence hides an answer inside what looks like code, beyond
+ *      reach of both the stem count and stripAnswers. repairOrphanFences
+ *      mends the common case upstream; this catches whatever it could not.
  *   2. Leak: any question's correct-answer text still appears in the stripped
  *      block (covers answers echoed outside their container alongside a normal
  *      answer block).
@@ -536,6 +600,10 @@ export function redactStudentQuestions(originalText) {
       continue;
     }
     const stripped = stripAnswers(block);
+    if (ANSWER_RESIDUE_RE.test(stripped)) {
+      structural += Math.max(stems, countAnswerStructures(block), 1);
+      continue;
+    }
     const blockNorm = normaliseForMatch(stripCodeForLeakCheck(stripped));
     if (correctAnswers.some((answer) => answerLeaksInto(blockNorm, answer))) {
       leak += stems || 1;
