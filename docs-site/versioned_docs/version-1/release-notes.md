@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.10.1 — 2026-09-23
+
+### What's Changed
+
+### Refactoring
+
+- exclude editor config and diagrams, drop questions about unassessed files
+
 ## v1.10.0 — 2026-09-23
 
 ### What's Changed
