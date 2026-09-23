@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.11.0 — 2026-09-23
+
+### What's Changed
+
+### Features
+
+- add the GrillMyCode logo to the issue, PDF and instructor README
+
 ## v1.10.3 — 2026-09-23
 
 ### What's Changed
