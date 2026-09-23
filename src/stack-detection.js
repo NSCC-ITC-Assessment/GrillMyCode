@@ -7,7 +7,12 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import * as core from '@actions/core';
-import { FALLBACK_EXCLUDE_PATTERNS, GITHUB_API_VERSION } from './constants.js';
+import {
+  EDITOR_CONFIG_EXCLUDE_PATTERNS,
+  FALLBACK_EXCLUDE_PATTERNS,
+  GITHUB_API_VERSION,
+  NON_CODE_ASSET_EXCLUDE_PATTERNS,
+} from './constants.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_PATH = join(__dirname, 'data', 'gitignore-templates.json');
@@ -61,6 +66,9 @@ const ALWAYS_EXCLUDE = [
   '**/*.log',
   '**/*.md',
   '**/*.svg',
+
+  ...EDITOR_CONFIG_EXCLUDE_PATTERNS,
+  ...NON_CODE_ASSET_EXCLUDE_PATTERNS,
 ];
 
 // Maps GitHub Languages API names to gitignore template keys when the name

@@ -27,7 +27,7 @@ The exclude patterns themselves come from three sources, merged in this order:
 
 | Source | Input | Purpose |
 |---|---|---|
-| Always-excluded | _(hardcoded)_ | Lock files, env files, OS noise, source maps, logs, Markdown — never relevant to assessment |
+| Always-excluded | _(hardcoded)_ | Lock files, env files, OS noise, source maps, logs, Markdown, editor and IDE settings, diagrams, tabular data — never relevant to assessment |
 | Auto-detected stack | _(automatic)_ | Build artifacts, dependency dirs, generated files for your specific language/framework |
 | Instructor additions | `additional_exclude_patterns` | Assignment-specific files the auto-detection wouldn't know about |
 
@@ -38,7 +38,7 @@ The final exclude list is the **union** of all three. `exclude_pattern_overrides
 When the action runs it performs up to seven lookups using the already-available `github_token`:
 
 1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` to identify all languages present in the repository (the same data shown on the repo's language bar).
-2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `grails-app/`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vscode/`, `.idea/`, etc.) to detect frameworks and editors.
+2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `grails-app/`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vs/`, `.idea/`, etc.) to detect frameworks and editors. Editor settings themselves are always excluded (see below); an editor detected here only adds its template's extra build-output patterns, such as JetBrains' `out/`.
 3. **Root filename suffix scan** — detects frameworks whose project file includes a variable component by checking whether any root entry ends with a known suffix: `.xcodeproj` / `.xcworkspace` → Xcode, `.uproject` → Unreal Engine, `.pro` → Qt, `.ipynb` → Jupyter Notebooks.
 4. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, `@tauri-apps/api`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
 5. **`composer.json` dependency scan** _(PHP repos only)_ — if a `composer.json` is found in the root, its `require` and `require-dev` entries are read and matched against known framework packages (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `codeigniter4/framework`, `yiisoft/yii2`, `cakephp/cakephp`, WordPress installers like `roots/wordpress`, etc.). Like the `package.json` scan, this identifies the framework even when its config files aren't at the repo root — for example Bedrock relocates `wp-config.php`, and Symfony Flex projects may not commit `symfony.lock`.
@@ -99,6 +99,39 @@ The following are excluded from every run regardless of detected stack:
 | `**/*.log` | Log output |
 | `**/*.md` | Markdown docs — pass assignment briefs via [`assignment_context`](../reference/inputs-outputs.md) instead |
 | `**/*.svg` | SVG assets |
+
+### Editor and IDE settings
+
+Editor configuration is excluded at any depth, so a project nested one folder down (`app/.vscode/`) is covered as well as one at the root. This applies even when stack detection falls back to the built-in list.
+
+| Editor | Patterns |
+|---|---|
+| VS Code and its forks | `**/.vscode/**`, `**/.vscode-test/**`, `**/*.code-workspace`, `**/.history/**` |
+| Visual Studio | `**/.vs/**` |
+| JetBrains IDEs, Fleet | `**/.idea/**`, `**/*.iml`, `**/*.ipr`, `**/*.iws`, `**/.fleet/**` |
+| Eclipse | `**/.project`, `**/.classpath`, `**/.factorypath`, `**/.settings/**` |
+| NetBeans | `**/nbproject/**` |
+| Xcode | `**/*.xcodeproj/**`, `**/*.xcworkspace/**`, `**/xcuserdata/**` |
+| Sublime Text, Zed, Nova, Theia | `**/*.sublime-project`, `**/*.sublime-workspace`, `**/.zed/**`, `**/.nova/**`, `**/.theia/**` |
+| Vim, Emacs | `**/*.swp`, `**/*.swo`, `**/*~`, `**/.#*`, `**/#*#`, `**/.netrwhist`, `**/Session.vim` |
+| AI coding assistants | `**/.cursor/**`, `**/.cursorrules`, `**/.cursorignore`, `**/.windsurf/**`, `**/.windsurfrules`, `**/.claude/**`, `**/.continue/**` |
+| Editor-agnostic | `**/.editorconfig`, `**/.devcontainer/**` |
+
+If an assignment asks students to write one of these — a dev container definition in a containers course, for example — re-include it with `exclude_pattern_overrides: '**/.devcontainer/**'`.
+
+### Diagrams and data
+
+Students sometimes commit a diagram of what they built, or a data file their program reads. These are plain text, so the binary check lets them through, but questions about a diagram's XML or a CSV's rows don't test the student's code.
+
+| Pattern | Reason |
+|---|---|
+| `**/*.drawio`, `**/*.dio` | draw.io / diagrams.net diagrams |
+| `**/*.excalidraw` | Excalidraw drawings |
+| `**/*.bpmn` | BPMN process diagrams |
+| `**/*.puml`, `**/*.plantuml`, `**/*.mmd` | PlantUML and Mermaid diagram sources |
+| `**/*.csv`, `**/*.tsv` | Tabular data |
+
+Re-include any of them with `exclude_pattern_overrides` when they are the deliverable (e.g. `'**/*.puml'` for a UML assignment).
 
 ## Pattern syntax
 
@@ -193,6 +226,14 @@ Use `exclude_pattern_overrides` to widen what gets assessed (re-include somethin
 ## Workflow files
 
 GitHub Actions workflow files (`.github/workflows/**`) are always excluded. This prevents questions from being generated about the GrillMyCode workflow file itself.
+
+## Questions about files outside the assessment
+
+The AI also sees material that isn't being assessed — [`assignment_context`](inputs-outputs.md) files and `instructor_context`. Occasionally it writes a question about one of those files, or names a file that doesn't exist. Every question starts with the name of the file it's about, so GrillMyCode checks that name against the assessed files and drops any question that doesn't match. The remaining questions are renumbered, so a report can hold fewer than `num_questions`.
+
+A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. Dropped questions are logged as a warning and listed in the run summary. If every question would be dropped, none are, and a warning asks you to check the filename headers in `raw-ai-output.md`.
+
+This check can't catch a file that *is* being assessed but shouldn't be — a file type none of the patterns above knows about. Add such files to `additional_exclude_patterns`.
 
 ## Confirming what was applied
 

@@ -7,6 +7,89 @@
  */
 
 /**
+ * Editor, IDE and AI-assistant configuration, excluded on every run whatever
+ * the detected stack. Stack detection only enables an editor's gitignore
+ * template when its directory sits at the repository root, and those templates
+ * deliberately keep the project files a team shares (.idea/misc.xml, *.iml,
+ * .vscode/settings.json once negations are dropped) — none of which is student
+ * code. Listed here rather than per-editor so a project nested one directory
+ * down, or a run on the fallback list, is covered the same way.
+ */
+export const EDITOR_CONFIG_EXCLUDE_PATTERNS = [
+  // VS Code and its forks
+  '**/.vscode/**',
+  '**/.vscode-test/**',
+  '**/*.code-workspace',
+  '**/.history/**',
+  // Visual Studio
+  '**/.vs/**',
+  // JetBrains IDEs and Fleet
+  '**/.idea/**',
+  '**/*.iml',
+  '**/*.ipr',
+  '**/*.iws',
+  '**/.fleet/**',
+  // Eclipse
+  '**/.project',
+  '**/.classpath',
+  '**/.factorypath',
+  '**/.settings/**',
+  // NetBeans
+  '**/nbproject/**',
+  // Xcode project bundles (generated project settings, not source)
+  '**/*.xcodeproj/**',
+  '**/*.xcworkspace/**',
+  '**/xcuserdata/**',
+  // Sublime Text, Zed, Nova, Theia
+  '**/*.sublime-project',
+  '**/*.sublime-workspace',
+  '**/.zed/**',
+  '**/.nova/**',
+  '**/.theia/**',
+  // Vim and Emacs swap, backup and session files
+  '**/*.swp',
+  '**/*.swo',
+  '**/*~',
+  '**/.#*',
+  '**/#*#',
+  '**/.netrwhist',
+  '**/Session.vim',
+  // AI coding assistants
+  '**/.cursor/**',
+  '**/.cursorrules',
+  '**/.cursorignore',
+  '**/.windsurf/**',
+  '**/.windsurfrules',
+  '**/.claude/**',
+  '**/.continue/**',
+  // Editor-agnostic settings and dev container definitions
+  '**/.editorconfig',
+  '**/.devcontainer/**',
+];
+
+/**
+ * Text files that describe or support a solution without being part of it —
+ * diagrams a student drew of what they built, and tabular data — excluded on
+ * every run. Each is plain text, so the binary check lets it through, and no
+ * language's gitignore template names it; without this list the model writes
+ * questions about a diagram's XML. An instructor who wants one assessed
+ * re-includes it with exclude_pattern_overrides.
+ */
+export const NON_CODE_ASSET_EXCLUDE_PATTERNS = [
+  // Diagrams (draw.io, Excalidraw, BPMN, PlantUML, Mermaid)
+  '**/*.drawio',
+  '**/*.dio',
+  '**/*.excalidraw',
+  '**/*.bpmn',
+  '**/*.puml',
+  '**/*.plantuml',
+  '**/*.mmd',
+  // Tabular data
+  '**/*.csv',
+  '**/*.tsv',
+];
+
+/**
  * Fallback glob patterns used when automatic stack detection fails or returns
  * no results. Covers the most common languages and build artefacts so that
  * assessments still work if the GitHub API is unreachable.
@@ -97,6 +180,9 @@ export const FALLBACK_EXCLUDE_PATTERNS = [
 
   // Documents
   '**/*.md',
+
+  ...EDITOR_CONFIG_EXCLUDE_PATTERNS,
+  ...NON_CODE_ASSET_EXCLUDE_PATTERNS,
 ];
 
 /**

@@ -393,6 +393,10 @@ When the action runs it automatically detects your stack using up to seven signa
 6. **`Gemfile` dependency scan** _(Ruby repos only)_ — reads `gem` declarations to identify the exact framework (`rails`, `jekyll`, `nanoc`) more reliably than inferring it from a `Rakefile`.
 7. **`mix.exs` dependency scan** _(Elixir repos only)_ — reads dependency tuples (e.g. `{:phoenix, ...}`) to add Phoenix web artifacts on top of the base Elixir excludes.
 
+Some files are excluded on every run, whatever the stack, at any depth: editor and IDE settings (`.vscode/`, `.idea/`, `*.iml`, Eclipse's `.project`/`.settings/`, `.cursor/`, `.editorconfig`, `.devcontainer/`, Vim/Emacs swap files, and more), diagrams (`.drawio`, `.excalidraw`, `.bpmn`, `.puml`, `.mmd`) and CSV/TSV data. Re-include any of them with `exclude_pattern_overrides`.
+
+As a backstop, any generated question whose filename header doesn't match an assessed file — for example a question about an `assignment_context` file — is dropped and the rest are renumbered.
+
 To exclude additional files specific to your assignment (starter code, fixtures, data files):
 
 ```yaml

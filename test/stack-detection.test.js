@@ -49,3 +49,21 @@ describe('detectExcludePatterns manifest decoding', () => {
     expect(core.info).toHaveBeenCalledWith('Scanned package.json — 2 deps');
   });
 });
+
+describe('detectExcludePatterns always-excluded editor and asset patterns', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('includes them when a stack is detected, with no editor directory at the root', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url) => {
+        const body = url.endsWith('/languages') ? { Python: 1000 } : [{ name: 'main.py' }];
+        return new Response(JSON.stringify(body), { status: 200 });
+      }),
+    );
+    const patterns = await detectExcludePatterns('token', 'org', 'repo');
+    expect(patterns).toEqual(
+      expect.arrayContaining(['**/.vscode/**', '**/.idea/**', '**/*.iml', '**/*.drawio']),
+    );
+  });
+});
