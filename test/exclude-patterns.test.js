@@ -3,7 +3,11 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import { filterFiles } from '../src/files.js';
-import { FALLBACK_EXCLUDE_PATTERNS } from '../src/constants.js';
+import {
+  EDITOR_CONFIG_EXCLUDE_PATTERNS,
+  FALLBACK_EXCLUDE_PATTERNS,
+  NON_CODE_ASSET_EXCLUDE_PATTERNS,
+} from '../src/constants.js';
 import { parseGitignore } from '../scripts/fetch-gitignore-templates.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -79,5 +83,70 @@ describe('FALLBACK_EXCLUDE_PATTERNS', () => {
   it('is entirely depth-independent — no pattern relies on matchBase', () => {
     const rootAnchored = FALLBACK_EXCLUDE_PATTERNS.filter((p) => !p.startsWith('**/'));
     expect(rootAnchored).toEqual([]);
+  });
+});
+
+describe('editor configuration and non-code assets', () => {
+  const nonCode = [
+    '.vscode/settings.json',
+    'app/.vscode/launch.json',
+    'workspace.code-workspace',
+    '.idea/misc.xml',
+    'backend/.idea/modules.xml',
+    'backend/backend.iml',
+    '.vs/proj/v17/DocumentLayout.json',
+    '.fleet/settings.json',
+    '.project',
+    '.classpath',
+    '.settings/org.eclipse.jdt.core.prefs',
+    'nbproject/project.xml',
+    'App.xcodeproj/project.pbxproj',
+    'proj.sublime-project',
+    '.zed/settings.json',
+    'src/.main.py.swp',
+    'src/main.py~',
+    'src/.#main.py',
+    'src/#main.py#',
+    '.cursor/rules/style.mdc',
+    '.cursorrules',
+    '.windsurf/rules.md',
+    '.claude/settings.local.json',
+    '.editorconfig',
+    '.devcontainer/devcontainer.json',
+    'diagram.drawio',
+    'docs/architecture.dio',
+    'design/flow.excalidraw',
+    'docs/process.bpmn',
+    'docs/classes.puml',
+    'docs/sequence.mmd',
+    'data/grades.csv',
+    'data/grades.tsv',
+  ];
+  const source = [
+    'src/project.py',
+    'src/settings/config.py',
+    'app/models/Session.java',
+    'src/editorconfig.js',
+    'src/data/loader.py',
+  ];
+
+  it('are excluded at any depth by the always-excluded lists', () => {
+    const patterns = [...EDITOR_CONFIG_EXCLUDE_PATTERNS, ...NON_CODE_ASSET_EXCLUDE_PATTERNS];
+    expect(filterFiles(nonCode, patterns)).toEqual([]);
+  });
+
+  it('are excluded by the fallback list too', () => {
+    expect(filterFiles(nonCode, FALLBACK_EXCLUDE_PATTERNS)).toEqual([]);
+  });
+
+  it('leave similarly named student source in place', () => {
+    const patterns = [...EDITOR_CONFIG_EXCLUDE_PATTERNS, ...NON_CODE_ASSET_EXCLUDE_PATTERNS];
+    expect(filterFiles(source, patterns)).toEqual(source);
+  });
+
+  it('can be re-included with an override', () => {
+    expect(filterFiles(['data/grades.csv'], NON_CODE_ASSET_EXCLUDE_PATTERNS, ['**/*.csv'])).toEqual(
+      ['data/grades.csv'],
+    );
   });
 });

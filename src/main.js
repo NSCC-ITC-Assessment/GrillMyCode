@@ -65,6 +65,7 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
   boldQuestionLines,
   countQuestions,
+  dropQuestionsOnUnassessedFiles,
   extractContextSummary,
   normaliseSeparators,
   redactStudentQuestions,
@@ -867,9 +868,34 @@ async function run() {
     // because both are cut on --- downstream: a missing one merges two
     // questions into one quiz item in the instructor copy, and into one block
     // that redactStudentQuestions can only withhold as a whole in the student's.
-    const cleanedQuestions = normaliseSeparators(
+    const normalisedQuestions = normaliseSeparators(
       splitBoldAroundCode(boldQuestionLines(questionsWithoutSummary.trim())),
     );
+
+    // The model also sees assignment and instructor context, and now and then
+    // asks about a file from there — or one it made up — instead of the code
+    // under assessment. Such questions are dropped from both copies.
+    const {
+      text: cleanedQuestions,
+      dropped: offTarget,
+      unassessed,
+      failedOpen,
+    } = dropQuestionsOnUnassessedFiles(normalisedQuestions, files);
+    if (offTarget > 0) {
+      core.warning(
+        `Dropped ${offTarget} question(s) about files that are not being assessed: ` +
+          `${unassessed.join(', ')}.`,
+      );
+      state.diagnostics.push(
+        `${offTarget} question(s) about files outside the assessed set were dropped ` +
+          `(${unassessed.map((f) => `\`${f}\``).join(', ')}).`,
+      );
+    } else if (failedOpen) {
+      core.warning(
+        `Every question named a file that is not being assessed (${unassessed.join(', ')}), ` +
+          `so none were dropped — check the filename headers in the raw AI output.`,
+      );
+    }
 
     // Distractors are always stripped from the student copy; the correct answer
     // too unless include_answers is set. cleanedQuestions retains both for the

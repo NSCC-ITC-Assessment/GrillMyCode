@@ -225,7 +225,7 @@ The grouping is per workflow **and** per branch (`github.ref`), so pushes to dif
 
 ### Why are some of my files not being assessed?
 
-GrillMyCode automatically detects the repository's language and framework stack and excludes build artifacts, dependency directories, and generated files. Binary files, lock files, and Markdown files are always excluded.
+GrillMyCode automatically detects the repository's language and framework stack and excludes build artifacts, dependency directories, and generated files. Binary files, lock files, Markdown files, editor and IDE settings (`.vscode/`, `.idea/`, `*.iml`, `.project` and so on), diagrams (`.drawio`, `.excalidraw`, `.puml`) and CSV/TSV data are always excluded. If you wish any of these file types to be include, you must explicitly state so in the `exclude_pattern_overrides` input.
 
 Check the `Exclude patterns applied` and `Assessing N file(s)` lines in the workflow step log to see exactly which files were included and which patterns caused exclusions.
 

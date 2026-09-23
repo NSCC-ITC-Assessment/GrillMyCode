@@ -548,6 +548,87 @@ export function redactStudentQuestions(originalText) {
 }
 
 /**
+ * Normalises a path, or a filename header's text, for comparing one against
+ * the other: forward slashes, no leading ./ or /, no trailing :line or
+ * :start-end the model sometimes appends, and lower case, since the model does
+ * not reliably preserve the capitalisation of a filename it copies.
+ */
+function normalisePathForMatch(p) {
+  return p
+    .replace(/\\/g, '/')
+    .replace(/^\.?\//, '')
+    .replace(/:\d+(?:-\d+)?$/, '')
+    .toLowerCase();
+}
+
+/** The file names a question block's top-level bold headers point at. */
+function headerFilenames(block) {
+  const lines = block.split('\n');
+  const topLevel = topLevelFlags(lines);
+  return lines
+    .filter((line, i) => topLevel[i] && FILENAME_HEADER_RE.test(line.trim()))
+    .map((line) => line.trim().replace(/^\*\*`?|`?\*\*$/g, ''));
+}
+
+/**
+ * Drops every question whose filename header names a file outside the
+ * assessed set, then renumbers what is left.
+ *
+ * The model also sees material that is not being assessed — assignment
+ * context, instructor context — and now and then writes a question about it,
+ * or about a file name it invented. A header matches an assessed file when it
+ * is that file's path or a trailing part of it (`app.py` for `src/app.py`),
+ * compared case-insensitively. A question showing several files goes if any
+ * one of them is unassessed. A question with no recognisable header is left to
+ * the structural guard and kept here.
+ *
+ * Fails open: when every question would go, the text is returned unchanged
+ * with `failedOpen` set. That outcome says more about a header format the
+ * matcher does not recognise than about the questions, and an empty report
+ * helps no one.
+ *
+ * Returns `{ text, dropped, unassessed, failedOpen }`, where `unassessed` is
+ * the distinct header names that caused a drop.
+ */
+export function dropQuestionsOnUnassessedFiles(text, assessedFiles) {
+  const assessed = assessedFiles.map(normalisePathForMatch);
+  const isAssessed = (name) => {
+    const n = normalisePathForMatch(name);
+    return assessed.some((p) => p === n || p.endsWith(`/${n}`));
+  };
+
+  const blocks = splitQuestionBlocks(text);
+  const kept = [];
+  const unassessed = new Set();
+  let dropped = 0;
+  let total = 0;
+
+  for (const block of blocks) {
+    const stems = countQuestions(block);
+    total += stems;
+    const offTarget = stems > 0 ? headerFilenames(block).filter((h) => !isAssessed(h)) : [];
+    if (offTarget.length > 0) {
+      dropped += stems;
+      offTarget.forEach((h) => unassessed.add(h));
+      continue;
+    }
+    const trimmed = block.replace(/^\n+|\n+$/g, '');
+    if (trimmed) kept.push(trimmed);
+  }
+
+  if (dropped === 0) return { text, dropped: 0, unassessed: [], failedOpen: false };
+  if (dropped === total) {
+    return { text, dropped: 0, unassessed: [...unassessed], failedOpen: true };
+  }
+  return {
+    text: renumberQuestions(kept.join('\n\n---\n\n')),
+    dropped,
+    unassessed: [...unassessed],
+    failedOpen: false,
+  };
+}
+
+/**
  * Truncates AI output to at most `maxQuestions` numbered questions.
  *
  * If the model over-generates (e.g. produces more questions than were
