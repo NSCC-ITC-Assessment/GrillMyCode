@@ -21,6 +21,15 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
+        with:
+          # The branch tip, not the commit that triggered the run. A run queued
+          # behind another in the concurrency group would otherwise start from
+          # its older triggering commit, missing the quizzes the run ahead of it
+          # just pushed. It then rebuilds those same students (their stored
+          # hashes are absent from its tree), and the .imscc files — never
+          # byte-identical, since each build embeds fresh ids and timestamps —
+          # collide add/add with the pushed copies on every rebase attempt.
+          ref: ${{ github.ref }}
 
       - name: Install Node.js dependencies
         # Exact versions, no ranges. This workflow is seeded into every
@@ -839,9 +848,15 @@ jobs:
           # it — so retry rather than going red and training people to ignore a
           # red run. --autostash covers any unstaged leftovers; a rebase that
           # stops on a conflict is aborted so the next attempt starts clean.
+          # -X theirs settles a conflicting quiz file in favour of the one just
+          # generated (during a rebase, "theirs" is the commit being replayed).
+          # Only this workflow writes quiz files and its runs are serialised, so
+          # such a conflict means the upstream copy was built from the same or
+          # older questions — retrying without it would conflict identically
+          # five times over.
           delay=5
           for attempt in 1 2 3 4 5; do
-            if git pull --rebase --autostash && git push; then
+            if git pull --rebase --autostash -X theirs && git push; then
               echo "Pushed on attempt ${attempt}."
               exit 0
             fi
