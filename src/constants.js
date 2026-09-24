@@ -519,8 +519,5 @@ export const REPO_MARKER_SWEEP_IDLE_DAYS = 10;
  */
 export const LOGO_URL = 'https://grillmycode.org/img/grillmycode-logo.svg';
 
-/** Height in pixels of the logo beside a report or README heading. */
+/** Height in pixels of the logo beside a report, PDF or README heading. */
 export const LOGO_HEADING_HEIGHT_PX = 28;
-
-/** Height in pixels of the logo in the PDF page header. */
-export const LOGO_PDF_HEADER_HEIGHT_PX = 16;

@@ -9,10 +9,10 @@ import { GIT_SHA_SHORT_LENGTH, LOGO_HEADING_HEIGHT_PX, LOGO_URL } from './consta
 
 /**
  * Logo beside the report heading. The report is also the PDF source, where
- * pdf.js drops all raw HTML, so the PDF heading falls back to plain text and
- * carries the logo in its page header instead.
+ * pdf.js drops all raw HTML except this exact tag, which it swaps for an
+ * embedded copy of the logo.
  */
-const LOGO_IMG = `<img src="${LOGO_URL}" alt="" height="${LOGO_HEADING_HEIGHT_PX}" align="absmiddle">`;
+export const LOGO_IMG = `<img src="${LOGO_URL}" alt="" height="${LOGO_HEADING_HEIGHT_PX}" align="absmiddle">`;
 
 /**
  * Assembles the full Markdown assessment report.
