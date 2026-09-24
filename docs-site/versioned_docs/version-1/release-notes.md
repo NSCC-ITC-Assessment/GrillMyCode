@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.11.2 — 2026-09-24
+
+### What's Changed
+
+### Bug Fixes
+
+- improve git pull handling in LMS quiz generation workflow
+
 ## v1.11.1 — 2026-09-24
 
 ### What's Changed
