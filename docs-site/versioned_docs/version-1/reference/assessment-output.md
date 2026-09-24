@@ -64,7 +64,7 @@ The PDF is attached to a rolling GitHub release tagged `gmc-assessments` in the 
 
 ### What the PDF contains
 
-The same report as the issue body, with the GrillMyCode logo and name at the top of every page and page numbers at the bottom. Any images or HTML in the report are left out of the PDF, so nothing in it is loaded from the web.
+The same report as the issue body, including the logo beside the heading, with the GrillMyCode name at the top of every page and page numbers at the bottom. The logo is built into the PDF, and any other images or HTML in the report are left out, so nothing in it is loaded from the web.
 
 ### File name
 

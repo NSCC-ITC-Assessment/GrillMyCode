@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.11.1 — 2026-09-24
+
+### What's Changed
+
+### Refactoring
+
+- adjust PDF generation with embedded logo and update documentation
+
 ## v1.11.0 — 2026-09-23
 
 ### What's Changed
