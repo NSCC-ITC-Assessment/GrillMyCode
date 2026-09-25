@@ -10,7 +10,7 @@ Include as much of the following as possible:
 
 - A description of the vulnerability and its potential impact
 - Steps to reproduce or a proof-of-concept
-- The affected version(s) (e.g. `@v1`, `@v1.0.2`)
+- The affected version(s) (e.g. `@v0`, `@v0.13.0`)
 - Any suggested mitigations
 
 ## Scope

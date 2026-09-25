@@ -25,6 +25,9 @@ const releasedVersions = JSON.parse(
 );
 const latestVersion = releasedVersions[0];
 const latestVersionPath = `/docs/v${latestVersion}`;
+// Retired version paths that may still be linked to. Each is redirected to the
+// latest release, page for page.
+const legacyVersionPaths = ['/docs/v1'];
 
 // ── Redirects for removed doc pages ───────────────────────────────────────────
 // The release workflow regenerates versioned_docs from docs/ on every tag, so a
@@ -65,7 +68,8 @@ function removedPageRedirects() {
     if (!target) continue;
     // The unversioned /docs/* alias is normally produced by createRedirects
     // below, but only for paths that exist in the latest release.
-    for (const from of [`${latestVersionPath}/${docPath}`, `/docs/${docPath}`]) {
+    const aliases = ['/docs', ...legacyVersionPaths].map((p) => `${p}/${docPath}`);
+    for (const from of [`${latestVersionPath}/${docPath}`, ...aliases]) {
       redirects.push({ from, to: `${latestVersionPath}/${target}` });
     }
   }
@@ -170,14 +174,17 @@ const config = {
         ],
         // Redirect bare /docs and every unversioned /docs/* path to the current
         // released version. Target is derived from latestVersion, so it follows
-        // the latest major automatically when a new version is cut.
+        // the latest major automatically when a new version is cut. Legacy
+        // version paths (see legacyVersionPaths) are redirected the same way.
         /** @param {string} existingPath */
         createRedirects(existingPath) {
           if (
             existingPath === latestVersionPath ||
             existingPath.startsWith(`${latestVersionPath}/`)
           ) {
-            return [existingPath.replace(latestVersionPath, '/docs')];
+            return ['/docs', ...legacyVersionPaths].map((p) =>
+              existingPath.replace(latestVersionPath, p),
+            );
           }
           return undefined;
         },

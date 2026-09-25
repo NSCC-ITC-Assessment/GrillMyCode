@@ -30,8 +30,8 @@ body:
     id: action-version
     attributes:
       label: Action version
-      description: The version ref used in your workflow (e.g. `@v1`, `@v1.2.0`, `@main`)
-      placeholder: "@v1"
+      description: The version ref used in your workflow (e.g. `@v0`, `@v0.13.0`, `@main`)
+      placeholder: "@v0"
     validations:
       required: true
 

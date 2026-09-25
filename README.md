@@ -50,7 +50,7 @@ jobs:
         with:
           fetch-depth: 0 # full history required for diff resolution
 
-      - uses: NSCC-ITC-Assessment/GrillMyCode@v1
+      - uses: NSCC-ITC-Assessment/GrillMyCode@v0
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
