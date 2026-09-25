@@ -28,7 +28,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   prTypes: ['opened', 'synchronize'],    // pull_request only
   pushBranches: ['main'],                // push only
   submissionTags: '',                    // tag only — comma/newline-separated tag names
-  tagDiffBase: 'cumulative',             // tag only — 'cumulative' | 'previous-tag'
+  tagDiffBase: 'cumulative',             // tag only — 'cumulative' | 'previous-tag' | 'tag:<name>'
 
   aiProvider: 'openrouter',                  // only supported value
   aiModel: 'google/gemini-3.5-flash-lite',
@@ -86,8 +86,13 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   `branches:` line, and the step always emits `submission_tags` with the same list (the action fails
   a tag run whose tag the input does not match). `tag_diff_base` is emitted only in tag mode, and
   only when non-default or exposed as a dispatch override. Patterns are validated against the same
-  charset as the action's `isSafeTagPattern` (`src/tags.js`) before the step can be left
-- `tag_diff_base` is a `tagTriggerOnly` dispatch override (`type: 'choice'`): it is offered on the
+  charset as the action's `isSafeTagPattern` (`src/tags.js`) before the step can be left. The
+  "Only work since a tag you name" radio stores `tag:<name>` from a text box shown beneath it;
+  `namedDiffBaseTagError` mirrors the action's `isSafeTagName` and blocks the step on an empty or
+  unusable name
+- `tag_diff_base` is a `tagTriggerOnly` dispatch override (`type: 'choice'`, options
+  `cumulative` / `previous-tag`, plus the configured `tag:<name>` value appended by
+  `dispatchInputLines` when one is set): it is offered on the
   Trigger step, and emitted, only in tag mode — `resolveDispatchOverrides(selected, { tagTrigger })`
 - `api_key` always emitted — OpenRouter requires it and the action fails without it
 - `discussion_category` only emitted if postDiscussion

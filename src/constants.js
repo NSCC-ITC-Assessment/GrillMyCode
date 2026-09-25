@@ -428,8 +428,20 @@ export const AI_RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504];
  *   previous-tag — the nearest earlier submission tag, so each tag assesses
  *                  only the work since the one before it. Falls back to the
  *                  cumulative base when there is no earlier tag.
+ *
+ * A value may instead name one tag, as TAG_DIFF_BASE_NAMED_PREFIX + the tag
+ * name (see below).
  */
 export const TAG_DIFF_BASE_MODES = ['cumulative', 'previous-tag'];
+
+/**
+ * Prefix of a tag_diff_base value that names the tag to diff from, as in
+ * "tag:phase1": each run assesses only the work since that tag. Unlike
+ * previous-tag it never falls back — a named tag that is missing, is not an
+ * ancestor of the assessed commit, or is on that commit fails the run, since
+ * the instructor asked for that tag specifically.
+ */
+export const TAG_DIFF_BASE_NAMED_PREFIX = 'tag:';
 
 /**
  * Default tag_diff_base. Cumulative keeps a tag run's range identical to a push

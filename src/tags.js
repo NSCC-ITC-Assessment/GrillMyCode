@@ -21,6 +21,8 @@
  * one is better served by listing the tags they do want.
  */
 
+import { TAG_DIFF_BASE_NAMED_PREFIX } from './constants.js';
+
 /**
  * Characters a pattern may contain: tag-name characters plus the glob
  * metacharacters above. Everything that could break out of the quoted YAML
@@ -34,6 +36,29 @@ const TAG_PATTERN_CHARSET_RE = /^[A-Za-z0-9._/*?+[\]-]+$/;
  * engines and is an error in others — reject both rather than guess.
  */
 const STACKED_QUANTIFIER_RE = /^[?+]|[*?+]\+/;
+
+/**
+ * A single tag name for tag_diff_base's "tag:<name>" form: the pattern
+ * charset without the glob metacharacters, since it names one tag rather than
+ * matching several. A leading `-` or `/` is rejected too, so the name can never
+ * be read as a git option or leave `refs/tags/` when prefixed with it.
+ */
+const TAG_NAME_RE = /^[A-Za-z0-9._][A-Za-z0-9._/-]*$/;
+
+/** True when `name` is a plain tag name usable in tag_diff_base's tag: form. */
+export function isSafeTagName(name) {
+  return TAG_NAME_RE.test(name) && !name.includes('..') && !name.endsWith('/');
+}
+
+/**
+ * The tag named by a parsed tag_diff_base value of the "tag:<name>" form, or ''
+ * for any other mode. inputs.js has already validated the name.
+ */
+export function namedDiffBaseTag(tagDiffBase) {
+  return tagDiffBase?.startsWith(TAG_DIFF_BASE_NAMED_PREFIX)
+    ? tagDiffBase.slice(TAG_DIFF_BASE_NAMED_PREFIX.length)
+    : '';
+}
 
 /** True when a pattern is in the supported syntax (see the module comment). */
 export function isSafeTagPattern(pattern) {

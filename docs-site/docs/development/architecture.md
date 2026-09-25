@@ -46,7 +46,7 @@ resolveSHAs()
     │  Determines baseSha and headSha from the event context
     │  Handles: push, workflow_dispatch, and tag runs (head peeled to its commit)
     │  Applies include_initial_commit override when enabled
-    │  Applies tag_diff_base: previous-tag on a tag run
+    │  Applies tag_diff_base (previous-tag / tag:<name>) on a tag run
     │
 resolveBranch()  — or, on a tag run, assertOnDefaultBranch()
     │  Extracts the branch name from the event payload or GITHUB_REF
@@ -186,7 +186,7 @@ Determines the base and head SHAs for the diff. Handles two event types:
 
 After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for Classroom 50 to exclude starter template files.
 
-On a run started by a submission tag (`{ tagName }` passed as the fourth argument), the head is the tagged commit, peeled with `git rev-parse <sha>^{commit}` because an annotated tag's push names the tag object. With `tag_diff_base: previous-tag`, the base then moves to the nearest strict ancestor carrying a tag that matches any `submission_tags` pattern (`pickPreviousSubmissionTag` in `src/tags.js`); with none, the base above stands. The chosen tag is returned as `previousTag`.
+On a run started by a submission tag (`{ tagName }` passed as the fourth argument), the head is the tagged commit, peeled with `git rev-parse <sha>^{commit}` because an annotated tag's push names the tag object. With `tag_diff_base: previous-tag`, the base then moves to the nearest strict ancestor carrying a tag that matches any `submission_tags` pattern (`pickPreviousSubmissionTag` in `src/tags.js`); with none, the base above stands. With `tag_diff_base: tag:<name>`, the base moves to that tag instead (`resolveTagCommit` in `src/git.js`, looked up under `refs/tags/`), and the run throws if the tag is missing, is not an ancestor of the head, or is on the head itself; it is skipped when `base_sha` is set. The chosen tag is returned as `previousTag`.
 
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
 

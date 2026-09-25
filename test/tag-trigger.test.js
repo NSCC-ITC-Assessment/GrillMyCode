@@ -13,6 +13,7 @@ vi.mock('../src/git.js', () => ({
   listAncestors: vi.fn(() => []),
   refExists: vi.fn(() => true),
   isAncestor: vi.fn(() => true),
+  resolveTagCommit: vi.fn(() => ''),
 }));
 
 const git = await import('../src/git.js');
@@ -52,6 +53,7 @@ beforeEach(() => {
   git.listAncestors.mockReturnValue([]);
   git.refExists.mockReturnValue(true);
   git.isAncestor.mockReturnValue(true);
+  git.resolveTagCommit.mockReturnValue('');
 });
 
 afterEach(() => {
@@ -160,6 +162,66 @@ describe('resolveSHAs on a tag run', () => {
       { tagName: 'phase2' },
     );
     expect(baseSha).toBe(overrideBase);
+  });
+
+  it('starts the diff at the named tag under tag:<name>', async () => {
+    git.resolveTagCommit.mockReturnValue(PHASE1_COMMIT);
+    const { baseSha, previousTag } = await resolveSHAs(
+      tagPushCtx(),
+      octokit,
+      inputs({ tagDiffBase: 'tag:phase1' }),
+      { tagName: 'phase2' },
+    );
+    expect(git.resolveTagCommit).toHaveBeenCalledWith('phase1');
+    expect(git.isAncestor).toHaveBeenCalledWith(PHASE1_COMMIT, TAGGED_COMMIT);
+    expect(baseSha).toBe(PHASE1_COMMIT);
+    expect(previousTag).toEqual({ name: 'phase1', commit: PHASE1_COMMIT });
+  });
+
+  it('fails when the named tag does not exist', async () => {
+    await expect(
+      resolveSHAs(tagPushCtx(), octokit, inputs({ tagDiffBase: 'tag:phase1' }), {
+        tagName: 'phase2',
+      }),
+    ).rejects.toThrow(/no tag "phase1"/);
+  });
+
+  it('fails when the named tag is on the assessed commit', async () => {
+    git.resolveTagCommit.mockReturnValue(TAGGED_COMMIT);
+    await expect(
+      resolveSHAs(tagPushCtx(), octokit, inputs({ tagDiffBase: 'tag:phase2' }), {
+        tagName: 'phase2',
+      }),
+    ).rejects.toThrow(/on the commit being assessed/);
+  });
+
+  it('fails when the named tag is not an ancestor of the assessed commit', async () => {
+    git.resolveTagCommit.mockReturnValue(PHASE1_COMMIT);
+    git.isAncestor.mockReturnValue(false);
+    await expect(
+      resolveSHAs(tagPushCtx(), octokit, inputs({ tagDiffBase: 'tag:phase1' }), {
+        tagName: 'phase2',
+      }),
+    ).rejects.toThrow(/not an earlier commit/);
+  });
+
+  it('does not look the named tag up when a manual base_sha is set', async () => {
+    const overrideBase = 'e'.repeat(40);
+    const { baseSha } = await resolveSHAs(
+      tagPushCtx(),
+      octokit,
+      inputs({ tagDiffBase: 'tag:phase1', baseSha: overrideBase }),
+      { tagName: 'phase2' },
+    );
+    expect(git.resolveTagCommit).not.toHaveBeenCalled();
+    expect(baseSha).toBe(overrideBase);
+  });
+
+  it('ignores the named tag on a branch push', async () => {
+    const ctx = { ...tagPushCtx(), ref: 'refs/heads/main' };
+    ctx.payload.after = TAGGED_COMMIT;
+    await resolveSHAs(ctx, octokit, inputs({ tagDiffBase: 'tag:phase1' }));
+    expect(git.resolveTagCommit).not.toHaveBeenCalled();
   });
 
   it('leaves a branch push untouched by the tag logic', async () => {

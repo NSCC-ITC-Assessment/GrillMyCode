@@ -20,8 +20,9 @@ import {
   listTags,
   peelToCommit,
   refExists,
+  resolveTagCommit,
 } from './git.js';
-import { findMatchingTagPattern, pickPreviousSubmissionTag } from './tags.js';
+import { findMatchingTagPattern, namedDiffBaseTag, pickPreviousSubmissionTag } from './tags.js';
 
 /**
  * Determines the base and head commit SHAs for the diff based on the
@@ -38,7 +39,8 @@ import { findMatchingTagPattern, pickPreviousSubmissionTag } from './tags.js';
  * tagName is set for a run started by a submission tag (see resolveTagName).
  * The tagged commit is then the head — peeled, because an annotated tag's push
  * names the tag object rather than the commit — and with tag_diff_base set to
- * previous-tag the base moves up to the nearest earlier submission tag.
+ * previous-tag the base moves up to the nearest earlier submission tag, and
+ * with tag:<name> to that tag, failing the run if it cannot be used.
  *
  * Returns { baseSha, headSha, previousTag }, where previousTag is the
  * { name, commit } the base was moved to, or null.
@@ -136,6 +138,45 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
           `${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}; using the cumulative base instead.`,
       );
     }
+  }
+
+  // ── Apply tag_diff_base: tag:<name> ────────────────────────────────────────
+  // The instructor named the tag to diff from, so there is no fallback: a tag
+  // that is missing, sits on another line of history or is on the assessed
+  // commit itself fails the run rather than quietly assessing a wider or empty
+  // range. Skipped when base_sha is set, since that override wins anyway and a
+  // missing tag should not fail a run that would never use it.
+  const namedTag = namedDiffBaseTag(inputs.tagDiffBase);
+  if (tagName && namedTag && !inputs.baseSha) {
+    const commit = resolveTagCommit(namedTag);
+    if (!commit) {
+      throw new Error(
+        `tag_diff_base is "${inputs.tagDiffBase}", but there is no tag "${namedTag}" in this ` +
+          `repository. Check the tag name, that the student has pushed it, and that the ` +
+          `checkout step sets fetch-depth: 0 so tags are fetched.`,
+      );
+    }
+    if (commit === headSha) {
+      throw new Error(
+        `tag_diff_base is "${inputs.tagDiffBase}", but tag "${namedTag}" is on the commit being ` +
+          `assessed (${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}), so there is no work since ` +
+          `it to assess.`,
+      );
+    }
+    if (!isAncestor(commit, headSha)) {
+      throw new Error(
+        `tag_diff_base is "${inputs.tagDiffBase}", but tag "${namedTag}" ` +
+          `(${commit.substring(0, GIT_SHA_SHORT_LENGTH)}) is not an earlier commit in the history ` +
+          `of ${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}, so the work since it cannot be ` +
+          `worked out.`,
+      );
+    }
+    previousTag = { name: namedTag, commit: sanitiseSha(commit) };
+    baseSha = previousTag.commit;
+    core.info(
+      `tag_diff_base is ${inputs.tagDiffBase}: base set to ` +
+        `${commit.substring(0, GIT_SHA_SHORT_LENGTH)}, so only work since that tag is assessed.`,
+    );
   }
 
   // ── Apply skip_committers ────────────────────────────────────────────────

@@ -3,7 +3,14 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { isAncestor, listAncestors, listTags, peelToCommit, refExists } from '../src/git.js';
+import {
+  isAncestor,
+  listAncestors,
+  listTags,
+  peelToCommit,
+  refExists,
+  resolveTagCommit,
+} from '../src/git.js';
 
 // These helpers parse real git output (peeled annotated tags, exit-code
 // answers), so they run against a throwaway repository rather than a mock.
@@ -49,6 +56,16 @@ afterAll(() => {
 });
 
 describe('git tag helpers', () => {
+  it('resolves a lightweight or annotated tag name to its commit', () => {
+    expect(resolveTagCommit('phase1')).toBe(commits.one);
+    expect(resolveTagCommit('phase2')).toBe(commits.two);
+  });
+
+  it('returns an empty string for a missing tag, and never picks up a branch', () => {
+    expect(resolveTagCommit('phase3')).toBe('');
+    expect(resolveTagCommit('side')).toBe('');
+  });
+
   it('lists lightweight and annotated tags with the commit each points at', () => {
     const tags = Object.fromEntries(listTags().map((t) => [t.name, t.commit]));
     expect(tags).toEqual({ phase1: commits.one, phase2: commits.two });

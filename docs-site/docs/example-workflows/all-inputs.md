@@ -206,7 +206,8 @@ jobs:
 
           # What a tag run assesses: "cumulative" (default) — all work to
           # date; "previous-tag" — only the work since the nearest earlier
-          # submission tag.
+          # submission tag; "tag:phase1" — only the work since that tag
+          # (the run fails if the tag is missing or not an earlier commit).
           # tag_diff_base: "cumulative"
 
           # Manually override the base and/or head commit SHA.

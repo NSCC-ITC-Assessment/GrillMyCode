@@ -91,6 +91,25 @@ export function invalidSubmissionTags(cfg) {
   );
 }
 
+// Mirrors isSafeTagName in the action's src/tags.js, for tag_diff_base's
+// "tag:<name>" form. Keep the two in step.
+const TAG_NAME_RE = /^[A-Za-z0-9._][A-Za-z0-9._/-]*$/;
+
+/**
+ * Why the "tag:<name>" diff base cannot be emitted, or '' when it can (or when
+ * another mode is chosen). The action fails every run on a bad name.
+ */
+export function namedDiffBaseTagError(cfg) {
+  const value = cfg.tagDiffBase || '';
+  if (!value.startsWith('tag:')) return '';
+  const name = value.slice('tag:'.length);
+  if (!name) return 'Please enter the tag to compare against before continuing.';
+  if (!TAG_NAME_RE.test(name) || name.includes('..') || name.endsWith('/')) {
+    return `"${name}" is not a usable tag name. Use letters, digits and . _ / - with no wildcards.`;
+  }
+  return '';
+}
+
 const DEFAULTS = {
   aiProvider: 'openrouter',
   // Compared against the resolved model (base + routing variant), so choosing a
@@ -217,9 +236,13 @@ function dispatchInputLines(cfg, overrideKeys) {
       lines.push("        options: ['false', 'true']");
       lines.push(`        default: ${yamlSingle(value === 'true' ? 'true' : 'false')}`);
     } else if (meta.type === 'choice') {
+      // A value outside the fixed options — tag_diff_base's "tag:<name>" form —
+      // is offered as an extra option rather than dropped, so the form's
+      // default still matches what an automatic run uses.
+      const options = meta.options.includes(value) || !value ? meta.options : [...meta.options, value];
       lines.push('        type: choice');
-      lines.push(`        options: [${meta.options.map(yamlSingle).join(', ')}]`);
-      lines.push(`        default: ${yamlSingle(meta.options.includes(value) ? value : meta.options[0])}`);
+      lines.push(`        options: [${options.map(yamlSingle).join(', ')}]`);
+      lines.push(`        default: ${yamlSingle(options.includes(value) ? value : options[0])}`);
     } else {
       lines.push('        required: false');
       lines.push(`        default: ${yamlSingle(value)}`);
