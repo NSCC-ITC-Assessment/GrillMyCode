@@ -19,6 +19,7 @@ import {
   AI_TOP_P,
   EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
   SUMMARY_FILE_TABLE_LIMIT,
+  GIT_EMPTY_TREE_SHA,
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
@@ -33,13 +34,17 @@ import {
   safeFilePart,
 } from './context.js';
 import { resolveSubmissionIdentity } from './submission-identity.js';
-import { getChangedFiles, getDiff, getDiffStat } from './git.js';
+import { getChangedFiles, getDiff, getDiffStat, getFirstCommit } from './git.js';
 import {
   filterFiles,
+  collectFilesAt,
   collectRawFiles,
   stripCommentsFromFiles,
+  buildAssessedCodeContent,
   buildCodeContent,
+  findCodebaseContextFiles,
   readAssignmentContextFiles,
+  selectCodebaseContext,
 } from './files.js';
 import { detectExcludePatterns } from './stack-detection.js';
 import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
@@ -132,6 +137,16 @@ function createRunState() {
     excludePatterns: [],
     excludePatternOverrides: [],
     assignmentContextFiles: [],
+    // Assessed files that existed before the range, sent with the student's
+    // lines marked (see buildAssessedCodeContent).
+    markedFiles: [],
+    // include_codebase_context: the starter files and the files of earlier
+    // work sent as context, those left out to stay within the size limit, and
+    // the characters sent. codebaseContextChars stays null when it is off.
+    codebaseStarterFiles: [],
+    codebaseEarlierFiles: [],
+    codebaseContextOmitted: [],
+    codebaseContextChars: null,
 
     diffChars: null,
     rawChars: null,
@@ -284,13 +299,20 @@ function renderAssessedFiles(state) {
     );
   }
 
+  const marked =
+    state.markedFiles.length > 0
+      ? `\n${fmtNum(state.markedFiles.length)} of these file(s) existed before this submission, ` +
+        `so questions were limited to the lines added or changed in it.\n`
+      : '';
+
   return (
     `### Files assessed\n\n` +
     table(['File', 'Added', 'Removed'], rows) +
     overflowNote(state.files.length, shown.length) +
     `\n**Total:** +${fmtNum(totals.added)} / −${fmtNum(totals.removed)} lines` +
     (sizes.length > 0 ? ` · ${sizes.join(' · ')}` : '') +
-    `\n`
+    `\n` +
+    marked
   );
 }
 
@@ -368,6 +390,7 @@ function renderConfiguration(state) {
         ? state.assignmentContextFiles.map((f) => `\`${f}\``).join(', ')
         : 'none',
     ],
+    ['Codebase context', renderCodebaseContextSetting(state)],
   ];
 
   const note = i.includeAnswers
@@ -376,6 +399,22 @@ function renderConfiguration(state) {
     : '';
 
   return details('Configuration used by this run', table(['Setting', 'Value'], rows) + note);
+}
+
+/** The include_codebase_context row of the configuration table. */
+function renderCodebaseContextSetting(state) {
+  if (!state.inputs.includeCodebaseContext) return 'off';
+  if (state.codebaseContextChars === null) return 'on — not used by this run';
+  const starter = state.codebaseStarterFiles.length;
+  const earlier = state.codebaseEarlierFiles.length;
+  return (
+    `on — ${fmtNum(starter)} starter file${starter === 1 ? '' : 's'}, ` +
+    `${fmtNum(earlier)} file${earlier === 1 ? '' : 's'} of earlier work, ` +
+    `${fmtNum(state.codebaseContextChars)} chars` +
+    (state.codebaseContextOmitted.length > 0
+      ? `, ${fmtNum(state.codebaseContextOmitted.length)} left out for size`
+      : '')
+  );
 }
 
 /**
@@ -602,6 +641,87 @@ async function reportEmptyAssessment({
   }
 }
 
+/**
+ * Reads the rest of the codebase to send as context under
+ * include_codebase_context: every file at the head that passes the exclude
+ * patterns, did not change in the assessed range, and was not touched by the
+ * bot commits skip_committers stepped over. Those are the files the
+ * assessment itself leaves out, and they come in two kinds:
+ *
+ *   starter — unchanged since the first commit, so code the student was given.
+ *             Only when include_initial_commit is off; with it on, the first
+ *             commit is the student's own work.
+ *   earlier — changed before the range but not in it: the student's own work
+ *             from an earlier submission, once tag_diff_base or base_sha moves
+ *             the base past the first commit.
+ *
+ * A file unchanged in the range is identical at the base and the head, so a
+ * starter file read here is byte-for-byte the first commit's copy.
+ *
+ * Records what it chose on `state` and returns `{ starterContent,
+ * earlierContent }` ('' for a kind with nothing to send).
+ */
+function loadCodebaseContext({
+  state,
+  inputs,
+  baseSha,
+  headSha,
+  skippedRange,
+  files,
+  excludePatterns,
+}) {
+  const none = { starterContent: '', earlierContent: '' };
+  if (baseSha === GIT_EMPTY_TREE_SHA) {
+    core.info(
+      'Codebase context: the whole history is being assessed, so there is no other code to add.',
+    );
+    state.codebaseContextChars = 0;
+    return none;
+  }
+
+  const found = findCodebaseContextFiles({
+    baseSha,
+    headSha,
+    firstCommit: inputs.includeInitialCommit ? null : getFirstCommit(),
+    excludePatterns,
+    excludePatternOverrides: inputs.excludePatternOverrides,
+    assessedFiles: files,
+    skippedRange,
+  });
+  const kindOf = new Map(found.map((f) => [f.filepath, f.kind]));
+  let candidates = found.map(({ filepath, content }) => ({ filepath, content }));
+  if (!inputs.keepComments) candidates = stripCommentsFromFiles(candidates).strippedFiles;
+  const selection = selectCodebaseContext(
+    candidates.map((f) => ({ ...f, kind: kindOf.get(f.filepath) })),
+    files,
+    inputs.codebaseContextMaxChars,
+  );
+  const { starterContent, earlierContent, starterFiles, earlierFiles, omitted } = selection;
+  state.codebaseStarterFiles = starterFiles;
+  state.codebaseEarlierFiles = earlierFiles;
+  state.codebaseContextOmitted = omitted;
+  state.codebaseContextChars = starterContent.length + earlierContent.length;
+
+  core.info(
+    `Codebase context: ${starterFiles.length} starter file(s)` +
+      (starterFiles.length > 0 ? ` (${starterFiles.join(', ')})` : '') +
+      `, ${earlierFiles.length} file(s) of earlier work` +
+      (earlierFiles.length > 0 ? ` (${earlierFiles.join(', ')})` : '') +
+      `, ${state.codebaseContextChars} characters.`,
+  );
+  if (omitted.length > 0) {
+    core.warning(
+      `Codebase context: ${omitted.length} file(s) left out to stay within ` +
+        `codebase_context_max_chars (${inputs.codebaseContextMaxChars}): ${omitted.join(', ')}.`,
+    );
+    state.diagnostics.push(
+      `${fmtNum(omitted.length)} file(s) were left out of the codebase context to stay within ` +
+        `\`codebase_context_max_chars\`.`,
+    );
+  }
+  return { starterContent, earlierContent };
+}
+
 // ─── Entry Point ─────────────────────────────────────────────────────────────
 
 async function run() {
@@ -662,9 +782,14 @@ async function run() {
     }
 
     // ── Resolve the commit range ────────────────────────────────────────────
-    const { baseSha, headSha, previousTag } = await resolveSHAs(ctx, octokit, inputs, {
-      tagName,
-    });
+    const { baseSha, headSha, previousTag, skippedRange } = await resolveSHAs(
+      ctx,
+      octokit,
+      inputs,
+      {
+        tagName,
+      },
+    );
     state.baseSha = baseSha;
     state.headSha = headSha;
     state.previousTagName = previousTag?.name ?? '';
@@ -789,7 +914,49 @@ async function run() {
       processedFiles = strippedFiles;
     }
 
-    let codeContent = buildCodeContent(processedFiles);
+    // ── Mark the student's lines in files that existed before the range ────
+    // The base copy is processed exactly like the head copy, so the comparison
+    // is between the two versions the AI would see. With the empty tree as the
+    // base every file is new and nothing is marked.
+    let baseFiles =
+      baseSha === GIT_EMPTY_TREE_SHA
+        ? []
+        : collectFilesAt(
+            processedFiles.map((f) => f.filepath),
+            baseSha,
+          );
+    if (!inputs.keepComments && baseFiles.length > 0) {
+      baseFiles = stripCommentsFromFiles(baseFiles).strippedFiles;
+    }
+    const assessed = buildAssessedCodeContent(
+      processedFiles,
+      new Map(baseFiles.map((f) => [f.filepath, f.content])),
+    );
+
+    let codeContent;
+    if (assessed.markedFiles.length > 0 && assessed.addedLines === 0) {
+      // Every change was to comments, whitespace or deletions, so no line is
+      // the student's to ask about. Assess the files whole rather than send
+      // the AI a submission with nothing in it to question.
+      codeContent = buildCodeContent(processedFiles);
+      state.diagnostics.push(
+        'No lines of code were added or changed once comments were set aside, so the ' +
+          "assessed files were sent whole, without the student's lines marked.",
+      );
+      core.warning(
+        'No added or changed lines of code were found in the assessed files — sending them ' +
+          "whole, without marking the student's lines.",
+      );
+    } else {
+      codeContent = assessed.content;
+      state.markedFiles = assessed.markedFiles;
+      if (assessed.markedFiles.length > 0) {
+        core.info(
+          `Marked the student's lines in ${assessed.markedFiles.length} file(s) that existed ` +
+            `before this submission: ${assessed.markedFiles.join(', ')}`,
+        );
+      }
+    }
     // Fall back to the raw diff if processing produced no output
     if (codeContent.trim() === '') {
       codeContent = diff;
@@ -812,6 +979,20 @@ async function run() {
     }
     // Paths only — the contents are instructor material and never rendered.
     state.assignmentContextFiles = assignmentContextFiles;
+
+    const { starterContent: starterContext, earlierContent: earlierContext } =
+      inputs.includeCodebaseContext
+        ? loadCodebaseContext({
+            state,
+            inputs,
+            baseSha,
+            headSha,
+            skippedRange,
+            files,
+            excludePatterns,
+          })
+        : { starterContent: '', earlierContent: '' };
+    const codebaseContextFiles = [...state.codebaseStarterFiles, ...state.codebaseEarlierFiles];
 
     // Distractors are stripped from every student-facing copy and are never
     // set as an output, so the instructor repository is the only place they
@@ -837,6 +1018,9 @@ async function run() {
       instructorContext: inputs.instructorContext,
       assignmentContext,
       includeDistractors,
+      markedFiles: state.markedFiles,
+      starterContext,
+      earlierContext,
     });
     core.debug(`Prompt messages:\n${JSON.stringify(messages, null, 2)}`);
 
@@ -892,13 +1076,14 @@ async function run() {
 
     // The model also sees assignment and instructor context, and now and then
     // asks about a file from there — or one it made up — instead of the code
-    // under assessment. Such questions are dropped from both copies.
+    // under assessment. Such questions are dropped from both copies, as is one
+    // that shows codebase context without any assessed code beside it.
     const {
       text: cleanedQuestions,
       dropped: offTarget,
       unassessed,
       failedOpen,
-    } = dropQuestionsOnUnassessedFiles(normalisedQuestions, files);
+    } = dropQuestionsOnUnassessedFiles(normalisedQuestions, files, codebaseContextFiles);
     if (offTarget > 0) {
       core.warning(
         `Dropped ${offTarget} question(s) about files that are not being assessed: ` +
@@ -961,6 +1146,7 @@ async function run() {
       tagName,
       previousTagName: state.previousTagName,
       assignmentContextFiles,
+      codebaseContextFiles,
       contextSummary,
       studentLogin: submitter,
       sourceRepo,
@@ -1011,6 +1197,7 @@ async function run() {
       tagName,
       previousTagName: state.previousTagName,
       assignmentContextFiles,
+      codebaseContextFiles,
       contextSummary,
       studentLogin: submitter,
       sourceRepo,
@@ -1142,6 +1329,7 @@ async function run() {
         tagName,
         previousTagName: state.previousTagName,
         assignmentContextFiles,
+        codebaseContextFiles,
         contextSummary,
         studentLogin: submitter,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,

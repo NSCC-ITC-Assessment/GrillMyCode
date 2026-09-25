@@ -92,6 +92,8 @@ Use `tag:<name>` in a workflow that runs for **one** milestone, such as a `phase
 
 A manual `base_sha` takes precedence over all three.
 
+With `previous-tag` or `tag:<name>`, earlier work isn't assessed again, but the AI can still see it. In files the new work edits, the earlier lines are shown around the marked new ones; see [Files that existed at the base](code-selection.md#files-that-existed-at-the-base). Earlier files the new work didn't touch are sent as background only with `include_codebase_context`; see [Codebase context](code-selection.md#codebase-context).
+
 ### Resubmitting
 
 A student resubmits by moving the tag and force-pushing it:

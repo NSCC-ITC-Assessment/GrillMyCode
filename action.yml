@@ -197,6 +197,38 @@ inputs:
     required: false
     default: "false"
 
+  include_codebase_context:
+    description: >
+      When true, the rest of the project is sent to the AI as background, so
+      questions about the code being assessed can draw on what it calls,
+      extends or is called by. "The rest" is every eligible file left once the
+      exclusions are applied and the assessed files are set aside: every file
+      that passes the exclude patterns and did not change in the assessed
+      range. That is
+      starter code the student has never changed and, when the assessed range
+      starts after the first commit (tag_diff_base: previous-tag or tag:<name>,
+      or base_sha), the student's own earlier work that this submission did
+      not touch. Files left out by a rule (exclude patterns, commits skipped
+      by skip_committers, binary files) are never sent. The AI is told never
+      to ask about these files on their own, and a question that shows only
+      them is dropped. When the whole history is assessed
+      (include_initial_commit true with no later base) there is nothing left
+      to add. Independent of this setting, a file that existed
+      before the assessed range is always assessed with the student's added
+      and changed lines marked, and questions are limited to those lines.
+    required: false
+    default: "false"
+
+  codebase_context_max_chars:
+    description: >
+      Maximum total characters sent as codebase context when
+      include_codebase_context is true. Starter code and earlier work share
+      the limit. Files are added whole, those in the same folders as the
+      assessed files first; a file that would exceed the limit is left out and
+      counted in the run summary. Values below 1 are clamped to 1.
+    required: false
+    default: "50000"
+
   fail_on_empty_assessment:
     description: >
       When true, a run that finds nothing to assess fails instead of succeeding.
@@ -336,6 +368,8 @@ runs:
     INPUT_ASSIGNMENT_CONTEXT_MAX_CHARS: ${{ inputs.assignment_context_max_chars }}
     INPUT_INSTRUCTOR_CONTEXT: ${{ inputs.instructor_context }}
     INPUT_INCLUDE_INITIAL_COMMIT: ${{ inputs.include_initial_commit }}
+    INPUT_INCLUDE_CODEBASE_CONTEXT: ${{ inputs.include_codebase_context }}
+    INPUT_CODEBASE_CONTEXT_MAX_CHARS: ${{ inputs.codebase_context_max_chars }}
     INPUT_KEEP_COMMENTS: ${{ inputs.keep_comments }}
     INPUT_FAIL_ON_EMPTY_ASSESSMENT: ${{ inputs.fail_on_empty_assessment }}
     INPUT_SKIP_COMMITTERS: ${{ inputs.skip_committers }}

@@ -127,3 +127,34 @@ describe('head_sha override reaches skip_committers', () => {
     ]);
   });
 });
+
+describe('skip_committers reports the span it skipped', () => {
+  const BOT_COMMIT = 'f'.repeat(40);
+
+  // The span is what keeps a skipped bot commit's files out of the codebase
+  // context as well as out of the assessment.
+  it('returns the base before and after the skip', async () => {
+    getLeadingSkipCandidates.mockReturnValue([
+      { sha: BOT_COMMIT, email: 'bot@example.com', name: 'github-actions[bot]' },
+    ]);
+    octokit.rest.repos.getCommit.mockResolvedValue({
+      data: { author: { login: 'github-actions[bot]' }, committer: null },
+    });
+    const { baseSha, skippedRange } = await resolveSHAs(
+      pushCtx(),
+      octokit,
+      inputs({ skipCommitters: ['github-actions[bot]'] }),
+    );
+    expect(baseSha).toBe(BOT_COMMIT);
+    expect(skippedRange).toEqual({ from: GIT_EMPTY_TREE_SHA, to: BOT_COMMIT });
+  });
+
+  it('returns null when nothing was skipped', async () => {
+    const { skippedRange } = await resolveSHAs(
+      pushCtx(),
+      octokit,
+      inputs({ skipCommitters: ['github-actions[bot]'] }),
+    );
+    expect(skippedRange).toBeNull();
+  });
+});

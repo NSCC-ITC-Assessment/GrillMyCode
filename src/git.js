@@ -7,7 +7,10 @@
  */
 
 import { spawnSync } from 'child_process';
-import { GIT_EMPTY_TREE_SHA, GIT_MAX_BUFFER } from './constants.js';
+import fs from 'fs';
+import os from 'os';
+import path from 'path';
+import { GIT_EMPTY_TREE_SHA, GIT_MAX_BUFFER, LINE_MARKERS } from './constants.js';
 
 /**
  * Runs a git command using spawnSync and returns stdout.
@@ -36,6 +39,95 @@ export function getChangedFiles(baseSha, headSha) {
 
 export function getDiff(baseSha, headSha, files) {
   return git('diff', baseSha, headSha, '--', ...files);
+}
+
+/**
+ * Every file path in a commit's tree. NUL-delimited so a path git would
+ * otherwise quote (non-ASCII, embedded quotes) comes back exactly as written.
+ */
+export function listTreeFiles(sha) {
+  return git('ls-tree', '-r', '--name-only', '-z', sha).split('\0').filter(Boolean);
+}
+
+/** Paths that differ between two commits, NUL-delimited like listTreeFiles. */
+export function listChangedPaths(fromSha, toSha) {
+  return git('diff', '--name-only', '-z', fromSha, toSha).split('\0').filter(Boolean);
+}
+
+/**
+ * A file's content at a commit, or null when the file does not exist there.
+ * The empty tree has no files, so it answers null without asking git.
+ */
+export function readFileAt(sha, filepath) {
+  if (sha === GIT_EMPTY_TREE_SHA) return null;
+  const result = spawnSync('git', ['show', `${sha}:${filepath}`], {
+    encoding: 'utf-8',
+    maxBuffer: GIT_MAX_BUFFER,
+  });
+  if (result.error) throw result.error;
+  return result.status === 0 ? result.stdout : null;
+}
+
+/**
+ * Line-by-line comparison of two texts, returned as the whole of the new text
+ * interleaved with the removed lines of the old: `[{ marker, text }]`, where
+ * marker is one of LINE_MARKERS.
+ *
+ * The texts are compared rather than two commits because the caller compares
+ * them after comment stripping — marking lines of the unstripped file would
+ * point the AI at lines it never sees. git does the diffing (`--no-index`
+ * works on any two files), with enough context lines that the whole file
+ * lands in a single hunk, so everything after the first @@ header is the file.
+ */
+export function diffLines(oldRaw, newRaw) {
+  // A missing final newline or a switch to CRLF line endings would otherwise
+  // mark lines the student never touched as theirs.
+  const normalise = (text) => text.replace(/\r\n/g, '\n').replace(/\n?$/, '\n');
+  const oldText = normalise(oldRaw);
+  const newText = normalise(newRaw);
+  const splitLines = (text) => text.replace(/\n$/, '').split('\n');
+  if (oldText === newText) {
+    return splitLines(newText).map((text) => ({ marker: LINE_MARKERS.unchanged, text }));
+  }
+
+  const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'gmc-diff-'));
+  try {
+    const oldFile = path.join(dir, 'old');
+    const newFile = path.join(dir, 'new');
+    fs.writeFileSync(oldFile, oldText, 'utf-8');
+    fs.writeFileSync(newFile, newText, 'utf-8');
+    const context = splitLines(oldText).length + splitLines(newText).length;
+    const result = spawnSync(
+      'git',
+      [
+        'diff',
+        '--no-index',
+        '--no-color',
+        '--no-ext-diff',
+        '--diff-algorithm=histogram',
+        `-U${context}`,
+        oldFile,
+        newFile,
+      ],
+      { encoding: 'utf-8', maxBuffer: GIT_MAX_BUFFER },
+    );
+    if (result.error) throw result.error;
+    // --no-index exits 1 when the files differ; only 2 and above are errors.
+    if (result.status > 1) throw new Error(`git diff --no-index failed:\n${result.stderr}`);
+
+    const lines = result.stdout.split('\n');
+    const start = lines.findIndex((line) => line.startsWith('@@'));
+    if (start === -1) {
+      return splitLines(newText).map((text) => ({ marker: LINE_MARKERS.unchanged, text }));
+    }
+    const markers = new Set(Object.values(LINE_MARKERS));
+    return lines
+      .slice(start + 1)
+      .filter((line) => line.length > 0 && markers.has(line[0]))
+      .map((line) => ({ marker: line[0], text: line.slice(1) }));
+  } finally {
+    fs.rmSync(dir, { recursive: true, force: true });
+  }
 }
 
 /**

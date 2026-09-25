@@ -10,8 +10,8 @@ Each run works through these stages in order:
 
 1. Choose a **commit range**: a base commit and a head commit.
 2. List the files that changed between them, and **filter** them.
-3. Read the full content of each remaining file at the head commit, and **strip comments**.
-4. Send the code to the AI, and **post-process** its reply.
+3. Read the full content of each remaining file at the head commit, **strip comments**, and **mark the student's lines** in any file that existed at the base.
+4. Send the code to the AI, with the remaining eligible files as [codebase context](#codebase-context) if you turned it on, and **post-process** its reply.
 
 ## 1. The commit range
 
@@ -45,7 +45,7 @@ Two things can move the base later than that:
 
 ### How this excludes Classroom 50 template code
 
-When a student accepts a templated Classroom 50 assignment, `gh student accept` creates their repository by copying the template (`POST /repos/{template_owner}/{template_repo}/generate`). That copy is the repository's **first commit**. With the default `include_initial_commit: 'false'` it is the base, so the template's starter code never enters the diff, just as it didn't under GitHub Classroom.
+When a student accepts a templated Classroom 50 assignment, `gh student accept` creates their repository by copying the template (`POST /repos/{template_owner}/{template_repo}/generate`). That copy is the repository's **first commit**. With the default `include_initial_commit: 'false'` it is the base, so the template's starter code is never assessed, just as under GitHub Classroom. A starter file the student hasn't changed isn't in the diff at all. In one they have changed, only their own lines are open to questions; see [Files that existed at the base](#files-that-existed-at-the-base).
 
 `gh student accept` then adds one or two more commits straight away:
 
@@ -77,6 +77,8 @@ An assignment created *without* `--empty-repo` but also without a template is se
 
 A commit is skipped only when its **GitHub-verified account login** matches an entry. Author name and email are used only to find candidates cheaply; matching on them alone would let a student hide their own commits by setting their Git author name to a bot's.
 
+Files those commits touched are also kept out of [codebase context](#codebase-context).
+
 Set `skip_committers: ''` to turn it off.
 
 ## 2. Filtering the files
@@ -89,13 +91,89 @@ The changed files between base and head are filtered in this order:
 
 The exclude patterns combine the always-excluded list, the patterns detected for the repository's stack, and `additional_exclude_patterns`. See [File filtering](exclude-patterns.md) for all of them.
 
-## 3. Comment stripping
+## 3. Comment stripping and line marking
 
-The AI is given the **full content** of each remaining file at the head commit, not only the changed lines.
+The AI is given the **full content** of each remaining file at the head commit, not only the changed lines. In a file that already existed at the base, the student's lines are marked; see [Files that existed at the base](#files-that-existed-at-the-base).
 
 Unless `keep_comments` is `'true'`, comments are removed first, and runs of blank lines are collapsed. Stripping is done per file by a comment remover in the action's Docker image. A file type the remover doesn't support is sent unchanged, as is any file it can't process within 10 seconds.
 
 If processing leaves no code at all, the run falls back to sending the raw diff, and says so in the run summary.
+
+### Files that existed at the base
+
+A file that already existed at the base commit, such as a starter file the student edited, mixes their work with code they didn't write in this range. The AI is still sent the whole file, so it can see what the student's lines do, but every line carries a marker:
+
+| Marker | Meaning | Used for |
+|---|---|---|
+| `+` | Added or changed by the student in the range | Questions: every question about the file must be about at least one of these lines |
+| (space) | Unchanged since the base | Context only |
+| `-` | Removed by the student | Context only. It shows what the student replaced, and never appears in a question's snippet |
+
+Files that are new in the range have no markers: every line is the student's.
+
+The comparison is made **after** comment stripping, between the base and head versions processed the same way. Differences in line endings (CRLF and LF) and a missing final newline are ignored. So an edit that only touches comments or whitespace marks nothing.
+
+If no file in the submission has a single added or changed line, for example because the student only edited comments, the files are sent whole without markers, and the run summary says so.
+
+What counts as "before the range" follows the base. By default that is the first commit, so the unmarked lines are starter code. With `tag_diff_base: previous-tag` or `tag:<name>`, the unmarked lines also include the student's own work from before that tag, and the questions cover only what changed since. Earlier files the submission didn't touch at all can be sent as [codebase context](#codebase-context). With `include_initial_commit: 'true'` the base is the empty tree, so nothing is marked.
+
+The run summary's **Files assessed** section says how many files were marked. Keeping questions to marked lines relies on the AI following its instructions: the file-name check in [After the AI replies](#4-after-the-ai-replies) can't tell lines apart within a file.
+
+## Codebase context
+
+By default the AI sees only the code being assessed. With `include_codebase_context: 'true'` it is also sent **the rest of the project** as background: every eligible file that's left once the exclusions are applied and the assessed files are set aside. It can then ask how the assessed code fits with the code around it: what it calls, extends or overrides, what calls it, and how data passes between them.
+
+### What is sent
+
+"Eligible" means exactly the same rules as for the assessment. Every file at the head commit that:
+
+- passes the same [exclude patterns and overrides](exclude-patterns.md) as the assessed files,
+- is **not** being assessed, because it didn't change between the base and the head, and
+- wasn't touched by a bot commit that [`skip_committers`](#skipping-bot-commits) skipped.
+
+A file left out of the assessment by a rule (an exclude pattern, the always-on `.github/workflows/**`, `skip_committers`, or being binary) is never sent as context either. Only files left out by the commit range are.
+
+In practice these files come in two kinds, and which ones exist depends on the commit range:
+
+| Kind | What it is | When there is any |
+|---|---|---|
+| **Starter code** | Files from the first commit that the student has never changed | Whenever `include_initial_commit` is `'false'` (the default) |
+| **Earlier work** | The student's own files from before the range that this submission didn't touch | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, or a manual `base_sha` |
+
+Some examples:
+
+| Setup | The AI is given as context |
+|---|---|
+| Default: every push assesses all work to date | Unchanged starter files only. Every file the student has touched is being assessed already |
+| Tag run with `tag_diff_base: previous-tag`, assessing `phase2` | Unchanged starter files, plus phase 1 files that phase 2 didn't touch |
+| `include_initial_commit: 'true'`, with no later base | Nothing: the whole history is being assessed. The run log says so |
+| `include_initial_commit: 'true'` with `previous-tag` | Earlier work only. The first commit is the student's, so nothing counts as starter code |
+
+A phase 1 file that phase 2 **did** edit isn't sent as context. It is assessed, with the phase 2 lines marked and the phase 1 lines visible around them; see [Files that existed at the base](#files-that-existed-at-the-base).
+
+Comments are stripped unless `keep_comments` is `'true'`. Binary files are skipped.
+
+### How the AI is told to use it
+
+- **Never a question target on its own.** Every question must show, and be about, code being assessed. A question may also show a context snippet when the answer depends on it. A question that shows **only** context files is dropped after the reply (see step 3 of [After the AI replies](#4-after-the-ai-replies)).
+- **Starter code** is sent in its own block, marked as reference data. Its content is identical to the first commit, which the student can't rewrite.
+- **Earlier work** is the student's own writing, so it is held to the same untrusted-input rules as the submission: the AI analyses it but never follows any instruction in it.
+
+### Size limit
+
+`codebase_context_max_chars` (default `50000`) caps the total. Starter code and earlier work share the limit. Files are added whole, in this order:
+
+1. Files in the same folder as one of the assessed files.
+2. Then the rest, by how many folders separate them from the nearest assessed file.
+3. Ties by path, alphabetically.
+
+A file that would go over the limit is left out, and smaller files after it are still tried. Files left out are named in the run log and counted in the run summary. Context is sent on every run, so a large limit adds to the cost of each assessment.
+
+### Where it shows
+
+- **Report header:** **Codebase context**, with the number of files used.
+- **Run summary:** the configuration table shows the starter and earlier-work counts, the size, and how many files were left out.
+- **Run log:** every file sent, by kind.
 
 ## When there is nothing to assess
 
@@ -114,7 +192,7 @@ The reply goes through these steps before anything is delivered:
 
 1. **Code fences repaired.** A code block the model left unopened is fixed, so the rest of the report isn't rendered as code.
 2. **Extra questions cut.** Questions beyond `num_questions` are removed, and the rest are renumbered.
-3. **Questions about files outside the assessment dropped.** Every question starts with the name of the file it's about. A question naming a file that wasn't assessed, such as an `assignment_context` file or a file that doesn't exist, is dropped. A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. Dropped questions are logged as a warning and listed in the run summary, so a report can hold fewer than `num_questions`. If every question would be dropped, none are, and a warning asks you to check the file name headers in `raw-ai-output.md`.
+3. **Questions about files outside the assessment dropped.** Every question starts with the name of the file it's about. A question naming a file that wasn't assessed, such as an `assignment_context` file or a file that doesn't exist, is dropped. A [codebase context](#codebase-context) file may be named only alongside an assessed file. A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. Dropped questions are logged as a warning and listed in the run summary, so a report can hold fewer than `num_questions`. If every question would be dropped, none are, and a warning asks you to check the file name headers in `raw-ai-output.md`.
 4. **Answers removed for the student.** The student's copy loses its answers and multiple-choice distractors. Any question that can't be cleanly separated from its answer, or whose text would reveal it, is **withheld** from the student's copy, and the report says how many were withheld. The instructor repository copy is never affected.
 
 The instructor repository keeps the model's reply exactly as it arrived, before any of these steps, as `raw-ai-output.md`; see [Instructor repository internals](instructor-repository.md).

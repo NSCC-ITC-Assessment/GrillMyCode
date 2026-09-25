@@ -14,8 +14,8 @@ import path from 'path';
 import { minimatch } from 'minimatch';
 import { extractText, getDocumentProxy } from 'unpdf';
 import mammoth from 'mammoth';
-import { COMMENT_REMOVER_BIN, COMMENT_STRIP_TIMEOUT_MS } from './constants.js';
-import { git } from './git.js';
+import { COMMENT_REMOVER_BIN, COMMENT_STRIP_TIMEOUT_MS, LINE_MARKERS } from './constants.js';
+import { diffLines, git, listChangedPaths, listTreeFiles, readFileAt } from './git.js';
 
 /**
  * Filters a list of file paths against exclude glob patterns.
@@ -67,6 +67,21 @@ export function collectRawFiles(files, headSha) {
 }
 
 /**
+ * Like collectRawFiles, for files that may not exist at `sha`: the base of the
+ * assessed range, or the first commit. A path absent there, or binary, is
+ * skipped.
+ */
+export function collectFilesAt(paths, sha) {
+  const found = [];
+  for (const filepath of paths) {
+    const content = readFileAt(sha, filepath);
+    if (content === null || content.includes('\0')) continue;
+    found.push({ filepath, content });
+  }
+  return found;
+}
+
+/**
  * Accepts pre-fetched raw file entries, runs rmcm on each, and returns
  * stripped entries. Falls back silently to the original content when the
  * file type is unsupported or the binary is unavailable.
@@ -113,12 +128,181 @@ export function stripCommentsFromFiles(rawFiles) {
  * for inclusion in the AI prompt.
  */
 export function buildCodeContent(files) {
-  return files
-    .map(({ filepath, content }) => {
-      const ext = path.extname(filepath).slice(1);
-      return `### \`${filepath}\`\n\`\`\`${ext}\n${content.trimEnd()}\n\`\`\``;
-    })
-    .join('\n\n');
+  return files.map(codeSection).join('\n\n');
+}
+
+function codeSection({ filepath, content }) {
+  const ext = path.extname(filepath).slice(1);
+  return `### \`${filepath}\`\n\`\`\`${ext}\n${content.trimEnd()}\n\`\`\``;
+}
+
+/**
+ * Formats the assessed files for the prompt, marking the student's lines in
+ * any file that already existed before the assessed range.
+ *
+ * `baseByPath` maps a file path to its content at the base of the range,
+ * processed the same way as `files` (comments stripped or not). A file with no
+ * entry there is new in the range — every line is the student's — and is
+ * rendered as a plain block. A file with one is rendered in full with a
+ * marker column (LINE_MARKERS): lines the student added or changed, lines they
+ * removed, and unchanged lines, which are context rather than their work.
+ * Without the markers a one-line edit to a starter file would put the whole
+ * file up for questions.
+ *
+ * Returns `{ content, markedFiles, addedLines }`: the files rendered with
+ * markers, and how many lines across the whole submission the student wrote
+ * (every line of a new file, the added lines of a marked one), which the caller
+ * uses to tell a submission with nothing to mark from one that has work in it.
+ */
+export function buildAssessedCodeContent(files, baseByPath) {
+  const sections = [];
+  const markedFiles = [];
+  let addedLines = 0;
+
+  for (const file of files) {
+    if (!baseByPath.has(file.filepath)) {
+      sections.push(codeSection(file));
+      if (file.content.trim()) addedLines += file.content.trimEnd().split('\n').length;
+      continue;
+    }
+
+    const lines = diffLines(baseByPath.get(file.filepath), file.content);
+    addedLines += lines.filter((l) => l.marker === LINE_MARKERS.added).length;
+    markedFiles.push(file.filepath);
+
+    const ext = path.extname(file.filepath).slice(1);
+    const body = lines.map((l) => `${l.marker}${l.text}`.trimEnd()).join('\n');
+    sections.push(
+      `### \`${file.filepath}\` (existed before this submission — student's lines marked)\n` +
+        `\`\`\`${ext}\n${body}\n\`\`\``,
+    );
+  }
+
+  return { content: sections.join('\n\n'), markedFiles, addedLines };
+}
+
+/** Directory segments of a path's parent folder ('' for a root-level file). */
+function dirSegments(filepath) {
+  const dir = path.posix.dirname(filepath.replace(/\\/g, '/'));
+  return dir === '.' ? [] : dir.split('/');
+}
+
+/**
+ * How many folder steps separate two files' folders: 0 for the same folder,
+ * 1 for a parent or child folder, and so on through their nearest shared
+ * ancestor.
+ */
+export function folderDistance(a, b) {
+  const da = dirSegments(a);
+  const db = dirSegments(b);
+  let shared = 0;
+  while (shared < da.length && shared < db.length && da[shared] === db[shared]) shared++;
+  return da.length - shared + (db.length - shared);
+}
+
+/**
+ * Finds the codebase context candidates: every file at `headSha` that passes
+ * the exclude patterns and did not change between `baseSha` and `headSha` —
+ * the files the assessment itself leaves out. Each is returned as
+ * `{ filepath, content, kind }`:
+ *
+ *   'starter' — also unchanged since `firstCommit`, so code the student was
+ *               given. Pass firstCommit as null when the first commit is the
+ *               student's own work (include_initial_commit), and every file is
+ *               'earlier'.
+ *   'earlier' — changed before the range but not in it: the student's work
+ *               from an earlier submission.
+ *
+ * A file unchanged in the range is identical at the base and the head, so a
+ * starter file read here is byte-for-byte the first commit's copy. Binary
+ * files are skipped.
+ *
+ * `skippedRange` is the { from, to } span of bot commits skip_committers
+ * stepped over (see resolveSHAs), or null. Any file those commits touched is
+ * left out: skip_committers means "do not send this", and such a file is
+ * neither the instructor's starter code nor the student's earlier work.
+ */
+export function findCodebaseContextFiles({
+  baseSha,
+  headSha,
+  firstCommit,
+  excludePatterns,
+  excludePatternOverrides,
+  assessedFiles,
+  skippedRange = null,
+}) {
+  const changedInRange = new Set(listChangedPaths(baseSha, headSha));
+  const skipped = new Set(skippedRange ? listChangedPaths(skippedRange.from, skippedRange.to) : []);
+  const paths = filterFiles(
+    listTreeFiles(headSha),
+    excludePatterns,
+    excludePatternOverrides,
+  ).filter((p) => !changedInRange.has(p) && !skipped.has(p) && !assessedFiles.includes(p));
+
+  let isStarter = () => false;
+  if (firstCommit) {
+    const inFirstCommit = new Set(listTreeFiles(firstCommit));
+    const changedSinceStart = new Set(listChangedPaths(firstCommit, headSha));
+    isStarter = (p) => inFirstCommit.has(p) && !changedSinceStart.has(p);
+  }
+
+  return collectFilesAt(paths, headSha).map((f) => ({
+    ...f,
+    kind: isStarter(f.filepath) ? 'starter' : 'earlier',
+  }));
+}
+
+/**
+ * Chooses which codebase files go to the AI as context, within maxChars.
+ *
+ * Each candidate is `{ filepath, content, kind }`, where kind is 'starter'
+ * (unchanged since the first commit, so not the student's) or 'earlier' (the
+ * student's own work from before the assessed range). Both compete for the one
+ * budget, nearest the student's assessed files first — a file in the same
+ * folder as the code the student changed is the likeliest to be what that code
+ * calls or extends — with ties broken by path so the choice is stable from run
+ * to run. Files are added whole: a file cut off part-way would show the AI half
+ * a class or function, which is worse than not showing it. One that does not
+ * fit is left out and the next, smaller one is still tried.
+ *
+ * Returns `{ starterContent, earlierContent, starterFiles, earlierFiles,
+ * omitted }` — the formatted blocks for each kind, the paths that made it into
+ * each, and the paths left out for size.
+ */
+export function selectCodebaseContext(candidates, assessedFiles, maxChars) {
+  const distance = (filepath) =>
+    assessedFiles.length === 0
+      ? 0
+      : Math.min(...assessedFiles.map((assessed) => folderDistance(filepath, assessed)));
+
+  const ordered = candidates
+    .filter((c) => c.content.trim())
+    .map((c) => ({ ...c, distance: distance(c.filepath) }))
+    .sort((a, b) => a.distance - b.distance || a.filepath.localeCompare(b.filepath));
+
+  const chosen = { starter: [], earlier: [] };
+  const omitted = [];
+  let used = 0;
+
+  for (const file of ordered) {
+    // Counted as if every file shared one block; split across two, the
+    // separators only shrink, so the total never exceeds maxChars.
+    const cost = codeSection(file).length + (used > 0 ? 2 : 0);
+    if (used + cost > maxChars) {
+      omitted.push(file.filepath);
+      continue;
+    }
+    chosen[file.kind === 'starter' ? 'starter' : 'earlier'].push(file);
+    used += cost;
+  }
+
+  return {
+    starterContent: buildCodeContent(chosen.starter),
+    earlierContent: buildCodeContent(chosen.earlier),
+    starterFiles: chosen.starter.map((f) => f.filepath),
+    earlierFiles: chosen.earlier.map((f) => f.filepath),
+    omitted,
+  };
 }
 
 /**

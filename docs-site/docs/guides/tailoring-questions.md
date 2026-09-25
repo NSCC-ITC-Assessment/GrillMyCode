@@ -12,7 +12,7 @@ Out of the box, GrillMyCode asks a mix of three kinds of question about any code
 
 Each question quotes a short snippet of the student's own code, so they know exactly what it's asking about.
 
-You can steer the questions in four ways, all in the [Workflow Wizard](../workflow-wizard.mdx)'s **Questions** step unless noted.
+You can steer the questions in five ways, all in the [Workflow Wizard](../workflow-wizard.mdx)'s **Questions** step unless noted.
 
 ## How many questions
 
@@ -47,6 +47,18 @@ Two things to keep in mind:
 
 Very long documents are cut off after about 20,000 characters, which is roughly 3,000 words.
 
+## Let the AI see the rest of the project
+
+Turn on **Give the AI the rest of the project as context** in the Wizard's **File handling options** step. The AI then also sees every eligible file that's left once the usual exclusions are applied and the assessed files are set aside. That's:
+
+- **Your starter code** that the student hasn't changed.
+- **The student's earlier work**, when each submission tag assesses only the new work, such as phase 1 while phase 2 is assessed.
+
+It can then ask how the new code fits with the code around it.
+
+- **It's background only.** Every question is still about the assessed code.
+- **It costs more per run.** Large projects are trimmed to a limit you can set in the **Advanced** step.
+
 ## Keep or remove comments
 
 GrillMyCode normally removes code comments before the AI sees the code. That way, the questions are about what the code *does*, not about the student's notes.
@@ -59,4 +71,4 @@ The **Include answers** option shows the answers to the student, right under eac
 
 ---
 
-**Go deeper:** [Inputs and outputs](../reference/inputs-outputs.md) (`num_questions`, `instructor_context`, `assignment_context`, `keep_comments`) · Recipe: [Assignment brief as context](../example-workflows/assignment-context.md)
+**Go deeper:** [Inputs and outputs](../reference/inputs-outputs.md) (`num_questions`, `instructor_context`, `assignment_context`, `keep_comments`) · [Codebase context](../reference/code-selection.md#codebase-context) · Recipe: [Assignment brief as context](../example-workflows/assignment-context.md)

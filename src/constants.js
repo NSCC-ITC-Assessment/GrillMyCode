@@ -380,6 +380,27 @@ export const INSTRUCTOR_REPO_SUFFIX = '-grillmycode-instructor';
 export const DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS = 20000;
 
 /**
+ * Default maximum total characters of codebase context — unchanged starter
+ * code and earlier student work — sent to the AI when include_codebase_context
+ * is true. Overridable via the codebase_context_max_chars action input. Files
+ * are added whole, nearest to the student's changed files first, and a file
+ * that would overflow the limit is left out rather than cut off part-way.
+ */
+export const DEFAULT_CODEBASE_CONTEXT_MAX_CHARS = 50000;
+
+/**
+ * Marker column prefixed to every line of an assessed file that already
+ * existed before the assessed range, so the AI can tell the student's lines
+ * from the code they started with. Mirrors unified-diff notation, which models
+ * read reliably.
+ */
+export const LINE_MARKERS = Object.freeze({
+  added: '+',
+  removed: '-',
+  unchanged: ' ',
+});
+
+/**
  * GitHub REST API version sent in the X-GitHub-Api-Version header on every
  * Octokit request. Update when adopting a newer stable GitHub API version.
  */

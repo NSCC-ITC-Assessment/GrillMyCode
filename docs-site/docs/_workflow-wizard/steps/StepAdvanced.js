@@ -5,6 +5,7 @@ const DEFAULTS = {
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   assignmentContextMaxChars: 20000,
+  codebaseContextMaxChars: 50000,
 };
 
 export default function StepAdvanced({ cfg, onChange }) {
@@ -77,6 +78,31 @@ export default function StepAdvanced({ cfg, onChange }) {
           }
         />
       </div>
+
+      {cfg.includeCodebaseContext && (
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>Codebase context max characters <span className={styles.optionalBadge}>optional</span></label>
+          <span className={styles.hint}>
+            Maximum total characters of project code given to the AI as context: your starter
+            code and the student's earlier work share this limit. Files are added whole, those
+            nearest the assessed files first; any that don't fit are left out and counted in the
+            run summary. Increase for a large project; decrease to limit token usage. Values below 1 are clamped to 1. Default:{' '}
+            <code>50000</code>
+          </span>
+          <input
+            type="number"
+            className={`${styles.input} ${styles.numberInput}`}
+            min={1}
+            step={5000}
+            value={cfg.codebaseContextMaxChars}
+            onChange={(e) =>
+              onChange({
+                codebaseContextMaxChars: Math.max(1, parseInt(e.target.value, 10) || 1),
+              })
+            }
+          />
+        </div>
+      )}
 
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Base SHA override <span className={styles.optionalBadge}>optional</span></label>
