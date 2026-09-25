@@ -456,7 +456,12 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
   pushInput('keep_comments', 'keepComments', yamlStr(cfg.keepComments));
   pushInput('include_initial_commit', 'includeInitialCommit', yamlStr(cfg.includeInitialCommit));
   pushInput('include_codebase_context', 'includeCodebaseContext', yamlStr(cfg.includeCodebaseContext));
-  if (cfg.includeCodebaseContext && differ(cfg, 'codebaseContextMaxChars')) {
+  // Also emitted when codebase context is a dispatch override, so a manual run
+  // that switches it on still gets the limit the instructor configured.
+  if (
+    (cfg.includeCodebaseContext || overridden.has('include_codebase_context')) &&
+    differ(cfg, 'codebaseContextMaxChars')
+  ) {
     lines.push(`          codebase_context_max_chars: ${yamlStr(cfg.codebaseContextMaxChars)}`);
   }
   if (differ(cfg, 'skipCommitters')) {

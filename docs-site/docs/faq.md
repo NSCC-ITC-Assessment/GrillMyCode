@@ -10,7 +10,7 @@ Short answers, each with a link to the full story. For something that isn't work
 
 ### What is GrillMyCode?
 
-A tool that runs in each student's GitHub repository and uses AI to write questions about the code that student wrote. You use the questions for a short conversation or written check, often called a code viva. See [How it works](how-it-works.md).
+A tool that runs in each student's GitHub repository and uses AI to write questions about the code that student wrote. You use the questions for a short conversation or written check, often called a code viva. See [How GrillMyCode works](how-gmc-works.md).
 
 ### Does it grade the code?
 
@@ -19,6 +19,10 @@ No, and that's deliberate. It writes questions and leaves the judgment to you. A
 ### Do I need to install anything?
 
 No. It runs on GitHub's servers. You add one workflow file to the assignment's template repository, and the [Workflow Wizard](workflow-wizard.mdx) writes that file for you.
+
+### Do I need to know Git and GitHub?
+
+Yes, the basics: committing and pushing, the default branch, and finding your way around a repository on GitHub. If you use submission tags, you'll also need to create and push tags. You don't need to know GitHub Actions already. See [What you need](getting-started/index.md#what-you-need).
 
 ### Do my students need to do anything?
 
@@ -32,7 +36,7 @@ Mostly. The questions, issue and PDF work in any GitHub repository. The private 
 
 ### What does it cost?
 
-GrillMyCode itself is free. The AI is paid through OpenRouter from a prepaid balance. With the recommended models, an assessment usually costs less than one cent, and $5 US typically lasts a large class a semester. See [Choosing a model and managing cost](guides/choosing-a-model.md).
+GrillMyCode itself is free. The AI is paid through OpenRouter from a prepaid balance. With the recommended models, an assessment typically costs from less than one cent to a few cents, and a small budget typically lasts a large class a semester. Cost can vary widely depending on the model you choose. See [Choosing a model and managing cost](guides/choosing-a-model.md).
 
 ### What secrets do I need?
 

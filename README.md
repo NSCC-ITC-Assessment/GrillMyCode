@@ -4,20 +4,24 @@ GrillMyCode writes questions about each student's own code, so you can check tha
 
 It's a GitHub Action. When a student pushes their work, it picks out the code they wrote and has an AI model write questions about it. The questions arrive as an issue in the student's repository, with a PDF copy, ready for a short conversation or written check (a _code viva_). It doesn't grade anything: it does the preparation, and you have the conversation.
 
-It's built for [Classroom 50](https://github.com/foundation50/classroom50) assignments, and with the recommended models an assessment usually costs less than one cent.
+It's built for [Classroom 50](https://github.com/foundation50/classroom50) assignments, and with the recommended models an assessment typically costs from less than one cent to a few cents. Cost can vary widely depending on the model you choose.
 
 **Full documentation: [grillmycode.org](https://grillmycode.org/)**
 
-## How it works
+## How GrillMyCode works
 
-1. **Something starts a run:** a push, a submission tag the student pushes, or you.
-2. **GrillMyCode finds the student's own code.** Your starter code, setup files, generated files and comments are left out.
-3. **An AI model writes the questions**, guided by your instructions and, optionally, the assignment brief. It goes through [OpenRouter](https://openrouter.ai/), using one key for the whole class.
-4. **The student gets their questions** as a GitHub issue and a PDF. Optionally, you get every student's questions _with answers_ in a private repository, plus a quiz file for your LMS.
+![A cartoon road with five numbered stops. 1: a student at a laptop says "Done!" and sends their work off. 2: the GrillMyCode flame uses a magnifying glass to pick out the student's own code and sets other files aside. 3: a friendly robot, handed a sticky note of instructions, writes questions. The road then forks at a signpost. 4, for students: the student smiles at a pinned issue of questions with a PDF copy. 5, for you and optional: an instructor with a coffee mug beside a locked folder and a quiz card.](docs-site/static/img/how-gmc-works-journey.svg)
 
-More: [How it works](https://grillmycode.org/docs/how-it-works) · [Architecture](https://grillmycode.org/docs/development/architecture)
+1. **The student submits code** by pushing it or by pushing a submission tag. You can also start a run yourself.
+2. **GrillMyCode isolates submitted code.** Your starter code, setup files, generated files and comments are left out.
+3. **An AI writes questions about submitted code**, guided by your instructions and, optionally, the assignment brief. It goes through [OpenRouter](https://openrouter.ai/), using one key for the whole class.
+4. **Questions are delivered to the student** as a GitHub issue and matching PDF. Optionally, you get every student's questions _with answers_ in a private repository, plus a quiz file for your LMS.
+
+More: [How GrillMyCode works](https://grillmycode.org/docs/how-gmc-works) · [Architecture](https://grillmycode.org/docs/development/architecture)
 
 ## Quick start
+
+You'll need basic Git and GitHub skills: committing and pushing changes, working with the default branch, and finding your way around a repository on GitHub, plus creating and pushing tags if you use submission tags. See [What you need](https://grillmycode.org/docs/getting-started#what-you-need).
 
 1. **Create an OpenRouter key** and save it as the organization secret `OPENROUTER_API_KEY`. See [Set up an OpenRouter key](https://grillmycode.org/docs/getting-started/openrouter-key).
 2. **Build your workflow** with the [Workflow Wizard](https://grillmycode.org/workflow-wizard), or use the minimal one below.

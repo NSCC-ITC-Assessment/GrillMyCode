@@ -12,7 +12,7 @@ You only do this once. Every assignment in your classroom shares the same key.
 ## Create an account and add credit
 
 1. Go to [openrouter.ai](https://openrouter.ai/) and sign up with Google, GitHub or an email address.
-2. Open the [credits page](https://openrouter.ai/credits) and add a prepaid balance. $5 is plenty to start with.
+2. Open the [credits page](https://openrouter.ai/credits) and add a prepaid balance. A small amount is plenty to start with, though cost can vary widely depending on the model you choose.
 
 You're charged only for what GrillMyCode uses. With a prepaid balance and automatic top-up turned off, spending can never go beyond what you've added.
 

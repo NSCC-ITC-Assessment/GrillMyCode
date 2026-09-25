@@ -9,6 +9,8 @@ Students only ever see questions. With a little extra setup, GrillMyCode also ke
 
 This page shows how to set it up. It takes about 10 minutes once, and one extra line in each assignment's workflow.
 
+![A cartoon split by a brick wall with an "Instructors only" sign and a padlock. The GrillMyCode flame sits on the wall and sends a paper plane to each side. On the student's side, the student looks at a pinned issue of questions with a PDF copy, and every answer is hidden. On your side as a Classroom 50 instructor, a locked folder with a tab for each student, such as jsmith, holds questions with answers, and a quiz card flies off to your LMS. Chips underneath compare the sides: the student gets questions but not answers; you get questions, answers and an LMS quiz.](/img/who-sees-what.svg)
+
 ## What you get
 
 For each assignment, GrillMyCode creates a private repository in your classroom's organization, named after the assignment. For example, `cs-principles-lab-3-grillmycode-instructor`. Inside, each student has a folder containing:

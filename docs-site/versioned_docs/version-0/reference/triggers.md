@@ -141,17 +141,19 @@ The two must agree, so **edit both when you change a default**. If they drift, a
 
 | Input | Why expose it |
 |---|---|
-| `num_questions` | Re-run with a shorter or longer question set |
 | `ai_model` | Try a different model when one produces weak questions |
+| `num_questions` | Re-run with a shorter or longer question set |
+| `assignment_context` | Point one run at a different brief or rubric (see below) |
 | `instructor_context` | Retarget the questions for one run |
-| `keep_comments` | Assess a submission where the comments are themselves the work |
+| `tag_diff_base` | Tag-triggered workflows only: re-run a milestone cumulatively, only since the previous tag, or since a tag you type in |
 | `additional_exclude_patterns` | Exclude a data dump you only noticed after the first run |
 | `exclude_pattern_overrides` | Bring back a file the default exclusions removed |
+| `keep_comments` | Assess a submission where the comments are themselves the work |
 | `include_initial_commit` | Recover a run where the student committed everything at once |
-| `tag_diff_base` | Tag-triggered workflows only: re-run a milestone cumulatively, only since the previous tag, or since a tag you type in |
+| `include_codebase_context` | Let the AI see the surrounding code when questions came out shallow; likely increases the run's cost |
 | `ai_temperature` | Rarely useful; most instructors should leave this fixed |
 
-The Wizard ticks the first six by default.
+The Wizard lists them in this order and ticks `ai_model` through `keep_comments` by default, apart from `tag_diff_base`.
 
 ### Settings to keep out of the form
 
@@ -162,7 +164,7 @@ Anyone who can run the workflow can set a dispatch input, and in a Classroom 50 
 - **`base_sha` / `head_sha`.** A range collapsed to a single commit produces an empty assessment, and the run reports it and succeeds, so nothing looks wrong at a glance.
 - **`skip_committers`.** The action verifies a commit's GitHub account login before skipping it, which stops anyone impersonating a bot. It can't stop someone naming their *own* login in the list and having their leading commits trimmed out of the assessment.
 
-`assignment_context` sits near this line. It is offered, but not ticked by default. Its globs match the student's own working tree, so a student running the workflow could point it at a file they wrote. What it can't do is empty the assessment: it only steers which topics the questions favour, and the action treats the files it reads as reference data that can't override the rubric or surface answers. The paths it matched appear in the run summary, so a re-pointed glob is visible on the run page.
+`assignment_context` sits near this line, and the Wizard ticks it by default. Its globs match the student's own working tree, so a student running the workflow could point it at a file they wrote. What it can't do is empty the assessment: it only steers which topics the questions favour, and the action treats the files it reads as reference data that can't override the rubric or surface answers. The paths it matched appear in the run summary, so a re-pointed glob is visible on the run page.
 
 ### Booleans need `type: choice`
 

@@ -12,7 +12,7 @@ GrillMyCode uses **Google Gemini 3.5 Flash Lite** unless you pick something else
 
 ## What it costs
 
-With the default model and the other recommended ones, an assessment usually costs **less than one cent**. A $5 US balance typically lasts a large class for a whole semester.
+With the default model and the other recommended ones, an assessment typically costs **from less than one cent to a few cents**. A small budget typically lasts a large class for a whole semester. Cost can vary widely depending on the model you choose.
 
 What adds to the cost:
 
@@ -24,7 +24,7 @@ To keep an eye on spending, check the activity page in your OpenRouter account. 
 
 ## The recommended models
 
-The Workflow Wizard's **AI** step offers six models tested with GrillMyCode, all usually under a cent per assessment. [Recommended models](../ai-providers/openrouter.md#recommended-models) lists them, with notes on each.
+The Workflow Wizard's **AI** step offers six models tested with GrillMyCode, each costing from less than one cent to a few cents per assessment. [Recommended models](../ai-providers/openrouter.md#recommended-models) lists them, with notes on each.
 
 ## Using a more capable model
 

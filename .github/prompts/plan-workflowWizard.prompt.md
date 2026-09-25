@@ -8,13 +8,13 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 ## Wizard Steps (9 total)
 
-1. **Trigger** — Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the instructor's own tag names (`submissionTags`) and `tagDiffBase`. Tags are never inferred — there is deliberately no preset for Classroom 50's own `submit/*` tags
-2. **AI Provider** — Model selection, OpenRouter model routing variant (`aiModelVariant`, appended to the model ID), and the API key secret name
-3. **Questions** — num_questions, include_answers, instructor_context, assignment_context
-4. **Delivery** — Informational only: the assessment issue and PDF are always delivered, so there is nothing to choose
-5. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `labelRepos`
-6. **Files** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides
-7. **File opts** — keep_comments, include_initial_commit, include_codebase_context, skip_committers
+1. **AI Provider** — Model selection, OpenRouter model routing variant (`aiModelVariant`, appended to the model ID), and the API key secret name
+2. **Questions** — num_questions, include_answers, instructor_context, assignment_context
+3. **Delivery** — Informational only: the assessment issue and PDF are always delivered, so there is nothing to choose
+4. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `labelRepos`
+5. **Files** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides
+6. **File opts** — keep_comments, include_initial_commit, include_codebase_context, skip_committers
+7. **Trigger** — Placed after the file steps so most values it can expose as manual run overrides are already set. Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the instructor's own tag names (`submissionTags`) and `tagDiffBase`. Tags are never inferred — there is deliberately no preset for Classroom 50's own `submit/*` tags
 8. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, codebase context max chars — shown only while codebase context is on, SHA overrides)
 9. **Review** — Generated YAML in styled code block with one-click copy button + checklist of prerequisites
 
@@ -114,8 +114,11 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   cost of each run. It is emitted only when ticked; `codebase_context_max_chars` only when
   codebase context is on and the value differs from the default. The checkbox is shown whatever
   `include_initial_commit` is: with it on there is no starter code, but a tag run with
-  `tag_diff_base: previous-tag` still has earlier work to send. Neither is a dispatch override —
-  both are per-assignment structural choices, like `assignment_context_max_chars`
+  `tag_diff_base: previous-tag` still has earlier work to send. `include_codebase_context` is
+  offered as a dispatch override on the Trigger step, unticked (a manual run that switches it on
+  costs more); when it is overridden, `codebase_context_max_chars` is emitted whenever it differs
+  from the default, not only when the checkbox is ticked. `codebase_context_max_chars` itself is
+  not a dispatch override — it is a structural cap, like `assignment_context_max_chars`
 - Include inline YAML comments on non-obvious inputs
 - Secret references use `${{ secrets.SECRET_NAME }}` format
 
@@ -129,13 +132,13 @@ the shipped wizard lives.
 
 1. `docs-site/docs/workflow-wizard.mdx` — Docs page that imports and renders the wizard
 2. `docs-site/docs/_workflow-wizard/index.js` — Wizard orchestrator: step state, navigation, config state. `STEPS` follows the step order above, and `getStepError` keys each validation check on the step's `label`, never its index, so reordering `STEPS` cannot move a check onto the wrong step
-3. `docs-site/docs/_workflow-wizard/steps/StepTrigger.js`
-4. `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js`
-5. `docs-site/docs/_workflow-wizard/steps/StepQuestions.js`
-6. `docs-site/docs/_workflow-wizard/steps/StepDelivery.js`
-7. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Required "created by Classroom 50?" question; only a "Yes" reveals instructor repository delivery + token secret name, and a "No" explains the feature is unavailable. Enabling delivery also reveals the `labelRepos` checkbox (checked by default), which shares the same PAT
-8. `docs-site/docs/_workflow-wizard/steps/StepFiles.js`
-9. `docs-site/docs/_workflow-wizard/steps/StepFileOptions.js`
+3. `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js`
+4. `docs-site/docs/_workflow-wizard/steps/StepQuestions.js`
+5. `docs-site/docs/_workflow-wizard/steps/StepDelivery.js`
+6. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Required "created by Classroom 50?" question; only a "Yes" reveals instructor repository delivery + token secret name, and a "No" explains the feature is unavailable. Enabling delivery also reveals the `labelRepos` checkbox (checked by default), which shares the same PAT
+7. `docs-site/docs/_workflow-wizard/steps/StepFiles.js`
+8. `docs-site/docs/_workflow-wizard/steps/StepFileOptions.js`
+9. `docs-site/docs/_workflow-wizard/steps/StepTrigger.js`
 10. `docs-site/docs/_workflow-wizard/steps/StepAdvanced.js`
 11. `docs-site/docs/_workflow-wizard/steps/StepReview.js`
 12. `docs-site/docs/_workflow-wizard/generateYaml.js` — Pure function: config → YAML string

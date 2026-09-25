@@ -13,12 +13,12 @@ Open the [Workflow Wizard](../workflow-wizard.mdx) and work through its pages. F
 
 | The Wizard asks about… | For a first try |
 |---|---|
-| **When it should run** | *Push, PR Merge, or Manual*. Questions are generated every time a student pushes. You can change this later; see [Choosing a trigger](../guides/choosing-a-trigger.md). |
 | **Which AI model to use** | Keep the recommended model. Leave the secret name as `OPENROUTER_API_KEY`, which you saved in step 1. |
 | **The questions** | Keep 20 questions, and write a sentence or two about the assignment in the instructor instructions box, for example *"Assignment 3: Python loops. Include at least one question about off-by-one errors."* Leave **Include answers** off. |
-| **Which files are assessed** | Keep the defaults. |
 | **Delivery** | Nothing to choose. Students always get an issue and a PDF. |
 | **The instructor repository** | Answer **Yes**: your repositories are created by Classroom 50. The private answer key is on by default. It needs [its own one-time setup](../guides/instructor-setup.md), and until you've done that it quietly does nothing, so it's safe to leave on. |
+| **Which files are assessed** | Keep the defaults. |
+| **When it should run** | *Push, PR Merge, or Manual*. Questions are generated every time a student pushes. You can change this later; see [Choosing a trigger](../guides/choosing-a-trigger.md). |
 | **Advanced settings** | Keep the defaults. |
 
 On the last page, select **Copy workflow YAML to clipboard**.

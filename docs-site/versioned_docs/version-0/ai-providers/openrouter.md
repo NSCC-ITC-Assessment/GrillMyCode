@@ -29,7 +29,7 @@ Model IDs must match OpenRouter's catalogue exactly; see [openrouter.ai/models](
 
 ## Recommended models
 
-These have been tested with GrillMyCode and usually cost under **one cent per assessment**. They are the options pre-loaded in the [Workflow Wizard](../workflow-wizard.mdx).
+These have been tested with GrillMyCode and cost from **less than one cent to a few cents per assessment**. Cost can vary widely depending on the model you choose. They are the options pre-loaded in the [Workflow Wizard](../workflow-wizard.mdx).
 
 | Model | `ai_model` | Good to know |
 |---|---|---|

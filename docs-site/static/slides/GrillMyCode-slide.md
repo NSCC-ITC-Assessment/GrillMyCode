@@ -12,16 +12,16 @@
 
 ## How it works
 
-1. Something starts a run: a push, a submission tag the student pushes, or you
-2. It finds the student's own code, leaving out starter code, setup files, generated files and comments
-3. An AI model writes the questions, guided by your instructions and, if you like, the assignment brief
-4. The student gets a GitHub issue and a PDF; you can also get a private answer key and an LMS quiz
+1. The student submits code: a push or a submission tag, or you start it yourself
+2. GrillMyCode isolates submitted code, leaving out starter code, setup files, generated files and comments
+3. An AI writes questions about submitted code, guided by your instructions and, if you like, the assignment brief
+4. Questions are delivered to the student as a GitHub issue and matching PDF; you can also get a private answer key and an LMS quiz
 
 ## Key features
 
 - ✦ Nothing for students to set up: runs on every push, on a submission tag, or when you say
 - ✦ Built for Classroom 50: your starter code is never assessed
-- ✦ Low cost: usually under a cent per assessment with the recommended models
+- ✦ Low cost: from less than one cent to a few cents per assessment with the recommended models; Cost can vary widely by model
 - ✦ Adjustable: number of questions, what they focus on, which files count, and which AI model
 
 ## Getting started

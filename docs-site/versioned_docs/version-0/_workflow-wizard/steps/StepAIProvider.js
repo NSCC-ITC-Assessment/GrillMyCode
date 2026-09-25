@@ -78,7 +78,7 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         <br />
         <br />
         The pre-defined models in the list below have been specifically chosen because they are very
-        cheap — typically <strong>less than 1 cent per API call</strong> — and have been tested to
+        cheap — <strong>from less than one cent to a few cents per API call</strong> — and have been tested to
         work well with GrillMyCode. If you choose your own model, be sure to verify its pricing
         first.
         <br />

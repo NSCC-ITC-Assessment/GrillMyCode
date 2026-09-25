@@ -20,18 +20,20 @@ import {
   submissionTagList,
 } from './generateYaml';
 
-// Order follows .github/prompts/plan-workflowWizard.prompt.md: the trigger is
-// the first real decision, and the file-handling steps most readers can leave
-// at their defaults come last. getStepError keys on `label`, not position, so
-// reordering this list cannot move a validation check onto the wrong step.
+// Order follows .github/prompts/plan-workflowWizard.prompt.md: the model and
+// questions come first, then the file-handling steps, then the trigger — placed
+// after the steps that set most of the values it can expose as manual run
+// overrides — and finally the edge-case settings most readers can leave at
+// their defaults. getStepError keys on `label`, not position, so reordering
+// this list cannot move a validation check onto the wrong step.
 const STEPS = [
-  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
   { label: 'AI',         title: 'Which model should GrillMyCode use?',                   subtitle: 'Select the OpenRouter model that will generate the comprehension questions.',                              Component: StepAIProvider },
   { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions GrillMyCode should generate and what context the chosen AI receives.',             Component: StepQuestions },
   { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Students always get a GitHub issue and a PDF. There is nothing to configure here.',                             Component: StepDelivery },
   { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository. Available for Classroom 50 assignment repositories only.', Component: StepInstructorRepo },
   { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff that\'s sent to the AI.',                    Component: StepFiles },
   { label: 'File opts',  title: 'File handling options',                 subtitle: 'Configure how the diff is built — what to skip, how comments are handled, and which commits count.', Component: StepFileOptions },
+  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
   { label: 'Advanced',   title: 'Advanced settings',                    subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
   { label: 'Review',     title: 'Your workflow is ready',               subtitle: 'Copy the generated YAML into your assignment repository.',                                Component: StepReview },
 ];
@@ -142,11 +144,12 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
             <strong>GrillMyCode</strong> — without writing a single line of YAML by hand.
           </p>
           <ul className={styles.introFeatures}>
-            <li>Choose your <strong>trigger event</strong> (manual dispatch, push to default branch, or both)</li>
-            <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
             <li>Pick your <strong>AI provider</strong> and model</li>
             <li>Configure <strong>question generation</strong> and delivery destinations</li>
-            <li>Fine-tune <strong>file patterns</strong> and advanced options</li>
+            <li>Fine-tune <strong>file patterns</strong> and file handling</li>
+            <li>Choose your <strong>trigger event</strong> (manual dispatch, push to default branch, or both)</li>
+            <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
+            <li>Adjust <strong>advanced options</strong> if you need to</li>
             <li>Copy the finished <strong>YAML</strong> straight into your repository</li>
           </ul>
           <p className={styles.introNote}>

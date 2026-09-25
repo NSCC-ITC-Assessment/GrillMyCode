@@ -12,8 +12,6 @@ When a student pushes their work, GrillMyCode reads the code they wrote and has 
 
 GrillMyCode does not grade anything. It does the preparation, and you have the conversation.
 
-![An assessment issue in a student's repository: the GrillMyCode header with a Download as PDF button, then questions that each quote a snippet of the student's own PHP code.](/img/screenshots/assessment-issue.png)
-
 ## How it fits into your course
 
 1. **You add GrillMyCode to an assignment once.** One file goes into the assignment's template repository, and every student who accepts the assignment gets a copy.
@@ -21,7 +19,7 @@ GrillMyCode does not grade anything. It does the preparation, and you have the c
 3. **Each student gets their own questions.** They appear as a GitHub issue in the student's repository, with a PDF copy. You choose when: on every push, when the student says they're done, or only when you start it.
 4. **You can also get the answers.** An optional private repository, which only instructors can see, holds every student's questions with answers, plus a quiz file you can import into your LMS.
 
-With the recommended AI models, an assessment usually costs less than one cent.
+With the recommended AI models, an assessment typically costs from less than one cent to a few cents. Cost can vary widely depending on the model you choose.
 
 ## Built for Classroom 50
 
@@ -31,6 +29,6 @@ Not using Classroom 50? Most of GrillMyCode still works; see [What code is asses
 
 ## Where to next
 
-- **New here?** Read [How it works](how-it-works.md). It takes five minutes.
-- **Ready to set it up?** Go to [Get started](getting-started/index.md). It takes about 15 minutes.
+- **New here?** Read [How GrillMyCode works](how-gmc-works.md). It takes five minutes.
+- **Ready to set it up?** Go to [Get started](getting-started/index.md). It takes about 15 minutes, and assumes you know the basics of Git and GitHub (see [What you need](getting-started/index.md#what-you-need)).
 - **Wondering whether it's worth it?** Read [Why GrillMyCode?](rationale.md)

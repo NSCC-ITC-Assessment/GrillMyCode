@@ -8,6 +8,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import unescapeImageAlt from './src/remark/unescapeImageAlt.js';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -61,6 +62,8 @@ const removedPages = [
     path: 'example-workflows/openrouter-provider',
     to: 'guides/choosing-a-model#using-a-more-capable-model',
   },
+  // Renamed to match its title, "How GrillMyCode works".
+  { path: 'how-it-works', to: 'how-gmc-works' },
 ];
 
 function removedPageRedirects() {
@@ -154,6 +157,10 @@ const config = {
           editUrl: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode/tree/main/docs-site/',
           lastVersion: latestVersion,
           versions: docsVersions,
+          remarkPlugins: [unescapeImageAlt],
+        },
+        pages: {
+          remarkPlugins: [unescapeImageAlt],
         },
         blog: false,
         theme: {

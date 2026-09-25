@@ -8,13 +8,15 @@ The trigger decides **when** GrillMyCode runs and generates questions for a stud
 
 ## At a glance
 
+![A timeline of one student's work: six pushes, the last one tagged "complete", followed by the deadline. Below it, three lanes, labelled Trigger option 1, 2 and 3, show when GrillMyCode runs. Every push: a small flame under each of the six pushes. Submission tag: one flame, under the tagged push. Manually: no flames until after the deadline, when a cursor clicks a green Run workflow button and one flame appears. A note says that whichever you choose, you can also start a run yourself at any time.](/img/choosing-a-trigger-timeline.svg)
+
 | Trigger | Runs when… | Best for | AI cost |
 |---|---|---|---|
 | **Push** | a student pushes code to the default branch (`main`) | Short assignments, and giving students questions to practise with while they work | One run per push |
 | **Submission tag** | a student pushes a tag you named, such as `complete` or `phase1` | Assessing finished work once, and projects handed in over several stages | One run per submission |
 | **Manual only** | you click **Run workflow** | Deciding the timing yourself, such as one run after the deadline or a trial on a few repositories | One run per click |
 
-## Push
+## Trigger option 1: Push {/* #push */}
 
 Every time a student pushes to the default branch, GrillMyCode generates a fresh set of questions about all of their work so far. The new questions replace the old ones in the same issue.
 
@@ -31,7 +33,7 @@ Every time a student pushes to the default branch, GrillMyCode generates a fresh
 
 Recipe: [Push to default branch](../example-workflows/pull-request.md).
 
-## Submission tag
+## Trigger option 2: Submission tag {/* #submission-tag */}
 
 Nothing happens on an ordinary push. GrillMyCode runs only when a student marks their work as done by pushing a **tag**, a label attached to a commit. You choose the tag names. The student runs:
 
@@ -63,6 +65,8 @@ Name one tag per stage, such as `phase1`, `phase2` and `final`. Each stage gets 
 
 You also choose what each later milestone covers:
 
+![A student's timeline with three tags: phase1, phase2 and final. Under option 1, "All work to date is assessed", the default, each tag's bar starts at the beginning, so phase2's bar is longer than phase1's and final's is longest. Under option 2, "Only work since the previous tag is assessed", the three bars sit end to end, each covering only the stretch since the tag before it. Under option 3, "Only work since a tag you name is assessed", the phase2 and final workflows each name phase1 as their starting point, so the phase2 bar and a longer final bar both begin at phase1. A small flame marks each tag's set of questions. A note says each tag gets its own set of questions and your starter code is never included.](/img/milestone-tags-coverage.svg)
+
 | Setting | `phase2` asks about… | Good for |
 |---|---|---|
 | **All work to date** (`cumulative`, the default) | everything the student has written, including phase 1 | Checking the student still understands the whole project as it grows |
@@ -78,7 +82,7 @@ You also choose what each later milestone covers:
 
 Recipes: [Submission tag](../example-workflows/tag-submission.md) · [Milestone tags](../example-workflows/3-milestone-tags.md).
 
-## Manual only
+## Trigger option 3: Manual only {/* #manual-only */}
 
 GrillMyCode never runs by itself. You start each run from the repository's **Actions** tab (**Actions → GrillMyCode → Run workflow**).
 

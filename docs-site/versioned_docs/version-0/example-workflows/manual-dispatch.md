@@ -24,14 +24,14 @@ on:
     # value in two places, and if they drift, clearing a field on the form stops
     # matching what leaving it at its default does.
     inputs:
-      num_questions:
-        description: 'num_questions - Number of comprehension questions to generate (1-50)'
-        required: false
-        default: '20'
       ai_model:
         description: 'ai_model - OpenRouter model ID in provider/model-name format'
         required: false
         default: 'google/gemini-3.5-flash-lite'
+      num_questions:
+        description: 'num_questions - Number of comprehension questions to generate (1-50)'
+        required: false
+        default: '20'
       instructor_context:
         description: 'instructor_context - Assignment context given to the AI (clear the field to use the workflow default unchanged)'
         required: false
@@ -62,8 +62,8 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
-          num_questions: "${{ github.event.inputs.num_questions || '20' }}"
           ai_model: "${{ github.event.inputs.ai_model || 'google/gemini-3.5-flash-lite' }}"
+          num_questions: "${{ github.event.inputs.num_questions || '20' }}"
           instructor_context: "${{ github.event.inputs.instructor_context || 'Assignment 3 - Python list comprehensions' }}"
           keep_comments: "${{ github.event.inputs.keep_comments || 'false' }}"
 ```

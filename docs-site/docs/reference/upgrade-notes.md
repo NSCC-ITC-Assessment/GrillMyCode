@@ -33,7 +33,7 @@ Current versions of GrillMyCode fail immediately with a message pointing here if
 +      api_key: ${{ secrets.OPENROUTER_API_KEY }}
 ```
 
-The main practical difference is cost: GitHub Models was free within your GitHub quota, whereas OpenRouter bills per token. The [recommended models](../ai-providers/openrouter.md#recommended-models) are typically well under one cent per assessment, so a small prepaid balance covers a full class for a semester.
+The main practical difference is cost: GitHub Models was free within your GitHub quota, whereas OpenRouter bills per token. The [recommended models](../ai-providers/openrouter.md#recommended-models) cost from less than one cent to a few cents per assessment, so a small prepaid balance covers a full class for a semester. Cost can vary widely depending on the model you choose.
 
 Workflows no longer need the `models: read` permission either. It is not used by anything, and can be removed from the `permissions:` block.
 

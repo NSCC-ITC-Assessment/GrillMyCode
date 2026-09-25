@@ -26,12 +26,13 @@ Normally, the settings in the workflow file apply to every run, and changing one
 
 Set this up in the Workflow Wizard's **Trigger** step, under **Manual run overrides**. These are ticked by default:
 
-- number of questions
 - AI model
+- number of questions
+- assignment brief files
 - instructor instructions
-- keep code comments
 - extra files to leave out
 - files to bring back
+- keep code comments
 
 Pick only settings you actually expect to change; a short form is easier to use.
 
@@ -45,7 +46,7 @@ Anyone who can run the workflow can fill in the form, and that includes the stud
 - **Include answers.** It would give students a "show me the answers" button.
 - **Settings that could quietly empty the assessment,** such as which commits are compared, or whose commits to skip.
 
-The assignment brief setting is offered but not ticked. A student could point it at a file they wrote, although that only steers the topics. Tick it only when you need to try a different brief for one run.
+The assignment brief setting is on the form too. A student could point it at a file they wrote, but that only steers the topics, and the run summary lists the files it read. Untick it if you'd rather the brief could only be changed in the workflow file.
 
 ---
 

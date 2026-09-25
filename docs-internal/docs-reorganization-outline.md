@@ -31,7 +31,7 @@ showing where every existing section ends up.
 | Spelling          | Canadian English (see [Writing standard](#writing-standard))                                                                |
 | README            | Restructure it where that makes it easier to digest (see [README](#readme))                                                 |
 | Classroom 50      | The gentle layer assumes the reader uses Classroom 50. Non-Classroom 50 use is covered in Reference                         |
-| Wizard step order | Move Trigger to step 1, restoring the order in the Wizard's planning prompt (see [Workflow Wizard](#workflow-wizard))       |
+| Wizard step order | Trigger stays at step 5, after Instructor and before the file-handling steps (see [Workflow Wizard](#workflow-wizard))      |
 | Screenshots       | The user supplies them. The rewrite leaves marked placeholders, listed in the [shot list](#screenshot-shot-list)            |
 | Slides            | In scope. Rewrite for a non-technical audience that knows Git and GitHub, and may know Classroom 50 (see [Slides](#slides)) |
 
@@ -443,26 +443,24 @@ Category `collapsed: true`.
 
 ### Workflow Wizard
 
-**Reorder the steps so Trigger comes first.** The current order is AI →
-Questions → Files → File opts → Trigger → Delivery → Instructor → Advanced
-→ Review. The Wizard's own planning prompt
-(`.github/prompts/plan-workflowWizard.prompt.md`) already specifies:
+**Reorder the steps, keeping Trigger at step 5.** The order was AI →
+Questions → Files → File opts → Trigger → Delivery → Instructor → Advanced →
+Review. The new order is:
 
-> Trigger → AI → Questions → Delivery → Instructor → Files → File opts →
+> AI → Questions → Delivery → Instructor → Trigger → Files → File opts →
 > Advanced → Review
 
-The code has drifted from that plan. Restoring it:
+An earlier draft of this outline moved Trigger to step 1. That was reversed:
+Trigger stays at step 5, where it was before the reorganization.
 
-- **Matches the docs' story.** _When should this run?_ is the first real
-  decision, and the Getting started and Choosing a trigger pages both lead
-  with it.
 - **Puts the Classroom 50 question earlier.** The Instructor step asks
-  "created by Classroom 50?". It moves from step 7 to step 5, ahead of
+  "created by Classroom 50?". It moves from step 7 to step 4, ahead of
   the file-handling steps that most readers can skip.
 - **Moves the technical steps to the end.** Files, File opts and Advanced
   come just before Review, where a non-technical reader can click through
   on defaults.
-- **Needs no prompt change.** The planning prompt already lists this order.
+- **Update the planning prompt to match.** The step list in
+  `.github/prompts/plan-workflowWizard.prompt.md` follows this order.
 
 Implementation notes:
 
@@ -476,7 +474,7 @@ Implementation notes:
   _Keeping a private answer key_ may be a better target than
   `guides/instructor-setup`.
 - This is a behaviour change to the Wizard, not a docs change. It lands as
-  its own commit (`fix(wizard): restore planned step order`), in the same
+  its own commit (`fix(wizard): reorder steps`), in the same
   branch.
 
 ### README

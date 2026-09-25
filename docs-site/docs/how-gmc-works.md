@@ -2,11 +2,13 @@
 sidebar_position: 3
 ---
 
-# How it works
+# How GrillMyCode works
 
 This page follows one student submission from start to finish. You don't need any technical background to read it. Each section ends with a link to the technical details, if you want them.
 
-## 1. Something starts a run
+![A cartoon road with five numbered stops. 1: a student at a laptop says "Done!" and sends their work off. 2: the GrillMyCode flame uses a magnifying glass to pick out the student's own code and sets other files aside. 3: a friendly robot, handed a sticky note of instructions, writes questions. The road then forks at a signpost. 4, for students: the student smiles at a pinned issue of questions with a PDF copy. 5, for you and optional: an instructor with a coffee mug beside a locked folder and a quiz card.](/img/how-gmc-works-journey.svg)
+
+## 1. The student submits code, triggering a run automatically or by the instructor
 
 You decide what starts GrillMyCode when you set it up. There are three choices:
 
@@ -18,7 +20,7 @@ Whichever you choose, the work happens on GitHub's servers. Nothing runs on your
 
 **Go deeper:** [Choosing a trigger](guides/choosing-a-trigger.md) · [Triggers in depth](reference/triggers.md)
 
-## 2. GrillMyCode finds the student's own code
+## 2. GrillMyCode isolates submitted code
 
 GrillMyCode looks at everything that has changed since the student accepted the assignment, then leaves out anything the student didn't write:
 
@@ -31,7 +33,7 @@ You can leave out more files for a particular assignment, or bring back a file t
 
 **Go deeper:** [What code is assessed](reference/code-selection.md) · [File filtering](reference/exclude-patterns.md)
 
-## 3. An AI model writes the questions
+## 3. An AI writes questions about submitted code
 
 GrillMyCode sends the student's code to an AI model through [OpenRouter](https://openrouter.ai/), a service that gives you access to many AI models through one account. Along with the code it can send:
 
@@ -41,11 +43,11 @@ GrillMyCode sends the student's code to an AI model through [OpenRouter](https:/
 
 The model writes 20 questions by default, each about a specific file and each with an answer. GrillMyCode checks the result before anyone sees it. For example, it drops any question about a file that wasn't part of the assessment.
 
-You pay OpenRouter from a prepaid balance, and one account covers your whole class. With the recommended models, an assessment usually costs less than one cent.
+You pay OpenRouter from a prepaid balance, and one account covers your whole class. With the recommended models, an assessment typically costs from less than one cent to a few cents. Cost can vary widely depending on the model you choose.
 
 **Go deeper:** [Choosing a model and managing cost](guides/choosing-a-model.md) · [OpenRouter](ai-providers/openrouter.md)
 
-## 4. The student gets their questions
+## 4. Questions are delivered to the student
 
 The questions arrive in two forms:
 
@@ -56,7 +58,7 @@ Students never see the answers. When the questions are generated again, for exam
 
 **Go deeper:** [What your students see](guides/what-students-see.md) · [The assessment issue and PDF](reference/assessment-output.md)
 
-## 5. You get the answers (optional)
+## 5. You get the questions, answers and LMS materials (optional for Classroom 50 instructors)
 
 After one extra setup step, GrillMyCode also keeps a private copy of every student's questions *with the answers*. The copies go in a repository that only instructors can see: one repository per assignment, with a folder for each student.
 

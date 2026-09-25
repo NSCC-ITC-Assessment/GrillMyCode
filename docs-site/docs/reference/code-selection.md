@@ -4,7 +4,7 @@ sidebar_position: 2
 
 # What code is assessed
 
-This page describes exactly which code GrillMyCode sends to the AI, and what happens to the questions before anyone sees them. For a non-technical overview, see [How it works](../how-it-works.md).
+This page describes exactly which code GrillMyCode sends to the AI, and what happens to the questions before anyone sees them. For a non-technical overview, see [How GrillMyCode works](../how-gmc-works.md).
 
 Each run works through these stages in order:
 

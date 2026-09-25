@@ -1,0 +1,223 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" role="img" aria-labelledby="gmc-who-title">
+  <title id="gmc-who-title">Who sees what. A brick wall marked "Instructors only" separates two sides. On the student's side: an issue of questions and a PDF, with the answers hidden. On your side as a Classroom 50 instructor, which is optional: a private repository with a folder for each student, their questions with answers, and a quiz for your LMS.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .ttl{font-size:20px;font-weight:800;fill:#1E293B}
+    .sub{font-size:14px;font-weight:600;fill:#475569}
+    .chip{font-size:14px;font-weight:800}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <linearGradient id="gmc-who-flame" x1="205" y1="60" x2="120" y2="295" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FA7A18"/><stop offset="0.45" stop-color="#F13B1F"/><stop offset="1" stop-color="#C8142E"/>
+    </linearGradient>
+    <linearGradient id="gmc-who-core" x1="0" y1="140" x2="0" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC53A"/><stop offset="1" stop-color="#FB8420"/>
+    </linearGradient>
+    <path id="gmc-who-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <g id="gmc-who-yes">
+      <circle r="10" fill="#16A34A"/>
+      <path d="M-4.5,0.5 L-1.2,3.8 L4.8,-3.4" fill="none" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="gmc-who-no">
+      <circle r="10" fill="#94A3B8"/>
+      <path d="M-3.8,-3.8 L3.8,3.8 M3.8,-3.8 L-3.8,3.8" stroke="#FFFFFF" stroke-width="2.8" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- backdrop: warm for the student, cool for you -->
+  <rect x="0" y="0" width="1000" height="560" rx="32" fill="#FFF7ED"/>
+  <path d="M500,0 H968 A32,32 0 0 1 1000,32 V528 A32,32 0 0 1 968,560 H500 Z" fill="#EFF6FF"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-who-sparkle" transform="translate(420,200) scale(.6)"/>
+    <use href="#gmc-who-sparkle" transform="translate(960,150) scale(.7)"/>
+    <use href="#gmc-who-sparkle" transform="translate(40,300) scale(.6)"/>
+  </g>
+
+  <!-- headings -->
+  <g class="txt">
+    <text class="ttl" x="40" y="36">What the student sees</text>
+    <text class="sub" x="40" y="58">in their own repository</text>
+    <text class="ttl" x="960" y="36" text-anchor="end">What you see as a</text>
+    <text class="ttl" x="960" y="58" text-anchor="end">Classroom 50 instructor</text>
+    <text class="sub" x="960" y="78" text-anchor="end">in a private repository (optional)</text>
+  </g>
+
+  <!-- ===== the wall ===== -->
+  <g>
+    <rect class="ink" x="468" y="150" width="64" height="300" rx="6" fill="#F4A582"/>
+    <g stroke="#C2410C" stroke-width="2.5" stroke-linecap="round" opacity=".55">
+      <path d="M470,180 H530 M470,210 H530 M470,240 H530 M470,270 H530 M470,360 H530 M470,390 H530 M470,420 H530"/>
+      <path d="M500,150 V180 M484,180 V210 M516,180 V210 M500,210 V240 M484,240 V270 M516,240 V270 M500,340 V360 M484,360 V390 M516,360 V390 M500,390 V420 M484,420 V450 M516,420 V450"/>
+    </g>
+    <rect class="ink" x="460" y="142" width="80" height="16" rx="5" fill="#E07B53"/>
+    <ellipse cx="500" cy="456" rx="70" ry="8" fill="#CBD5E1" opacity=".6"/>
+  </g>
+  <!-- "Instructors only" sign -->
+  <g class="txt">
+    <rect class="ink" x="436" y="278" width="128" height="62" rx="10" fill="#FFFFFF"/>
+    <path class="ink" fill="none" stroke-width="3" d="M492,298 V292 A8,8 0 0 1 508,292 V298"/>
+    <rect x="488" y="297" width="24" height="16" rx="3" fill="#334155"/>
+    <circle cx="500" cy="305" r="2.5" fill="#FFC53A"/>
+    <text x="500" y="332" text-anchor="middle" font-size="13" font-weight="800" fill="#1E293B">Instructors only</text>
+  </g>
+
+  <!-- flame mascot sitting on the wall -->
+  <g transform="translate(419,28) scale(.44)">
+    <path class="ink" stroke-width="7" fill="url(#gmc-who-flame)" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+    <path fill="url(#gmc-who-core)" d="M188 138C186 170 184 196 192 214C214 228 223 248 221 266C219 284 210 294 204 298H156C142 290 129 272 129 250C129 212 170 176 188 138Z"/>
+    <circle cx="158" cy="228" r="11" fill="#1E293B"/><circle cx="162" cy="224" r="4" fill="#FFFFFF"/>
+    <circle cx="204" cy="228" r="11" fill="#1E293B"/><circle cx="208" cy="224" r="4" fill="#FFFFFF"/>
+    <path d="M166,254 Q181,270 196,254" fill="none" stroke="#1E293B" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="140" cy="250" r="10" fill="#FB7185" opacity=".45"/><circle cx="222" cy="250" r="10" fill="#FB7185" opacity=".45"/>
+  </g>
+  <!-- paper planes going each way -->
+  <path d="M458,112 C420,96 390,110 372,140" fill="none" stroke="#94A3B8" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <g transform="translate(372,150) rotate(200)">
+    <path class="ink" fill="#FFFFFF" d="M0,0 L36,11 L0,22 L7,11 Z"/><path class="ink" fill="none" d="M7,11 H36"/>
+  </g>
+  <path d="M542,112 C580,96 610,110 628,140" fill="none" stroke="#94A3B8" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <g transform="translate(624,128) rotate(-20)">
+    <path class="ink" fill="#FFFFFF" d="M0,0 L36,11 L0,22 L7,11 Z"/><path class="ink" fill="none" d="M7,11 H36"/>
+  </g>
+
+  <!-- ===== the student's side ===== -->
+  <!-- PDF behind the issue -->
+  <g transform="translate(386,200) rotate(7)">
+    <rect class="ink" x="0" y="0" width="62" height="80" rx="6" fill="#FFFFFF"/>
+    <rect x="1.5" y="56" width="59" height="18" fill="#DC2626"/>
+    <text class="txt" x="31" y="70" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">PDF</text>
+  </g>
+  <!-- the issue -->
+  <rect class="ink" x="190" y="168" width="200" height="240" rx="14" fill="#FFFFFF"/>
+  <path d="M190,200 H390" stroke="#1E293B" stroke-width="3"/>
+  <circle cx="208" cy="184" r="4.5" fill="#F87171"/><circle cx="224" cy="184" r="4.5" fill="#FBBF24"/><circle cx="240" cy="184" r="4.5" fill="#34D399"/>
+  <g transform="translate(380,170) rotate(30)">
+    <line x1="0" y1="0" x2="0" y2="14" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round"/>
+    <circle class="ink" cx="0" cy="-6" r="9" fill="#EF4444" stroke-width="2.5"/>
+  </g>
+  <g class="txt" font-size="17" font-weight="800" fill="#F97316">
+    <text x="206" y="236">?</text><text x="206" y="286">?</text><text x="206" y="336">?</text>
+  </g>
+  <path d="M226,230 H372 M226,280 H358 M226,330 H370" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+  <!-- hidden answers -->
+  <g fill="#F1F5F9" stroke="#CBD5E1" stroke-width="2" stroke-dasharray="4 4">
+    <rect x="226" y="244" width="120" height="16" rx="8"/>
+    <rect x="226" y="294" width="120" height="16" rx="8"/>
+    <rect x="226" y="344" width="120" height="16" rx="8"/>
+  </g>
+  <g transform="translate(364,252)" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M-10,0 Q0,-9 10,0 Q0,9 -10,0 Z"/><circle r="3" fill="#94A3B8"/><path d="M-9,8 L9,-8"/>
+  </g>
+  <g transform="translate(364,302)" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M-10,0 Q0,-9 10,0 Q0,9 -10,0 Z"/><circle r="3" fill="#94A3B8"/><path d="M-9,8 L9,-8"/>
+  </g>
+  <g transform="translate(364,352)" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round">
+    <path d="M-10,0 Q0,-9 10,0 Q0,9 -10,0 Z"/><circle r="3" fill="#94A3B8"/><path d="M-9,8 L9,-8"/>
+  </g>
+  <!-- the student -->
+  <g transform="translate(0,-72) scale(1)">
+    <ellipse cx="106" cy="550" rx="70" ry="8" fill="#FDBA74" opacity=".45"/>
+    <path class="ink" fill="#F97316" d="M62,548 C62,510 80,496 106,496 C132,496 150,510 150,548 Z"/>
+    <path class="ink" fill="#FDDCB5" d="M98,478 V497 Q106,503 114,497 V478 Z"/>
+    <g transform="translate(106,490) scale(.86) translate(-106,-492)">
+      <path class="ink" fill="#5B3A29" d="M75,468 C72,434 92,422 108,422 C126,422 142,434 138,468 C138,484 141,494 147,502 C136,506 128,502 124,496 L88,496 C84,502 76,506 66,502 C71,494 75,484 75,468 Z"/>
+      <ellipse class="ink" cx="106" cy="464" rx="24" ry="28" fill="#FDDCB5"/>
+      <path class="ink" fill="#5B3A29" d="M80,464 C76,436 94,428 110,430 C128,432 136,446 133,462 C120,458 106,450 98,440 C94,450 88,458 80,464 Z"/>
+      <circle class="ink" cx="126" cy="442" r="4.2" fill="#FFC53A" stroke-width="2.5"/>
+      <circle cx="97" cy="468" r="2.6" fill="#1E293B"/><circle cx="117" cy="468" r="2.6" fill="#1E293B"/>
+      <path class="ink" fill="none" stroke-width="2.6" d="M101,480 Q107,484 113,480"/>
+      <path d="M91,460 Q97,457 102,459.5 M112,459.5 Q117,457 123,460" fill="none" stroke="#1E293B" stroke-width="2.6" stroke-linecap="round"/>
+      <path d="M108.0,471 Q105.0,476 108.0,477" fill="none" stroke="#1E293B" stroke-width="2" stroke-linecap="round" stroke-opacity=".5"/>
+    </g>
+  </g>
+  <!-- thinking bubble -->
+  <g class="txt">
+    <circle class="ink" cx="72" cy="300" r="22" fill="#FFFFFF" stroke-width="2.5"/>
+    <text x="72" y="309" text-anchor="middle" font-size="24" font-weight="800" fill="#F97316">?</text>
+    <circle class="ink" cx="90" cy="332" r="5" fill="#FFFFFF" stroke-width="2"/>
+  </g>
+
+  <!-- ===== your side ===== -->
+  <!-- private folder, with a tab per student -->
+  <g class="txt">
+    <rect class="ink" x="600" y="186" width="54" height="30" rx="6" fill="#FDE68A" stroke-width="2.5"/>
+    <text x="627" y="206" text-anchor="middle" font-size="12" font-weight="800" fill="#92400E">jsmith</text>
+    <rect class="ink" x="662" y="196" width="44" height="26" rx="6" fill="#FDE68A" stroke-width="2.5"/>
+    <rect class="ink" x="714" y="190" width="44" height="30" rx="6" fill="#FDE68A" stroke-width="2.5"/>
+  </g>
+  <path class="ink" fill="#FBBF24" d="M580,210 H626 L640,224 H790 A10,10 0 0 1 800,234 V398 A10,10 0 0 1 790,408 H590 A10,10 0 0 1 580,398 Z"/>
+  <path class="ink" fill="none" d="M580,244 H800"/>
+  <g transform="translate(606,262)">
+    <circle class="ink" r="17" fill="#334155" stroke-width="2.5"/>
+    <path fill="none" stroke="#FFFFFF" stroke-width="2.5" stroke-linecap="round" d="M-5,-1 V-5 A5,5 0 0 1 5,-5 V-1"/>
+    <rect x="-7.5" y="-1" width="15" height="11" rx="2" fill="#FFC53A"/>
+  </g>
+  <!-- questions with answers, pulled out of the folder -->
+  <g transform="translate(640,256) rotate(-5)">
+    <rect class="ink" x="0" y="0" width="130" height="136" rx="10" fill="#FFFFFF"/>
+    <g class="txt" font-size="15" font-weight="800">
+      <text x="12" y="30" fill="#F97316">?</text><text x="12" y="54" fill="#16A34A">A</text>
+      <text x="12" y="84" fill="#F97316">?</text><text x="12" y="108" fill="#16A34A">A</text>
+    </g>
+    <path d="M30,25 H116 M30,79 H106" stroke="#CBD5E1" stroke-width="6" stroke-linecap="round"/>
+    <path d="M30,49 H100 M30,103 H112" stroke="#86EFAC" stroke-width="6" stroke-linecap="round"/>
+  </g>
+  <!-- quiz heading to the LMS -->
+  <g transform="translate(830,176) rotate(8)">
+    <rect class="ink" x="0" y="0" width="54" height="68" rx="7" fill="#FFFFFF"/>
+    <rect x="10" y="13" width="10" height="10" rx="2" fill="#16A34A"/>
+    <path d="M25,18 H44" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+    <rect x="10" y="30" width="10" height="10" rx="2" fill="none" stroke="#94A3B8" stroke-width="2"/>
+    <path d="M25,35 H44" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+    <rect x="10" y="47" width="10" height="10" rx="2" fill="none" stroke="#94A3B8" stroke-width="2"/>
+    <path d="M25,52 H40" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <path d="M894,206 C918,196 928,184 930,168" fill="none" stroke="#94A3B8" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <!-- graduation cap = your LMS -->
+  <g class="txt">
+    <path class="ink" fill="#334155" d="M930,108 L968,124 L930,140 L892,124 Z" stroke-width="2.5"/>
+    <path class="ink" fill="#334155" d="M910,132 V146 C918,154 942,154 950,146 V132 L930,140 Z" stroke-width="2.5"/>
+    <path d="M962,126 V142" stroke="#FFC53A" stroke-width="3" stroke-linecap="round"/>
+    <circle cx="962" cy="145" r="3.5" fill="#FFC53A"/>
+    <text class="sub" x="930" y="100" text-anchor="middle">your LMS</text>
+  </g>
+  <!-- the instructor -->
+  <g transform="translate(160,-62)">
+    <ellipse cx="720" cy="550" rx="70" ry="8" fill="#BFDBFE" opacity=".6"/>
+    <path class="ink" fill="#334155" d="M676,548 C676,510 694,496 720,496 C746,496 764,510 764,548 Z"/>
+    <path class="ink" fill="none" stroke="#FFFFFF" d="M708,498 L720,512 L732,498"/>
+    <circle class="ink" cx="720" cy="464" r="27" fill="#E8B48A"/>
+    <path class="ink" fill="#4B5563" d="M693,460 C688,438 702,428 718,430 C724,424 736,426 740,432 C750,438 750,450 747,460 C744,452 740,448 736,446 C730,452 718,454 706,450 C700,452 696,456 693,460 Z"/>
+    <circle cx="710" cy="466" r="8" fill="#FFFFFF" fill-opacity=".6" class="ink" stroke-width="2.5"/>
+    <circle cx="731" cy="466" r="8" fill="#FFFFFF" fill-opacity=".6" class="ink" stroke-width="2.5"/>
+    <path d="M718,466 H723" stroke="#1E293B" stroke-width="2.5"/>
+    <circle cx="710" cy="467" r="2.8" fill="#1E293B"/><circle cx="731" cy="467" r="2.8" fill="#1E293B"/>
+    <path class="ink" fill="none" d="M712,481 Q720,488 728,481"/>
+    <g transform="translate(662,506)">
+      <rect class="ink" x="0" y="0" width="22" height="26" rx="4" fill="#FFFFFF"/>
+      <path class="ink" fill="none" d="M0,7 C-9,7 -9,19 0,19"/>
+      <path d="M6,-6 Q9,-10 6,-14 M14,-6 Q17,-10 14,-14" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+  </g>
+
+  <!-- ===== the comparison ===== -->
+  <g class="txt">
+    <rect class="ink" x="120" y="496" width="136" height="36" rx="18" fill="#FFFFFF" stroke-width="2"/>
+    <use href="#gmc-who-yes" x="142" y="514"/>
+    <text class="chip" x="160" y="519" fill="#1E293B">Questions</text>
+    <rect class="ink" x="268" y="496" width="124" height="36" rx="18" fill="#F1F5F9" stroke="#94A3B8" stroke-width="2"/>
+    <use href="#gmc-who-no" x="290" y="514"/>
+    <text class="chip" x="308" y="519" fill="#64748B">Answers</text>
+
+    <rect class="ink" x="570" y="496" width="136" height="36" rx="18" fill="#FFFFFF" stroke-width="2"/>
+    <use href="#gmc-who-yes" x="592" y="514"/>
+    <text class="chip" x="610" y="519" fill="#1E293B">Questions</text>
+    <rect class="ink" x="716" y="496" width="124" height="36" rx="18" fill="#FFFFFF" stroke-width="2"/>
+    <use href="#gmc-who-yes" x="738" y="514"/>
+    <text class="chip" x="756" y="519" fill="#1E293B">Answers</text>
+    <rect class="ink" x="850" y="496" width="118" height="36" rx="18" fill="#FFFFFF" stroke-width="2"/>
+    <use href="#gmc-who-yes" x="872" y="514"/>
+    <text class="chip" x="890" y="519" fill="#1E293B">LMS quiz</text>
+  </g>
+</svg>

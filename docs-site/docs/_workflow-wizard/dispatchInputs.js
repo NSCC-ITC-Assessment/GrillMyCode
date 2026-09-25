@@ -33,9 +33,9 @@
  *
  * assignment_context was held back on that same "the student can dispatch too"
  * reasoning — it is a glob matched against the student's working tree, so a
- * student could re-point it at a file they wrote. It is listed now, unticked,
- * because that reasoning did not survive contact with the rest of the
- * catalogue: instructor_context is exposed and ticked by default, and it steers
+ * student could re-point it at a file they wrote. It is listed now, and ticked
+ * by default, because that reasoning did not survive contact with the rest of
+ * the catalogue: instructor_context is exposed and ticked too, and it steers
  * question focus by free text that a dispatching student can equally supply.
  * The assessed code is student-authored and reaches the prompt in full, so
  * student-controlled text in the prompt is the tool's baseline condition rather
@@ -54,6 +54,13 @@
  * mode a run used is shown in the run summary's configuration block. It is
  * offered only for tag-triggered workflows (tagTriggerOnly), where it has an
  * effect at all, and is unticked by default.
+ *
+ * include_codebase_context only adds background — files the AI is told never to
+ * ask about on their own — so it cannot narrow or empty the assessment either.
+ * It is listed because it is the setting an instructor reaches for when a
+ * run's questions came out shallow for want of the surrounding code. Its size
+ * limit, codebase_context_max_chars, stays in the file: like
+ * assignment_context_max_chars it is a structural cap, not a per-run choice.
  */
 
 /**
@@ -78,6 +85,15 @@ export const MAX_DISPATCH_INPUTS = 25;
  */
 export const DISPATCH_OVERRIDES = [
   {
+    key: 'ai_model',
+    cfgKey: 'aiModel',
+    label: 'AI model',
+    type: 'string',
+    defaultSelected: true,
+    description: 'OpenRouter model ID in provider/model-name format',
+    hint: 'Try a different model on a single run — useful when one model produces weak questions for a particular assignment.',
+  },
+  {
     key: 'num_questions',
     cfgKey: 'numQuestions',
     label: 'Number of questions',
@@ -87,13 +103,15 @@ export const DISPATCH_OVERRIDES = [
     hint: 'Re-run with a shorter or longer question set without editing the workflow.',
   },
   {
-    key: 'ai_model',
-    cfgKey: 'aiModel',
-    label: 'AI model',
+    key: 'assignment_context',
+    cfgKey: 'assignmentContext',
+    label: 'Assignment context files',
     type: 'string',
     defaultSelected: true,
-    description: 'OpenRouter model ID in provider/model-name format',
-    hint: 'Try a different model on a single run — useful when one model produces weak questions for a particular assignment.',
+    normalize: true,
+    description:
+      'Comma-separated file glob(s) whose contents are given to the AI as assignment context',
+    hint: 'Point a single run at a different brief or rubric — useful when an assignment’s instructions moved, or to test how a new brief steers the questions before committing it. The globs match the student’s own working tree, and anyone who can run the workflow can set them; the paths matched are listed in the run summary.',
   },
   {
     key: 'instructor_context',
@@ -116,13 +134,15 @@ export const DISPATCH_OVERRIDES = [
     hint: 'Retarget the questions for one run — the field prefills with your current context so you can edit it in place. GitHub has no multi-line dispatch field, so a multi-line context is shown collapsed to one line; automatic runs still use the full version, and `gh workflow run` can pass multi-line text.',
   },
   {
-    key: 'keep_comments',
-    cfgKey: 'keepComments',
-    label: 'Keep code comments',
-    type: 'boolean',
-    defaultSelected: true,
-    description: 'Preserve code comments instead of stripping them before analysis',
-    hint: 'Re-run with comments preserved when a student’s comments are themselves part of what you want to assess.',
+    key: 'tag_diff_base',
+    cfgKey: 'tagDiffBase',
+    label: 'Tag diff base',
+    type: 'choice',
+    options: ['cumulative', 'previous-tag'],
+    tagTriggerOnly: true,
+    description:
+      'cumulative assesses all work to date; previous-tag only the work since the last submission tag; tag:<name> only the work since that tag',
+    hint: 'Re-run a milestone either way — for example, a cumulative assessment of phase2 when the workflow normally assesses only the work since phase1.',
   },
   {
     key: 'additional_exclude_patterns',
@@ -145,14 +165,13 @@ export const DISPATCH_OVERRIDES = [
     hint: 'Pull a file back in that the default exclusions removed.',
   },
   {
-    key: 'assignment_context',
-    cfgKey: 'assignmentContext',
-    label: 'Assignment context files',
-    type: 'string',
-    normalize: true,
-    description:
-      'Comma-separated file glob(s) whose contents are given to the AI as assignment context',
-    hint: 'Point a single run at a different brief or rubric — useful when an assignment’s instructions moved, or to test how a new brief steers the questions before committing it. Unticked by default: the globs match the student’s own working tree, and anyone who can run the workflow can set them.',
+    key: 'keep_comments',
+    cfgKey: 'keepComments',
+    label: 'Keep code comments',
+    type: 'boolean',
+    defaultSelected: true,
+    description: 'Preserve code comments instead of stripping them before analysis',
+    hint: 'Re-run with comments preserved when a student’s comments are themselves part of what you want to assess.',
   },
   {
     key: 'include_initial_commit',
@@ -163,15 +182,12 @@ export const DISPATCH_OVERRIDES = [
     hint: 'Lets you recover a run where a student committed everything at once and the first-commit exclusion left nothing to assess.',
   },
   {
-    key: 'tag_diff_base',
-    cfgKey: 'tagDiffBase',
-    label: 'Tag diff base',
-    type: 'choice',
-    options: ['cumulative', 'previous-tag'],
-    tagTriggerOnly: true,
-    description:
-      'cumulative assesses all work to date; previous-tag only the work since the last submission tag; tag:<name> only the work since that tag',
-    hint: 'Re-run a milestone either way — for example, a cumulative assessment of phase2 when the workflow normally assesses only the work since phase1.',
+    key: 'include_codebase_context',
+    cfgKey: 'includeCodebaseContext',
+    label: 'Include codebase context',
+    type: 'boolean',
+    description: 'Send the rest of the project to the AI as background for the assessed code',
+    hint: 'Re-run with the surrounding code visible when questions came out shallow because the AI could not see what the student’s code calls or extends. Likely increases the cost of that run.',
   },
   {
     key: 'ai_temperature',
@@ -184,14 +200,18 @@ export const DISPATCH_OVERRIDES = [
 ];
 
 /**
- * Ticked when the wizard first opens: the question, context and file-filtering
- * settings an instructor varies between runs of the same assignment, in
- * catalogue order from num_questions through exclude_pattern_overrides.
+ * Ticked when the wizard first opens: the model, question, context and
+ * file-filtering settings an instructor varies between runs of the same
+ * assignment.
  *
- * The three below that range stay unticked because they are situational rather
- * than routine — assignment_context re-points question focus and is best fixed
- * for the cohort, include_initial_commit is a per-assignment structural choice,
- * and ai_temperature is best left fixed.
+ * The rest stay unticked because they are situational rather than routine —
+ * tag_diff_base re-scopes a milestone, include_initial_commit is a
+ * per-assignment structural choice, include_codebase_context raises the cost of
+ * a run, and ai_temperature is best left fixed.
+ *
+ * The catalogue follows the wizard's own step order (AI, Questions, Trigger,
+ * Files, File opts, Advanced), and within a step the order of its controls, so
+ * the Run workflow form lists fields in the order the wizard asked about them.
  */
 export const DEFAULT_DISPATCH_OVERRIDES = DISPATCH_OVERRIDES.filter((o) => o.defaultSelected).map(
   (o) => o.key,

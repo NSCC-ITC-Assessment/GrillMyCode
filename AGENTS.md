@@ -20,7 +20,7 @@ All documentation work must target `docs-site/docs/` (the "Next / unreleased" ve
 
 The docs are written for instructors in two layers. Put new content in the right one:
 
-- **Gentle layer** — `intro.md`, `how-it-works.md`, `getting-started/`, `guides/`. Task-first,
+- **Gentle layer** — `intro.md`, `how-gmc-works.md`, `getting-started/`, `guides/`. Task-first,
   plain language, **no input names or YAML in body text**. Assume the reader uses Classroom 50
   and knows Git/GitHub basics, but explain GitHub Actions terms (workflow, secret, Actions tab,
   tag) on first use. Each guide ends with a `**Go deeper:**` line linking its Reference page.
