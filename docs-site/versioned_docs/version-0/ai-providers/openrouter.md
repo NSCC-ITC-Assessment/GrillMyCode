@@ -31,16 +31,16 @@ Model IDs must match OpenRouter's catalogue exactly; see [openrouter.ai/models](
 
 These have been tested with GrillMyCode and usually cost under **one cent per assessment**. They are the options pre-loaded in the [Workflow Wizard](../workflow-wizard.mdx).
 
-| Model | `ai_model` |
-|---|---|
-| Google Gemini 3.5 Flash Lite (default) | `google/gemini-3.5-flash-lite` |
-| DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` |
-| Minimax M2.7 | `minimax/minimax-m2.7` |
-| StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` |
-| Tencent Hy3 | `tencent/hy3` |
-| Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` |
+| Model | `ai_model` | Good to know |
+|---|---|---|
+| Google Gemini 3.5 Flash Lite (default) | `google/gemini-3.5-flash-lite` | Fast and cheap, with the best multiple-choice distractors of those tested, which is why it is the default |
+| DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | Very cheap, and a reliable alternative |
+| Minimax M2.7 | `minimax/minimax-m2.7` | Very cheap, and does well with little tuning |
+| StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` | Good quality for the price |
+| Tencent Hy3 | `tencent/hy3` | Cheap and works, though its writing style varies more |
+| Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` | Good at following the required question format |
 
-Of those tested, the default writes the most effective multiple-choice distractors, which is why it is the default. See [Choosing a model and managing cost](../guides/choosing-a-model.md#the-recommended-models) for notes on each. Any other model works too; check its price at [openrouter.ai/models](https://openrouter.ai/models) first, because costs vary by orders of magnitude.
+Any other model works too; check its price at [openrouter.ai/models](https://openrouter.ai/models) first, because costs vary by orders of magnitude.
 
 ## Model routing variants
 

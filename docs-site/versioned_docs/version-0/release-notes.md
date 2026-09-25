@@ -5,6 +5,22 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.15.1 — 2026-09-25
+
+### What's Changed
+
+### Bug Fixes
+
+- redact instructor_repo_token in the debug input dump
+
+### Documentation
+
+- remove stale facts and duplicated content
+
+### Refactoring
+
+- move the issue body length limit into constants
+
 ## v0.15.0 — 2026-09-25
 
 ### What's Changed

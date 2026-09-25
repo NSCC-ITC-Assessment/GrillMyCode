@@ -24,13 +24,13 @@ Every push to the repository triggers one of three build pipelines, depending on
 
 | Environment | Trigger | Image tag produced | Purpose |
 |---|---|---|---|
-| **DEV** | Push to any feature / fix branch | `:branch-name` (sanitized) | Validate the build compiles and passes checks before review |
+| **DEV** | Push to any feature / fix branch | `:branch-<name>` (sanitized) | Validate the build compiles and passes checks before review |
 | **STAGING** | Merge to `main` | `:next` | Integration point — code that has been reviewed and merged but not yet versioned |
 | **PROD** | Push of a `v*` tag | `:v0.x.x`, `:v0.x`, `:v0`, `:latest` | Stable, versioned releases consumed by instructors |
 
 ### DEV — branch builds
 
-When you push source-code changes to any branch other than `main`, `branch-build.yml` fires. It builds the Docker image and pushes it to `ghcr.io` under a sanitized form of the branch name (e.g. `feat/add-provider` → `:feat-add-provider`). This tag exists solely for internal validation and is not intended for use in production workflow files.
+When you push source-code changes to any branch other than `main`, `branch-build.yml` fires. It builds the Docker image and pushes it to `ghcr.io` under a sanitized form of the branch name (e.g. `feat/add-provider` → `:branch-feat-add-provider`). This tag exists solely for internal validation and is not intended for use in production workflow files.
 
 ### STAGING — `main` after merge
 
@@ -69,8 +69,8 @@ Pushing a tag is the single action that triggers everything. When you run `git p
 1. The `release.yml` workflow fires
 2. It builds the Docker image and pushes it to `ghcr.io` with four version tags (`vX.Y.Z`, `vX.Y`, `vX`, `latest`)
 3. It automatically creates a **GitHub Release** with auto-generated release notes
-
-No files are committed or modified during release. The repository is not touched after the tag is pushed — the release is a pure build-and-publish operation.
+4. It moves the floating `vX` and `vX.Y` git tags to the new release
+5. It snapshots the docs and commits the snapshot to `main` (see [Docs versioning](#docs-versioning))
 
 You do not need to manually create the GitHub Release through the UI.
 
@@ -155,29 +155,6 @@ image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:v2"
 
 ---
 
-## Patching an older major (maintenance mode)
-
-When a bug exists in a previous major line, apply the fix there independently.
-
-```bash
-# Example: main is on v2.x.x but a bug needs fixing in v1
-
-# 1. Create a release branch from the latest v1 patch tag
-git checkout -b release/v1 v1.2.0
-
-# 2. Apply the fix
-git cherry-pick <commit-hash>
-git push origin release/v1
-
-# 3. Tag from the release branch
-git tag v1.2.1
-git push origin v1.2.1
-```
-
-This updates `v1` without affecting `v2` or `latest`.
-
----
-
 ## Docs versioning
 
 The documentation site uses Docusaurus versioning to mirror the action's release lifecycle. A version dropdown in the navbar lets readers toggle between **stable** docs (the latest release) and **Next (unreleased)** docs (whatever is currently on `main`).
@@ -212,34 +189,3 @@ To snapshot manually — for example, to preview the result locally before taggi
 cd docs-site
 pnpm docusaurus docs:version N
 ```
-
----
-
-## What counts as a patch, minor, or major?
-
-### Patch — bug fix, no behaviour change for consumers
-
-- A supported AI provider returns an unexpected response shape and the action crashes
-- The diff truncation cuts mid-line and produces malformed Markdown
-- `sanitiseSha` rejects a valid short SHA format that GitHub legitimately produces
-- `resolveOutputFile` generates an invalid filename for an edge-case branch name
-- `include_initial_commit` logic incorrectly identifies the initial commit on a shallow clone
-- Whitespace or encoding issue in the generated Markdown output
-
-### Minor — new backwards-compatible functionality
-
-- New AI provider (e.g. adding `anthropic` or `google-gemini`)
-- New optional input (e.g. `question-style`, `language`)
-- New output (e.g. `question-count`, `truncated`)
-- New delivery mechanism (e.g. Teams/Slack webhook, workflow artifact)
-- New event support (e.g. `workflow_run`, `schedule`)
-
-### Major — breaking change (existing workflow files would stop working)
-
-- Removing or renaming an existing input
-- Changing an input's default behaviour in a way that alters existing results
-- Changing the output file format
-- Removing a supported `ai_provider` value
-- Changing the PDF or issue naming convention
-- Removing an output
-- Requiring a new mandatory input

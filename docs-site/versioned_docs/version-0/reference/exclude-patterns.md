@@ -7,12 +7,6 @@ sidebar_label: File filtering
 
 GrillMyCode detects each repository's languages and frameworks and excludes the files they generate, with no configuration needed in most cases. This page lists every rule and how patterns are matched. For a plain-language overview, see [Choosing which files are assessed](../guides/choosing-files.md).
 
-:::info[Binary files are never assessed]
-
-Regardless of any include or exclude settings, **binary files are always skipped** before being sent to the AI. Any file whose content contains a null byte is automatically filtered out. Only text-based source files are eligible for assessment.
-
-:::
-
 ## How the decision flow works
 
 For each file in the changed diff, the action applies this logic in order:
@@ -150,12 +144,6 @@ Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with t
 | `config.json` | Any file named exactly `config.json` at any depth (matchBase) |
 | `src/config.json` | Only `src/config.json` specifically (has a `/`, so anchored) |
 
-**Key behaviours to know:**
-
-- Patterns with no `/` in them match on filename only — `*.log` matches `logs/server.log`, not just `server.log` at the root.
-- Patterns with a `/` are matched against the full path — `src/*.js` only matches JS files directly in `src/`, not `src/utils/helper.js`.
-- `**` matches across directory separators — `tests/**` matches `tests/unit/foo.test.js`.
-
 **Worked examples:**
 
 | File path | Pattern | Match? | Why |
@@ -224,10 +212,6 @@ Use `exclude_pattern_overrides` to widen what gets assessed (re-include somethin
 
 :::
 
-## Workflow files
-
-GitHub Actions workflow files (`.github/workflows/**`) are always excluded. This prevents questions from being generated about the GrillMyCode workflow file itself.
-
 ## Confirming what was applied
 
 The action logs the full exclude list on every run. Look for these lines in the workflow step output:
@@ -239,9 +223,9 @@ Using gitignore templates: Node, Nextjs, Global/VisualStudioCode
 Additional exclude patterns (from input): data/**, tests/fixtures/**
 Exclude pattern overrides (re-included): README.md
 Exclude patterns applied (94):
-  .git/**
-  .gitignore
-  node_modules/**
+  **/.git/**
+  **/.gitignore
+  **/node_modules/**
   ...
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 ```

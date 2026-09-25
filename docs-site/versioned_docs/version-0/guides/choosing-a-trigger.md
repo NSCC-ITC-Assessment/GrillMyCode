@@ -95,17 +95,6 @@ GrillMyCode never runs by itself. You start each run from the repository's **Act
 
 To change settings for a single run, see [Running it yourself](running-manually.md).
 
-## Quick decision guide
-
-| If you want… | Choose |
-|---|---|
-| Students to get practice questions as they go | **Push** |
-| One assessment of the finished assignment | **Submission tag**, one tag |
-| An assessment at each stage of a longer project | **Submission tag**, one tag per milestone |
-| Each stage's questions to cover only that stage's new code | **Submission tag** with **only work since the previous tag** |
-| To decide the timing yourself | **Manual only** |
-| Students to be assessed only on work they deliberately hand in | **Submission tag** |
-
 ## Can I use more than one?
 
 **Manual runs** work alongside any trigger.

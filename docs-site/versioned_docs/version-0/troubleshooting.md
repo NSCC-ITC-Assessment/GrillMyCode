@@ -51,14 +51,6 @@ With a tag-triggered workflow, that's expected. GrillMyCode ignores Classroom 50
 
 ### OpenRouter: "No endpoints available matching your guardrail restrictions and data policy" (404)
 
-The full error looks like this:
-
-```
-OpenRouter Error: Assessment failed: AI API error 404: { error: { message:
-"No endpoints available matching your guardrail restrictions and data policy.",
-code: 404 } }
-```
-
 This is an OpenRouter account setting, not a GrillMyCode bug. Your privacy or guardrail settings exclude every provider that could serve the requested model. It's most common with free or near-free models, which require you to opt in to data sharing.
 
 Fix it in your [OpenRouter privacy settings](https://openrouter.ai/settings/privacy):

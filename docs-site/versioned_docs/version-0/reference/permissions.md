@@ -50,12 +50,7 @@ When it is empty or not set, instructor delivery is skipped, and the model is as
 
 ### Classic PAT (recommended — simplest option)
 
-1. Go to **GitHub → Settings → Developer settings → Personal access tokens → Tokens (classic)**.
-2. Click **Generate new token (classic)**.
-3. Give it a descriptive name, e.g. `GrillMyCode instructor delivery`.
-4. Set an expiry that suits your retention policy (e.g. 1 year).
-5. Select the **`repo`** scope (the full checkbox — this covers creating private org repos and reading/writing file contents) and the **`workflow`** scope (required to commit GitHub Actions workflow files into the instructor repository, and to keep them up to date afterwards).
-6. Click **Generate token** and copy the value immediately.
+Select the **`repo`** scope (creating private organization repositories and writing their contents) and the **`workflow`** scope (committing the quiz workflow into the instructor repository and keeping it up to date). Step by step: [Create an access token](../guides/instructor-setup.md#create-an-access-token).
 
 ### Fine-grained PAT (more restrictive)
 

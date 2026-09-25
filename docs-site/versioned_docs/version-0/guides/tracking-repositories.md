@@ -29,12 +29,6 @@ Labels need the answer-key token because GitHub doesn't let a workflow's built-i
 
 ![An organization's repository list. Three student repositories show "· 🔥 GrillMyCode: 20 questions" at the end of their description and a grillmycode topic; one student's repository has neither.](/img/screenshots/org-repository-markers.png)
 
-GrillMyCode is careful with these labels:
-
-- It keeps any topics you've added yourself.
-- It replaces its own old note rather than adding another one.
-- It leaves a description alone if adding the note would make it too long for GitHub.
-
 Labels stay on a repository once they're added, so they show which students have had questions at some point. The search above shows who has questions right now.
 
 :::tip
