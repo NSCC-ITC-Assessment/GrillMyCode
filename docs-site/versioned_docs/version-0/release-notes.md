@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.14.0 — 2026-09-25
+
+### What's Changed
+
+### Bug Fixes
+
+- **release:** escape `<` and `{` in docs release notes
+
+### Chores & Maintenance
+
+- **release:** publish under the v0 major tag
+
 ## v0.13.0 — 2026-09-25
 
 ### What's Changed
