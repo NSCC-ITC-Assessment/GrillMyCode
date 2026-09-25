@@ -18,9 +18,10 @@ import {
   DEFAULT_AI_MODEL,
   DEFAULT_TAG_DIFF_BASE,
   TAG_DIFF_BASE_MODES,
+  TAG_DIFF_BASE_NAMED_PREFIX,
   DEFAULT_LABEL_REPOS,
 } from './constants.js';
-import { isSafeTagPattern } from './tags.js';
+import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
 /**
  * Parses submission_tags. Accepts commas, newlines or both as separators, since
@@ -47,12 +48,30 @@ function readSubmissionTags() {
   return patterns;
 }
 
+/**
+ * Reads tag_diff_base: one of TAG_DIFF_BASE_MODES, or "tag:<name>" naming the
+ * tag to diff from. The mode is case-insensitive; the tag name is not, because
+ * git tag names are case-sensitive. Returned as the mode, or as the prefix plus
+ * the name exactly as written.
+ */
 function readTagDiffBase() {
-  const value = (core.getInput('tag_diff_base') || DEFAULT_TAG_DIFF_BASE).trim().toLowerCase();
+  const raw = (core.getInput('tag_diff_base') || DEFAULT_TAG_DIFF_BASE).trim();
+  if (raw.toLowerCase().startsWith(TAG_DIFF_BASE_NAMED_PREFIX)) {
+    const name = raw.slice(TAG_DIFF_BASE_NAMED_PREFIX.length).trim();
+    if (!isSafeTagName(name)) {
+      throw new Error(
+        `tag_diff_base "${raw}" does not name a usable tag. Write it as ` +
+          `"${TAG_DIFF_BASE_NAMED_PREFIX}<tag name>", e.g. "${TAG_DIFF_BASE_NAMED_PREFIX}phase1"; ` +
+          'the name may use letters, digits and . _ / - but no wildcards.',
+      );
+    }
+    return `${TAG_DIFF_BASE_NAMED_PREFIX}${name}`;
+  }
+  const value = raw.toLowerCase();
   if (!TAG_DIFF_BASE_MODES.includes(value)) {
     throw new Error(
-      `tag_diff_base must be one of ${TAG_DIFF_BASE_MODES.map((m) => `"${m}"`).join(', ')}; ` +
-        `got "${value}".`,
+      `tag_diff_base must be one of ${TAG_DIFF_BASE_MODES.map((m) => `"${m}"`).join(', ')}, ` +
+        `or "${TAG_DIFF_BASE_NAMED_PREFIX}<tag name>"; got "${value}".`,
     );
   }
   return value;

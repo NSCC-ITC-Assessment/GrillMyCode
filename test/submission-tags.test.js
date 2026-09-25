@@ -1,9 +1,40 @@
 import { describe, expect, it } from 'vitest';
 import {
   findMatchingTagPattern,
+  isSafeTagName,
   isSafeTagPattern,
+  namedDiffBaseTag,
   pickPreviousSubmissionTag,
 } from '../src/tags.js';
+
+describe('isSafeTagName', () => {
+  it.each(['phase1', 'Phase-1', 'sprint/3', 'v1.2.0', '_draft'])('accepts %s', (name) => {
+    expect(isSafeTagName(name)).toBe(true);
+  });
+
+  it.each([
+    ['an empty name', ''],
+    ['a wildcard', 'phase*'],
+    ['a leading dash', '-phase1'],
+    ['a leading slash', '/phase1'],
+    ['a trailing slash', 'phase1/'],
+    ['a double dot', 'phase..1'],
+    ['whitespace', 'phase 1'],
+    ['a caret', 'phase1^'],
+  ])('rejects %s', (_label, name) => {
+    expect(isSafeTagName(name)).toBe(false);
+  });
+});
+
+describe('namedDiffBaseTag', () => {
+  it('returns the tag name from the tag: form', () => {
+    expect(namedDiffBaseTag('tag:Phase1')).toBe('Phase1');
+  });
+
+  it.each(['cumulative', 'previous-tag', '', undefined])('returns "" for %s', (value) => {
+    expect(namedDiffBaseTag(value)).toBe('');
+  });
+});
 
 describe('isSafeTagPattern', () => {
   it.each(['complete', 'phase1', 'sprint/*', 'release/**', 'v[0-9]+', 'milestone-?', 'a.b_c'])(

@@ -143,6 +143,21 @@ export function isAncestor(ancestor, descendant) {
   throw new Error(`git merge-base failed:\n${result.stderr}`);
 }
 
+/**
+ * The commit a tag points at (peeled, so an annotated tag gives its commit), or
+ * '' when no such tag exists locally. The name is looked up under `refs/tags/`
+ * explicitly, so a branch of the same name is never picked up instead.
+ */
+export function resolveTagCommit(name) {
+  const result = spawnSync(
+    'git',
+    ['rev-parse', '--verify', '--quiet', `refs/tags/${name}^{commit}`],
+    { encoding: 'utf-8' },
+  );
+  if (result.error) throw result.error;
+  return result.status === 0 ? result.stdout.trim() : '';
+}
+
 /** True when `ref` resolves to a commit in the local repository. */
 export function refExists(ref) {
   const result = spawnSync('git', ['rev-parse', '--verify', '--quiet', `${ref}^{commit}`], {

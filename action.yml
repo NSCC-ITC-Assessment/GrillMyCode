@@ -257,7 +257,7 @@ inputs:
       workflow's on.push.tags, separated by commas or newlines, e.g.
       "complete" or "phase1, phase2, final". A wildcard entry is allowed and
       uses GitHub's filter syntax: * (not crossing /), **, ?, + and [ ]
-      classes; ! negation is not supported.
+      classes; ! negation is not supported. Matching is case-sensitive.
 
       A run started by a tag (a tag push, or a manual run with a tag selected)
       fails unless the tag matches one of these entries and points at a commit
@@ -274,8 +274,11 @@ inputs:
       the student's work to date. "previous-tag" starts the diff at the nearest
       earlier commit carrying a submission_tags tag, so each tag assesses only
       the work since the one before it; with no earlier tag it falls back to
-      the cumulative base. A manual base_sha takes precedence over both.
-      Ignored on runs not started by a tag.
+      the cumulative base. "tag:<name>" (e.g. "tag:phase1") starts the diff at
+      that tag, which need not be in submission_tags; the name is
+      case-sensitive. The run fails if the tag is missing, is not an earlier
+      commit, or is on the assessed commit. A manual base_sha takes precedence
+      over all three. Ignored on runs not started by a tag.
     required: false
     default: "cumulative"
 
