@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.15.0 — 2026-09-25
+
+### What's Changed
+
+### Features
+
+- mark student lines in existing files and add codebase context
+
 ## v0.14.0 — 2026-09-25
 
 ### What's Changed

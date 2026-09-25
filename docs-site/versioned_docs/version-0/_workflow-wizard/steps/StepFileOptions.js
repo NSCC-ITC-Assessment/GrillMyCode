@@ -56,6 +56,46 @@ export default function StepFileOptions({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
+        <label className={styles.checkboxLabel}>
+          <input
+            type="checkbox"
+            checked={cfg.includeCodebaseContext}
+            onChange={(e) => onChange({ includeCodebaseContext: e.target.checked })}
+          />
+          <span>
+            <strong>Give the AI the rest of the project as context</strong> (Recommended)
+            <div className={styles.radioDescription}>
+              Normally the AI sees only the code being assessed. Tick this to also give it the rest
+              of the project as background, so it can ask how the assessed code fits with the code
+              around it. <strong>The rest of the project</strong> means every eligible file that's
+              left once the usual exclusions are applied and the files being assessed are set
+              aside. Anything the exclusions leave out, such as generated files, lock files or
+              files you listed to exclude, is never sent. In practice that leaves:
+              <ul>
+                <li>
+                  <strong>Your starter code</strong> that the student hasn't changed.
+                </li>
+                <li>
+                  <strong>The student's earlier work</strong> that this submission didn't touch,
+                  when each submission tag is assessed on its own (for example, phase 1 code
+                  while phase 2 is assessed).
+                </li>
+              </ul>
+              The AI never asks about this code on its own: every question is still about the code
+              being assessed.
+              <br />
+              <strong>This will likely increase the cost of each run,</strong> because this code is
+              sent to the AI every time, in addition to the code being assessed. How much depends
+              on the size of the project; the limit is under <strong>Advanced</strong>.
+              <br />
+              Whether or not this is ticked, when a student edits a file that already existed,
+              only the lines they added or changed are asked about.
+            </div>
+          </span>
+        </label>
+      </div>
+
+      <div className={styles.fieldGroup}>
         <label className={styles.label}>Skip committers <span className={styles.optionalBadge}>optional</span></label>
         <span className={styles.hint}>
           Comma-separated list of author name or email substrings. A leading run of commits whose

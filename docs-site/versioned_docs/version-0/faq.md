@@ -66,7 +66,11 @@ They're removed on purpose, so questions are about what the code does. You can k
 
 ### Is my starter code assessed?
 
-No. Anything in the template when the student accepted is left out. See [Choosing which files are assessed](guides/choosing-files.md).
+No. Anything in the template when the student accepted is left out, and if a student edits one of your files, only their added or changed lines are asked about. See [Choosing which files are assessed](guides/choosing-files.md).
+
+### Can the AI see the rest of the project for background?
+
+Yes, if you turn it on. It gets every eligible file that's left once the usual exclusions are applied and the assessed files are set aside: in practice your starter code, and the student's earlier work when only their latest submission is assessed. The AI never asks about that code on its own. See [Tailoring the questions](guides/tailoring-questions.md#let-the-ai-see-the-rest-of-the-project).
 
 ## When it runs
 

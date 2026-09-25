@@ -22,7 +22,7 @@ Whichever you choose, the work happens on GitHub's servers. Nothing runs on your
 
 GrillMyCode looks at everything that has changed since the student accepted the assignment, then leaves out anything the student didn't write:
 
-- **Your starter code.** The template the student started from is never assessed.
+- **Your starter code.** The template the student started from is never assessed. If the student edits one of your files, only the lines they added or changed are asked about.
 - **Classroom 50's setup files.**
 - **Files that aren't code.** Installed libraries, build output, lock files, documentation, editor settings, diagrams, data files and images are left out automatically. GrillMyCode recognizes the common languages and frameworks and knows which files each one generates.
 - **Comments.** Code comments are removed so the questions are about what the code *does*, not what the student wrote about it. You can turn this off.
@@ -37,6 +37,7 @@ GrillMyCode sends the student's code to an AI model through [OpenRouter](https:/
 
 - **Your instructions**, such as "focus on loops, and ask at least one question about off-by-one errors".
 - **The assignment brief or rubric**, so the questions follow what the assignment asked for.
+- **The rest of the project**, if you turn it on: every eligible file left once the files above are left out and the assessed files are set aside. In practice that's your starter code, and the student's earlier work when only their latest submission is assessed. The AI uses it to ask how the new code fits with the code around it; the questions stay on the code being assessed.
 
 The model writes 20 questions by default, each about a specific file and each with an answer. GrillMyCode checks the result before anyone sees it. For example, it drops any question about a file that wasn't part of the assessment.
 
