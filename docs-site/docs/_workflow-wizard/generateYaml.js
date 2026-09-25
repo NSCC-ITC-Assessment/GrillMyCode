@@ -127,6 +127,8 @@ const DEFAULTS = {
   additionalExcludePatterns: '',
   keepComments: false,
   includeInitialCommit: false,
+  includeCodebaseContext: false,
+  codebaseContextMaxChars: 50000,
   skipCommitters: 'github-actions[bot]',
   instructorRepoEnabled: false,
   labelRepos: false,
@@ -453,6 +455,10 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
   }
   pushInput('keep_comments', 'keepComments', yamlStr(cfg.keepComments));
   pushInput('include_initial_commit', 'includeInitialCommit', yamlStr(cfg.includeInitialCommit));
+  pushInput('include_codebase_context', 'includeCodebaseContext', yamlStr(cfg.includeCodebaseContext));
+  if (cfg.includeCodebaseContext && differ(cfg, 'codebaseContextMaxChars')) {
+    lines.push(`          codebase_context_max_chars: ${yamlStr(cfg.codebaseContextMaxChars)}`);
+  }
   if (differ(cfg, 'skipCommitters')) {
     lines.push(`          skip_committers: ${yamlStr(cfg.skipCommitters)}`);
   }

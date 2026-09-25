@@ -14,8 +14,8 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 4. **Delivery** — Informational only: the assessment issue and PDF are always delivered, so there is nothing to choose
 5. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `labelRepos`
 6. **Files** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides
-7. **File opts** — keep_comments, include_initial_commit, skip_committers
-8. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, SHA overrides)
+7. **File opts** — keep_comments, include_initial_commit, include_codebase_context, skip_committers
+8. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, codebase context max chars — shown only while codebase context is on, SHA overrides)
 9. **Review** — Generated YAML in styled code block with one-click copy button + checklist of prerequisites
 
 ---
@@ -54,12 +54,14 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   excludeWorkflowFiles: true,
   keepComments: false,
   includeInitialCommit: false,
+  includeCodebaseContext: false,
   skipCommitters: 'github-actions[bot]',
 
   outputFile: 'grill-my-code.md',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   assignmentContextMaxChars: 20000,
+  codebaseContextMaxChars: 50000,
   baseSha: '',
   headSha: '',
 }
@@ -107,6 +109,13 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   would configure a label that is never written. Its checkbox — checked and marked Recommended by
   default — lives on the Instructor step, under the token field, for the same reason; it is not an
   Advanced-step option
+- `include_codebase_context` is unticked by default, matching the action default, but its label
+  is marked **(Recommended)**, with a caveat in its description that it will likely increase the
+  cost of each run. It is emitted only when ticked; `codebase_context_max_chars` only when
+  codebase context is on and the value differs from the default. The checkbox is shown whatever
+  `include_initial_commit` is: with it on there is no starter code, but a tag run with
+  `tag_diff_base: previous-tag` still has earlier work to send. Neither is a dispatch override —
+  both are per-assignment structural choices, like `assignment_context_max_chars`
 - Include inline YAML comments on non-obvious inputs
 - Secret references use `${{ secrets.SECRET_NAME }}` format
 

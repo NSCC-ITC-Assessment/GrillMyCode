@@ -650,6 +650,12 @@ function headerFilenames(block) {
  * one of them is unassessed. A question with no recognisable header is left to
  * the structural guard and kept here.
  *
+ * `contextFiles` are the codebase context files: unchanged starter code and
+ * earlier work. A question may show one of them beside the assessed code —
+ * that is how it asks how the two fit together — so a context file's header is
+ * allowed, but only in a question that also shows an assessed file. A question
+ * showing context alone is about code that is not being assessed, and goes.
+ *
  * Fails open: when every question would go, the text is returned unchanged
  * with `failedOpen` set. That outcome says more about a header format the
  * matcher does not recognise than about the questions, and an empty report
@@ -658,11 +664,19 @@ function headerFilenames(block) {
  * Returns `{ text, dropped, unassessed, failedOpen }`, where `unassessed` is
  * the distinct header names that caused a drop.
  */
-export function dropQuestionsOnUnassessedFiles(text, assessedFiles) {
-  const assessed = assessedFiles.map(normalisePathForMatch);
-  const isAssessed = (name) => {
-    const n = normalisePathForMatch(name);
-    return assessed.some((p) => p === n || p.endsWith(`/${n}`));
+export function dropQuestionsOnUnassessedFiles(text, assessedFiles, contextFiles = []) {
+  const matcher = (paths) => {
+    const normalised = paths.map(normalisePathForMatch);
+    return (name) => {
+      const n = normalisePathForMatch(name);
+      return normalised.some((p) => p === n || p.endsWith(`/${n}`));
+    };
+  };
+  const isAssessed = matcher(assessedFiles);
+  const isContext = matcher(contextFiles);
+  const offTargetHeaders = (headers) => {
+    const assessedShown = headers.some(isAssessed);
+    return headers.filter((h) => !isAssessed(h) && !(assessedShown && isContext(h)));
   };
 
   const blocks = splitQuestionBlocks(text);
@@ -674,7 +688,7 @@ export function dropQuestionsOnUnassessedFiles(text, assessedFiles) {
   for (const block of blocks) {
     const stems = countQuestions(block);
     total += stems;
-    const offTarget = stems > 0 ? headerFilenames(block).filter((h) => !isAssessed(h)) : [];
+    const offTarget = stems > 0 ? offTargetHeaders(headerFilenames(block)) : [];
     if (offTarget.length > 0) {
       dropped += stems;
       offTarget.forEach((h) => unassessed.add(h));

@@ -77,6 +77,8 @@ const INITIAL_CONFIG = {
   additionalExcludePatterns: '',
   keepComments: false,
   includeInitialCommit: false,
+  includeCodebaseContext: false,
+  codebaseContextMaxChars: 50000,
   skipCommitters: 'github-actions[bot]',
 
   aiTemperature: 0.5,

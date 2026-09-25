@@ -187,6 +187,21 @@ jobs:
           # first commit is the student's own work, not starter code.
           # include_initial_commit: "false"
 
+          # Give the AI the rest of the project as background, so questions
+          # can cover how the assessed code fits with the code around it. "The
+          # rest" is every eligible file left once the exclusions are applied
+          # and the assessed files are set aside: starter code the student
+          # hasn't changed, plus (when tag_diff_base assesses only the latest
+          # phase) the student's earlier work that this submission didn't
+          # touch. Excluded files are never sent. Questions are never about
+          # it alone.
+          # include_codebase_context: "false"
+
+          # Maximum characters sent as codebase context, shared by starter code
+          # and earlier work. Files nearest the assessed files go first; any
+          # that don't fit are left out and counted in the run summary.
+          # codebase_context_max_chars: "50000"
+
           # Comma-separated list of author names or email substrings.
           # A leading run of commits whose author matches any entry is skipped.
           # Only skips a contiguous leading run — not all matching commits.

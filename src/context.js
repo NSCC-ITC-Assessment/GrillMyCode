@@ -42,8 +42,12 @@ import { findMatchingTagPattern, namedDiffBaseTag, pickPreviousSubmissionTag } f
  * previous-tag the base moves up to the nearest earlier submission tag, and
  * with tag:<name> to that tag, failing the run if it cannot be used.
  *
- * Returns { baseSha, headSha, previousTag }, where previousTag is the
- * { name, commit } the base was moved to, or null.
+ * Returns { baseSha, headSha, previousTag, skippedRange }, where previousTag is
+ * the { name, commit } the base was moved to, or null, and skippedRange is the
+ * { from, to } span of leading bot commits skip_committers stepped over, or
+ * null. The span is kept even when a later base supersedes it, so the files
+ * those commits wrote can be kept out of the codebase context as well as out
+ * of the assessment.
  */
 export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // Validate both overrides up front so a malformed SHA is rejected with the
@@ -64,6 +68,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
       baseSha: sanitiseSha(inputs.baseSha),
       headSha: overrideHead,
       previousTag: null,
+      skippedRange: null,
     };
   }
 
@@ -180,6 +185,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   }
 
   // ── Apply skip_committers ────────────────────────────────────────────────
+  let skippedRange = null;
   // Advance baseSha past any consecutive leading commits by bot accounts so
   // that automated Classroom/Actions commits are excluded from the diff.
   //
@@ -220,6 +226,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
         `skip_committers: advanced base SHA from ${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)} to ` +
           `${advancedBase.substring(0, GIT_SHA_SHORT_LENGTH)} past GitHub-verified bot commits.`,
       );
+      skippedRange = { from: baseSha, to: advancedBase };
       baseSha = advancedBase;
     }
   }
@@ -229,7 +236,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
     baseSha = sanitiseSha(inputs.baseSha);
   }
 
-  return { baseSha, headSha, previousTag };
+  return { baseSha, headSha, previousTag, skippedRange };
 }
 
 /**

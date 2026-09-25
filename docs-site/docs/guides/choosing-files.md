@@ -8,7 +8,7 @@ GrillMyCode only asks about code the student wrote. Most of the time you don't n
 
 ## What's left out automatically
 
-- **Your starter code.** Everything that was in the template when the student accepted the assignment.
+- **Your starter code.** Everything that was in the template when the student accepted the assignment. If a student edits one of your files, the questions cover only the lines they added or changed. The AI can still see the rest of that file, so it understands what their lines do.
 - **Setup files.** Classroom 50's files, GitHub workflow files and Git settings files.
 - **Anything generated or installed.** GrillMyCode recognizes the languages and frameworks in the repository (Python, Java, JavaScript, React, Laravel, Unity and many more) and leaves out what they produce: installed libraries, build output and caches.
 - **Files nobody writes by hand.** Lock files, minified files and logs.

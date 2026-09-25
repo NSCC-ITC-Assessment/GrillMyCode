@@ -62,6 +62,7 @@ jobs:
 - If the assignment uses Classroom 50 milestone tags, use the same names here, and one push does both jobs.
 - A wildcard such as `revision*` groups every matching tag into one issue.
 - For different instructions per stage, see [Separate workflow per phase](4-phase-workflows.md).
+- With `previous-tag`, the AI can still see earlier stages as background; see [Codebase context](5-codebase-context.md).
 
 ## Related
 

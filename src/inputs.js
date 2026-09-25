@@ -11,6 +11,7 @@ import {
   MAX_QUESTIONS,
   MIN_QUESTIONS,
   DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS,
+  DEFAULT_CODEBASE_CONTEXT_MAX_CHARS,
   DEFAULT_AI_RETRY_MAX_ATTEMPTS,
   DEFAULT_AI_TEMPERATURE,
   DEFAULT_NUM_QUESTIONS,
@@ -166,6 +167,14 @@ export function readInputs() {
     keepComments: core.getInput('keep_comments') === 'true',
     includeAnswers: core.getInput('include_answers') === 'true',
     includeInitialCommit: core.getInput('include_initial_commit') === 'true',
+    includeCodebaseContext: core.getInput('include_codebase_context') === 'true',
+    codebaseContextMaxChars: Math.max(
+      1,
+      parseInt(
+        core.getInput('codebase_context_max_chars') || String(DEFAULT_CODEBASE_CONTEXT_MAX_CHARS),
+        10,
+      ),
+    ),
     // Defaults to false so that accepting an assignment does not immediately
     // fail every student repository: at accept time the diff is legitimately
     // empty (template repos) or contains only the excluded .classroom50.yaml

@@ -82,16 +82,35 @@ stripCommentsFromFiles()
     │  Falls back silently to original content for unsupported types
     │  Falls back to raw diff if stripping produces no output at all
     │
-buildCodeContent()
-    │  Formats stripped files as fenced Markdown code blocks
+collectFilesAt(baseSha) → buildAssessedCodeContent()
+    │  Reads each assessed file at baseSha, processed like the head copy
+    │  A file that existed there is diffed against it (diffLines, via
+    │  `git diff --no-index`) and rendered whole with a +/-/space marker column;
+    │  a file new in the range is a plain fenced block
+    │  Nothing marked at all (comment-only edits) → plain blocks for every file
     │
 readAssignmentContextFiles()
     │  Reads files from GITHUB_WORKSPACE that match assignment_context globs
     │  Concatenates contents as headed sections; capped at assignment_context_max_chars input (default 20000)
     │  Returns an empty string when no globs are supplied or no files match
     │
+loadCodebaseContext()   ← only when include_codebase_context is true
+    │  findCodebaseContextFiles(): files at headSha that pass the exclude
+    │  patterns and did not change in the range (listTreeFiles, listChangedPaths),
+    │  less any file touched by the bot commits skip_committers stepped over
+    │  (skippedRange from resolveSHAs)
+    │  'starter' if also unchanged since the first commit (never when
+    │  include_initial_commit is true), otherwise 'earlier' — student work
+    │  from before a later base (tag_diff_base, base_sha)
+    │  selectCodebaseContext() orders both kinds by folder distance from the
+    │  assessed files and adds whole files up to codebase_context_max_chars
+    │  Nothing to add when the base is the empty tree
+    │
 buildPrompt()
     │  Constructs the system + user messages for the AI
+    │  Explains the marker column when any file is marked
+    │  Sends starter code as a nonce-delimited reference block and earlier work
+    │  as a second untrusted block, both ahead of the submission
     │  Injects assignment context (file contents) then instructor instructions
     │  AI receives comment-stripped file content, not the raw diff
     │  Asks for multiple-choice distractors only when instructor_repo_token is

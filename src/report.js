@@ -36,6 +36,7 @@ export function formatReport({
   tagName,
   previousTagName,
   assignmentContextFiles,
+  codebaseContextFiles,
   contextSummary,
   studentLogin,
   sourceRepo,
@@ -65,6 +66,13 @@ export function formatReport({
       ? `> **Assignment Context:** ${assignmentContextFiles.map((f) => `\`${f}\``).join(', ')}\n`
       : '';
 
+  // A count rather than a list: the rest of a codebase can run to dozens of
+  // files, and the run log carries the names.
+  const codebaseContextNote =
+    codebaseContextFiles && codebaseContextFiles.length > 0
+      ? `> **Codebase context:** ${codebaseContextFiles.length} other file${codebaseContextFiles.length === 1 ? '' : 's'}, not assessed\n`
+      : '';
+
   const instructorContextNote = contextSummary ? `> **Instructor Note:** ${contextSummary}\n` : '';
 
   const studentNote = studentLogin ? `\n> **Student:** \`${studentLogin}\`\n` : '';
@@ -92,6 +100,7 @@ export function formatReport({
     submissionLine,
     `> **Code Files Assessed:** ${fileList}`,
     contextNote,
+    codebaseContextNote,
     instructorContextNote,
     '---',
     '',
