@@ -3,7 +3,6 @@ import {
   applyRepoLabels,
   buildDescriptionLabel,
   mergeLabelTopic,
-  removeLabelTopic,
   stripDescriptionLabel,
   withDescriptionLabel,
 } from '../src/repo-labels.js';
@@ -31,19 +30,6 @@ describe('mergeLabelTopic', () => {
   it('handles a repository with no topics at all', () => {
     expect(mergeLabelTopic([])).toEqual({ names: [REPO_LABEL_TOPIC], changed: true });
     expect(mergeLabelTopic(undefined)).toEqual({ names: [REPO_LABEL_TOPIC], changed: true });
-  });
-});
-
-describe('removeLabelTopic', () => {
-  it('removes only the label', () => {
-    expect(removeLabelTopic(['python', REPO_LABEL_TOPIC, 'week-3'])).toEqual({
-      names: ['python', 'week-3'],
-      changed: true,
-    });
-  });
-
-  it('reports no change when there is nothing to remove', () => {
-    expect(removeLabelTopic(['python']).changed).toBe(false);
   });
 });
 

@@ -1175,7 +1175,6 @@ async function run() {
           headSha,
           rawOutput: rawOutputCopy,
           submission,
-          labelRepos: inputs.labelRepos,
         });
         state.instructorDelivery = 'delivered';
       } catch (err) {

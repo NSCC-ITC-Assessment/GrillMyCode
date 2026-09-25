@@ -451,8 +451,8 @@ export const SUBMISSION_TAG_GROUP_FALLBACK = 'tag';
  * Workflow Wizard ticks it by default, so Wizard-built workflows carry that
  * line. When on, the student repository gets both labels — the
  * REPO_LABEL_TOPIC topic for filtering and the description note for the
- * question count — and the instructor repository gets the daily
- * reconciliation sweep that clears them again.
+ * question count. A label means questions were generated for the repository
+ * at least once.
  */
 export const DEFAULT_LABEL_REPOS = false;
 
@@ -486,22 +486,6 @@ export const REPO_LABEL_DESCRIPTION_SIGIL = '🔥 GrillMyCode';
  * label, destroys more than the label is worth.
  */
 export const REPO_DESCRIPTION_MAX_CHARS = 350;
-
-/**
- * Days of assignment inactivity after which the label-reconciliation sweep
- * stops doing work on its schedule.
- *
- * The sweep is seeded into the instructor repository and runs daily, but the
- * action only re-syncs it when a student pushes. An assignment nobody submits
- * to any more would therefore keep sweeping on whatever version it last
- * received, indefinitely and unfixably. Measured against the instructor
- * repository's own last push, which advances on every delivery and on nothing
- * the sweep itself does, so a quiet assignment winds down on its own and
- * resumes the moment a student pushes again.
- *
- * A manual run ignores this: an instructor who presses Run wants it to run.
- */
-export const REPO_LABEL_SWEEP_IDLE_DAYS = 10;
 
 /**
  * Public URL of the GrillMyCode logo, shown beside the heading of the issue
