@@ -219,6 +219,13 @@ export const EMPTY_ASSESSMENT_FILE_LIST_LIMIT = 20;
 export const SUMMARY_FILE_TABLE_LIMIT = 50;
 
 /**
+ * Length at which the assessment issue body is truncated. GitHub rejects issue
+ * bodies over 65,536 characters; the margin leaves room for the truncation
+ * notice appended after the cut. The PDF always carries the full report.
+ */
+export const ISSUE_BODY_LIMIT = 65_000;
+
+/**
  * Maximum stdout buffer size for git spawnSync calls.
  */
 export const GIT_MAX_BUFFER = 20 * 1024 * 1024; // 20 MB

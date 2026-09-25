@@ -23,6 +23,7 @@ import {
   GIT_SHA_SHORT_LENGTH,
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
+  ISSUE_BODY_LIMIT,
 } from './constants.js';
 import { readInputs } from './inputs.js';
 import {
@@ -1214,7 +1215,6 @@ async function run() {
     core.setOutput('code_after_strip', buildCodeContent(processedFiles));
 
     // ── Guard: GitHub issue bodies cap at 65 536 characters ──────────────────
-    const ISSUE_BODY_LIMIT = 65_000;
     core.info(`Issue body: ${issueBody.length} characters`);
     const safeIssueBody =
       issueBody.length > ISSUE_BODY_LIMIT
