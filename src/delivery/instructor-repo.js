@@ -5,7 +5,7 @@
  * a private instructor-only repository using the GitHub Contents API. The
  * repository is created automatically if it does not already exist.
  *
- * The quiz-generation workflow, the marker-reconciliation workflow and the
+ * The quiz-generation workflow, the label-reconciliation workflow and the
  * README that documents them are owned by this action: every delivery brings
  * them into line with the copies shipped here, so a repository created by an
  * earlier release picks up later fixes on its own rather than by hand.
@@ -62,13 +62,13 @@ const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
   'utf-8',
 );
 
-const RECONCILE_MARKERS_WORKFLOW = readFileSync(
-  join(__dirname, '../workflows/reconcile-repo-markers.yml'),
+const RECONCILE_LABELS_WORKFLOW = readFileSync(
+  join(__dirname, '../workflows/reconcile-repo-labels.yml'),
   'utf-8',
 );
 
 const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/generate-lms-quiz.yml';
-const RECONCILE_MARKERS_WORKFLOW_PATH = '.github/workflows/reconcile-repo-markers.yml';
+const RECONCILE_LABELS_WORKFLOW_PATH = '.github/workflows/reconcile-repo-labels.yml';
 
 /**
  * The folder a student's assessment is filed in: {studentLogin}/, or
@@ -357,8 +357,8 @@ function renderInstructorReadme(owner, instructorRepoName) {
 
 /**
  * Brings the action-managed files — the student-questions workflow, the README
- * describing it, and the marker-reconciliation workflow when repo_marker is in
- * use — into line with the copies shipped in this action, committing each only
+ * describing it, and the label-reconciliation workflow when label_repos is
+ * on — into line with the copies shipped in this action, committing each only
  * when its content differs from what the repository has.
  *
  * This runs on every delivery rather than only at creation. A repository
@@ -374,7 +374,7 @@ function renderInstructorReadme(owner, instructorRepoName) {
  * next and needs no such scope, would be a far worse outcome than running one
  * more time on a stale workflow. The next run retries the sync.
  */
-async function syncInstructorRepoFiles(octokit, owner, instructorRepoName, repoMarker = 'off') {
+async function syncInstructorRepoFiles(octokit, owner, instructorRepoName, labelRepos = false) {
   const files = [
     {
       path: STUDENT_QUESTIONS_WORKFLOW_PATH,
@@ -388,27 +388,28 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName, repoM
     },
   ];
 
-  // The reconciliation sweep is written only for an assignment that actually
-  // uses repo_marker. Seeding it everywhere would put a scheduled job — one
-  // that writes to student repositories — into every instructor repository,
-  // including those of instructors who never asked for a marker at all.
+  // The reconciliation sweep is written only for an assignment with label_repos
+  // on. Seeding it everywhere would put a scheduled job — one that writes to
+  // student repositories — into the instructor repository of every assignment
+  // that turned labels off.
   //
-  // It is also re-synced when it is already there and the mode is now off, so
-  // that turning repo_marker off disarms the sweep in place (MARKER_MODE
-  // renders to off and the job exits immediately) rather than leaving a live
-  // sweeper behind, reconciling markers nobody is writing any more.
-  const reconcileExists =
-    repoMarker === 'off'
-      ? Boolean(
-          (await fetchFile(octokit, owner, instructorRepoName, RECONCILE_MARKERS_WORKFLOW_PATH))
-            .sha,
-        )
-      : false;
-  if (repoMarker !== 'off' || reconcileExists) {
+  // It is also re-synced when it is already there and label_repos is now off,
+  // so that turning it off disarms the sweep in place (LABELS_ENABLED renders
+  // to false and the job exits immediately) rather than leaving a live sweeper
+  // behind, reconciling labels nobody is writing any more.
+  const reconcileExists = labelRepos
+    ? false
+    : Boolean(
+        (await fetchFile(octokit, owner, instructorRepoName, RECONCILE_LABELS_WORKFLOW_PATH)).sha,
+      );
+  if (labelRepos || reconcileExists) {
     files.push({
-      path: RECONCILE_MARKERS_WORKFLOW_PATH,
-      content: RECONCILE_MARKERS_WORKFLOW.replace(/\{\{MARKER_MODE\}\}/g, repoMarker),
-      message: 'chore: sync reconcile-repo-markers workflow [skip ci]',
+      path: RECONCILE_LABELS_WORKFLOW_PATH,
+      content: RECONCILE_LABELS_WORKFLOW.replace(
+        /\{\{LABELS_ENABLED\}\}/g,
+        String(Boolean(labelRepos)),
+      ),
+      message: 'chore: sync reconcile-repo-labels workflow [skip ci]',
     });
   }
 
@@ -468,13 +469,13 @@ export async function deliverToInstructorRepo({
   headSha,
   rawOutput,
   submission,
-  repoMarker = 'off',
+  labelRepos = false,
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
 
   // Before the questions.md write below, so that the push it makes is handled
   // by the current workflow rather than whatever the repository was seeded with.
-  await syncInstructorRepoFiles(octokit, owner, instructorRepoName, repoMarker);
+  await syncInstructorRepoFiles(octokit, owner, instructorRepoName, labelRepos);
 
   const folder = assessmentFolder(studentLogin, tagGroup);
   const label = tagGroup ? `${studentLogin} (${tagGroup})` : studentLogin;

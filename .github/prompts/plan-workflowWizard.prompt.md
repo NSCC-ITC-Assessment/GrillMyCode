@@ -12,7 +12,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 2. **AI Provider** — Model selection, OpenRouter model routing variant (`aiModelVariant`, appended to the model ID), and the API key secret name
 3. **Questions** — num_questions, include_answers, instructor_context, assignment_context
 4. **Delivery** — Informational only: the assessment issue and PDF are always delivered, so there is nothing to choose
-5. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `repoMarker`
+5. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `labelRepos`
 6. **Files** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides
 7. **File opts** — keep_comments, include_initial_commit, skip_committers
 8. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, SHA overrides)
@@ -47,7 +47,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   usesClassroom50: null,                     // true | false; null until answered on the Instructor step
   instructorRepoEnabled: false,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
-  repoMarker: 'off',                         // 'off' | 'topic' | 'description' | 'both'
+  labelRepos: true,                          // ticked by default; the action default is false
 
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
@@ -95,12 +95,13 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   (`instructorRepoActive`), preceded by a comment that it works in Classroom 50 assignment
   repositories only — the action identifies the assignment and student from Classroom 50's
   repository naming and skips instructor delivery anywhere else
-- `repo_marker` is emitted only inside the `instructorRepoActive` block, and only when non-default.
-  It writes to the student repository's topics/description, which `GITHUB_TOKEN` cannot reach at any
-  `permissions:` setting (that key has no `administration` scope), so it shares
-  `instructor_repo_token`. Offering it without that token would generate a workflow that only ever
-  warns. Its radio group lives on the Instructor step, under the token field, for the same reason —
-  it is not an Advanced-step option
+- `label_repos` is emitted only inside the `instructorRepoActive` block, and only when non-default
+  (unchecked, so `label_repos: "false"`). It writes to the student repository's topics and
+  description, which `GITHUB_TOKEN` cannot reach at any `permissions:` setting (that key has no
+  `administration` scope), so it shares `instructor_repo_token`. Offering it without that token
+  would configure a label that is never written. Its checkbox — checked and marked Recommended by
+  default — lives on the Instructor step, under the token field, for the same reason; it is not an
+  Advanced-step option
 - Include inline YAML comments on non-obvious inputs
 - Secret references use `${{ secrets.SECRET_NAME }}` format
 
@@ -118,7 +119,7 @@ the shipped wizard lives.
 4. `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js`
 5. `docs-site/docs/_workflow-wizard/steps/StepQuestions.js`
 6. `docs-site/docs/_workflow-wizard/steps/StepDelivery.js`
-7. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Required "created by Classroom 50?" question; only a "Yes" reveals instructor repository delivery + token secret name, and a "No" explains the feature is unavailable. Enabling delivery also reveals the `repoMarker` radio group, which shares the same PAT
+7. `docs-site/docs/_workflow-wizard/steps/StepInstructorRepo.js` — Required "created by Classroom 50?" question; only a "Yes" reveals instructor repository delivery + token secret name, and a "No" explains the feature is unavailable. Enabling delivery also reveals the `labelRepos` checkbox (checked by default), which shares the same PAT
 8. `docs-site/docs/_workflow-wizard/steps/StepFiles.js`
 9. `docs-site/docs/_workflow-wizard/steps/StepFileOptions.js`
 10. `docs-site/docs/_workflow-wizard/steps/StepAdvanced.js`

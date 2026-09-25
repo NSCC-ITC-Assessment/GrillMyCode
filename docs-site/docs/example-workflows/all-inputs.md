@@ -142,26 +142,22 @@ jobs:
           # Leave empty (default) to disable instructor repository delivery.
           # instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 
-          # ── Repository marker ─────────────────────────────────────────────
+          # ── Repository label ─────────────────────────────────────────────
 
-          # Marks the STUDENT repository in GitHub's own metadata once questions
+          # Labels the STUDENT repository in GitHub's own metadata once questions
           # have been generated, so assessed repositories are identifiable in the
-          # organisation's repository list. One of:
-          #   off         (default) writes nothing
-          #   topic       adds the "grillmycode" topic — also makes the repos
-          #               filterable with org:<org> topic:grillmycode
-          #   description appends "· 🔥 GrillMyCode: N questions" to the
-          #               repository description (the only surface that can
-          #               carry the question count)
-          #   both        writes both, in two separate API calls
+          # organization's repository list. When "true", adds the
+          # "grillmycode" topic (filterable with org:<org> topic:grillmycode) and
+          # appends "· 🔥 GrillMyCode: N questions" to the repository
+          # description. "false" (default) writes nothing.
           # Requires instructor_repo_token above: repository metadata cannot be
           # reached with GITHUB_TOKEN at any permissions: setting, because that
-          # key has no administration scope to grant. Without the PAT the marker
-          # is skipped with a warning.
-          # Existing topics are preserved, and a marker written by an earlier run
+          # key has no administration scope to grant. Without the PAT the labels
+          # are skipped with a warning.
+          # Existing topics are preserved, and a label written by an earlier run
           # is replaced rather than appended to, so repeated pushes leave one
-          # accurate marker. A failure here never fails the run.
-          # repo_marker: "off"
+          # accurate label. A failure here never fails the run.
+          # label_repos: "false"
 
           # ── Run reporting ─────────────────────────────────────────────────
 

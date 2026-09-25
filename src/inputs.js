@@ -18,8 +18,7 @@ import {
   DEFAULT_AI_MODEL,
   DEFAULT_TAG_DIFF_BASE,
   TAG_DIFF_BASE_MODES,
-  DEFAULT_REPO_MARKER,
-  REPO_MARKER_MODES,
+  DEFAULT_LABEL_REPOS,
 } from './constants.js';
 import { isSafeTagPattern } from './tags.js';
 
@@ -60,20 +59,17 @@ function readTagDiffBase() {
 }
 
 /**
- * Reads repo_marker. Like tag_diff_base, an unrecognised value is a
- * configuration error rather than something to fall back from quietly: the
- * instructor asked for a marker and silently writing none would look identical
- * to the feature not working.
+ * Reads label_repos. Like tag_diff_base, an unrecognised value is a
+ * configuration error rather than something to fall back from quietly:
+ * guessing which way the instructor meant it would either write labels they
+ * turned off or silently write none.
  */
-function readRepoMarker() {
-  const value = (core.getInput('repo_marker') || DEFAULT_REPO_MARKER).trim().toLowerCase();
-  if (!REPO_MARKER_MODES.includes(value)) {
-    throw new Error(
-      `repo_marker must be one of ${REPO_MARKER_MODES.map((m) => `"${m}"`).join(', ')}; ` +
-        `got "${value}".`,
-    );
-  }
-  return value;
+function readLabelRepos() {
+  const value = core.getInput('label_repos').trim().toLowerCase();
+  if (value === '') return DEFAULT_LABEL_REPOS;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`label_repos must be "true" or "false"; got "${value}".`);
 }
 
 export function readInputs() {
@@ -179,6 +175,6 @@ export function readInputs() {
     baseSha: core.getInput('base_sha') || '',
     headSha: core.getInput('head_sha') || '',
     instructorRepoToken: core.getInput('instructor_repo_token') || '',
-    repoMarker: readRepoMarker(),
+    labelRepos: readLabelRepos(),
   };
 }

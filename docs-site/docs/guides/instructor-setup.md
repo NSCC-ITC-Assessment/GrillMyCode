@@ -55,12 +55,13 @@ When the token expires, generate a new one and replace the secret's value. Until
 
 ## For each assignment
 
-In the [Workflow Wizard](../workflow-wizard.mdx)'s **Instructor** step, answer **Yes** to the Classroom 50 question and leave **Write to a private instructor repository** ticked. Both are the defaults. Then commit the workflow to the template as usual.
+In the [Workflow Wizard](../workflow-wizard.mdx)'s **Instructor** step, answer **Yes** to the Classroom 50 question and leave **Write to a private instructor repository** and **Label assessed repositories in the organization list** ticked. All three are the defaults. Then commit the workflow to the template as usual.
 
-If you already have a workflow file, add this line under `with:` instead:
+If you already have a workflow file, add these lines under `with:` instead:
 
 ```yaml
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+          label_repos: "true"
 ```
 
 That's all. The private repository is created automatically when the first student's questions are generated.
@@ -83,6 +84,7 @@ The repository is also listed with your organization's other repositories.
 
 - **It's for Classroom 50 repositories only.** GrillMyCode works out the assignment and the student from the way Classroom 50 names repositories. In any other repository, it skips the answer key and adds a warning to the run.
 - **It changes the questions slightly.** With the token in place, the AI also writes three wrong answers per question for the multiple-choice quiz. Students never see them, but each assessment costs a little more. Without the token, only the correct answers are generated.
+- **Student repositories get labelled.** With labels ticked, once a student has questions, their repository shows a `grillmycode` topic and a question count in its description, so you can spot them in your organization's repository list. See [Tracking assessed repositories](tracking-repositories.md#repository-labels).
 - **Check the run, not just the tick.** If the answer key can't be written, for example because the token has expired, the run still succeeds, because the student's questions were delivered fine. The problem shows as an error message on the run's summary page. See [Troubleshooting](../troubleshooting.md#the-run-is-green-but-nothing-arrived-in-the-instructor-repository).
 
 ## Setup summary
@@ -96,4 +98,4 @@ The repository is also listed with your organization's other repositories.
 
 ---
 
-**Go deeper:** [Instructor repository internals](../reference/instructor-repository.md): folder layout, file formats, how students are identified · [Tracking assessed repositories](tracking-repositories.md): resubmissions and repository markers · Recipe: [Private answer key](../example-workflows/1-instructor-repo.md)
+**Go deeper:** [Instructor repository internals](../reference/instructor-repository.md): folder layout, file formats, how students are identified · [Tracking assessed repositories](tracking-repositories.md): resubmissions and repository labels · Recipe: [Private answer key](../example-workflows/1-instructor-repo.md)

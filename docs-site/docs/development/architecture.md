@@ -134,12 +134,12 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                ├── syncInstructorRepoFiles()
                │     Rewrites generate-lms-quiz.yml and README.md when they differ
                │     from the copies shipped in src/; warns (never throws) on failure.
-               │     Adds reconcile-repo-markers.yml, with repo_marker rendered
-               │     into it, while the marker is enabled — and re-syncs it with
-               │     mode off, if already present, once the marker is turned off,
+               │     Adds reconcile-repo-labels.yml, with label_repos rendered
+               │     into it, while the label is on — and re-syncs it switched
+               │     off, if already present, once the label is turned off,
                │     so disabling disarms the sweep rather than stranding it.
                │     That sweep runs daily but is only refreshed here, so it
-               │     stands itself down after REPO_MARKER_SWEEP_IDLE_DAYS with
+               │     stands itself down after REPO_LABEL_SWEEP_IDLE_DAYS with
                │     no delivery rather than running on a version no fix reaches
                │
                ├── writeFileWithRetry()
@@ -152,7 +152,7 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                      Writes {studentLogin}/questions.md, retrying on 409/422
                      conflicts and backing off on rate limits
                │
-     applyRepoMarker()   ← only when repo_marker is not "off"
+     applyRepoLabels()   ← only when label_repos is "true"
                │  Marks the STUDENT repository, on the instructor PAT (repository
                │  metadata is unreachable with GITHUB_TOKEN — the permissions key
                │  has no administration scope). Runs last and never throws: the
@@ -164,8 +164,8 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │     instructor's own topics. Skipped when already present
                │
                └── repos.get() → repos.update()
-                     Strips any marker from an earlier run before appending the
-                     current one, so repeated pushes leave one accurate marker.
+                     Strips any label from an earlier run before appending the
+                     current one, so repeated pushes leave one accurate label.
                      Leaves an over-long description untouched
 ```
 
@@ -291,7 +291,7 @@ delivered by that point.
 - **Shell injection prevention:** all `git` calls use `spawnSync` with an explicit argument array — no shell string interpolation. SHAs are validated with `sanitiseSha()` before use.
 - **Secret masking:** the external API key is registered with `core.setSecret()` before any API call, preventing it from appearing in workflow logs.
 - **Minimal permissions:** the action only requests the permissions it needs for the chosen delivery method.
-- **Token separation:** the instructor PAT is used only by `src/delivery/instructor-repo.js` and `src/repo-marker.js`, each through its own Octokit instance. It is never passed to the student-facing delivery paths, and the student's `GITHUB_TOKEN` is never given access to the instructor repository — which is what keeps the answer key out of reach of anyone who can read the student's repository or its workflow logs. `src/repo-marker.js` writes only repository metadata (topics, description) on the student's own repository and reads nothing from the instructor repository, so sharing the PAT widens what the token is used for without widening what a student can see.
+- **Token separation:** the instructor PAT is used only by `src/delivery/instructor-repo.js` and `src/repo-labels.js`, each through its own Octokit instance. It is never passed to the student-facing delivery paths, and the student's `GITHUB_TOKEN` is never given access to the instructor repository — which is what keeps the answer key out of reach of anyone who can read the student's repository or its workflow logs. `src/repo-labels.js` writes only repository metadata (topics, description) on the student's own repository and reads nothing from the instructor repository, so sharing the PAT widens what the token is used for without widening what a student can see.
 
 ---
 

@@ -1,18 +1,18 @@
-name: Reconcile Repository Markers
+name: Reconcile Repository Labels
 
-# Brings the repo_marker topic/description on this assignment's student
+# Brings the label_repos topic and description on this assignment's student
 # repositories back into line with what they actually hold right now.
 #
-# The action writes a marker when it generates an assessment, and it only runs
+# The action writes a label when it generates an assessment, and it only runs
 # on a push, a tag or a manual dispatch — so nothing ever clears one. Without
-# this workflow a marker means "questions were generated here at least once",
+# this workflow a label means "questions were generated here at least once",
 # which drifts from "currently has a question set" the moment a student closes
 # their assessment issue or an instructor deletes it. This job closes that gap
 # on a schedule by reading the live state and writing the difference.
 #
 # The open issue labelled `assessment` is the source of truth, because that is
 # what the action creates and updates for every assessment and what a student
-# actually reads. A repository with one should carry the marker; a repository
+# actually reads. A repository with one should carry the label; a repository
 # without one should not.
 #
 # The sweep winds itself down after SWEEP_IDLE_DAYS without a delivery. It runs
@@ -23,8 +23,8 @@ name: Reconcile Repository Markers
 #
 # This file is owned by GrillMyCode and re-synced on every delivery — local
 # edits are replaced. It is written into the instructor repository only while
-# repo_marker is enabled; setting repo_marker back to "off" re-syncs it with
-# MARKER_MODE below set to off, after which it exits immediately.
+# label_repos is on; setting label_repos to "false" re-syncs it with
+# LABELS_ENABLED below set to false, after which it exits immediately.
 
 on:
   schedule:
@@ -39,15 +39,15 @@ on:
         default: false
 
 concurrency:
-  group: reconcile-repo-markers
+  group: reconcile-repo-labels
   cancel-in-progress: false
 
 jobs:
   reconcile:
-    name: Reconcile markers for this assignment
+    name: Reconcile labels for this assignment
     runs-on: ubuntu-latest
     steps:
-      - name: Reconcile repository markers
+      - name: Reconcile repository labels
         env:
           # The same PAT instructor delivery uses. Repository metadata is out of
           # reach of GITHUB_TOKEN — the workflow permissions key has no
@@ -55,23 +55,23 @@ jobs:
           # Store it as an organisation-level secret visible to private
           # repositories and every instructor repository inherits it.
           GMC_TOKEN: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
-          # Rendered by the action from the repo_marker input at sync time.
-          MARKER_MODE: "{{MARKER_MODE}}"
+          # Rendered by the action from the label_repos input at sync time.
+          LABELS_ENABLED: "{{LABELS_ENABLED}}"
           DRY_RUN: ${{ inputs.dry_run }}
           GITHUB_REPOSITORY: ${{ github.repository }}
           GITHUB_EVENT_NAME: ${{ github.event_name }}
         run: |
           node <<'JSEOF'
           const token = process.env.GMC_TOKEN;
-          const mode = (process.env.MARKER_MODE || 'off').trim();
+          const enabled = (process.env.LABELS_ENABLED || '').trim() === 'true';
           const dryRun = process.env.DRY_RUN === 'true';
           const [owner, instructorRepo] = process.env.GITHUB_REPOSITORY.split('/');
 
           // Keep these three in step with src/constants.js in the action. The
           // action's test suite asserts that this file still carries the
           // current values, so a change there fails CI rather than silently
-          // orphaning markers written by earlier runs.
-          const MARKER_TOPIC = 'grillmycode';
+          // orphaning labels written by earlier runs.
+          const LABEL_TOPIC = 'grillmycode';
           const DESCRIPTION_SEPARATOR = ' · ';
           const DESCRIPTION_SIGIL = '🔥 GrillMyCode';
           const INSTRUCTOR_SUFFIX = '-grillmycode-instructor';
@@ -96,12 +96,13 @@ jobs:
           // top-level `await` is a syntax error. Same shape as
           // generate-lms-quiz.yml.
           (async () => {
-          if (mode === 'off' || mode === '' || mode.startsWith('{{')) {
-            // An unrendered placeholder means this file was copied by hand
-            // rather than synced by the action; treat it as disabled rather
-            // than guessing a mode and writing to student repositories.
-            note('repo_marker is off for this assignment — nothing to reconcile.');
-            await finish('### Reconcile Repository Markers\n\nrepo_marker is **off** for this assignment, so no repositories were examined.\n');
+          if (!enabled) {
+            // Anything but a rendered "true" — including an unrendered
+            // placeholder, which means this file was copied by hand rather than
+            // synced by the action — is treated as off rather than guessing
+            // and writing to student repositories.
+            note('label_repos is off for this assignment — nothing to reconcile.');
+            await finish('### Reconcile Repository Labels\n\nlabel_repos is **off** for this assignment, so no repositories were examined.\n');
             return;
           }
 
@@ -141,7 +142,7 @@ jobs:
             if (idleDays >= SWEEP_IDLE_DAYS) {
               note(`No assessment has been delivered for ${idleDays} days — this assignment looks finished, so the sweep is standing down.`);
               await finish(
-                `### Reconcile Repository Markers\n\nNo assessment has been delivered to this ` +
+                `### Reconcile Repository Labels\n\nNo assessment has been delivered to this ` +
                 `repository for **${idleDays} days**, so the scheduled sweep stood down without ` +
                 `examining anything. It resumes automatically the next time a student pushes. ` +
                 `To run it now regardless, start it from the Actions tab.\n`,
@@ -159,7 +160,7 @@ jobs:
           const prefix = `${assignment}-`;
 
           // One paginated listing carries each repository's name, topics and
-          // description, so the whole cohort's current marker state costs a
+          // description, so the whole cohort's current label state costs a
           // handful of calls rather than three per repository.
           const repos = [];
           for (let page = 1; ; page++) {
@@ -182,7 +183,7 @@ jobs:
           );
 
           note(`Assignment: ${assignment}`);
-          note(`Mode: ${mode}${dryRun ? ' (dry run — nothing will be written)' : ''}`);
+          if (dryRun) note('Dry run — nothing will be written');
           note(`Candidate repositories: ${candidates.length}`);
 
           /** True when the repository has an open, action-created assessment issue. */
@@ -195,14 +196,12 @@ jobs:
             return issues.some((issue) => !issue.pull_request);
           }
 
-          function stripDescriptionMarker(description) {
+          function stripDescriptionLabel(description) {
             const esc = (s) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
             const re = new RegExp(`(?:${esc(DESCRIPTION_SEPARATOR)})?${esc(DESCRIPTION_SIGIL)}:[\\s\\S]*$`, 'u');
             return String(description ?? '').replace(re, '').trimEnd();
           }
 
-          const wantsTopic = mode === 'topic' || mode === 'both';
-          const wantsDescription = mode === 'description' || mode === 'both';
           const changes = [];
           let failures = 0;
 
@@ -230,39 +229,37 @@ jobs:
               }
             }
 
-            const hasTopic = topics.some((t) => String(t).toLowerCase() === MARKER_TOPIC);
+            const hasTopic = topics.some((t) => String(t).toLowerCase() === LABEL_TOPIC);
             const actions = [];
 
-            if (wantsTopic && live && !hasTopic) {
+            if (live && !hasTopic) {
               actions.push({
                 what: 'add topic',
                 run: () => api(`/repos/${owner}/${repo.name}/topics`, {
                   method: 'PUT',
-                  body: JSON.stringify({ names: [...topics, MARKER_TOPIC] }),
+                  body: JSON.stringify({ names: [...topics, LABEL_TOPIC] }),
                 }),
               });
             } else if (!live && hasTopic) {
-              // Cleared whatever the mode is: a marker that no longer reflects
-              // reality is worse than no marker, and a mode change should not
-              // strand the markers written under the previous one.
+              // A label that no longer reflects reality is worse than no label.
               actions.push({
                 what: 'remove topic',
                 run: () => api(`/repos/${owner}/${repo.name}/topics`, {
                   method: 'PUT',
-                  body: JSON.stringify({ names: topics.filter((t) => String(t).toLowerCase() !== MARKER_TOPIC) }),
+                  body: JSON.stringify({ names: topics.filter((t) => String(t).toLowerCase() !== LABEL_TOPIC) }),
                 }),
               });
             }
 
-            // Description markers are only ever cleared here, never re-added:
-            // the marker carries a question count, and this job has no reliable
+            // Description labels are only ever cleared here, never re-added:
+            // the label carries a question count, and this job has no reliable
             // way to recover it. The action re-adds it on the student's next
             // push, with a count it actually knows.
-            const stripped = stripDescriptionMarker(repo.description);
-            const hasDescriptionMarker = stripped !== String(repo.description ?? '').trimEnd();
-            if (!live && hasDescriptionMarker) {
+            const stripped = stripDescriptionLabel(repo.description);
+            const hasDescriptionLabel = stripped !== String(repo.description ?? '').trimEnd();
+            if (!live && hasDescriptionLabel) {
               actions.push({
-                what: 'strip description marker',
+                what: 'strip description label',
                 run: () => api(`/repos/${owner}/${repo.name}`, {
                   method: 'PATCH',
                   body: JSON.stringify({ description: stripped }),
@@ -297,17 +294,17 @@ jobs:
             : '_Every repository already matched its live state — nothing to do._\n';
 
           await finish(
-            `### Reconcile Repository Markers\n\n` +
+            `### Reconcile Repository Labels\n\n` +
             summary.map((l) => `- ${l}`).join('\n') + '\n\n' + table +
             `\n<sub>The open issue labelled \`${ASSESSMENT_LABEL}\` is the source of truth. ` +
-            `Description markers are cleared here but re-added by the action on the next push, ` +
+            `Description labels are cleared here but re-added by the action on the next push, ` +
             `because only it knows the question count.</sub>\n`,
           );
           })().catch((err) => {
-            // A marker sweep is housekeeping, but a silent failure would let
-            // markers drift indefinitely with nothing to notice it, so this
+            // A label sweep is housekeeping, but a silent failure would let
+            // labels drift indefinitely with nothing to notice it, so this
             // fails the run loudly rather than exiting 0.
-            console.error(`::error::Marker reconciliation failed: ${err.message}`);
+            console.error(`::error::Label reconciliation failed: ${err.message}`);
             process.exit(1);
           });
           JSEOF

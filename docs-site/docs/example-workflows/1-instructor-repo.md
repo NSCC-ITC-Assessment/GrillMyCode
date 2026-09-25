@@ -44,11 +44,13 @@ jobs:
           # Store a full questions-and-answers copy in the private instructor
           # repository. The repository is created automatically if it doesn't exist.
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+          # Label assessed repositories in the organization's repository list.
+          label_repos: "true"
 ```
 
 ## Change these
 
-Nothing, if you named the secret `INSTRUCTOR_REPO_TOKEN`. Otherwise, use your secret's name.
+Nothing, if you named the secret `INSTRUCTOR_REPO_TOKEN`. Otherwise, use your secret's name. Remove `label_repos` to leave repositories unlabelled; see [Repository labels](2-repo-labels.md).
 
 ## What you get
 

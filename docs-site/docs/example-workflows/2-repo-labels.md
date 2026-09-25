@@ -1,9 +1,9 @@
 ---
 sidebar_position: 8
-sidebar_label: Repository marker
+sidebar_label: Repository labels
 ---
 
-# Repository marker
+# Repository labels
 
 **Use this when** you want to see, straight from your organization's repository list, which student repositories have questions. It needs the [private answer key](1-instructor-repo.md) token.
 
@@ -40,23 +40,16 @@ jobs:
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
           num_questions: "20"
 
-          # The token the marker needs. Also stores the private answer key.
+          # The token the labels need. Also stores the private answer key.
           instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
 
-          # Mark the repository once questions exist.
-          repo_marker: "both"
+          # Labels the repository once questions exist.
+          label_repos: "true"
 ```
 
 ## Change these
 
-- **`repo_marker`:** one of these values.
-
-| Value | Writes |
-|---|---|
-| `off` | Nothing (the default) |
-| `topic` | The `grillmycode` topic. Filterable with `org:<your-org> topic:grillmycode` |
-| `description` | `· 🔥 GrillMyCode: N questions` at the end of the description. The only mark that shows the count |
-| `both` | Both |
+- **`label_repos`:** `"true"` adds the `grillmycode` topic, which you can filter with `org:<your-org> topic:grillmycode`, and appends `· 🔥 GrillMyCode: N questions` to the description. `"false"`, or leaving the line out, writes nothing.
 
 Before and after, in the organization's repository list:
 
@@ -74,10 +67,10 @@ grillmycode
 ## Good to know
 
 - Your own topics are kept, and the description note replaces itself rather than piling up.
-- A daily workflow in the instructor repository removes marks whose assessment issue has been closed.
+- A daily workflow in the instructor repository removes labels whose assessment issue has been closed.
 - GitHub shows topics in some list views and not others; check it appears where you look.
 - No setup needed at all: `org:<your-org> is:issue is:open label:assessment` lists repositories with live questions.
 
 ## Related
 
-[Tracking assessed repositories](../guides/tracking-repositories.md) · [Repository marker internals](../reference/repository-marker.md)
+[Tracking assessed repositories](../guides/tracking-repositories.md) · [Repository label internals](../reference/repository-labels.md)

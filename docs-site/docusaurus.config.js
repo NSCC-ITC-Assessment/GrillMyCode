@@ -50,6 +50,9 @@ const removedPages = [
   },
   // Merged into "The assessment issue and PDF" in the docs reorganization.
   { path: 'reference/pdf-asset-naming', to: 'reference/assessment-output#the-pdf' },
+  // Renamed when repository markers became repository labels.
+  { path: 'reference/repository-marker', to: 'reference/repository-labels' },
+  { path: 'example-workflows/repo-marker', to: 'example-workflows/repo-labels' },
 ];
 
 function removedPageRedirects() {
