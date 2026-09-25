@@ -56,6 +56,11 @@ const removedPages = [
   // Renamed when repository markers became repository labels.
   { path: 'reference/repository-marker', to: 'reference/repository-labels' },
   { path: 'example-workflows/repo-marker', to: 'example-workflows/repo-labels' },
+  // Folded into "Choosing a model": the recipe only changed ai_model.
+  {
+    path: 'example-workflows/openrouter-provider',
+    to: 'guides/choosing-a-model#using-a-more-capable-model',
+  },
 ];
 
 function removedPageRedirects() {

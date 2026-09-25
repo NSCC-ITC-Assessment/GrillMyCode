@@ -33,7 +33,7 @@ Set this up in the Workflow Wizard's **Trigger** step, under **Manual run overri
 - extra files to leave out
 - files to bring back
 
-Pick only settings you actually expect to change. GitHub allows at most 10, and a short form is easier to use.
+Pick only settings you actually expect to change; a short form is easier to use.
 
 ![The GrillMyCode workflow page with the Run workflow menu open, showing form fields for the number of questions, AI model, instructor context and keep comments.](/img/screenshots/run-workflow-form.png)
 

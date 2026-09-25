@@ -57,12 +57,12 @@
  */
 
 /**
- * GitHub hard-caps `workflow_dispatch` at 10 inputs; a workflow declaring more
- * fails to parse. The catalogue below holds exactly that many today, so the cap
- * cannot bite yet — but the next entry will have to displace an existing one,
- * which is why the check stays.
+ * GitHub hard-caps `workflow_dispatch` at 25 inputs; a workflow declaring more
+ * fails to parse. The catalogue below is well short of that, so the cap cannot
+ * bite yet — the check stays so a growing catalogue can never emit an invalid
+ * workflow.
  */
-export const MAX_DISPATCH_INPUTS = 10;
+export const MAX_DISPATCH_INPUTS = 25;
 
 /**
  * `cfgKey`   — the wizard config field supplying the fallback/default value.
@@ -213,7 +213,7 @@ export function availableDispatchOverrides({ tagTrigger = false } = {}) {
 /**
  * Returns the selected override keys in catalogue order, deduplicated, with
  * unknown keys dropped — and tagTriggerOnly keys too, unless tagTrigger is set —
- * and the list truncated to GitHub's 10-input cap. The UI, the generator and
+ * and the list truncated to GitHub's input cap. The UI, the generator and
  * the review checklist all go through this, so an over-long selection, or one
  * left over from a trigger the instructor has since switched away from, can
  * never reach the emitted YAML.

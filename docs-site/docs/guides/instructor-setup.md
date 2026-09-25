@@ -66,10 +66,6 @@ If you already have a workflow file, add these lines under `with:` instead:
 
 That's all. The private repository is created automatically when the first student's questions are generated.
 
-### Assignments without a starter repo
-
-An assignment created without a template, or with `--empty-repo`, has nowhere to ship the workflow from. Add the workflow file to each student's repository directly. The answer key works the same way.
-
 ## Where to find it
 
 After the first student's run, open:
@@ -86,15 +82,6 @@ The repository is also listed with your organization's other repositories.
 - **It changes the questions slightly.** With the token in place, the AI also writes three wrong answers per question for the multiple-choice quiz. Students never see them, but each assessment costs a little more. Without the token, only the correct answers are generated.
 - **Student repositories get labelled.** With labels ticked, once a student has questions, their repository shows a `grillmycode` topic and a question count in its description, so you can spot them in your organization's repository list. See [Tracking assessed repositories](tracking-repositories.md#repository-labels).
 - **Check the run, not just the tick.** If the answer key can't be written, for example because the token has expired, the run still succeeds, because the student's questions were delivered fine. The problem shows as an error message on the run's summary page. See [Troubleshooting](../troubleshooting.md#the-run-is-green-but-nothing-arrived-in-the-instructor-repository).
-
-## Setup summary
-
-| What | When | Where |
-|---|---|---|
-| Create an access token | Once | Your GitHub account → Settings → Developer settings |
-| Add the `INSTRUCTOR_REPO_TOKEN` organization secret | Once | Organization → Settings → Secrets and variables → Actions |
-| Add the token line to the workflow | Once per assignment | The Wizard's **Instructor** step, or the template's workflow file |
-| The private repository is created | Automatically, on the first run | `{organization}/{assignment-name}-grillmycode-instructor` |
 
 ---
 
