@@ -25,7 +25,6 @@ Using Docker means:
 
 - The Node version, `git` binary, and all dependencies are fixed and identical across every runner — no version drift
 - The image is built once and reused; consumer repos pay no build cost at runtime
-- The pre-built image reference in `action.yml` is updated automatically by the release workflow each time a version tag is pushed
 
 ---
 
@@ -341,16 +340,4 @@ node:26-slim
 
 ## CI/CD workflows
 
-Three workflows build and publish Docker images. They are mutually exclusive by trigger.
-
-| Workflow | Trigger | Image tag(s) produced | Intended for |
-|---|---|---|---|
-| `branch-build.yml` | Push to any non-`main` branch (code changes only); `workflow_dispatch` | `branch-<sanitized-branch-name>` | **Contributors** — ephemeral dev image for testing a feature or fix branch before it is merged |
-| `staging-build.yml` | Push to `main` (code changes only); `workflow_dispatch` | `next` | **Maintainers** — bleeding-edge integration build; reflects the current state of `main` but is not recommended for consumers |
-| `release.yml` | Push of a `v*` tag | `vX.Y.Z`, `vX.Y`, `vX`, `latest` | **Consumers** — stable, versioned release; consumers pin to the major tag (e.g. `:v0`) |
-
-All three workflows ignore documentation-only changes (`docs-site/**`, `README.md`, etc.) to avoid unnecessary image rebuilds.
-
-The canonical tag in `action.yml` is the major tag (e.g. `:v0`). The `action-image-tag` PR check enforces this and will fail if the tag has been changed manually on a branch.
-
-See [Versioning & Releases](versioning) for the full release process.
+The build, staging and release workflows, and the image tags each produces, are described in [Versioning & Releases](versioning.md#build-environments). The `action-image-tag` PR check fails if the major tag in `action.yml` (e.g. `:v0`) is changed on a branch.

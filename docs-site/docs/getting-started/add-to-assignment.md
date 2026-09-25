@@ -30,9 +30,7 @@ A student repository is a copy of the template *at the moment the student accept
 
 ## Assignments without a template
 
-If you created the assignment with `--empty-repo`, there is no template to copy from. Add the workflow file to each student's repository directly.
-
-You also need to change one setting. In the Wizard's **File handling options** step, tick **Include initial (template) commit** before copying the workflow. In an empty repository, the first commit is the student's own work, so it has to be included. The [Classroom 50 guide](../guides/classroom50.md#empty-repository-assignments) explains why.
+If you created the assignment with `--empty-repo`, there is no template to copy from, and one setting needs changing. See [Empty-repository assignments](../guides/classroom50.md#empty-repository-assignments).
 
 ## Next
 

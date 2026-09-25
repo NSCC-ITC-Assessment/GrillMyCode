@@ -310,7 +310,7 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
             }
           >
             {/* Counted against the settings actually on offer, not GitHub's
-                10-input cap — measuring against a number larger than the list
+                input cap — measuring against a number larger than the list
                 reads as though options are hidden. The cap only becomes worth
                 mentioning if the catalogue ever grows past it. */}
             {selected.length} of {catalogue.length} selected.{' '}

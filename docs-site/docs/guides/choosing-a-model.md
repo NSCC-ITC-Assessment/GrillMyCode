@@ -24,16 +24,7 @@ To keep an eye on spending, check the activity page in your OpenRouter account. 
 
 ## The recommended models
 
-These have all been tested with GrillMyCode and usually cost under a cent per assessment. They're the choices in the Workflow Wizard's **AI** step.
-
-| Model | Good to know |
-|---|---|
-| **Google Gemini 3.5 Flash Lite** (default) | Fast and cheap, with the best multiple-choice wrong answers of those tested |
-| DeepSeek V4 Flash | Very cheap, and a reliable alternative |
-| Minimax M2.7 | Very cheap, and does well with little tuning |
-| StepFun Step 3.7 Flash | Good quality for the price |
-| Tencent Hy3 | Cheap and works, though its writing style varies more |
-| Xiaomi MiMo V2.5 Pro | Good at following the required question format |
+The Workflow Wizard's **AI** step offers six models tested with GrillMyCode, all usually under a cent per assessment. [Recommended models](../ai-providers/openrouter.md#recommended-models) lists them, with notes on each.
 
 ## Using a more capable model
 
@@ -57,4 +48,4 @@ Everyone shares your one OpenRouter key, so a class submitting in the same few m
 
 ---
 
-**Go deeper:** [OpenRouter](../ai-providers/openrouter.md): model IDs, routing variants and every OpenRouter-related setting · Recipe: [A more capable model](../example-workflows/openrouter-provider.md)
+**Go deeper:** [OpenRouter](../ai-providers/openrouter.md): model IDs, routing variants and every OpenRouter-related setting

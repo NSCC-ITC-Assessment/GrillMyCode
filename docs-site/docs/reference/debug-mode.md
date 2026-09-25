@@ -11,7 +11,7 @@ GrillMyCode supports GitHub Actions' built-in debug logging mechanism. When enab
 
 | Debug entry | Contents |
 |---|---|
-| **Resolved inputs** | Every parsed input value after defaults and clamping have been applied. Sensitive fields (`github_token`, `api_key`) are shown as `[REDACTED]`. |
+| **Resolved inputs** | Every parsed input value after defaults and clamping have been applied. Sensitive fields (`github_token`, `api_key`, `instructor_repo_token`) are shown as `[REDACTED]`. |
 | **Code after comment stripping** | The full code content after comments have been removed. Omitted when `keep_comments: true` — a message is logged instead confirming no comments were removed. |
 | **Prompt messages** | The full `[system, user]` message array passed to the AI provider, including all injected code content, file lists, assignment context, and instructor instructions. |
 | **PDF: launching Chromium** | The resolved `PUPPETEER_EXECUTABLE_PATH` used to launch the headless browser for PDF generation. |
@@ -46,5 +46,4 @@ This enables `ACTIONS_STEP_DEBUG` only for that run, with no permanent repositor
 ## What it does not log
 
 - The raw AI response. When the [instructor repository](instructor-repository.md#raw-ai-outputmd) is configured, it is saved there as `raw-ai-output.md` on every run, debug mode or not
-- Git diff content (already visible in `core.info` output under normal logging)
 - Code content before comment stripping

@@ -107,13 +107,7 @@ The re-pushed tag runs the workflow again and updates the same issue. With the i
 
 ### Classroom 50 and tags
 
-- **On a *tagged commit* assignment,** `gh student submit` grades the work in Classroom 50 but does **not** run GrillMyCode, because its `submit/…` tags are ignored. Students must also push your tag.
-- **On an *every push* assignment,** nothing changes. Classroom 50 pushes its own tags with the workflow's `github.token`, which never starts another workflow.
-- **Classroom 50 milestone tags** (names such as `phase1`, pushed with plain Git) fit naturally. Use the same names in `on.push.tags` and `submission_tags`, and one `git push origin phase1` both grades the milestone and generates its questions.
-
-### Push and tags in one workflow
-
-The Wizard offers one or the other, because a student who pushes and then tags would be assessed twice for the same work. If you want both, for example practice questions on every push plus a formal assessment at the end, use two separate workflow files, each with its own settings.
+On an *every push* assignment, Classroom 50's `submit/…` tags don't start a run at all, because they are pushed with the workflow's `github.token`, which never triggers another workflow. On a tag-triggered assignment they start one but match nothing, as above. What to tell students is in [Using GrillMyCode with Classroom 50](../guides/classroom50.md#gh-student-submit-and-submission-tags).
 
 ## Manual runs
 
@@ -142,8 +136,6 @@ on:
 The entry under `on.workflow_dispatch.inputs` defines the form field: its label, type and pre-filled value. The expression under `with:` reads the field and falls back to the same value when nothing was supplied, which is what happens on an automatic run, where the field doesn't exist.
 
 The two must agree, so **edit both when you change a default**. If they drift, a manual run with the form left untouched stops matching what an automatic run does.
-
-GitHub allows at most **10** `workflow_dispatch` inputs; a workflow declaring more fails to parse.
 
 ### Which settings to expose
 
@@ -221,7 +213,7 @@ When a new push arrives for the same branch while an earlier run is still going,
 - **Only the latest code is assessed.** The superseded run stops before it publishes, so no stale assessment is produced.
 - **No duplicate or conflicting output.** Runs never overlap, so there are no duplicate issues, clashing PDF uploads or competing commits to the instructor repository.
 - **A cancelled run may stop part-way.** If it had already written some output, the replacement run overwrites it, so the final state reflects the latest push. A cancelled run in the Actions tab is expected.
-- **AI cost isn't spent twice, but Actions minutes are.** The cancelled run stops before it finishes generating, so OpenRouter doesn't bill for a discarded assessment. The runner time it used still counts. On public repositories runner minutes are free; on private repositories, which includes most Classroom 50 repositories, they count against your plan's allowance.
+- **A cancelled run isn't free.** Its runner time counts against your plan's Actions minutes on private repositories, which includes most Classroom 50 repositories, and a reply already being generated may still be billed by OpenRouter.
 
 The group is per workflow **and** per ref, so pushes to different branches run independently. For a tag-triggered workflow the ref is the tag, so only a re-push of the *same* tag cancels a run; `phase1` and `phase2` pushed together both finish.
 

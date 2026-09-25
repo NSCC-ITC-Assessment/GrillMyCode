@@ -61,9 +61,7 @@ See [Classroom 50 internals](classroom50-internals.md) for every commit Classroo
 
 ### Empty-repository assignments
 
-An assignment registered with `gh teacher assignment add --empty-repo` has no template. The first commit is the **student's own first push**, so the default base excludes it. A student who commits their whole assignment at once gets an empty assessment.
-
-Set `include_initial_commit: 'true'` for these assignments. There is no template to exclude, so nothing is lost.
+With `--empty-repo` the first commit is the **student's own first push**, which the default base leaves out. Set `include_initial_commit: 'true'`; see [Empty-repository assignments](../guides/classroom50.md#empty-repository-assignments).
 
 An assignment created *without* `--empty-repo` but also without a template is seeded with a README. Its first commit is that README, so the default is correct for it.
 

@@ -75,7 +75,6 @@ jobs:
 
 ## Good to know
 
-- GitHub allows at most 10 fields on the form.
 - Anyone who can run the workflow can fill in the form, including the student. Never put secrets, `include_answers`, `base_sha`/`head_sha` or `skip_committers` on it.
 - True/false settings use `type: choice` with `'false'` and `'true'`, not `type: boolean`.
 - The form can't hold multi-line text; keep a multi-line `instructor_context` in an `env` block.
