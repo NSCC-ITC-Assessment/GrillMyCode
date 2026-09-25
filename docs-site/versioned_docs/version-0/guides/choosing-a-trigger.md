@@ -8,6 +8,8 @@ The trigger decides **when** GrillMyCode runs and generates questions for a stud
 
 ## At a glance
 
+![A timeline of one student's work: six pushes, the last one tagged "complete", followed by the deadline. Below it, three lanes show when GrillMyCode runs. Every push: a small flame under each of the six pushes. Submission tag: one flame, under the tagged push. Only when you start it: no flames until after the deadline, when a cursor clicks a green Run workflow button and one flame appears. A note says that whichever you choose, you can also start a run yourself at any time.](/img/choosing-a-trigger-timeline.svg)
+
 | Trigger | Runs when… | Best for | AI cost |
 |---|---|---|---|
 | **Push** | a student pushes code to the default branch (`main`) | Short assignments, and giving students questions to practise with while they work | One run per push |
@@ -62,6 +64,8 @@ Name one tag per stage, such as `phase1`, `phase2` and `final`. Each stage gets 
 - you want to check understanding at each checkpoint, not just at the end
 
 You also choose what each later milestone covers:
+
+![A student's timeline with three tags: phase1, phase2 and final. Under "All work to date", the default, each tag's bar starts at the beginning, so phase2's bar is longer than phase1's and final's is longest. Under "Only work since the previous tag", the three bars sit end to end, each covering only the stretch since the tag before it. A small flame marks each tag's set of questions. A note says each tag gets its own set of questions and your starter code is never included.](/img/milestone-tags-coverage.svg)
 
 | Setting | `phase2` asks about… | Good for |
 |---|---|---|

@@ -8,6 +8,8 @@ GrillMyCode only asks about code the student wrote. Most of the time you don't n
 
 ## What's left out automatically
 
+![A cartoon sorting line. Files tumble out of a box labelled "the repo" onto a conveyor belt. The GrillMyCode flame inspects each one with a magnifying glass: the student's own files hop over a trapdoor, and the rest drop into a "Set aside" bin surrounded by labels such as your starter code, installed libraries, lock files, passwords, docs, editor settings and images. Scissors snip a comment off a file, and only the student's own code reaches the end of the line.](/img/choosing-files-sorting.svg)
+
 - **Your starter code.** Everything that was in the template when the student accepted the assignment. If a student edits one of your files, the questions cover only the lines they added or changed. The AI can still see the rest of that file, so it understands what their lines do.
 - **Setup files.** Classroom 50's files, GitHub workflow files and Git settings files.
 - **Anything generated or installed.** GrillMyCode recognizes the languages and frameworks in the repository (Python, Java, JavaScript, React, Laravel, Unity and many more) and leaves out what they produce: installed libraries, build output and caches.

@@ -1,0 +1,258 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" role="img" aria-labelledby="gmc-hiw-title">
+  <title id="gmc-hiw-title">How GrillMyCode works: the student hands in work, GrillMyCode finds the student's own code, an AI writes questions, then the student gets the questions and the instructor can get the answers.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .ttl{font-size:19px;font-weight:800;fill:#1E293B}
+    .sub{font-size:14px;font-weight:500;fill:#475569}
+    .num{font-size:20px;font-weight:800;fill:#FFFFFF}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+    .road{fill:none;stroke:#FCD9B6;stroke-width:24;stroke-linecap:round;stroke-linejoin:round}
+    .lane{fill:none;stroke:#FFFFFF;stroke-width:3;stroke-dasharray:10 12;stroke-linecap:round}
+  </style>
+  <defs>
+    <linearGradient id="gmc-hiw-flame" x1="205" y1="60" x2="120" y2="295" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FA7A18"/><stop offset="0.45" stop-color="#F13B1F"/><stop offset="1" stop-color="#C8142E"/>
+    </linearGradient>
+    <linearGradient id="gmc-hiw-core" x1="0" y1="140" x2="0" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC53A"/><stop offset="1" stop-color="#FB8420"/>
+    </linearGradient>
+    <path id="gmc-hiw-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="680" rx="32" fill="#FFF7ED"/>
+
+  <!-- cloud behind stations 2 and 3 -->
+  <g fill="#E0F2FE">
+    <rect x="340" y="62" width="640" height="290" rx="56"/>
+    <circle cx="430" cy="78" r="46"/>
+    <circle cx="530" cy="58" r="52"/>
+    <circle cx="880" cy="62" r="50"/>
+    <circle cx="940" cy="96" r="38"/>
+  </g>
+  <g class="txt">
+    <rect x="585" y="20" width="230" height="34" rx="17" fill="#FFFFFF" class="ink" stroke-width="2"/>
+    <text x="700" y="43" text-anchor="middle" font-size="15" font-weight="700" fill="#0369A1">Behind the scenes, online</text>
+  </g>
+
+  <!-- the road -->
+  <path class="road" d="M40,258 H900 C985,258 985,378 900,378 H530 Q500,378 500,408 V540 Q500,566 470,566 H230"/>
+  <path class="road" d="M500,540 Q500,566 530,566 H770" stroke="#FDE7CF"/>
+  <path class="lane" d="M40,258 H900 C985,258 985,378 900,378 H530 Q500,378 500,408 V540 Q500,566 470,566 H230"/>
+  <path class="lane" d="M530,566 H770" stroke="#FCD9B6" stroke-dasharray="4 10"/>
+
+  <!-- decoration -->
+  <g fill="#FFC53A">
+    <use href="#gmc-hiw-sparkle" transform="translate(300,60) scale(.9)"/>
+    <use href="#gmc-hiw-sparkle" transform="translate(40,400) scale(.7)"/>
+    <use href="#gmc-hiw-sparkle" transform="translate(960,470) scale(.8)"/>
+    <use href="#gmc-hiw-sparkle" transform="translate(640,640) scale(.6)"/>
+  </g>
+  <g fill="#FB923C" opacity=".5">
+    <circle cx="260" cy="120" r="4"/><circle cx="380" cy="440" r="5"/><circle cx="620" cy="420" r="4"/><circle cx="930" cy="610" r="5"/><circle cx="60" cy="630" r="4"/>
+  </g>
+
+  <!-- ===== 1. The student hands in work ===== -->
+  <ellipse cx="160" cy="248" rx="90" ry="9" fill="#FDBA74" opacity=".45"/>
+  <!-- student -->
+  <path class="ink" fill="#F97316" d="M104,246 C104,200 128,182 160,182 C192,182 216,200 216,246 Z"/>
+  <path class="ink" fill="none" d="M146,184 L160,200 L174,184"/>
+  <path class="ink" fill="#5B3A29" d="M122,146 C118,106 142,94 162,94 C184,94 202,108 198,146 C198,166 202,180 208,190 C196,194 186,190 182,182 L138,182 C134,190 124,194 112,190 C118,180 122,166 122,146 Z"/>
+  <circle class="ink" cx="160" cy="142" r="32" fill="#FDDCB5"/>
+  <path class="ink" fill="#5B3A29" d="M128,142 C124,110 146,100 164,102 C186,104 196,120 192,140 C176,136 160,126 150,114 C146,126 138,136 128,142 Z"/>
+  <circle class="ink" cx="184" cy="118" r="5" fill="#FFC53A" stroke-width="2.5"/>
+  <circle cx="148" cy="146" r="3.5" fill="#1E293B"/><circle cx="172" cy="146" r="3.5" fill="#1E293B"/>
+  <path class="ink" fill="none" d="M151,157 Q160,165 169,157"/>
+  <circle cx="140" cy="157" r="5" fill="#FB7185" opacity=".35"/><circle cx="180" cy="157" r="5" fill="#FB7185" opacity=".35"/>
+  <!-- laptop (lid facing us) -->
+  <rect class="ink" x="112" y="190" width="96" height="58" rx="8" fill="#CBD5E1"/>
+  <g transform="translate(149,203) scale(.12)">
+    <path fill="url(#gmc-hiw-flame)" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+  </g>
+  <rect class="ink" x="98" y="246" width="124" height="10" rx="5" fill="#94A3B8"/>
+  <!-- "Done!" bubble -->
+  <g class="txt">
+    <path class="ink" fill="#FFFFFF" d="M44,62 H112 A18,18 0 0 1 112,98 H100 L112,112 L86,98 H44 A18,18 0 0 1 44,62 Z"/>
+    <text x="78" y="86" text-anchor="middle" font-size="17" font-weight="800" fill="#C2410C">Done!</text>
+  </g>
+  <!-- paper plane heading for the cloud -->
+  <path d="M216,196 C250,170 262,120 318,112" fill="none" stroke="#94A3B8" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <g transform="translate(318,100) rotate(-12)">
+    <path class="ink" fill="#FFFFFF" d="M0,0 L44,14 L0,28 L9,14 Z"/>
+    <path class="ink" fill="none" d="M9,14 H44"/>
+  </g>
+
+  <!-- ===== 2. Finds the student's own code ===== -->
+  <ellipse cx="500" cy="248" rx="110" ry="9" fill="#93C5FD" opacity=".45"/>
+  <!-- set-aside files, faded -->
+  <g opacity=".55">
+    <g transform="translate(372,196) rotate(-10)">
+      <rect class="ink" x="0" y="0" width="38" height="48" rx="6" fill="#E2E8F0" stroke="#94A3B8"/>
+      <path d="M8,14 H30 M8,22 H30 M8,30 H22" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    </g>
+    <g transform="translate(398,214) rotate(8)">
+      <rect class="ink" x="0" y="0" width="34" height="42" rx="6" fill="#E2E8F0" stroke="#94A3B8"/>
+      <path d="M8,13 H26 M8,21 H26" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </g>
+  <g transform="translate(372,190)">
+    <circle cx="0" cy="0" r="11" fill="#94A3B8"/>
+    <path d="M-4.5,-4.5 L4.5,4.5 M4.5,-4.5 L-4.5,4.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+  <!-- flame mascot -->
+  <g transform="translate(410,122) scale(.43)">
+    <path class="ink" stroke-width="7" fill="url(#gmc-hiw-flame)" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+    <path fill="url(#gmc-hiw-core)" d="M188 138C186 170 184 196 192 214C214 228 223 248 221 266C219 284 210 294 204 298H156C142 290 129 272 129 250C129 212 170 176 188 138Z"/>
+    <circle cx="158" cy="232" r="11" fill="#1E293B"/><circle cx="162" cy="228" r="4" fill="#FFFFFF"/>
+    <circle cx="204" cy="232" r="11" fill="#1E293B"/><circle cx="208" cy="228" r="4" fill="#FFFFFF"/>
+    <path d="M166,258 Q181,274 196,258" fill="none" stroke="#1E293B" stroke-width="7" stroke-linecap="round"/>
+    <circle cx="140" cy="254" r="10" fill="#FB7185" opacity=".45"/><circle cx="222" cy="254" r="10" fill="#FB7185" opacity=".45"/>
+  </g>
+  <!-- the kept file: the student's own code -->
+  <g transform="translate(548,150)">
+    <rect class="ink" x="0" y="0" width="50" height="64" rx="7" fill="#FFFFFF"/>
+    <path d="M10,16 H40 M10,26 H34 M10,36 H40 M10,46 H26" stroke="#F97316" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <g transform="translate(598,150)">
+    <circle cx="0" cy="0" r="13" fill="#16A34A" class="ink" stroke-width="2.5"/>
+    <path d="M-5.5,0.5 L-1.5,4.5 L6,-4" fill="none" stroke="#FFFFFF" stroke-width="3.2" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <!-- magnifying glass held by the mascot -->
+  <path class="ink" fill="none" d="M519,214 C530,212 536,206 540,200"/>
+  <line x1="542" y1="198" x2="556" y2="186" stroke="#1E293B" stroke-width="8" stroke-linecap="round"/>
+  <circle class="ink" cx="574" cy="170" r="26" fill="#BAE6FD" fill-opacity=".45" stroke-width="5"/>
+  <path d="M560,160 Q566,152 576,151" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- ===== 3. An AI writes the questions ===== -->
+  <ellipse cx="826" cy="248" rx="90" ry="9" fill="#93C5FD" opacity=".45"/>
+  <!-- robot -->
+  <line class="ink" x1="826" y1="118" x2="826" y2="96"/>
+  <circle class="ink" cx="826" cy="92" r="8" fill="#FFC53A"/>
+  <rect class="ink" x="784" y="118" width="84" height="66" rx="20" fill="#FFFFFF"/>
+  <rect x="795" y="130" width="62" height="42" rx="12" fill="#1E293B"/>
+  <path d="M806,150 Q812,142 818,150 M834,150 Q840,142 846,150" fill="none" stroke="#5EEAD4" stroke-width="4" stroke-linecap="round"/>
+  <path d="M816,159 Q826,166 836,159" fill="none" stroke="#5EEAD4" stroke-width="3.5" stroke-linecap="round"/>
+  <rect class="ink" x="796" y="188" width="60" height="56" rx="16" fill="#FDBA74"/>
+  <circle cx="826" cy="212" r="8" fill="#FFFFFF" class="ink" stroke-width="2.5"/>
+  <path class="ink" fill="none" stroke-width="6" d="M796,204 C782,200 776,190 772,176"/>
+  <path class="ink" fill="none" stroke-width="6" d="M856,204 C870,208 876,216 880,226"/>
+  <!-- sticky note: your instructions -->
+  <g transform="translate(700,160) rotate(-8)">
+    <rect class="ink" x="0" y="0" width="54" height="54" rx="4" fill="#FEF08A" stroke-width="2.5"/>
+    <path d="M9,16 H45 M9,26 H40 M9,36 H44" stroke="#A16207" stroke-width="3" stroke-linecap="round" opacity=".7"/>
+  </g>
+  <path d="M758,190 Q766,190 772,184" fill="none" stroke="#94A3B8" stroke-width="3" stroke-dasharray="2 7" stroke-linecap="round"/>
+  <!-- question bubbles popping out -->
+  <g class="txt" font-weight="800" text-anchor="middle">
+    <circle class="ink" cx="900" cy="112" r="20" fill="#F97316" stroke-width="2.5"/>
+    <text x="900" y="120" font-size="22" fill="#FFFFFF">?</text>
+    <circle class="ink" cx="930" cy="164" r="15" fill="#FFC53A" stroke-width="2.5"/>
+    <text x="930" y="170" font-size="17" fill="#1E293B">?</text>
+    <circle class="ink" cx="890" cy="62" r="13" fill="#5EEAD4" stroke-width="2.5"/>
+    <text x="890" y="68" font-size="15" fill="#1E293B">?</text>
+  </g>
+
+  <!-- ===== 4. The student gets their questions ===== -->
+  <ellipse cx="230" cy="552" rx="120" ry="9" fill="#FDBA74" opacity=".45"/>
+  <!-- PDF peeking out behind -->
+  <g transform="translate(282,424) rotate(10)">
+    <rect class="ink" x="0" y="0" width="60" height="78" rx="6" fill="#FFFFFF"/>
+    <rect x="0" y="54" width="60" height="18" fill="#DC2626"/>
+    <text class="txt" x="30" y="68" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">PDF</text>
+    <rect x="0" y="0" width="60" height="78" rx="6" fill="none" class="ink"/>
+  </g>
+  <!-- the issue card -->
+  <rect class="ink" x="160" y="412" width="126" height="120" rx="12" fill="#FFFFFF"/>
+  <path d="M160,440 H286" stroke="#1E293B" stroke-width="3"/>
+  <circle cx="176" cy="426" r="4" fill="#F87171"/><circle cx="190" cy="426" r="4" fill="#FBBF24"/><circle cx="204" cy="426" r="4" fill="#34D399"/>
+  <g class="txt" font-size="15" font-weight="800" fill="#F97316">
+    <text x="174" y="467">?</text><text x="174" y="492">?</text><text x="174" y="517">?</text>
+  </g>
+  <path d="M190,462 H266 M190,487 H256 M190,512 H270" stroke="#CBD5E1" stroke-width="5" stroke-linecap="round"/>
+  <!-- pin -->
+  <g transform="translate(278,414) rotate(30)">
+    <line x1="0" y1="0" x2="0" y2="14" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round"/>
+    <circle class="ink" cx="0" cy="-6" r="9" fill="#EF4444" stroke-width="2.5"/>
+  </g>
+  <!-- student, reading happily -->
+  <path class="ink" fill="#F97316" d="M62,548 C62,510 80,496 106,496 C132,496 150,510 150,548 Z"/>
+  <path class="ink" fill="#5B3A29" d="M75,468 C72,434 92,422 108,422 C126,422 142,434 138,468 C138,484 141,494 147,502 C136,506 128,502 124,496 L88,496 C84,502 76,506 66,502 C71,494 75,484 75,468 Z"/>
+  <circle class="ink" cx="106" cy="464" r="27" fill="#FDDCB5"/>
+  <path class="ink" fill="#5B3A29" d="M80,464 C76,436 94,428 110,430 C128,432 136,446 133,462 C120,458 106,450 98,440 C94,450 88,458 80,464 Z"/>
+  <circle class="ink" cx="126" cy="442" r="4.2" fill="#FFC53A" stroke-width="2.5"/>
+  <path d="M94,466 Q97,462 100,466 M112,466 Q115,462 118,466" fill="none" stroke="#1E293B" stroke-width="3" stroke-linecap="round"/>
+  <path d="M93,464 L90,461 M119,464 L122,461" stroke="#1E293B" stroke-width="2.2" stroke-linecap="round"/>
+  <path class="ink" fill="#FFFFFF" d="M98,476 Q106,486 114,476 Z" stroke-width="2.5"/>
+  <circle cx="88" cy="475" r="4.5" fill="#FB7185" opacity=".35"/><circle cx="124" cy="475" r="4.5" fill="#FB7185" opacity=".35"/>
+  <path class="ink" fill="none" stroke-width="6" d="M142,520 C150,512 154,504 158,496"/>
+
+  <!-- signpost at the fork -->
+  <g class="txt">
+    <line class="ink" x1="560" y1="420" x2="560" y2="548" stroke-width="6"/>
+    <path class="ink" fill="#FFFFFF" stroke-width="2.5" d="M470,428 H600 V458 H470 L456,443 Z"/>
+    <text x="530" y="449" text-anchor="middle" font-size="14" font-weight="800" fill="#C2410C">For students</text>
+    <path class="ink" fill="#FFFFFF" stroke-width="2.5" d="M520,470 H650 L664,485 L650,500 H520 Z"/>
+    <text x="590" y="491" text-anchor="middle" font-size="14" font-weight="800" fill="#0369A1">For you</text>
+  </g>
+
+  <!-- ===== 5. You get the answers (optional) ===== -->
+  <ellipse cx="770" cy="552" rx="120" ry="9" fill="#FDBA74" opacity=".45"/>
+  <!-- instructor with glasses and a mug -->
+  <path class="ink" fill="#334155" d="M676,548 C676,510 694,496 720,496 C746,496 764,510 764,548 Z"/>
+  <path class="ink" fill="none" stroke="#FFFFFF" d="M708,498 L720,512 L732,498"/>
+  <circle class="ink" cx="720" cy="464" r="27" fill="#E8B48A"/>
+  <path class="ink" fill="#4B5563" d="M693,460 C688,438 702,428 718,430 C724,424 736,426 740,432 C750,438 750,450 747,460 C744,452 740,448 736,446 C730,452 718,454 706,450 C700,452 696,456 693,460 Z"/>
+  <circle cx="710" cy="466" r="8" fill="#FFFFFF" fill-opacity=".6" class="ink" stroke-width="2.5"/>
+  <circle cx="731" cy="466" r="8" fill="#FFFFFF" fill-opacity=".6" class="ink" stroke-width="2.5"/>
+  <path d="M718,466 H723" stroke="#1E293B" stroke-width="2.5"/>
+  <circle cx="710" cy="467" r="2.8" fill="#1E293B"/><circle cx="731" cy="467" r="2.8" fill="#1E293B"/>
+  <path class="ink" fill="none" d="M712,481 Q720,488 728,481"/>
+  <g transform="translate(662,506)">
+    <rect class="ink" x="0" y="0" width="22" height="26" rx="4" fill="#FFFFFF"/>
+    <path class="ink" fill="none" d="M0,7 C-9,7 -9,19 0,19"/>
+    <path d="M6,-6 Q9,-10 6,-14 M14,-6 Q17,-10 14,-14" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round"/>
+  </g>
+  <!-- private folder with a lock -->
+  <path class="ink" fill="#FBBF24" d="M788,436 H818 L828,446 H876 A8,8 0 0 1 884,454 V522 A8,8 0 0 1 876,530 H796 A8,8 0 0 1 788,522 Z"/>
+  <path class="ink" fill="none" d="M788,458 H884"/>
+  <path class="ink" fill="none" stroke-width="4" d="M827,486 V478 A9,9 0 0 1 845,478 V486"/>
+  <rect class="ink" x="820" y="484" width="32" height="26" rx="5" fill="#334155"/>
+  <circle cx="836" cy="496" r="3.5" fill="#FFC53A"/>
+  <!-- LMS quiz card -->
+  <g transform="translate(902,452) rotate(8)">
+    <rect class="ink" x="0" y="0" width="50" height="66" rx="6" fill="#FFFFFF"/>
+    <rect x="9" y="12" width="9" height="9" rx="2" fill="#16A34A"/>
+    <path d="M23,16.5 H41" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+    <rect x="9" y="28" width="9" height="9" rx="2" fill="none" stroke="#94A3B8" stroke-width="2"/>
+    <path d="M23,32.5 H41" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+    <rect x="9" y="44" width="9" height="9" rx="2" fill="none" stroke="#94A3B8" stroke-width="2"/>
+    <path d="M23,48.5 H37" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  </g>
+
+  <!-- ===== numbered stops on the road ===== -->
+  <g class="txt" text-anchor="middle">
+    <circle class="ink" cx="160" cy="258" r="19" fill="#C2410C"/><text class="num" x="160" y="265">1</text>
+    <circle class="ink" cx="500" cy="258" r="19" fill="#C2410C"/><text class="num" x="500" y="265">2</text>
+    <circle class="ink" cx="826" cy="258" r="19" fill="#C2410C"/><text class="num" x="826" y="265">3</text>
+    <circle class="ink" cx="230" cy="566" r="19" fill="#C2410C"/><text class="num" x="230" y="573">4</text>
+    <circle class="ink" cx="770" cy="566" r="19" fill="#FFFFFF" stroke-dasharray="5 5"/><text class="num" x="770" y="573" style="fill:#C2410C">5</text>
+  </g>
+
+  <!-- ===== captions ===== -->
+  <g class="txt" text-anchor="middle">
+    <text class="ttl" x="160" y="306">The student hands in work</text>
+    <text class="sub" x="160" y="329">a push, a tag, or you start it</text>
+
+    <text class="ttl" x="500" y="306">It finds their own code</text>
+    <text class="sub" x="500" y="329">starter code and extras set aside</text>
+
+    <text class="ttl" x="818" y="306">An AI writes questions</text>
+    <text class="sub" x="818" y="329">guided by your instructions</text>
+
+    <text class="ttl" x="230" y="614">The student gets questions</text>
+    <text class="sub" x="230" y="637">an issue and a PDF, no answers</text>
+
+    <text class="ttl" x="770" y="614">You get the answer key</text>
+    <text class="sub" x="770" y="637">optional, private to instructors</text>
+  </g>
+</svg>

@@ -8,6 +8,7 @@ import { themes as prismThemes } from 'prism-react-renderer';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import unescapeImageAlt from './src/remark/unescapeImageAlt.js';
 
 // This runs in Node.js - Don't use client-side code here (browser APIs, JSX...)
 
@@ -154,6 +155,10 @@ const config = {
           editUrl: 'https://github.com/NSCC-ITC-Assessment/GrillMyCode/tree/main/docs-site/',
           lastVersion: latestVersion,
           versions: docsVersions,
+          remarkPlugins: [unescapeImageAlt],
+        },
+        pages: {
+          remarkPlugins: [unescapeImageAlt],
         },
         blog: false,
         theme: {

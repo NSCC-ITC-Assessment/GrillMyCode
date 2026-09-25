@@ -6,6 +6,8 @@ sidebar_position: 3
 
 This page follows one student submission from start to finish. You don't need any technical background to read it. Each section ends with a link to the technical details, if you want them.
 
+![A cartoon road with five numbered stops. 1: a student at a laptop says "Done!" and sends their work off. 2: the GrillMyCode flame uses a magnifying glass to pick out the student's own code and sets other files aside. 3: a friendly robot, handed a sticky note of instructions, writes questions. The road then forks at a signpost. 4, for students: the student smiles at a pinned issue of questions with a PDF copy. 5, for you and optional: an instructor with a coffee mug beside a locked folder and a quiz card.](/img/how-it-works-journey.svg)
+
 ## 1. Something starts a run
 
 You decide what starts GrillMyCode when you set it up. There are three choices:

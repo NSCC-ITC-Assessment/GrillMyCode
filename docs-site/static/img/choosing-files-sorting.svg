@@ -1,0 +1,216 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 550" role="img" aria-labelledby="gmc-sort-title">
+  <title id="gmc-sort-title">How GrillMyCode picks out the student's own code: files from the repository ride a conveyor belt, everything the student didn't write drops into a Set aside bin, comments are snipped off, and only the student's own code reaches the end.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .ttl{font-size:19px;font-weight:800;fill:#1E293B}
+    .sub{font-size:14px;font-weight:500;fill:#475569}
+    .chip{font-size:14px;font-weight:700;fill:#475569}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <linearGradient id="gmc-sort-flame" x1="205" y1="60" x2="120" y2="295" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FA7A18"/><stop offset="0.45" stop-color="#F13B1F"/><stop offset="1" stop-color="#C8142E"/>
+    </linearGradient>
+    <linearGradient id="gmc-sort-core" x1="0" y1="140" x2="0" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC53A"/><stop offset="1" stop-color="#FB8420"/>
+    </linearGradient>
+    <radialGradient id="gmc-sort-glow" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#FFC53A" stop-opacity=".55"/><stop offset="1" stop-color="#FFC53A" stop-opacity="0"/>
+    </radialGradient>
+    <path id="gmc-sort-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <!-- the student's file: orange lines -->
+    <g id="gmc-sort-mine">
+      <rect class="ink" x="0" y="0" width="40" height="50" rx="6" fill="#FFFFFF"/>
+      <path d="M8,13 H32 M8,21 H27 M8,29 H32 M8,37 H21" stroke="#F97316" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+    <!-- a file the student didn't write: grey -->
+    <g id="gmc-sort-other">
+      <rect class="ink" x="0" y="0" width="40" height="50" rx="6" fill="#E2E8F0" stroke="#64748B"/>
+      <path d="M8,13 H32 M8,21 H32 M8,29 H24" stroke="#94A3B8" stroke-width="3.5" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="550" rx="32" fill="#FFF7ED"/>
+  <g transform="translate(0,-50)">
+  <g fill="#FFC53A">
+    <use href="#gmc-sort-sparkle" transform="translate(300,110) scale(.8)"/>
+    <use href="#gmc-sort-sparkle" transform="translate(770,100) scale(.6)"/>
+  </g>
+  <g fill="#FB923C" opacity=".5">
+    <circle cx="250" cy="130" r="4"/><circle cx="560" cy="120" r="5"/><circle cx="960" cy="560" r="4"/><circle cx="40" cy="560" r="5"/>
+  </g>
+
+  <!-- ===== the repository box ===== -->
+  <g transform="translate(40,140) rotate(-6)">
+    <use href="#gmc-sort-other"/>
+  </g>
+  <g transform="translate(88,128) rotate(5)">
+    <use href="#gmc-sort-mine"/>
+  </g>
+  <g transform="translate(132,146) rotate(12)">
+    <use href="#gmc-sort-other"/>
+  </g>
+  <path class="ink" fill="#C08552" d="M36,180 L18,150 L100,158 L112,180 Z"/>
+  <path class="ink" fill="#C08552" d="M112,180 L128,154 L204,150 L186,180 Z"/>
+  <rect class="ink" x="36" y="180" width="150" height="96" rx="10" fill="#D9A066"/>
+  <path d="M60,206 H162" stroke="#A86B3C" stroke-width="3" stroke-linecap="round" opacity=".6"/>
+  <text class="txt" x="111" y="244" text-anchor="middle" font-size="17" font-weight="800" fill="#7C4A21">the repo</text>
+  <ellipse cx="111" cy="282" rx="84" ry="8" fill="#FDBA74" opacity=".45"/>
+
+  <!-- ===== flame mascot, behind the belt ===== -->
+  <g transform="translate(360,118) scale(.5)">
+    <path class="ink" stroke-width="6" fill="url(#gmc-sort-flame)" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+    <path fill="url(#gmc-sort-core)" d="M188 138C186 170 184 196 192 214C214 228 223 248 221 266C219 284 210 294 204 298H156C142 290 129 272 129 250C129 212 170 176 188 138Z"/>
+    <circle cx="158" cy="222" r="10" fill="#1E293B"/><circle cx="162" cy="218" r="3.6" fill="#FFFFFF"/>
+    <circle cx="204" cy="222" r="10" fill="#1E293B"/><circle cx="208" cy="218" r="3.6" fill="#FFFFFF"/>
+    <path d="M166,246 Q181,260 196,246" fill="none" stroke="#1E293B" stroke-width="6" stroke-linecap="round"/>
+    <circle cx="140" cy="242" r="9" fill="#FB7185" opacity=".45"/><circle cx="222" cy="242" r="9" fill="#FB7185" opacity=".45"/>
+  </g>
+  <!-- mascot's arm and magnifying glass over the next file -->
+  <path class="ink" fill="none" d="M414,222 C404,214 400,206 398,198"/>
+  <line x1="397" y1="196" x2="390" y2="184" stroke="#1E293B" stroke-width="8" stroke-linecap="round"/>
+  <circle class="ink" cx="378" cy="164" r="24" fill="#BAE6FD" fill-opacity=".45" stroke-width="5"/>
+  <path d="M365,155 Q370,148 379,147" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+
+  <!-- ===== conveyor belt: two sections with a trapdoor between ===== -->
+  <g>
+    <line class="ink" x1="236" y1="276" x2="236" y2="336" stroke-width="6"/>
+    <line class="ink" x1="490" y1="276" x2="490" y2="336" stroke-width="6"/>
+    <line class="ink" x1="630" y1="276" x2="630" y2="336" stroke-width="6"/>
+    <line class="ink" x1="756" y1="276" x2="756" y2="336" stroke-width="6"/>
+    <rect class="ink" x="196" y="250" width="330" height="26" rx="13" fill="#334155"/>
+    <rect class="ink" x="594" y="250" width="186" height="26" rx="13" fill="#334155"/>
+    <g fill="#94A3B8">
+      <circle cx="222" cy="263" r="6"/><circle cx="282" cy="263" r="6"/><circle cx="342" cy="263" r="6"/><circle cx="402" cy="263" r="6"/><circle cx="462" cy="263" r="6"/><circle cx="512" cy="263" r="6"/>
+      <circle cx="608" cy="263" r="6"/><circle cx="668" cy="263" r="6"/><circle cx="728" cy="263" r="6"/><circle cx="766" cy="263" r="6"/>
+    </g>
+    <!-- trapdoor flap, swung open -->
+    <path class="ink" fill="#64748B" d="M526,266 L536,262 L520,318 L510,316 Z"/>
+  </g>
+  <ellipse cx="490" cy="342" rx="300" ry="8" fill="#FDBA74" opacity=".35"/>
+
+  <!-- files riding the first section -->
+  <g transform="translate(206,200)"><use href="#gmc-sort-other"/></g>
+  <g transform="translate(256,200)"><use href="#gmc-sort-mine"/></g>
+  <g transform="translate(306,200)">
+    <rect class="ink" x="0" y="0" width="40" height="50" rx="6" fill="#E2E8F0" stroke="#64748B"/>
+    <circle cx="28" cy="14" r="5" fill="#FBBF24"/>
+    <path d="M6,42 L16,26 L24,36 L29,30 L35,42 Z" fill="#94A3B8"/>
+  </g>
+  <g transform="translate(356,200)">
+    <rect class="ink" x="0" y="0" width="40" height="50" rx="6" fill="#E2E8F0" stroke="#64748B"/>
+    <circle cx="20" cy="24" r="10" fill="none" stroke="#94A3B8" stroke-width="4"/>
+    <circle cx="20" cy="24" r="3.5" fill="#94A3B8"/>
+    <path d="M20,10 V14 M20,34 V38 M6,24 H10 M30,24 H34" stroke="#94A3B8" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- under the glass: not the student's -->
+  <g transform="translate(398,202)">
+    <circle cx="0" cy="0" r="11" fill="#94A3B8" class="ink" stroke-width="2"/>
+    <path d="M-4.5,-4.5 L4.5,4.5 M4.5,-4.5 L-4.5,4.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+  </g>
+
+  <!-- a grey file falling through the trapdoor -->
+  <g transform="translate(546,318) rotate(28)" opacity=".85"><use href="#gmc-sort-other"/></g>
+  <path d="M532,300 V286 M580,322 V306" stroke="#94A3B8" stroke-width="3" stroke-linecap="round"/>
+
+  <!-- an orange file hopping over the gap -->
+  <path d="M500,214 C520,130 580,112 624,176" fill="none" stroke="#F97316" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <g transform="translate(586,118) rotate(14)"><use href="#gmc-sort-mine"/></g>
+
+  <!-- files on the second section, comments being snipped -->
+  <g transform="translate(640,200)"><use href="#gmc-sort-mine"/></g>
+  <g transform="translate(704,200)"><use href="#gmc-sort-mine"/></g>
+  <!-- comment strip flying off -->
+  <g transform="translate(680,150) rotate(-18)">
+    <rect x="0" y="0" width="56" height="18" rx="4" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+    <text class="txt" x="28" y="14" text-anchor="middle" font-size="13" font-weight="800" fill="#15803D">// note</text>
+  </g>
+  <!-- scissors -->
+  <g transform="translate(748,178) rotate(-30)">
+    <circle class="ink" cx="-10" cy="16" r="7" fill="#FFFFFF" stroke-width="3"/>
+    <circle class="ink" cx="10" cy="16" r="7" fill="#FFFFFF" stroke-width="3"/>
+    <path class="ink" d="M-5,11 L8,-16 M5,11 L-8,-16" stroke="#475569" stroke-width="4"/>
+  </g>
+  <text class="txt sub" x="688" y="128" text-anchor="middle" font-style="italic">comments snipped</text>
+
+  <!-- ===== the end of the line: the student's own code ===== -->
+  <circle cx="880" cy="206" r="96" fill="url(#gmc-sort-glow)"/>
+  <rect class="ink" x="818" y="250" width="124" height="26" rx="8" fill="#C2410C"/>
+  <g transform="translate(832,194) rotate(-7)"><use href="#gmc-sort-mine"/></g>
+  <g transform="translate(868,188) rotate(6)"><use href="#gmc-sort-mine"/></g>
+  <g transform="translate(920,200)">
+    <circle class="ink" cx="0" cy="0" r="14" fill="#16A34A" stroke-width="2.5"/>
+    <path d="M-6,0.5 L-1.5,5 L6.5,-4.5" fill="none" stroke="#FFFFFF" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"/>
+  </g>
+  <g fill="#FFC53A">
+    <use href="#gmc-sort-sparkle" transform="translate(826,150) scale(.9)"/>
+    <use href="#gmc-sort-sparkle" transform="translate(944,144) scale(.7)"/>
+  </g>
+  <path d="M780,263 H818" stroke="#334155" stroke-width="10"/>
+
+  <!-- ===== the Set aside bin ===== -->
+  <path class="ink" fill="#64748B" d="M466,404 H616 L602,516 H480 Z"/>
+  <rect class="ink" x="456" y="392" width="170" height="20" rx="8" fill="#94A3B8"/>
+  <text class="txt" x="541" y="468" text-anchor="middle" font-size="20" font-weight="800" fill="#FFFFFF">Set aside</text>
+  <ellipse cx="541" cy="522" rx="96" ry="8" fill="#CBD5E1" opacity=".6"/>
+
+  <!-- what goes in the bin -->
+  <g class="txt">
+    <g transform="translate(92,396) rotate(-3)">
+      <rect class="ink" x="0" y="0" width="166" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="83" y="21" text-anchor="middle">Your starter code</text>
+    </g>
+    <g transform="translate(270,410) rotate(2)">
+      <rect class="ink" x="0" y="0" width="160" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="80" y="21" text-anchor="middle">Setup files</text>
+    </g>
+    <g transform="translate(58,448) rotate(2)">
+      <rect class="ink" x="0" y="0" width="176" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="88" y="21" text-anchor="middle">Installed libraries</text>
+    </g>
+    <g transform="translate(250,460) rotate(-2)">
+      <rect class="ink" x="0" y="0" width="180" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="90" y="21" text-anchor="middle">Build output &amp; logs</text>
+    </g>
+    <g transform="translate(120,502) rotate(-1)">
+      <rect class="ink" x="0" y="0" width="150" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="75" y="21" text-anchor="middle">Lock files</text>
+    </g>
+    <g transform="translate(290,512) rotate(3)">
+      <rect class="ink" x="0" y="0" width="150" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="75" y="21" text-anchor="middle">Passwords (.env)</text>
+    </g>
+
+    <g transform="translate(652,396) rotate(3)">
+      <rect class="ink" x="0" y="0" width="156" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="78" y="21" text-anchor="middle">READMEs &amp; docs</text>
+    </g>
+    <g transform="translate(820,410) rotate(-2)">
+      <rect class="ink" x="0" y="0" width="140" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="70" y="21" text-anchor="middle">Editor settings</text>
+    </g>
+    <g transform="translate(664,454) rotate(-2)">
+      <rect class="ink" x="0" y="0" width="156" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="78" y="21" text-anchor="middle">Diagrams &amp; data</text>
+    </g>
+    <g transform="translate(836,462) rotate(3)">
+      <rect class="ink" x="0" y="0" width="112" height="32" rx="16" fill="#FFFFFF" stroke-width="2"/>
+      <text class="chip" x="56" y="21" text-anchor="middle">Images</text>
+    </g>
+  </g>
+
+  <!-- ===== captions ===== -->
+  <g class="txt" text-anchor="middle">
+    <text class="ttl" x="111" y="316">Everything in</text>
+    <text class="ttl" x="111" y="338">the repository</text>
+
+    <text class="ttl" x="880" y="316">The student's</text>
+    <text class="ttl" x="880" y="338">own code</text>
+    <text class="sub" x="880" y="360">what the questions are about</text>
+
+    <text class="sub" x="750" y="560">If a student edits your starter file,</text>
+    <text class="sub" x="750" y="580">only their own lines are asked about.</text>
+  </g>
+  </g>
+</svg>

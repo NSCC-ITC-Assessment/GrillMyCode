@@ -8,6 +8,8 @@ import MinimalWorkflow from '../_partials/_minimal-workflow.mdx';
 
 Setting up GrillMyCode takes about 15 minutes. The first step is done once for your whole classroom. After that, adding GrillMyCode to another assignment takes about a minute.
 
+![Three panels joined by arrows. "Once per classroom": an instructor puts a key into a safe labelled "your org", captioned "Save your OpenRouter key in your GitHub organization". "Once per assignment": a magic wand makes a file with the GrillMyCode flame on it, which drops into a template, captioned "Add one file to the template; the Workflow Wizard writes it for you". "Automatic": six student repositories, each with a different student and a copy of the file, captioned "Every student gets a copy when they accept the assignment".](/img/setup-effort.svg)
+
 ## What you need
 
 - **A Classroom 50 classroom**, with permission to change its GitHub organization's settings. Organization owners have this.
