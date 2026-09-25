@@ -89,17 +89,6 @@ export function mergeLabelTopic(topics, topic = REPO_LABEL_TOPIC) {
   return { names: [...existing, wanted], changed: true };
 }
 
-/**
- * Removes the label topic from a topic set. Used to clear a label rather than
- * to write one; kept beside the merge so the two stay symmetrical.
- */
-export function removeLabelTopic(topics, topic = REPO_LABEL_TOPIC) {
-  const existing = Array.isArray(topics) ? topics : [];
-  const wanted = topic.toLowerCase();
-  const names = existing.filter((name) => String(name).toLowerCase() !== wanted);
-  return { names, changed: names.length !== existing.length };
-}
-
 /** The label text itself, e.g. "🔥 GrillMyCode: 20 questions". */
 export function buildDescriptionLabel(questionCount) {
   const noun = questionCount === 1 ? 'question' : 'questions';

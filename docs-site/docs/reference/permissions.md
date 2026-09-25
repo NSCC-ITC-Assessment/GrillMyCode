@@ -44,7 +44,7 @@ Your OpenRouter API key. The action fails immediately with a setup message if it
 
 Optional. A personal access token (PAT) used only for the [instructor repository](instructor-repository.md) and the [repository labels](repository-labels.md). It is never passed to the student-facing steps, and the workflow's `GITHUB_TOKEN` is never given access to the instructor repository. That separation is what keeps the answer key out of reach of anyone who can read the student's repository or its logs.
 
-The token must belong to an account that can create repositories in the organization: an organization owner, or a member if the organization allows members to create repositories. Store it as the organization secret `INSTRUCTOR_REPO_TOKEN`. If the secret is limited to selected repositories, include the instructor repositories as well, because the [label reconciliation sweep](repository-labels.md#keeping-labels-true-the-reconciliation-sweep) runs there.
+The token must belong to an account that can create repositories in the organization: an organization owner, or a member if the organization allows members to create repositories. Store it as the organization secret `INSTRUCTOR_REPO_TOKEN`.
 
 When it is empty or not set, instructor delivery is skipped, and the model is asked for correct answers only, without multiple-choice distractors.
 

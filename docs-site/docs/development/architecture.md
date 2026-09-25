@@ -134,13 +134,6 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                ├── syncInstructorRepoFiles()
                │     Rewrites generate-lms-quiz.yml and README.md when they differ
                │     from the copies shipped in src/; warns (never throws) on failure.
-               │     Adds reconcile-repo-labels.yml, with label_repos rendered
-               │     into it, while the label is on — and re-syncs it switched
-               │     off, if already present, once the label is turned off,
-               │     so disabling disarms the sweep rather than stranding it.
-               │     That sweep runs daily but is only refreshed here, so it
-               │     stands itself down after REPO_LABEL_SWEEP_IDLE_DAYS with
-               │     no delivery rather than running on a version no fix reaches
                │
                ├── writeFileWithRetry()
                │     Writes {studentLogin}/raw-ai-output.md — the model's reply

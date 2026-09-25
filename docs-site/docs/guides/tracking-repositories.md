@@ -35,7 +35,7 @@ GrillMyCode is careful with these labels:
 - It replaces its own old note rather than adding another one.
 - It leaves a description alone if adding the note would make it too long for GitHub.
 
-Once a day, a small workflow in the private repository removes labels from repositories whose assessment issue has since been closed. It stops by itself after an assignment has been quiet for 10 days.
+Labels stay on a repository once they're added, so they show which students have had questions at some point. The search above shows who has questions right now.
 
 :::tip
 GitHub shows topics in some repository list views and not others. The description note shows everywhere.
@@ -55,4 +55,4 @@ Only the student's own submissions count. A run you start yourself from the Acti
 
 ---
 
-**Go deeper:** [Repository label internals](../reference/repository-labels.md): the daily sweep and how the labels are written · [Instructor repository internals](../reference/instructor-repository.md#spotting-resubmissions): the resubmission record · Recipe: [Repository labels](../example-workflows/2-repo-labels.md)
+**Go deeper:** [Repository label internals](../reference/repository-labels.md): how the labels are written · [Instructor repository internals](../reference/instructor-repository.md#spotting-resubmissions): the resubmission record · Recipe: [Repository labels](../example-workflows/2-repo-labels.md)

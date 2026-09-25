@@ -142,9 +142,7 @@ export default function StepInstructorRepo({ cfg, onChange, docsBase = '/docs' }
                       description, so you can tell which repositories have a question set without
                       opening them, and filter for them with{' '}
                       <code>org:&lt;your-org&gt; topic:grillmycode</code>. Existing topics are kept,
-                      and the label replaces itself on each run rather than stacking up. A daily
-                      workflow in the instructor repository clears labels from repositories whose
-                      assessment issue has since been closed. See the{' '}
+                      and the label replaces itself on each run rather than stacking up. See the{' '}
                       <a
                         href={`${docsBase}/example-workflows/repo-labels`}
                         target="_blank"

@@ -38,7 +38,6 @@ A delivery failure is reported as an error annotation on the run but **doesn't f
 README.md                                   ← describes the repository (action-owned)
 .github/workflows/
   generate-lms-quiz.yml                     ← builds the quiz files (action-owned)
-  reconcile-repo-labels.yml                ← only when label_repos is on (action-owned)
 {student-login}/
   questions.md                              ← the assessment: questions and answers
   raw-ai-output.md                          ← the AI's unprocessed reply, for diagnosis
@@ -58,7 +57,7 @@ Each run replaces the student's files, so there is always exactly one up-to-date
 
 ### Action-owned files
 
-`README.md`, `generate-lms-quiz.yml` and, when `label_repos` is on, `reconcile-repo-labels.yml` belong to the action. Every run compares them with the copies shipped in the action and rewrites any that differ, so a repository created by an older release picks up fixes by itself. Local edits to them are replaced on the next run.
+`README.md` and `generate-lms-quiz.yml` belong to the action. Every run compares them with the copies shipped in the action and rewrites any that differ, so a repository created by an older release picks up fixes by itself. Local edits to them are replaced on the next run.
 
 Writing under `.github/workflows/` needs the token's `workflow` scope. Without it the sync logs a warning, and the assessment is still delivered; see [Upgrade notes](upgrade-notes.md#already-have-an-instructor-pat).
 

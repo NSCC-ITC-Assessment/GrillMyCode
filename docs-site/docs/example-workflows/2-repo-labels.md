@@ -67,7 +67,7 @@ grillmycode
 ## Good to know
 
 - Your own topics are kept, and the description note replaces itself rather than piling up.
-- A daily workflow in the instructor repository removes labels whose assessment issue has been closed.
+- Labels stay on the repository once added, even after the assessment issue is closed.
 - GitHub shows topics in some list views and not others; check it appears where you look.
 - No setup needed at all: `org:<your-org> is:issue is:open label:assessment` lists repositories with live questions.
 
