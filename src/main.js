@@ -734,7 +734,12 @@ async function run() {
     state.inputs = inputs;
     core.debug(
       `Resolved inputs:\n${JSON.stringify(
-        { ...inputs, githubToken: '[REDACTED]', apiKey: inputs.apiKey ? '[REDACTED]' : '' },
+        {
+          ...inputs,
+          githubToken: '[REDACTED]',
+          apiKey: inputs.apiKey ? '[REDACTED]' : '',
+          instructorRepoToken: inputs.instructorRepoToken ? '[REDACTED]' : '',
+        },
         null,
         2,
       )}`,
