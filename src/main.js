@@ -502,7 +502,7 @@ async function writeRunSummary(state) {
   try {
     const heading = state.failureMessage
       ? 'GrillMyCode — run failed'
-      : 'GrillMyCode — assessment generated';
+      : 'GrillMyCode — assessment questions generated';
 
     const banner = state.failureMessage
       ? `❌ **${state.failureMessage}**\n\nThe sections below show how far the run got before it stopped.`
@@ -573,7 +573,7 @@ async function reportEmptyAssessment({
     // files in range and this is genuinely unexpected — saying otherwise would
     // send the reader looking for a cause that cannot apply.
     const acceptTimeExplains = !inputs.includeInitialCommit && !inputs.baseSha && !inputs.headSha;
-    headline = `No assessment generated: the commit range ${shortBase}..${shortHead} contains no changed files.`;
+    headline = `No assessment questions generated: the commit range ${shortBase}..${shortHead} contains no changed files.`;
     detail =
       `Nothing was compared, so the exclude patterns were never involved.` +
       (acceptTimeExplains
@@ -594,7 +594,7 @@ async function reportEmptyAssessment({
     // the Classroom 50 setup commit. Asserting it for an arbitrary set of
     // excluded files would point the reader at a cause that is not theirs.
     const isClassroomSetupCommit = allFiles.length === 1 && allFiles[0] === '.classroom50.yaml';
-    headline = `No assessment generated: all ${allFiles.length} changed file(s) were removed by the exclude patterns.`;
+    headline = `No assessment questions generated: all ${allFiles.length} changed file(s) were removed by the exclude patterns.`;
     detail =
       `Files did change in ${shortBase}..${shortHead}, but none survived filtering, ` +
       `so there was nothing to send to the AI.` +
@@ -618,7 +618,7 @@ async function reportEmptyAssessment({
   // annotation only makes the run page show something is off.
   try {
     await core.summary
-      .addHeading('GrillMyCode: no assessment generated', 2)
+      .addHeading('GrillMyCode: no assessment questions generated', 2)
       .addRaw(`**${headline}**\n\n${detail}\n`)
       .addHeading('What to check', 3)
       .addList(checks)
