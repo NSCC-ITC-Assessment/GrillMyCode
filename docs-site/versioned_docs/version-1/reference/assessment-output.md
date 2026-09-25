@@ -35,7 +35,7 @@ A **GrillMyCode** heading with the logo, a **Download as PDF** button, then a he
 | **Student** / **Repository** | When known: the student's login and the `owner/repo` the questions came from. This makes each copy identifiable in the instructor repository |
 | **Commits reviewed** | Always: base → head, as short SHAs |
 | **Branch** | Only on a branch other than `main` or `master` |
-| **Submission tag** | On tag runs, with the previous tag when `tag_diff_base` is `previous-tag` |
+| **Submission tag** | On tag runs, with the tag the diff started from when `tag_diff_base` is `previous-tag` or `tag:<name>` |
 | **Code Files Assessed** | Always: the files that passed filtering |
 | **Assignment Context** | When `assignment_context` matched any files |
 | **Instructor Note** | When `instructor_context` is set: a one-sentence summary of the question focus, written by the model |

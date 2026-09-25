@@ -38,7 +38,7 @@ The base does **not** depend on what was pushed. Every run assesses all of the s
 
 Two things can move the base later than that:
 
-- **`tag_diff_base: previous-tag`** (tag runs only). The base becomes the nearest earlier commit carrying one of your `submission_tags`, so a tag assesses only the work since the previous one. With no earlier tag, the base above is used. See [Triggers in depth](triggers.md).
+- **`tag_diff_base: previous-tag`** (tag runs only). The base becomes the nearest earlier commit carrying one of your `submission_tags`, so a tag assesses only the work since the previous one. With no earlier tag, the base above is used. **`tag_diff_base: tag:<name>`** moves it to the tag you name instead, and fails the run if it can't. See [Triggers in depth](triggers.md#what-each-tag-assesses).
 - **`skip_committers`**. See [Skipping bot commits](#skipping-bot-commits).
 
 `base_sha` overrides everything above. When both `base_sha` and `head_sha` are set, the run uses them as given and skips all other resolution.

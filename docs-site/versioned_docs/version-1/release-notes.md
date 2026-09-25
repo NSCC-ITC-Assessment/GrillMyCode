@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v1.13.0 — 2026-09-25
+
+### What's Changed
+
+### Features
+
+- add tag:<name> option to tag_diff_base
+
 ## v1.12.0 — 2026-09-25
 
 ### What's Changed

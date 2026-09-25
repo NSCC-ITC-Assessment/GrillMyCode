@@ -48,7 +48,9 @@
  * tag_diff_base narrows what is assessed too — previous-tag assesses only the
  * work since the last submission tag — but unlike the four above it cannot
  * empty the assessment: the action never diffs from a tag on the assessed
- * commit itself, so the range always holds at least that tag's commits. The
+ * commit itself (tag:<name> fails the run instead), so the range always holds
+ * at least that tag's commits. A tag:<name> value is added to the choice's
+ * options by generateYaml.js, since the fixed list cannot hold it. The
  * mode a run used is shown in the run summary's configuration block. It is
  * offered only for tag-triggered workflows (tagTriggerOnly), where it has an
  * effect at all, and is unticked by default.
@@ -168,7 +170,7 @@ export const DISPATCH_OVERRIDES = [
     options: ['cumulative', 'previous-tag'],
     tagTriggerOnly: true,
     description:
-      'cumulative assesses all work to date; previous-tag only the work since the last submission tag',
+      'cumulative assesses all work to date; previous-tag only the work since the last submission tag; tag:<name> only the work since that tag',
     hint: 'Re-run a milestone either way — for example, a cumulative assessment of phase2 when the workflow normally assesses only the work since phase1.',
   },
   {

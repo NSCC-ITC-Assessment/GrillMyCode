@@ -29,6 +29,8 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
   const showBranchOption = cfg.triggerEvent === 'push+workflow_dispatch';
   const branchMode = cfg.branchMode || 'specify';
   const tagTrigger = isTagTrigger(cfg);
+  const namedTagMode = (cfg.tagDiffBase || '').startsWith('tag:');
+  const namedTag = namedTagMode ? cfg.tagDiffBase.slice('tag:'.length) : '';
 
   const catalogue = availableDispatchOverrides({ tagTrigger });
   const selected = resolveDispatchOverrides(cfg.dispatchOverrides, { tagTrigger });
@@ -152,7 +154,8 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
               milestones such as <code>phase1</code> and <code>phase2</code> are kept apart.
               Wildcards (<code>*</code>, <code>**</code>, <code>?</code>, <code>+</code>,{' '}
               <code>[0-9]</code>) are allowed; every tag matching one entry shares that entry's
-              issue. The tagged commit must be on the default branch, or the run fails.
+              issue. Names are case-sensitive, so <code>Phase1</code> won’t match <code>phase1</code>.
+              The tagged commit must be on the default branch, or the run fails.
             </span>
             <textarea
               className={styles.textarea}
@@ -199,7 +202,37 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
                   </div>
                 </span>
               </label>
+              <label className={styles.radioLabel}>
+                <input
+                  type="radio"
+                  name="tagDiffBase"
+                  value="tag:"
+                  checked={namedTagMode}
+                  onChange={() => onChange({ tagDiffBase: `tag:${namedTag}` })}
+                />
+                <span>
+                  <strong>Only work since a tag you name</strong> <code>tag:&lt;name&gt;</code>
+                  <div className={styles.radioDescription}>
+                    Every run assesses only what changed since the one tag you type below, which
+                    doesn’t need to be in the list above. Suits a workflow file that runs for one
+                    stage only. The name is case-sensitive. The run fails if that tag is missing,
+                    isn’t an earlier commit, or is on the commit being assessed.
+                  </div>
+                </span>
+              </label>
             </div>
+            {namedTagMode && (
+              <div className={styles.fieldGroup} style={{ marginTop: '0.75rem' }}>
+                <label className={styles.label}>Tag to compare against</label>
+                <input
+                  type="text"
+                  className={styles.input}
+                  value={namedTag}
+                  onChange={(e) => onChange({ tagDiffBase: `tag:${e.target.value.trim()}` })}
+                  placeholder="phase1"
+                />
+              </div>
+            )}
           </div>
         </div>
       )}

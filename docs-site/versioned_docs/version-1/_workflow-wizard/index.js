@@ -16,6 +16,7 @@ import {
   instructorRepoActive,
   invalidSubmissionTags,
   isTagTrigger,
+  namedDiffBaseTagError,
   submissionTagList,
 } from './generateYaml';
 
@@ -109,6 +110,8 @@ function getStepError(stepIndex, cfg) {
     if (invalid.length > 0) {
       return `Unsupported tag pattern(s): ${invalid.join(', ')}. Use letters, digits and . _ / - plus the wildcards * ? + and [ ].`;
     }
+    const namedTagError = namedDiffBaseTagError(cfg);
+    if (namedTagError) return namedTagError;
   }
   if (label === 'Instructor') {
     if (cfg.usesClassroom50 === null) {

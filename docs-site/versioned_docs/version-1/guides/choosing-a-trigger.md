@@ -67,11 +67,12 @@ You also choose what each later milestone covers:
 |---|---|---|
 | **All work to date** (`cumulative`, the default) | everything the student has written, including phase 1 | Checking the student still understands the whole project as it grows |
 | **Only work since the previous tag** (`previous-tag`) | just what changed after `phase1` | Keeping each stage's questions focused on that stage's new code |
+| **Only work since a tag you name** (`tag:phase1`) | just what changed after the tag you name, and the run fails if that tag is missing | A separate workflow for each stage, each with its own instructions |
 
 **Keep in mind (for both kinds of tag):**
 
 - Only the tags you name count. GrillMyCode ignores every other tag, including the `submit/…` tags Classroom 50 creates for its own grading — so on a Classroom 50 assignment, `gh student submit` alone does not generate questions.
-- Students need to know the tag commands. Put them in the assignment instructions.
+- Students need to know the tag commands. Put them in the assignment instructions, and ask students to type the tag names exactly: `Phase1` and `phase1` are different tags.
 - The tagged commit must be on the default branch. A tag on any other branch fails the run, so the student can see their submission didn't count.
 - To resubmit under the same tag, the student moves it to their latest commit and pushes it again: `git tag -f complete` then `git push --force origin complete`. The new questions replace the old ones for that tag, but the resubmission is flagged to you and the replaced questions are kept ([details](tracking-repositories.md#spotting-resubmissions)).
 

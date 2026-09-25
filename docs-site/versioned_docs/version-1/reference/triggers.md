@@ -40,7 +40,7 @@ No tag is ever inferred. Tags created by other tools, including Classroom 50's `
 
 ### Pattern syntax
 
-Plain names such as `complete` or `phase1` match exactly. Wildcards use GitHub's filter syntax:
+Plain names such as `complete` or `phase1` match exactly. Matching is case-sensitive: neither `phase1` nor `phase*` matches a tag pushed as `Phase1`, and that run fails. Wildcards use GitHub's filter syntax:
 
 | Syntax | Matches |
 |---|---|
@@ -80,8 +80,17 @@ The group is named after the **entry in your list**, not the tag that matched it
 |---|---|
 | `cumulative` (default) | All of the student's work to date, exactly like a push-triggered run |
 | `previous-tag` | Only the work since the nearest earlier commit carrying any `submission_tags` tag. The first tag, with nothing earlier to compare against, assesses all work to date |
+| `tag:<name>`, e.g. `tag:phase1` | Only the work since the tag you name. It doesn't need to be in `submission_tags`. The name is case-sensitive, like all git tag names: `tag:Phase1` won't find `phase1` |
 
-A manual `base_sha` takes precedence over both.
+`tag:<name>` never falls back to `cumulative`. The run **fails** when the named tag:
+
+- doesn't exist (not pushed, misspelled, or the checkout lacks `fetch-depth: 0`)
+- isn't an earlier commit in the tagged commit's history, for example because it's on another branch
+- is on the tagged commit itself, which leaves nothing to assess
+
+Use `tag:<name>` in a workflow that runs for **one** milestone, such as a `phase2` workflow that should always compare against `phase1`. In a workflow shared by several tags it applies to all of them, and the named tag's own run fails. See the [Separate workflow per phase](../example-workflows/4-phase-workflows.md) recipe.
+
+A manual `base_sha` takes precedence over all three.
 
 ### Resubmitting
 
@@ -145,7 +154,7 @@ GitHub allows at most **10** `workflow_dispatch` inputs; a workflow declaring mo
 | `additional_exclude_patterns` | Exclude a data dump you only noticed after the first run |
 | `exclude_pattern_overrides` | Bring back a file the default exclusions removed |
 | `include_initial_commit` | Recover a run where the student committed everything at once |
-| `tag_diff_base` | Tag-triggered workflows only: re-run a milestone cumulatively, or only since the previous tag |
+| `tag_diff_base` | Tag-triggered workflows only: re-run a milestone cumulatively, only since the previous tag, or since a tag you type in |
 | `ai_temperature` | Rarely useful; most instructors should leave this fixed |
 
 The Wizard ticks the first six by default.
