@@ -11,7 +11,7 @@ A GrillMyCode workflow uses up to three credentials:
 |---|---|---|---|
 | `github_token` | The built-in `GITHUB_TOKEN` | Yes (it's the default) | The assessment issue, the PDF release, and reading repository metadata |
 | `api_key` | `OPENROUTER_API_KEY` | Yes | Generating questions through OpenRouter |
-| `instructor_repo_token` | `INSTRUCTOR_REPO_TOKEN` | No | The instructor repository and repository markers |
+| `instructor_repo_token` | `INSTRUCTOR_REPO_TOKEN` | No | The instructor repository and repository labels |
 
 All three are registered as secrets with the Actions runner before use, so they are masked in logs. Never expose any of them as a [manual-run form field](triggers.md#settings-to-keep-out-of-the-form).
 
@@ -42,9 +42,9 @@ Your OpenRouter API key. The action fails immediately with a setup message if it
 
 ## `instructor_repo_token`
 
-Optional. A personal access token (PAT) used only for the [instructor repository](instructor-repository.md) and the [repository marker](repository-marker.md). It is never passed to the student-facing steps, and the workflow's `GITHUB_TOKEN` is never given access to the instructor repository. That separation is what keeps the answer key out of reach of anyone who can read the student's repository or its logs.
+Optional. A personal access token (PAT) used only for the [instructor repository](instructor-repository.md) and the [repository labels](repository-labels.md). It is never passed to the student-facing steps, and the workflow's `GITHUB_TOKEN` is never given access to the instructor repository. That separation is what keeps the answer key out of reach of anyone who can read the student's repository or its logs.
 
-The token must belong to an account that can create repositories in the organization: an organization owner, or a member if the organization allows members to create repositories. Store it as the organization secret `INSTRUCTOR_REPO_TOKEN`. If the secret is limited to selected repositories, include the instructor repositories as well, because the [marker reconciliation sweep](repository-marker.md#keeping-markers-true-the-reconciliation-sweep) runs there.
+The token must belong to an account that can create repositories in the organization: an organization owner, or a member if the organization allows members to create repositories. Store it as the organization secret `INSTRUCTOR_REPO_TOKEN`.
 
 When it is empty or not set, instructor delivery is skipped, and the model is asked for correct answers only, without multiple-choice distractors.
 

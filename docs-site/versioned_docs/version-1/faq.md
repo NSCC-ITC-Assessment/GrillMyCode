@@ -102,7 +102,7 @@ Yes. With the private answer key, each student gets a quiz file you can import i
 
 ### How can I see which students have questions?
 
-Search your organization for open `assessment` issues, or turn on repository markers. See [Tracking assessed repositories](guides/tracking-repositories.md).
+Search your organization for open `assessment` issues, or turn on repository labels, which the Workflow Wizard does by default. See [Tracking assessed repositories](guides/tracking-repositories.md).
 
 ## Upgrading
 
