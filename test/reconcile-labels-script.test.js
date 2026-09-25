@@ -5,9 +5,9 @@ import { createContext, runInContext } from 'node:vm';
 import { createRequire } from 'node:module';
 import { Buffer } from 'node:buffer';
 import {
-  REPO_MARKER_DESCRIPTION_SEPARATOR,
-  REPO_MARKER_DESCRIPTION_SIGIL,
-  REPO_MARKER_SWEEP_IDLE_DAYS,
+  REPO_LABEL_DESCRIPTION_SEPARATOR,
+  REPO_LABEL_DESCRIPTION_SIGIL,
+  REPO_LABEL_SWEEP_IDLE_DAYS,
 } from '../src/constants.js';
 
 /**
@@ -22,7 +22,7 @@ import {
  * An extraction failure throws rather than silently testing nothing.
  */
 const WORKFLOW = readFileSync(
-  join(import.meta.dirname, '../src/workflows/reconcile-repo-markers.yml'),
+  join(import.meta.dirname, '../src/workflows/reconcile-repo-labels.yml'),
   'utf8',
 );
 
@@ -31,7 +31,7 @@ function extractScript() {
   const start = lines.findIndex((l) => l.trim().startsWith('node <<'));
   const end = lines.findIndex((l) => l.trim() === 'JSEOF');
   if (start === -1 || end === -1) {
-    throw new Error('the embedded script heredoc was not found in reconcile-repo-markers.yml');
+    throw new Error('the embedded script heredoc was not found in reconcile-repo-labels.yml');
   }
   return lines.slice(start + 1, end).join('\n');
 }
@@ -53,7 +53,7 @@ const INSTRUCTOR_REPO = 'nscc/appd5000-lab3-grillmycode-instructor';
  * made and the job summary it wrote.
  */
 async function runSweep({
-  mode,
+  enabled = 'true',
   dryRun = false,
   repos = [],
   issues = {},
@@ -99,7 +99,7 @@ async function runSweep({
     process: {
       env: {
         GMC_TOKEN: 'test-token',
-        MARKER_MODE: mode,
+        LABELS_ENABLED: enabled,
         DRY_RUN: String(dryRun),
         GITHUB_REPOSITORY: `nscc/${INSTRUCTOR_REPO.split('/')[1]}`,
         GITHUB_EVENT_NAME: eventName,
@@ -128,16 +128,16 @@ const topicWrite = (calls) => calls.find((c) => c.method === 'PUT' && c.path.end
 const descriptionWrite = (calls) => calls.find((c) => c.method === 'PATCH');
 
 describe('reconciliation sweep: disabled states', () => {
-  it('makes no API calls at all when the mode is off', async () => {
-    const { calls, summary } = await runSweep({ mode: 'off' });
+  it('makes no API calls at all when label_repos is off', async () => {
+    const { calls, summary } = await runSweep({ enabled: 'false' });
     expect(calls).toEqual([]);
     expect(summary).toContain('**off**');
   });
 
-  it('treats an unrendered placeholder as off rather than guessing a mode', async () => {
+  it('treats an unrendered placeholder as off rather than guessing', async () => {
     // A file copied by hand instead of synced by the action must not start
     // writing to student repositories on a guess.
-    const { calls } = await runSweep({ mode: '{{MARKER_MODE}}' });
+    const { calls } = await runSweep({ enabled: '{{LABELS_ENABLED}}' });
     expect(calls).toEqual([]);
   });
 });
@@ -148,8 +148,7 @@ describe('reconciliation sweep: winding down when an assignment finishes', () =>
   // could reach.
   it('stands down on a schedule once the assignment has been quiet', async () => {
     const { calls, summary } = await runSweep({
-      mode: 'both',
-      idleDays: REPO_MARKER_SWEEP_IDLE_DAYS,
+      idleDays: REPO_LABEL_SWEEP_IDLE_DAYS,
       repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
     });
     // One call — its own metadata — and nothing else is even listed.
@@ -160,8 +159,7 @@ describe('reconciliation sweep: winding down when an assignment finishes', () =>
 
   it('still runs the day before the threshold', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
-      idleDays: REPO_MARKER_SWEEP_IDLE_DAYS - 1,
+      idleDays: REPO_LABEL_SWEEP_IDLE_DAYS - 1,
       repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
     });
     expect(topicWrite(calls)).toBeDefined();
@@ -170,16 +168,15 @@ describe('reconciliation sweep: winding down when an assignment finishes', () =>
   it('ignores the idle check on a manual run, however long it has been quiet', async () => {
     // An instructor who presses Run wants it to run.
     const { calls } = await runSweep({
-      mode: 'both',
       eventName: 'workflow_dispatch',
-      idleDays: REPO_MARKER_SWEEP_IDLE_DAYS * 3,
+      idleDays: REPO_LABEL_SWEEP_IDLE_DAYS * 3,
       repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
     });
     expect(topicWrite(calls)).toBeDefined();
   });
 
-  it('does not read its own metadata at all when the mode is off', async () => {
-    const { calls } = await runSweep({ mode: 'off', idleDays: 99 });
+  it('does not read its own metadata at all when label_repos is off', async () => {
+    const { calls } = await runSweep({ enabled: 'false', idleDays: 99 });
     expect(calls).toEqual([]);
   });
 });
@@ -187,7 +184,6 @@ describe('reconciliation sweep: winding down when an assignment finishes', () =>
 describe('reconciliation sweep: scope', () => {
   it('only touches repositories named for this assignment', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith'), repo('some-other-course-lab1-jsmith')],
       issues: { 'appd5000-lab3-jsmith': [OPEN_ASSESSMENT] },
     });
@@ -196,7 +192,6 @@ describe('reconciliation sweep: scope', () => {
 
   it('leaves archived repositories alone', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'], archived: true })],
     });
     expect(writes(calls)).toEqual([]);
@@ -206,7 +201,6 @@ describe('reconciliation sweep: scope', () => {
 describe('reconciliation sweep: topics', () => {
   it('adds the topic to a repository whose assessment is live but unmarked', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith')],
       issues: { 'appd5000-lab3-jsmith': [OPEN_ASSESSMENT] },
     });
@@ -215,15 +209,13 @@ describe('reconciliation sweep: topics', () => {
 
   it('removes the topic once no open assessment issue remains', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith', { topics: ['python', 'grillmycode'] })],
     });
     expect(topicWrite(calls).body.names).not.toContain('grillmycode');
   });
 
-  it("preserves the instructor's other topics when removing the marker", async () => {
+  it("preserves the instructor's other topics when removing the label", async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith', { topics: ['python', 'grillmycode', 'week-3'] })],
     });
     expect(topicWrite(calls).body.names).toEqual(['python', 'week-3']);
@@ -231,16 +223,14 @@ describe('reconciliation sweep: topics', () => {
 
   it('does not count a labelled pull request as a live assessment', async () => {
     const { calls } = await runSweep({
-      mode: 'topic',
       repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
       issues: { 'appd5000-lab3-jsmith': [{ number: 2, pull_request: { url: 'x' } }] },
     });
     expect(topicWrite(calls).body.names).not.toContain('grillmycode');
   });
 
-  it('writes nothing when the marker already matches reality', async () => {
+  it('writes nothing when the label already matches reality', async () => {
     const { calls, summary } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith', { topics: ['grillmycode'] })],
       issues: { 'appd5000-lab3-jsmith': [OPEN_ASSESSMENT] },
     });
@@ -250,19 +240,17 @@ describe('reconciliation sweep: topics', () => {
 });
 
 describe('reconciliation sweep: descriptions', () => {
-  const marked = `Week 3 lab${REPO_MARKER_DESCRIPTION_SEPARATOR}${REPO_MARKER_DESCRIPTION_SIGIL}: 20 questions`;
+  const marked = `Week 3 lab${REPO_LABEL_DESCRIPTION_SEPARATOR}${REPO_LABEL_DESCRIPTION_SIGIL}: 20 questions`;
 
-  it('strips a stale marker back to the instructor’s own text', async () => {
+  it('strips a stale label back to the instructor’s own text', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith', { description: marked })],
     });
     expect(descriptionWrite(calls).body.description).toBe('Week 3 lab');
   });
 
-  it('never re-adds a description marker, because it cannot know the count', async () => {
+  it('never re-adds a description label, because it cannot know the count', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith', { description: 'Week 3 lab' })],
       issues: { 'appd5000-lab3-jsmith': [OPEN_ASSESSMENT] },
     });
@@ -271,7 +259,6 @@ describe('reconciliation sweep: descriptions', () => {
 
   it('leaves a description that merely mentions GrillMyCode alone', async () => {
     const { calls } = await runSweep({
-      mode: 'both',
       repos: [repo('appd5000-lab3-jsmith', { description: 'Week 3 lab, graded with GrillMyCode' })],
     });
     expect(descriptionWrite(calls)).toBeUndefined();
@@ -281,7 +268,6 @@ describe('reconciliation sweep: descriptions', () => {
 describe('reconciliation sweep: dry run', () => {
   it('makes no writes but still reports the drift it found', async () => {
     const { calls, summary } = await runSweep({
-      mode: 'both',
       dryRun: true,
       repos: [
         repo('appd5000-lab3-jsmith'),

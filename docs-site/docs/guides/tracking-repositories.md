@@ -18,27 +18,27 @@ org:your-org is:issue is:open label:assessment
 
 It reads the live state, so it's always accurate, and it needs no setup at all.
 
-### Repository markers
+### Repository labels
 
-GrillMyCode can also mark each student repository once questions exist. You can then see the mark right in your organization's repository list, without searching. There are two kinds of mark:
+With the [private answer key](instructor-setup.md) set up, GrillMyCode can also label each student repository once questions exist. You can then see the labels right in your organization's repository list, without searching. Each repository gets two labels:
 
-- **A topic.** A `grillmycode` tag on the repository. You can also filter by it, with the search `org:your-org topic:grillmycode`.
-- **A note in the description.** GrillMyCode adds `· 🔥 GrillMyCode: 20 questions` to the end of the description. It's the only mark that shows the number of questions, and it appears in every list view.
+- **A topic.** A `grillmycode` tag on the repository. You can filter by it, with the search `org:your-org topic:grillmycode`.
+- **A note in the description.** GrillMyCode adds `· 🔥 GrillMyCode: 20 questions` to the end of the description. It shows the number of questions, and it appears in every list view.
 
-You can use either or both. Choose them in the Workflow Wizard's **Instructor** step, under **Mark assessed repositories**. Markers need the [private answer key](instructor-setup.md) token, because GitHub doesn't let a workflow's built-in permissions change a repository's topics or description.
+Labels need the answer-key token because GitHub doesn't let a workflow's built-in permissions change a repository's topics or description. Labels are turned on by **Label assessed repositories in the organization list** in the Workflow Wizard's **Instructor** step, which is ticked by default. Untick it to leave repositories unlabelled.
 
 ![An organization's repository list. Three student repositories show "· 🔥 GrillMyCode: 20 questions" at the end of their description and a grillmycode topic; one student's repository has neither.](/img/screenshots/org-repository-markers.png)
 
-GrillMyCode is careful with these marks:
+GrillMyCode is careful with these labels:
 
 - It keeps any topics you've added yourself.
 - It replaces its own old note rather than adding another one.
 - It leaves a description alone if adding the note would make it too long for GitHub.
 
-Once a day, a small workflow in the private repository removes marks from repositories whose assessment issue has since been closed. It stops by itself after an assignment has been quiet for 10 days.
+Once a day, a small workflow in the private repository removes labels from repositories whose assessment issue has since been closed. It stops by itself after an assignment has been quiet for 10 days.
 
 :::tip
-GitHub shows topics in some repository list views and not others. Before relying on topics alone, try one repository and check the topic appears where you look. The description note shows everywhere.
+GitHub shows topics in some repository list views and not others. The description note shows everywhere.
 :::
 
 ## Spotting resubmissions
@@ -55,4 +55,4 @@ Only the student's own submissions count. A run you start yourself from the Acti
 
 ---
 
-**Go deeper:** [Repository marker internals](../reference/repository-marker.md): the daily sweep and how the marks are written · [Instructor repository internals](../reference/instructor-repository.md#spotting-resubmissions): the resubmission record · Recipe: [Repository marker](../example-workflows/2-repo-marker.md)
+**Go deeper:** [Repository label internals](../reference/repository-labels.md): the daily sweep and how the labels are written · [Instructor repository internals](../reference/instructor-repository.md#spotting-resubmissions): the resubmission record · Recipe: [Repository labels](../example-workflows/2-repo-labels.md)

@@ -445,58 +445,50 @@ export const DEFAULT_TAG_DIFF_BASE = 'cumulative';
 export const SUBMISSION_TAG_GROUP_FALLBACK = 'tag';
 
 /**
- * Accepted values of the repo_marker input, which picks what GrillMyCode writes
- * to the student repository's own metadata so an assessed repository is
- * identifiable in an organisation's repository list:
- *   off         — write nothing (default; no repository metadata is touched).
- *   topic       — add REPO_MARKER_TOPIC to the repository's topics.
- *   description — append the marker text to the repository description.
- *   both        — do both, in two separate API calls (the repository-update
- *                 endpoint cannot set topics; see src/repo-marker.js).
+ * Default label_repos. Off, so that writing to repository metadata the
+ * instructor owns — topics they set by hand, the description text they wrote —
+ * is always visible in the workflow as an explicit label_repos: "true". The
+ * Workflow Wizard ticks it by default, so Wizard-built workflows carry that
+ * line. When on, the student repository gets both labels — the
+ * REPO_LABEL_TOPIC topic for filtering and the description note for the
+ * question count — and the instructor repository gets the daily
+ * reconciliation sweep that clears them again.
  */
-export const REPO_MARKER_MODES = ['off', 'topic', 'description', 'both'];
+export const DEFAULT_LABEL_REPOS = false;
 
 /**
- * Default repo_marker. Off, because every other mode writes to repository
- * metadata the instructor owns — topics they set by hand, or the description
- * text they wrote — and a delivery feature should not start editing either
- * without being asked. Turning it on is a deliberate choice per assignment.
- */
-export const DEFAULT_REPO_MARKER = 'off';
-
-/**
- * Topic added under repo_marker: topic / both. Lowercase because GitHub
+ * Topic added when label_repos is on. Lowercase because GitHub
  * lowercases every topic name it stores, so any other casing would never match
  * the value read back and the topic list would be rewritten on every run.
  */
-export const REPO_MARKER_TOPIC = 'grillmycode';
+export const REPO_LABEL_TOPIC = 'grillmycode';
 
 /**
- * Separator placed between the instructor's description and the marker text.
+ * Separator placed between the instructor's description and the label text.
  * A middle dot rather than a hyphen or pipe: it reads as punctuation in the
  * repository list and is unlikely to appear at the end of a description already.
  */
-export const REPO_MARKER_DESCRIPTION_SEPARATOR = ' · ';
+export const REPO_LABEL_DESCRIPTION_SEPARATOR = ' · ';
 
 /**
- * Fixed leading text of the description marker. This is the sentinel that makes
+ * Fixed leading text of the description label. This is the sentinel that makes
  * the write idempotent: before appending, any existing run of
  * separator + sigil + trailing text is stripped, so a repository assessed ten
- * times carries one marker with the current question count, not ten markers.
- * Changing this value orphans markers written by earlier versions of the action.
+ * times carries one label with the current question count, not ten labels.
+ * Changing this value orphans labels written by earlier versions of the action.
  */
-export const REPO_MARKER_DESCRIPTION_SIGIL = '🔥 GrillMyCode';
+export const REPO_LABEL_DESCRIPTION_SIGIL = '🔥 GrillMyCode';
 
 /**
  * Maximum length GitHub accepts for a repository description. A description
- * that would exceed this once the marker is appended is left alone entirely —
+ * that would exceed this once the label is appended is left alone entirely —
  * the alternative, truncating text the instructor wrote to make room for a
- * marker, destroys more than the marker is worth.
+ * label, destroys more than the label is worth.
  */
 export const REPO_DESCRIPTION_MAX_CHARS = 350;
 
 /**
- * Days of assignment inactivity after which the marker-reconciliation sweep
+ * Days of assignment inactivity after which the label-reconciliation sweep
  * stops doing work on its schedule.
  *
  * The sweep is seeded into the instructor repository and runs daily, but the
@@ -509,7 +501,7 @@ export const REPO_DESCRIPTION_MAX_CHARS = 350;
  *
  * A manual run ignores this: an instructor who presses Run wants it to run.
  */
-export const REPO_MARKER_SWEEP_IDLE_DAYS = 10;
+export const REPO_LABEL_SWEEP_IDLE_DAYS = 10;
 
 /**
  * Public URL of the GrillMyCode logo, shown beside the heading of the issue

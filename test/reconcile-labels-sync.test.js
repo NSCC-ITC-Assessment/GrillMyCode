@@ -4,19 +4,19 @@ import { join } from 'node:path';
 import { Buffer } from 'node:buffer';
 import { deliverToInstructorRepo } from '../src/delivery/instructor-repo.js';
 import {
-  REPO_MARKER_DESCRIPTION_SEPARATOR,
-  REPO_MARKER_DESCRIPTION_SIGIL,
-  REPO_MARKER_TOPIC,
+  REPO_LABEL_DESCRIPTION_SEPARATOR,
+  REPO_LABEL_DESCRIPTION_SIGIL,
+  REPO_LABEL_TOPIC,
   INSTRUCTOR_REPO_SUFFIX,
   GITHUB_API_VERSION,
-  REPO_MARKER_SWEEP_IDLE_DAYS,
+  REPO_LABEL_SWEEP_IDLE_DAYS,
 } from '../src/constants.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), warning: vi.fn(), error: vi.fn() }));
 
-const RECONCILE_PATH = '.github/workflows/reconcile-repo-markers.yml';
+const RECONCILE_PATH = '.github/workflows/reconcile-repo-labels.yml';
 const WORKFLOW_SOURCE = readFileSync(
-  join(import.meta.dirname, '../src/workflows/reconcile-repo-markers.yml'),
+  join(import.meta.dirname, '../src/workflows/reconcile-repo-labels.yml'),
   'utf-8',
 );
 
@@ -25,16 +25,16 @@ const WORKFLOW_SOURCE = readFileSync(
  * cannot import the action's constants — it carries its own copies. These
  * assertions are what keeps the two in step: change a value in constants.js
  * without updating the workflow and this fails, rather than the change quietly
- * orphaning every marker written by an earlier release.
+ * orphaning every label written by an earlier release.
  */
 describe('shipped workflow matches the action constants', () => {
   it('carries the current topic, separator and sigil', () => {
-    expect(WORKFLOW_SOURCE).toContain(`const MARKER_TOPIC = '${REPO_MARKER_TOPIC}';`);
+    expect(WORKFLOW_SOURCE).toContain(`const LABEL_TOPIC = '${REPO_LABEL_TOPIC}';`);
     expect(WORKFLOW_SOURCE).toContain(
-      `const DESCRIPTION_SEPARATOR = '${REPO_MARKER_DESCRIPTION_SEPARATOR}';`,
+      `const DESCRIPTION_SEPARATOR = '${REPO_LABEL_DESCRIPTION_SEPARATOR}';`,
     );
     expect(WORKFLOW_SOURCE).toContain(
-      `const DESCRIPTION_SIGIL = '${REPO_MARKER_DESCRIPTION_SIGIL}';`,
+      `const DESCRIPTION_SIGIL = '${REPO_LABEL_DESCRIPTION_SIGIL}';`,
     );
   });
 
@@ -44,7 +44,7 @@ describe('shipped workflow matches the action constants', () => {
   });
 
   it('carries the current idle stand-down threshold', () => {
-    expect(WORKFLOW_SOURCE).toContain(`const SWEEP_IDLE_DAYS = ${REPO_MARKER_SWEEP_IDLE_DAYS};`);
+    expect(WORKFLOW_SOURCE).toContain(`const SWEEP_IDLE_DAYS = ${REPO_LABEL_SWEEP_IDLE_DAYS};`);
   });
 
   it('keys on the same issue label the action applies to assessment issues', () => {
@@ -83,7 +83,7 @@ function fakeOctokit({ existing = {} } = {}) {
   };
 }
 
-function deliver(octokit, repoMarker) {
+function deliver(octokit, labelRepos) {
   return deliverToInstructorRepo({
     octokit,
     owner: 'org',
@@ -91,7 +91,7 @@ function deliver(octokit, repoMarker) {
     studentLogin: 'student',
     content: '## GrillMyCode\n\n1. Question?',
     headSha: 'abcdef1234567890',
-    repoMarker,
+    labelRepos,
   });
 }
 
@@ -102,53 +102,44 @@ beforeEach(() => {
 });
 
 describe('reconciliation workflow sync', () => {
-  it('is not seeded for an assignment that does not use repo_marker', async () => {
-    // Otherwise every instructor repository would acquire a scheduled job that
-    // writes to student repositories, including for instructors who never
-    // asked for a marker.
+  it('is not seeded for an assignment with label_repos off', async () => {
+    // Otherwise the instructor repository would acquire a scheduled job that
+    // writes to student repositories, for an assignment that turned labels off.
     const octokit = fakeOctokit();
-    await deliver(octokit, 'off');
+    await deliver(octokit, false);
     expect(written(octokit, RECONCILE_PATH)).toBeUndefined();
   });
 
-  it('is seeded with the mode rendered in when repo_marker is on', async () => {
+  it('is seeded with the switch rendered in when label_repos is on', async () => {
     const octokit = fakeOctokit();
-    await deliver(octokit, 'both');
+    await deliver(octokit, true);
 
     const file = written(octokit, RECONCILE_PATH);
     expect(file).toBeDefined();
-    expect(file.content).toContain('MARKER_MODE: "both"');
-    expect(file.content).not.toContain('{{MARKER_MODE}}');
+    expect(file.content).toContain('LABELS_ENABLED: "true"');
+    expect(file.content).not.toContain('{{LABELS_ENABLED}}');
   });
 
-  it('renders each mode it is given', async () => {
-    for (const mode of ['topic', 'description', 'both']) {
-      const octokit = fakeOctokit();
-      await deliver(octokit, mode);
-      expect(written(octokit, RECONCILE_PATH).content).toContain(`MARKER_MODE: "${mode}"`);
-    }
-  });
-
-  it('disarms an existing sweep in place when repo_marker is turned off', async () => {
-    // Leaving the previous mode behind would keep a scheduled job reconciling
-    // markers that nothing writes any more.
+  it('disarms an existing sweep in place when label_repos is turned off', async () => {
+    // Leaving it enabled would keep a scheduled job reconciling labels that
+    // nothing writes any more.
     const octokit = fakeOctokit({
-      existing: { [RECONCILE_PATH]: WORKFLOW_SOURCE.replace(/\{\{MARKER_MODE\}\}/g, 'both') },
+      existing: { [RECONCILE_PATH]: WORKFLOW_SOURCE.replace(/\{\{LABELS_ENABLED\}\}/g, 'true') },
     });
-    await deliver(octokit, 'off');
+    await deliver(octokit, false);
 
     const file = written(octokit, RECONCILE_PATH);
     expect(file).toBeDefined();
-    expect(file.content).toContain('MARKER_MODE: "off"');
+    expect(file.content).toContain('LABELS_ENABLED: "false"');
   });
 
-  it('leaves the assessment write unaffected whatever the mode', async () => {
+  it('leaves the assessment write unaffected', async () => {
     const octokit = fakeOctokit();
-    await deliver(octokit, 'both');
+    await deliver(octokit, true);
     expect(written(octokit, 'student/questions.md')).toBeDefined();
   });
 
-  it('defaults to off when no mode is passed at all', async () => {
+  it('is not seeded when the caller passes no label_repos at all', async () => {
     const octokit = fakeOctokit();
     await deliverToInstructorRepo({
       octokit,

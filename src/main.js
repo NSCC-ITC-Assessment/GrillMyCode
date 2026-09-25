@@ -9,7 +9,7 @@
  *   5. Generate a PDF of the assessment and attach it to the gmc-assessments release
  *   6. Create or update a GitHub Issue with the assessment questions and PDF link
  *   7. Optionally write a full instructor copy (with answers) to a private instructor repo
- *   8. Optionally mark the student repository (topic / description) as assessed
+ *   8. Label the student repository (topic + description) as assessed, unless turned off
  */
 
 import * as core from '@actions/core';
@@ -46,7 +46,7 @@ import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput } from './report.js';
 import { postIssue } from './delivery/issue.js';
-import { applyRepoMarker } from './repo-marker.js';
+import { applyRepoLabels } from './repo-labels.js';
 import {
   assessmentFolder,
   deliverToInstructorRepo,
@@ -147,11 +147,11 @@ function createRunState() {
     pdfError: '',
     instructorDelivery: 'skipped',
     instructorError: '',
-    // repo_marker outcome per surface — see src/repo-marker.js for the status
-    // values. 'skipped' covers both repo_marker: off and a missing PAT.
-    repoMarkerTopic: 'skipped',
-    repoMarkerDescription: 'skipped',
-    repoMarkerError: '',
+    // label_repos outcome per surface — see src/repo-labels.js for the status
+    // values. 'skipped' covers both label_repos: false and a missing PAT.
+    repoLabelTopic: 'skipped',
+    repoLabelDescription: 'skipped',
+    repoLabelError: '',
 
     inputs: null,
     diagnostics: [],
@@ -350,7 +350,7 @@ function renderConfiguration(state) {
       `${i.includeInitialCommit ? '**yes**' : 'no'}${flag(i.includeInitialCommit)}`,
     ],
     ...(state.tagName ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
-    ...(i.repoMarker !== 'off' ? [['Repository marker', `\`${i.repoMarker}\``]] : []),
+    ['Repository labels', i.labelRepos ? 'on' : '**off**'],
     ['Manual SHA override', i.baseSha || i.headSha ? `**in effect**${flag(true)}` : 'none'],
     [
       'Exclude patterns',
@@ -379,26 +379,28 @@ function renderConfiguration(state) {
 }
 
 /**
- * Renders the repo_marker outcome for the delivery table. Each surface reports
+ * Renders the label_repos outcome for the delivery table. Each surface reports
  * separately because they are separate API calls that can disagree — a topic
  * can be written while the description is refused — and a single combined
- * status would hide which half of `both` actually landed.
+ * status would hide which of the two actually landed.
  */
-function renderRepoMarker(state) {
+function renderRepoLabels(state) {
   const label = {
     applied: '✅ written',
     unchanged: '✅ already current',
     'too-long': '⚠️ skipped — description would exceed the length limit',
-    failed: `❌ failed${state.repoMarkerError ? ` — ${state.repoMarkerError}` : ''}`,
+    failed: `❌ failed${state.repoLabelError ? ` — ${state.repoLabelError}` : ''}`,
   };
   const parts = [];
-  if (state.repoMarkerTopic !== 'skipped') {
-    parts.push(`topic — ${label[state.repoMarkerTopic] ?? '—'}`);
+  if (state.repoLabelTopic !== 'skipped') {
+    parts.push(`topic — ${label[state.repoLabelTopic] ?? '—'}`);
   }
-  if (state.repoMarkerDescription !== 'skipped') {
-    parts.push(`description — ${label[state.repoMarkerDescription] ?? '—'}`);
+  if (state.repoLabelDescription !== 'skipped') {
+    parts.push(`description — ${label[state.repoLabelDescription] ?? '—'}`);
   }
-  return parts.length > 0 ? parts.join('<br>') : '— not configured';
+  if (parts.length > 0) return parts.join('<br>');
+  if (!state.inputs?.labelRepos) return '— turned off';
+  return '— not configured';
 }
 
 function renderDelivery(state) {
@@ -422,7 +424,7 @@ function renderDelivery(state) {
         failed: `❌ failed${state.instructorError ? ` — ${state.instructorError}` : ''}`,
       }[state.instructorDelivery] ?? '—',
     ],
-    ['Repository marker', renderRepoMarker(state)],
+    ['Repository labels', renderRepoLabels(state)],
   ];
   return `### Delivery\n\n${table(['Output', 'Status'], rows)}`;
 }
@@ -1173,7 +1175,7 @@ async function run() {
           headSha,
           rawOutput: rawOutputCopy,
           submission,
-          repoMarker: inputs.repoMarker,
+          labelRepos: inputs.labelRepos,
         });
         state.instructorDelivery = 'delivered';
       } catch (err) {
@@ -1189,27 +1191,26 @@ async function run() {
     // Deliberately last. It is the only step that writes to metadata the
     // instructor owns, and the least consequential thing in the run: the
     // student already has their questions by this point, so nothing here is
-    // allowed to put that at risk. applyRepoMarker never throws.
-    if (inputs.repoMarker !== 'off' && !inputs.instructorRepoToken) {
+    // allowed to put that at risk. applyRepoLabels never throws.
+    if (inputs.labelRepos && !inputs.instructorRepoToken) {
       core.warning(
-        `repo_marker is set to "${inputs.repoMarker}" but instructor_repo_token is not ` +
-          `configured, so no marker was written. Repository topics and descriptions are out of ` +
-          `reach of GITHUB_TOKEN — the permissions key has no administration scope to grant — ` +
-          `so the marker rides on the same PAT as instructor delivery.`,
+        `label_repos is "true" but instructor_repo_token is not configured, so no labels ` +
+          `were written. Repository topics and descriptions are out of reach of ` +
+          `GITHUB_TOKEN — the permissions key has no administration scope to grant — so ` +
+          `the labels ride on the same PAT as instructor delivery.`,
       );
-    } else if (inputs.repoMarker !== 'off') {
-      const marker = await applyRepoMarker({
+    } else if (inputs.labelRepos) {
+      const labels = await applyRepoLabels({
         octokit: github.getOctokit(inputs.instructorRepoToken, {
           headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
         }),
         owner: ctx.repo.owner,
         repo: ctx.repo.repo,
-        mode: inputs.repoMarker,
         questionCount: state.questionsGenerated ?? 0,
       });
-      state.repoMarkerTopic = marker.topic;
-      state.repoMarkerDescription = marker.description;
-      state.repoMarkerError = marker.error;
+      state.repoLabelTopic = labels.topic;
+      state.repoLabelDescription = labels.description;
+      state.repoLabelError = labels.error;
     }
   } catch (err) {
     state.failureMessage = err.message;
