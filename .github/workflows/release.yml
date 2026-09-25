@@ -90,7 +90,13 @@ jobs:
           const tag = process.env.TAG;
           const major = process.env.MAJOR;
           const date = new Date().toISOString().split('T')[0];
-          const body = fs.readFileSync('/tmp/release-body.txt', 'utf8').trim();
+          // Release notes are built from commit subjects, which can contain `<` or
+          // `{` (e.g. "tag:<name>"). MDX treats those as JSX and fails the docs
+          // build, so escape them everywhere except inside inline code spans.
+          const body = fs.readFileSync('/tmp/release-body.txt', 'utf8').trim()
+            .split(/(`[^`\n]*`)/)
+            .map((part, i) => i % 2 ? part : part.replace(/</g, '&lt;').replace(/\{/g, '&#123;'))
+            .join('');
           const notesFile = `docs-site/versioned_docs/version-${major}/release-notes.md`;
           const newEntry = `\n## ${tag} — ${date}\n\n${body}\n`;
           if (fs.existsSync(notesFile)) {
@@ -259,3 +265,13 @@ jobs:
           git tag -f "${MAJOR}" "${SHA}"
           git tag -f "${MINOR}" "${SHA}"
           git push origin "${MAJOR}" "${MINOR}" --force
+
+      # TEMPORARY: keep @v1 working as an alias of v0 for existing workflows that
+      # reference it. To drop it, remove this step and delete the tag
+      # (git push origin --delete v1); workflows still on @v1 then fail with
+      # "Unable to resolve action", so do it at a term boundary.
+      - name: Update legacy v1 alias
+        if: steps.version.outputs.major == 'v0'
+        run: |
+          git tag -f v1 "$(git rev-list -n1 "${{ steps.version.outputs.tag }}")"
+          git push origin v1 --force
