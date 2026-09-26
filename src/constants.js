@@ -506,6 +506,15 @@ export const SUBMISSION_TAG_GROUP_FALLBACK = 'tag';
 export const DEFAULT_LABEL_REPOS = false;
 
 /**
+ * Default for log_prompt, an undocumented diagnostic input. When on, the chat
+ * messages sent to the model are filed as prompt.md beside the instructor
+ * assessment. Off by default: the prompt repeats the student's whole diff and
+ * any assignment context, so it is only worth the space while investigating
+ * how a prompt produced the questions it did.
+ */
+export const DEFAULT_LOG_PROMPT = false;
+
+/**
  * Topic added when label_repos is on. Lowercase because GitHub
  * lowercases every topic name it stores, so any other casing would never match
  * the value read back and the topic list would be rewritten on every run.

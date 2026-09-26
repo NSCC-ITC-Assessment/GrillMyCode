@@ -21,6 +21,7 @@ import {
   TAG_DIFF_BASE_MODES,
   TAG_DIFF_BASE_NAMED_PREFIX,
   DEFAULT_LABEL_REPOS,
+  DEFAULT_LOG_PROMPT,
 } from './constants.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
@@ -204,5 +205,10 @@ export function readInputs() {
     headSha: core.getInput('head_sha') || '',
     instructorRepoToken: core.getInput('instructor_repo_token') || '',
     labelRepos: readLabelRepos(),
+    // Undocumented diagnostic. Anything but an explicit "true" leaves it off,
+    // and deliberately without the error readLabelRepos raises: an unknown
+    // value must not fail a run, or announce the input in the log.
+    logPrompt:
+      (core.getInput('log_prompt').trim().toLowerCase() || String(DEFAULT_LOG_PROMPT)) === 'true',
   };
 }

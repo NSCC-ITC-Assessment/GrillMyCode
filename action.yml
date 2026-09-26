@@ -329,6 +329,14 @@ inputs:
     required: false
     default: ""
 
+  log_prompt:
+    description: >
+      Internal diagnostic; not part of the supported interface. When "true",
+      files the prompt sent to the AI in the student's instructor-repository
+      folder. Requires instructor_repo_token.
+    required: false
+    default: "false"
+
 # ─── Outputs ─────────────────────────────────────────────────────────────────
 
 outputs:
