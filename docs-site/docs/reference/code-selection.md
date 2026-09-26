@@ -109,6 +109,8 @@ A file that already existed at the base commit, such as a starter file the stude
 
 Files that are new in the range have no markers: every line is the student's.
 
+The markers never reach the report. The AI is asked to leave them out of its snippets, and GrillMyCode removes any it copies in anyway, along with any removed lines.
+
 The comparison is made **after** comment stripping, between the base and head versions processed the same way. Differences in line endings (CRLF and LF) and a missing final newline are ignored. So an edit that only touches comments or whitespace marks nothing.
 
 If no file in the submission has a single added or changed line, for example because the student only edited comments, the files are sent whole without markers, and the run summary says so.
@@ -186,12 +188,16 @@ Both are normal straight after an assignment is accepted, so by default such a r
 
 ## 4. After the AI replies
 
+The model replies with a JSON object rather than a finished report. It holds each question's code snippets, with the file each one comes from, then the question, its answer and, when there is an [instructor repository](instructor-repository.md), three multiple-choice distractors. GrillMyCode writes the report from it, so the numbering, code blocks and layout are always the same whatever model you use.
+
+GrillMyCode asks for the format twice: in the prompt, and as a JSON schema. Models on OpenRouter that support [structured outputs](../ai-providers/openrouter.md#structured-outputs) are held to the schema. Others follow the prompt alone and occasionally need a retry.
+
 The reply goes through these steps before anything is delivered:
 
-1. **Code fences repaired.** A code block the model left unopened is fixed, so the rest of the report isn't rendered as code.
-2. **Extra questions cut.** Questions beyond `num_questions` are removed, and the rest are renumbered.
-3. **Questions about files outside the assessment dropped.** Every question starts with the name of the file it's about. A question naming a file that wasn't assessed, such as an `assignment_context` file or a file that doesn't exist, is dropped. A [codebase context](#codebase-context) file may be named only alongside an assessed file. A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. Dropped questions are logged as a warning and listed in the run summary, so a report can hold fewer than `num_questions`. If every question would be dropped, none are, and a warning asks you to check the file name headers in `raw-ai-output.md`.
-4. **Answers removed for the student.** The student's copy loses its answers and multiple-choice distractors. Any question that can't be cleanly separated from its answer, or whose text would reveal it, is **withheld** from the student's copy, and the report says how many were withheld. The instructor repository copy is never affected.
+1. **Reply checked.** A reply that isn't the JSON asked for is retried, and each retry counts towards `ai_retry_max_attempts`. If the model stopped at its output limit it isn't retried, since a retry would stop at the same place. The complete questions before the cut are used instead, and the run summary says so. A question with no question text or no answer is dropped, and the warning gives its position in the reply, such as `entry 23 of 30`, so you can find it in `raw-ai-output.md`. If nothing usable is left, the run fails with `AI reply could not be used`.
+2. **Extra questions cut.** Questions beyond `num_questions` are removed. Any "broader" questions, about the code as a whole rather than one snippet, are placed last, under a **Broader Questions** heading.
+3. **Questions about files outside the assessment dropped.** Every snippet names the file it comes from. A question showing a file that wasn't assessed, such as an `assignment_context` file or a file that doesn't exist, is dropped. A [codebase context](#codebase-context) file may be shown only alongside an assessed file. A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. Dropped questions are logged as a warning and listed in the run summary, so a report can hold fewer than `num_questions`. If every question would be dropped, none are, and a warning asks you to check the file names in `raw-ai-output.md`. The questions left are numbered in order.
+4. **Answers left out for the student.** The student's copy is written without answers or multiple-choice distractors. A question whose own text would reveal an answer is **withheld** from the student's copy, and the report says how many were withheld. It keeps its number, so questions are numbered the same in every copy. The **Instructor Note** gets the same check, and is left out of the student's copy if it would reveal an answer. The instructor repository copy is never affected.
 
 The instructor repository keeps the model's reply exactly as it arrived, before any of these steps, as `raw-ai-output.md`; see [Instructor repository internals](instructor-repository.md).
 

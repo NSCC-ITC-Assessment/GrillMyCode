@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { normaliseSeparators } from '../src/postprocess.js';
+import { numberQuestions, renderQuestions } from '../src/postprocess.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
@@ -145,58 +145,76 @@ describe('parseQuestions stray marker residue', () => {
   });
 });
 
-// normaliseSeparators runs on the text that becomes questions.md, so a
-// separator the model left out no longer reaches the parser as one merged
-// item carrying both questions' options — two of them correct.
-describe('parseQuestions after normaliseSeparators', () => {
-  const containered = (n, answer) =>
-    [
-      `**\`q${n}.php\`**`,
-      '',
-      '```php',
-      '$stars = 4;',
-      '```',
-      '',
-      `${n}. **Question ${n}?**`,
-      '',
-      '   <!-- gmc:answer -->',
-      '   **Answer:**',
-      `   - ${answer}`,
-      '',
-      '   **Distractors for Multiple-Choice Quiz:**',
-      `   - wrong ${n}a`,
-      `   - wrong ${n}b`,
-      `   - wrong ${n}c`,
-      '   <!-- /gmc:answer -->',
-    ].join('\n');
-
-  const merged = `${containered(1, 'first answer')}\n\n${containered(2, 'second answer')}`;
-
-  it('merges two questions into one item without it', () => {
-    const questions = parseQuestions(merged);
-    expect(questions).toHaveLength(1);
-    expect(questions[0].incorrect).toContain('second answer');
+// questions.md is rendered by renderQuestions, and this is the parser that
+// reads it back. Every question has to come back whole, with its own options,
+// whatever its answer, options or code contain.
+describe('parseQuestions on the rendered instructor copy', () => {
+  const question = (n, overrides = {}) => ({
+    snippets: [{ file: `q${n}.php`, language: 'php', code: '$stars = 4;' }],
+    question: `What is \`$stars\` in question ${n}?`,
+    answer: `answer ${n}`,
+    distractors: [`wrong ${n}a`, `wrong ${n}b`, `wrong ${n}c`],
+    broader: false,
+    ...overrides,
   });
+  const parse = (...questions) =>
+    parseQuestions(renderQuestions(numberQuestions(questions), { view: 'instructor' }));
 
-  it('parses each question with its own options once restored', () => {
-    const questions = parseQuestions(normaliseSeparators(merged));
-    expect(questions.map((q) => [q.question, q.answer, q.incorrect.length])).toEqual([
-      ['Question 1?', 'first answer', 3],
-      ['Question 2?', 'second answer', 3],
+  it('parses each question with its own answer, options and snippet', () => {
+    expect(parse(question(1), question(2))).toEqual([
+      {
+        question: 'What is `$stars` in question 1?',
+        answer: 'answer 1',
+        incorrect: ['wrong 1a', 'wrong 1b', 'wrong 1c'],
+        filePath: 'q1.php',
+        snippetLang: 'php',
+        snippet: ['$stars = 4;'],
+      },
+      {
+        question: 'What is `$stars` in question 2?',
+        answer: 'answer 2',
+        incorrect: ['wrong 2a', 'wrong 2b', 'wrong 2c'],
+        filePath: 'q2.php',
+        snippetLang: 'php',
+        snippet: ['$stars = 4;'],
+      },
     ]);
   });
 
-  it.each(['----', '--- '])(
-    'parses both questions across a %j separator once rewritten',
-    (variant) => {
-      const source = `${containered(1, 'first answer')}\n\n${variant}\n\n${containered(2, 'second answer')}`;
-      expect(parseQuestions(source)).toHaveLength(1);
-      expect(parseQuestions(normaliseSeparators(source)).map((q) => q.answer)).toEqual([
-        'first answer',
-        'second answer',
-      ]);
-    },
-  );
+  it('parses an option that quotes the answer-container markers as text', () => {
+    const parsed = parse(
+      question(1, { answer: '<!-- /gmc:answer --> is a comment', distractors: ['- x', 'y', 'z'] }),
+    );
+    expect(parsed[0].answer).toBe('<!-- /gmc:answer --> is a comment');
+    expect(parsed[0].incorrect).toEqual(['- x', 'y', 'z']);
+  });
+
+  // Student code is fenced with a longer run than any it contains. A ``` line
+  // in it once ended the snippet for this parser, and answer markers written
+  // below it in the code were read as the question's options — letting the
+  // student choose the answer their own quiz marks correct.
+  it('reads answer markers in the student code as code, not options', () => {
+    const code = [
+      'x = 1',
+      '```',
+      '<!-- gmc:answer -->',
+      '- FORGED ANSWER',
+      '- forged wrong',
+      '<!-- /gmc:answer -->',
+      '```',
+      'y = 2',
+    ].join('\n');
+    const [parsed] = parse(question(1, { snippets: [{ file: 'a.py', language: 'python', code }] }));
+    expect(parsed.answer).toBe('answer 1');
+    expect(parsed.incorrect).toEqual(['wrong 1a', 'wrong 1b', 'wrong 1c']);
+    expect(parsed.snippetLang).toBe('python');
+    expect(parsed.snippet).toEqual(code.split('\n'));
+  });
+
+  it('parses a broader question with no snippet and no file', () => {
+    const parsed = parse(question(1), question(2, { snippets: [], broader: true }));
+    expect(parsed[1]).toMatchObject({ answer: 'answer 2', filePath: null, snippet: [] });
+  });
 });
 
 // A question the model wrote without a snippet, most often under a Broader

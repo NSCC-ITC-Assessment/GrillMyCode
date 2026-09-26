@@ -163,34 +163,24 @@ describe('selectCodebaseContext', () => {
 });
 
 describe('dropQuestionsOnUnassessedFiles with codebase context files', () => {
-  const question = (n, ...headers) =>
-    [
-      ...headers.flatMap((h) => [`**${h}**`, '', '```', 'code', '```', '']),
-      `${n}. What does this do?`,
-      '',
-      '<!-- gmc:answer -->',
-      '**Answer:**',
-      '- it works',
-      '<!-- /gmc:answer -->',
-    ].join('\n');
-  const report = (...blocks) => blocks.join('\n\n---\n\n');
+  const question = (...files) => ({ snippets: files.map((file) => ({ file, code: 'code' })) });
 
   it('keeps a question showing starter code beside the student’s code', () => {
-    const text = report(question(1, 'src/main.py', 'src/board.py'), question(2, 'main.py'));
-    const result = dropQuestionsOnUnassessedFiles(text, ['src/main.py'], ['src/board.py']);
+    const questions = [question('src/main.py', 'src/board.py'), question('main.py')];
+    const result = dropQuestionsOnUnassessedFiles(questions, ['src/main.py'], ['src/board.py']);
     expect(result.dropped).toBe(0);
   });
 
   it('drops a question that shows only codebase context', () => {
-    const text = report(question(1, 'src/board.py'), question(2, 'src/main.py'));
-    const result = dropQuestionsOnUnassessedFiles(text, ['src/main.py'], ['src/board.py']);
+    const questions = [question('src/board.py'), question('src/main.py')];
+    const result = dropQuestionsOnUnassessedFiles(questions, ['src/main.py'], ['src/board.py']);
     expect(result.dropped).toBe(1);
     expect(result.unassessed).toEqual(['src/board.py']);
   });
 
   it('still drops a question pairing student code with a file that is neither', () => {
-    const text = report(question(1, 'src/main.py', 'README.md'), question(2, 'src/main.py'));
-    const result = dropQuestionsOnUnassessedFiles(text, ['src/main.py'], ['src/board.py']);
+    const questions = [question('src/main.py', 'README.md'), question('src/main.py')];
+    const result = dropQuestionsOnUnassessedFiles(questions, ['src/main.py'], ['src/board.py']);
     expect(result.dropped).toBe(1);
     expect(result.unassessed).toEqual(['README.md']);
   });

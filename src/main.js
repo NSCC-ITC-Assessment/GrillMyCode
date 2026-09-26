@@ -49,7 +49,7 @@ import {
   selectCodebaseContext,
 } from './files.js';
 import { detectExcludePatterns } from './stack-detection.js';
-import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
+import { buildPrompt, buildResponseFormat, PROMPT_TEMPLATE_HASH } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput, formatPrompt } from './report.js';
 import { postIssue } from './delivery/issue.js';
@@ -70,17 +70,14 @@ import {
 import { generatePdf } from './delivery/pdf.js';
 import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
-  boldQuestionLines,
-  countQuestions,
+  arrangeQuestions,
   dropQuestionsOnUnassessedFiles,
-  extractContextSummary,
-  normaliseSeparators,
-  redactStudentQuestions,
-  renumberQuestions,
-  repairOrphanFences,
-  splitBoldAroundCode,
-  stripAnswers,
-  truncateToMaxQuestions,
+  carriesAnswer,
+  findLeakedAnswers,
+  numberQuestions,
+  parseQuestionsReply,
+  renderQuestions,
+  stripLineMarkers,
 } from './postprocess.js';
 
 // ─── Run Summary ─────────────────────────────────────────────────────────────
@@ -1124,61 +1121,74 @@ async function run() {
     );
 
     // Held unmodified so a verbatim copy can be filed alongside the instructor
-    // assessment. Every postprocessor below is lossy — truncateToMaxQuestions
-    // deletes surplus questions outright, renumberQuestions rewrites the
-    // numbering, extractContextSummary cuts its region out — so without this
+    // assessment. Everything below works on the parsed questions and is lossy —
+    // arrangeQuestions deletes surplus questions outright, and a question
+    // without an answer never makes it out of the parse — so without this
     // variable the model's actual reply exists nowhere after this line, and
-    // diagnosing a postprocessing bug means re-running against a live model.
-    const { content: aiOutput, metadata: aiResponse } = await callAI({
+    // diagnosing a parsing bug means re-running against a live model.
+    const {
+      content: aiOutput,
+      parsed: reply,
+      metadata: aiResponse,
+    } = await callAI({
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       apiKey: inputs.apiKey,
       messages,
       retryMaxAttempts: inputs.aiRetryMaxAttempts,
       temperature: inputs.aiTemperature,
+      responseFormat: buildResponseFormat({
+        includeDistractors,
+        includeContextSummary: Boolean(inputs.instructorContext),
+      }),
+      parse: parseQuestionsReply,
     });
+    const { contextSummary } = reply;
 
-    // An opening fence the model left out would otherwise hide the stem and
-    // answer below it inside "code", beyond every pass that follows.
-    const { text: fencedOutput, repaired: fencesRepaired } = repairOrphanFences(aiOutput);
-    if (fencesRepaired > 0) {
+    if (reply.salvaged) {
       core.warning(
-        `Restored ${fencesRepaired} missing opening code fence(s) in the AI output — ` +
-          `check those snippets in the report against the raw AI output.`,
+        `The AI reply was not complete JSON; recovered ${reply.questions.length} complete ` +
+          `question(s) from it. Check raw-ai-output.md in the instructor repository.`,
       );
       state.diagnostics.push(
-        `${fencesRepaired} code snippet(s) were missing their opening fence and had one restored.`,
+        `The AI reply was not complete JSON, so only the ${reply.questions.length} complete ` +
+          `question(s) in it were used.`,
       );
     }
-    const rawQuestions = truncateToMaxQuestions(
-      renumberQuestions(fencedOutput),
-      inputs.numQuestions,
-    );
-
-    // Extract the AI-generated context summary (only present when instructorContext was set).
-    // One call does both halves — reading the summary and removing its region —
-    // so a closing marker the model drifted on cannot leave the note missing
-    // and the raw block visible at the same time, which is what it did.
-    const { summary: contextSummary, rest: questionsWithoutSummary } =
-      extractContextSummary(rawQuestions);
-    // Separators are restored here, ahead of the split into the two copies,
-    // because both are cut on --- downstream: a missing one merges two
-    // questions into one quiz item in the instructor copy, and into one block
-    // that redactStudentQuestions can only withhold as a whole in the student's.
-    const normalisedQuestions = normaliseSeparators(
-      splitBoldAroundCode(boldQuestionLines(questionsWithoutSummary.trim())),
-    );
+    if (reply.malformed.length > 0) {
+      // Positions only — the Actions log is readable by the student, so the
+      // entries themselves are never quoted.
+      const where = `entr${reply.malformed.length === 1 ? 'y' : 'ies'} ${reply.malformed.join(', ')} of ${reply.entries}`;
+      core.warning(
+        `Dropped ${reply.malformed.length} question(s) from the AI reply that had no question ` +
+          `text or no answer (${where} in the reply).`,
+      );
+      state.diagnostics.push(
+        `${reply.malformed.length} question(s) in the AI reply had no question text or no ` +
+          `answer and were dropped (${where}).`,
+      );
+    }
+    const { questions: unmarked, stripped } = stripLineMarkers(reply.questions, state.markedFiles);
+    if (stripped > 0) {
+      core.info(`Removed the line markers the AI copied into ${stripped} snippet(s).`);
+    }
+    const { questions: arranged, surplus } = arrangeQuestions(unmarked, inputs.numQuestions);
+    if (surplus > 0) {
+      core.warning(
+        `AI generated more than ${inputs.numQuestions} questions — truncating to the requested count.`,
+      );
+    }
 
     // The model also sees assignment and instructor context, and now and then
     // asks about a file from there — or one it made up — instead of the code
     // under assessment. Such questions are dropped from both copies, as is one
     // that shows codebase context without any assessed code beside it.
     const {
-      text: cleanedQuestions,
+      questions: onTarget,
       dropped: offTarget,
       unassessed,
       failedOpen,
-    } = dropQuestionsOnUnassessedFiles(normalisedQuestions, files, codebaseContextFiles);
+    } = dropQuestionsOnUnassessedFiles(arranged, files, codebaseContextFiles);
     if (offTarget > 0) {
       core.warning(
         `Dropped ${offTarget} question(s) about files that are not being assessed: ` +
@@ -1191,41 +1201,56 @@ async function run() {
     } else if (failedOpen) {
       core.warning(
         `Every question named a file that is not being assessed (${unassessed.join(', ')}), ` +
-          `so none were dropped — check the filename headers in the raw AI output.`,
+          `so none were dropped — check the file names in the raw AI output.`,
       );
     }
+    // Numbered once, here, so every copy of the report numbers a question the
+    // same way — the student's copy keeps the gaps a withheld question leaves.
+    const finalQuestions = numberQuestions(onTarget);
 
-    // Distractors are always stripped from the student copy; the correct answer
-    // too unless include_answers is set. cleanedQuestions retains both for the
-    // instructor copy.
-    let questions;
-    if (inputs.includeAnswers) {
-      questions = stripAnswers(cleanedQuestions, { keepAnswers: true });
-    } else {
-      // Fail-closed: withhold any question that lacked a recognisable answer
-      // block or whose correct-answer text survived redaction (e.g. the model
-      // was injected into echoing it), rather than risk a leak.
-      const { text, structural, leak, dropped } = redactStudentQuestions(cleanedQuestions);
-      questions = text;
-      state.questionsWithheld = dropped;
-      if (structural > 0) {
+    if (includeDistractors) {
+      const short = finalQuestions.filter((q) => q.distractors.length !== 3).length;
+      if (short > 0) {
         core.warning(
-          `Structural guard: withheld ${structural} question(s) without a recognisable ` +
-            `**Answer:** heading or answer container, so the stripped view could not be ` +
-            `confirmed answer-free — check the submitted code for prompt injection.`,
+          `${short} question(s) arrived without exactly three distractors. The quiz workflow ` +
+            `withholds any question that has none.`,
         );
-      }
-      if (leak > 0) {
-        core.warning(
-          `Answer-leak guard: withheld ${leak} question(s) whose correct-answer text survived ` +
-            `redaction in the student view — check the submitted code for prompt injection.`,
-        );
-      }
-      if (dropped > 0) {
-        questions += `\n\n> [!NOTE]\n> ${dropped} question(s) were withheld from this report pending instructor review.`;
       }
     }
-    state.questionsGenerated = countQuestions(questions);
+
+    // Distractors never reach the student copy; the correct answer only with
+    // include_answers.
+    let questions;
+    // The context summary is shown to the student as the Instructor Note, so
+    // it is held to the same leak check as the question text. The instructor
+    // copy keeps it either way.
+    let studentContextSummary = contextSummary;
+    if (inputs.includeAnswers) {
+      questions = renderQuestions(finalQuestions, { view: 'answers' });
+      state.questionsGenerated = finalQuestions.length;
+    } else {
+      // Fail-closed: withhold any question whose text carries a correct answer
+      // (e.g. the model was injected into echoing it), rather than risk a leak.
+      const leaked = new Set(findLeakedAnswers(finalQuestions));
+      const shown = finalQuestions.filter((q) => !leaked.has(q));
+      questions = renderQuestions(shown, { view: 'student' });
+      state.questionsGenerated = shown.length;
+      state.questionsWithheld = leaked.size;
+      if (leaked.size > 0) {
+        core.warning(
+          `Answer-leak guard: withheld ${leaked.size} question(s) whose question text carries ` +
+            `a correct answer — check the submitted code for prompt injection.`,
+        );
+        questions += `\n\n> [!NOTE]\n> ${leaked.size} question(s) were withheld from this report pending instructor review.`;
+      }
+      if (contextSummary && carriesAnswer(contextSummary, finalQuestions)) {
+        studentContextSummary = '';
+        core.warning(
+          'Answer-leak guard: left the Instructor Note out of the student report because it ' +
+            'carries a correct answer — check the submitted code for prompt injection.',
+        );
+      }
+    }
 
     // ── Build base report (PDF source — no self-referencing link) ───────────
     const sourceRepo = `${ctx.repo.owner}/${ctx.repo.repo}`;
@@ -1242,7 +1267,7 @@ async function run() {
       previousTagName: state.previousTagName,
       assignmentContextFiles,
       codebaseContextFiles,
-      contextSummary,
+      contextSummary: studentContextSummary,
       studentLogin: submitter,
       sourceRepo,
     });
@@ -1293,7 +1318,7 @@ async function run() {
       previousTagName: state.previousTagName,
       assignmentContextFiles,
       codebaseContextFiles,
-      contextSummary,
+      contextSummary: studentContextSummary,
       studentLogin: submitter,
       sourceRepo,
       pdfUrl,
@@ -1358,18 +1383,10 @@ async function run() {
         headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
       });
       const instructorRepoName = assignmentName + INSTRUCTOR_REPO_SUFFIX;
-      // Keep answers, distractors AND the answer-container markers for the
-      // instructor copy. The markers used to be stripped here to keep the
-      // rendered Markdown clean, but they are HTML comments — invisible in
-      // rendered Markdown either way — and generate-lms-quiz.yml parses this
-      // exact file. Stripping them left the workflow with nothing but the
-      // **Answer:**/**Distractors…** headings to find the options by, matched
-      // literally, so a single heading the model re-worded cost the question
-      // its distractors (observed: the heading emitted as
-      // `<!-- Distractors for Multiple-Choice Quiz: -->`, 7 questions withheld
-      // from one quiz). The container is the one boundary the model marks
-      // explicitly, so it is now carried through for the parser to use.
-      const instructorQuestions = cleanedQuestions;
+      // Answers, distractors and the answer-container markers, which
+      // generate-lms-quiz.yml parses this exact file by. The markers are HTML
+      // comments, invisible in rendered Markdown.
+      const instructorQuestions = renderQuestions(finalQuestions, { view: 'instructor' });
 
       // ── Submission record (tag runs only) ─────────────────────────────────
       // Read before the report is built so the instructor copy's header can

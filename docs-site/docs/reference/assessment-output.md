@@ -42,7 +42,7 @@ A **GrillMyCode** heading with the logo, a **Download as PDF** button, then a he
 
 The questions follow, then a footer naming the model, provider and action version.
 
-The student's copy never includes answers or multiple-choice distractors unless `include_answers` is `'true'`. Questions that couldn't be safely separated from their answers are withheld, and the report says how many; see [What code is assessed](code-selection.md#4-after-the-ai-replies).
+The student's copy never includes answers or multiple-choice distractors unless `include_answers` is `'true'`. A question whose text would reveal an answer is withheld, and the report says how many. An Instructor Note that would reveal one is left out. See [What code is assessed](code-selection.md#4-after-the-ai-replies).
 
 ### When the questions are regenerated
 

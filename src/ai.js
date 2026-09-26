@@ -12,6 +12,10 @@
  * 200 response carries them in an error body (a failure after generation
  * started), as are 200 responses whose body is not valid JSON.
  *
+ * A `parse` callback turns the reply text into what the caller needs. A reply
+ * it rejects is retried like a transport failure, unless the model stopped at
+ * the output token limit — a retry would hit the same limit again.
+ *
  * Alongside the text, callAI returns the response metadata the provenance
  * header of raw-ai-output.md records — above all `finish_reason`, without
  * which a reply cut off at the output token limit is indistinguishable from a
@@ -98,15 +102,29 @@ function stringOrNull(value) {
  * @param {Array}  opts.messages       - Chat messages array
  * @param {number} opts.retryMaxAttempts - Total attempts (initial + retries)
  * @param {number} opts.temperature    - Sampling temperature
- * @returns {Promise<{ content: string, metadata: object }>} `content` is the
- *   trimmed reply. `metadata` holds `finishReason`, `nativeFinishReason`,
+ * @param {object} [opts.responseFormat] - Sent as `response_format` when given
+ * @param {Function} [opts.parse]      - `(content, { finishReason }) => parsed`;
+ *   throws when the reply is unusable. Its error message reaches the Actions
+ *   log, which the student can read, so it must never quote the reply.
+ * @returns {Promise<{ content: string, parsed: any, metadata: object }>}
+ *   `content` is the trimmed reply and `parsed` what `parse` made of it (the
+ *   content itself when there is no `parse`). `metadata` holds `finishReason`, `nativeFinishReason`,
  *   `usage` (token counts, or null if the provider sent none), `attempts`
  *   (requests sent, so retries = attempts - 1), `durationMs` (wall time across
  *   every attempt, backoff included), and the `generationId`, `servedModel` and
  *   `servedProvider` OpenRouter reports — the model actually served can differ
  *   from the one requested when routing or fallbacks are in play.
  */
-export async function callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature }) {
+export async function callAI({
+  provider,
+  model,
+  apiKey,
+  messages,
+  retryMaxAttempts,
+  temperature,
+  responseFormat,
+  parse = (content) => content,
+}) {
   let url;
   const headers = { 'Content-Type': 'application/json' };
 
@@ -137,6 +155,7 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
     messages,
     temperature: temperature,
     top_p: AI_TOP_P,
+    ...(responseFormat ? { response_format: responseFormat } : {}),
   });
 
   let lastError;
@@ -287,8 +306,28 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       );
     }
 
+    let parsed;
+    try {
+      parsed = parse(content.trim(), { finishReason });
+    } catch (formatError) {
+      lastError = formatError;
+      if (finishReason !== 'length' && attempt < retryMaxAttempts - 1) {
+        const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+        core.warning(
+          `AI reply could not be used (${formatError.message}). ` +
+            `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
+        );
+        await sleep(delay);
+        continue;
+      }
+      throw new Error(`AI reply could not be used: ${formatError.message}`, {
+        cause: formatError,
+      });
+    }
+
     return {
       content: content.trim(),
+      parsed,
       metadata: {
         finishReason,
         nativeFinishReason: stringOrNull(choice.native_finish_reason),

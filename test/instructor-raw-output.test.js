@@ -113,12 +113,19 @@ describe('formatRawOutput', () => {
 
   it('carries the reply through byte for byte', () => {
     // Fences, answer-container markers and trailing whitespace are exactly what
-    // a postprocessing bug hides, so none of them may be touched here.
+    // a parsing bug hides, so none of them may be touched here.
     const raw = '1. Q?\n\n```js\ncode`` ```\n```\n\n<!-- answer -->\n**Answer:** A   \n';
     const out = formatRawOutput({ ...opts, rawOutput: raw });
 
     expect(out).toContain(raw);
-    expect(out.endsWith(raw)).toBe(true);
+  });
+
+  // A reply that wrapped itself in a fence must not close the one around it.
+  it('fences the reply more deeply than any backtick run in it', () => {
+    const raw = '```json\n{"questions": []}\n```';
+    const out = formatRawOutput({ ...opts, rawOutput: raw });
+
+    expect(out.endsWith(`\`\`\`\`json\n${raw}\n\`\`\`\`\n`)).toBe(true);
   });
 
   it('records the provenance an instructor needs to place the file', () => {

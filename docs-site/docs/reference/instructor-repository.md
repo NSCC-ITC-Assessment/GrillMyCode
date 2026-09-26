@@ -76,9 +76,9 @@ The three wrong options per question are only needed for the quiz, and every stu
 
 ## `raw-ai-output.md`
 
-A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived, before GrillMyCode repaired code fences, cut questions beyond `num_questions`, dropped questions about unassessed files, lifted the instructor note out of the body and renumbered the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
+A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived: a JSON object, shown in a code block. GrillMyCode has not yet checked it, cut questions beyond `num_questions`, dropped questions about unassessed files, or numbered and formatted the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
 
-Open it when a student's `questions.md` looks wrong. Questions that were cut or dropped, and formatting changes the processing steps made, are only visible here. Use GitHub's **Raw** view to see it as the model wrote it, and include its contents in any bug report about generated questions.
+Open it when a student's `questions.md` looks wrong. Questions that were cut or dropped are only visible here. Include its contents in any bug report about generated questions.
 
 The header records how the reply was produced:
 

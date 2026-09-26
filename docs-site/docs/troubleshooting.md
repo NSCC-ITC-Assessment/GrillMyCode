@@ -69,6 +69,13 @@ OpenRouter's rate limits apply to the API key, so a whole class pushing at once 
 - Raise `ai_retry_max_attempts` so waits last longer.
 - Try a less busy model; see [Choosing a model and managing cost](guides/choosing-a-model.md).
 
+### The run failed with `AI reply could not be used`
+
+GrillMyCode asks the model for its questions in a fixed JSON format, and every attempt returned something else. If the log also warns that the model hit its output limit, the reply was cut off before a single question was complete.
+
+- If the reply was cut off, lower `num_questions`, or choose a model with a larger output limit.
+- Otherwise, choose a model that supports structured outputs, which holds it to the format. See [Structured outputs](ai-providers/openrouter.md#structured-outputs).
+
 ### Questions take a long time to arrive
 
 If you're happy with the questions but not the wait, try the **Speed** routing option (`:nitro`). Check the price first, because fast providers can cost more. See [Model routing variants](ai-providers/openrouter.md#model-routing-variants).

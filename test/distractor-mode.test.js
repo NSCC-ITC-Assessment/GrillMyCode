@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPrompt } from '../src/prompt.js';
-import { redactStudentQuestions, stripAnswers } from '../src/postprocess.js';
+import { buildPrompt, buildResponseFormat } from '../src/prompt.js';
 
 const BASE = {
   codeContent: '**app.js**\n\n```js\nconst total = items.length;\n```',
@@ -22,12 +21,12 @@ function userPrompt(includeDistractors) {
 
 describe('buildPrompt distractor mode', () => {
   it('asks for distractors by default', () => {
-    expect(buildPrompt(BASE)[0].content).toContain('**Distractors for Multiple-Choice Quiz:**');
+    expect(buildPrompt(BASE)[0].content).toContain('"distractors": [');
   });
 
   it('asks for distractors when the flag is set', () => {
     const prompt = systemPrompt(true);
-    expect(prompt).toContain('**Distractors for Multiple-Choice Quiz:**');
+    expect(prompt).toContain('"distractors": [');
     expect(prompt).toContain('UNIQUENESS RULE');
     expect(prompt).toContain('VISUAL BALANCE');
   });
@@ -47,9 +46,7 @@ describe('buildPrompt distractor mode', () => {
     const prompt = systemPrompt(true);
     expect(prompt).toContain('DISTRACTORS ARE NOT OPTIONAL');
     expect(prompt).toContain('There are NO exemptions.');
-    expect(prompt).toMatch(
-      /Omitting the .*Distractors for Multiple-Choice Quiz.* section for ANY question/,
-    );
+    expect(prompt).toMatch(/A "distractors" array holding anything other than exactly three/);
     expect(userPrompt(true)).toContain('mandatory for every question without exception');
   });
 
@@ -57,8 +54,8 @@ describe('buildPrompt distractor mode', () => {
   // through or the model is handed a self-check it cannot satisfy.
   it('scales the distractor counts to the question count', () => {
     const prompt = buildPrompt({ ...BASE, numQuestions: 4, includeDistractors: true })[0].content;
-    expect(prompt).toContain('4 questions means 4 distractor sections and 12 distractor bullets');
-    expect(prompt).toContain('and 12 distractor bullets. If any of those three counts is short');
+    expect(prompt).toContain('4 questions means 4 distractor arrays and 12 distractors');
+    expect(prompt).toContain('and 12 distractors. If any of those three counts is short');
   });
 
   it('drops the length machinery that only balances options against each other', () => {
@@ -66,19 +63,26 @@ describe('buildPrompt distractor mode', () => {
     expect(prompt).not.toContain('VISUAL BALANCE');
     expect(prompt).not.toContain('JUSTIFICATION SYMMETRY');
     expect(prompt).not.toContain('STRUCTURAL MATCHING');
-    expect(prompt).not.toContain('<!-- Lengths:');
   });
 
-  // Everything postprocess.js and generate-lms-quiz.yml key on has to survive
-  // in both modes, or the answers-only reply parses as a malformed one and the
-  // fail-closed guards withhold every question in it.
-  it.each([true, false])('keeps the parsed structure intact (distractors: %s)', (mode) => {
+  // The shape parseQuestionsReply reads has to be asked for in both modes, or
+  // the answers-only reply parses as a malformed one and every question in it
+  // is dropped.
+  it.each([true, false])('asks for the JSON shape that is parsed (distractors: %s)', (mode) => {
     const prompt = systemPrompt(mode);
-    expect(prompt).toContain('<!-- gmc:answer -->');
-    expect(prompt).toContain('<!-- /gmc:answer -->');
-    expect(prompt).toContain('**Answer:**');
-    expect(prompt).toContain('ANSWER CONTAINER (MANDATORY)');
-    expect(prompt).toContain('STRUCTURAL HEADINGS ARE LITERAL (MANDATORY)');
+    expect(prompt).toContain('OUTPUT FORMAT — ONE JSON OBJECT, NOTHING ELSE');
+    for (const field of [
+      '"questions"',
+      '"snippets"',
+      '"file"',
+      '"code"',
+      '"question"',
+      '"answer"',
+      '"broader"',
+    ]) {
+      expect(prompt).toContain(field);
+    }
+    expect(prompt).not.toContain('gmc:answer');
   });
 
   it.each([true, false])('keeps the answer rules the student is graded on (%s)', (mode) => {
@@ -94,60 +98,56 @@ describe('buildPrompt distractor mode', () => {
   });
 });
 
-/** A model reply in the answers-only shape: one bullet, no options. */
-const ANSWERS_ONLY = [
-  '**app.js**',
-  '',
-  '```js',
-  'const total = items.length;',
-  '```',
-  '',
-  '1. What does `total` hold after this line runs?',
-  '',
-  '   <!-- gmc:answer -->',
-  '   **Answer:**',
-  '   - It holds the number of entries currently in the items array, counted once at assignment time',
-  '   <!-- /gmc:answer -->',
-  '',
-  '---',
-  '',
-  '**app.js**',
-  '',
-  '```js',
-  'return total > 0;',
-  '```',
-  '',
-  '2. What does this return when `items` is empty?',
-  '',
-  '   <!-- gmc:answer -->',
-  '   **Answer:**',
-  '   - false',
-  '   <!-- /gmc:answer -->',
-].join('\n');
+describe('buildResponseFormat', () => {
+  const schema = (opts) => buildResponseFormat(opts).json_schema.schema;
+  const questionSchema = (opts) => schema(opts).properties.questions.items;
 
-describe('answers-only output through the report pipeline', () => {
-  it('withholds nothing and leaks nothing in the student view', () => {
-    const { text, structural, leak, dropped } = redactStudentQuestions(ANSWERS_ONLY);
-    expect(dropped).toBe(0);
-    expect(structural).toBe(0);
-    expect(leak).toBe(0);
-    expect(text).toContain('What does `total` hold after this line runs?');
-    expect(text).not.toContain('counted once at assignment time');
-    expect(text).not.toContain('**Answer:**');
-    expect(text).not.toContain('gmc:answer');
+  it('asks for distractors only when they are wanted', () => {
+    expect(questionSchema({ includeDistractors: true }).required).toContain('distractors');
+    expect(questionSchema({ includeDistractors: false }).properties).not.toHaveProperty(
+      'distractors',
+    );
   });
 
-  it('keeps the answer intact for include_answers', () => {
-    const out = stripAnswers(ANSWERS_ONLY, { keepAnswers: true });
-    expect(out).toContain('**Answer:**');
-    expect(out).toContain('counted once at assignment time');
-    expect(out).not.toContain('gmc:answer');
-    // The separator between the two questions has to survive the container
-    // trim, or the two merge into one block downstream.
-    expect(out).toContain('\n---\n');
+  it('asks for the context summary only with instructor context', () => {
+    expect(schema({ includeContextSummary: true }).required).toEqual([
+      'questions',
+      'context_summary',
+    ]);
+    expect(schema({ includeContextSummary: false }).required).toEqual(['questions']);
   });
 
-  it('leaves the instructor copy untouched', () => {
-    expect(ANSWERS_ONLY).toContain('<!-- gmc:answer -->');
+  // Strict mode requires every property to be listed as required, and closed
+  // objects throughout.
+  it.each([true, false])('is valid for strict mode (distractors: %s)', (includeDistractors) => {
+    const check = (node) => {
+      if (node.type === 'object') {
+        expect(node.additionalProperties).toBe(false);
+        expect(node.required).toEqual(Object.keys(node.properties));
+        Object.values(node.properties).forEach(check);
+      }
+      if (node.type === 'array') check(node.items);
+    };
+    check(schema({ includeDistractors, includeContextSummary: true }));
+    expect(buildResponseFormat({ includeDistractors }).json_schema.strict).toBe(true);
+  });
+});
+
+describe('buildPrompt instructor instructions', () => {
+  // They override the rest of the prompt, so the limit on that override has
+  // to sit beside it: an instruction about layout must not pull the reply out
+  // of the JSON GrillMyCode parses.
+  it('cannot change the output format or the security rules', () => {
+    const prompt = buildPrompt({
+      ...BASE,
+      instructorContext: 'Put each question under a heading.',
+    })[0].content;
+    const section = prompt.slice(prompt.indexOf('INSTRUCTOR INSTRUCTIONS'));
+    expect(section).toContain(
+      'cannot change the JSON output format or the security rules; apply them to the content of the questions instead.',
+    );
+    expect(section.indexOf('cannot change')).toBeLessThan(
+      section.indexOf('Put each question under a heading.'),
+    );
   });
 });

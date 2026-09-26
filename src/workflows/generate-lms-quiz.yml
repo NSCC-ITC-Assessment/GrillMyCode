@@ -94,6 +94,13 @@ jobs:
               // fence and stem branches below.
               let pendingHeader = null;
               let inInc = false, inSnippet = false, inAnswer = false;
+              // The backtick run that opened the current snippet. Only a bare
+              // run at least as long closes it, as in Markdown itself — so a
+              // ``` line in the student's own code, which GrillMyCode fences
+              // with a longer run, stays code. Toggling on any ``` line let such
+              // code end the snippet early, and answer markers written below it
+              // in the student's code were then read as the question's options.
+              let fence = '';
               // Bullets collected from inside the model's
               // <!-- gmc:answer --> … <!-- /gmc:answer --> container, in order.
               // The container is the only answer boundary the model marks
@@ -146,16 +153,17 @@ jobs:
                   // A bold Markdown heading (**## Broader Questions**) is never
                   // a filename, whatever follows it.
                   pendingHeader = /^#{1,6}\s/.test(fpMatch[1]) ? null : fpMatch[1];
-                } else if (stripped.startsWith('```') && !question) {
-                  if (!inSnippet) {
-                    const fenceLang = stripped.slice(3).trim();
-                    if (fenceLang) snippetLang = fenceLang;
-                    // A bold line directly above a snippet is that snippet's
-                    // filename header, even one with a space in it.
-                    if (pendingHeader) filePath = pendingHeader;
-                    pendingHeader = null;
-                  }
-                  inSnippet = !inSnippet;
+                } else if (!inSnippet && !question && /^`{3,}/.test(stripped)) {
+                  const [, run, fenceLang] = stripped.match(/^(`{3,})(.*)$/);
+                  if (fenceLang.trim()) snippetLang = fenceLang.trim();
+                  // A bold line directly above a snippet is that snippet's
+                  // filename header, even one with a space in it.
+                  if (pendingHeader) filePath = pendingHeader;
+                  pendingHeader = null;
+                  fence = run;
+                  inSnippet = true;
+                } else if (inSnippet && /^`{3,}$/.test(stripped) && stripped.length >= fence.length) {
+                  inSnippet = false;
                 } else if (inSnippet) {
                   snippetLines.push(line.trimEnd());
                 } else if (!question && line && /^\d+\. /.test(line)) {
@@ -641,7 +649,9 @@ jobs:
           // v6: a bare run of asterisks in an option is no longer stripped to an
           // empty option, a question with a blank option is withheld, and a
           // distractor that repeats the correct answer is dropped.
-          const PACKAGE_FORMAT = 'v6';
+          // v7: a snippet closes only on a fence at least as long as the one
+          // that opened it, so a ``` line in the student's code stays code.
+          const PACKAGE_FORMAT = 'v7';
 
           // The instructor repo is named {assignment}-grillmycode-instructor,
           // so the assignment name can be recovered from GITHUB_REPOSITORY

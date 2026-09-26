@@ -115,11 +115,28 @@ buildPrompt()
     │  Asks for multiple-choice distractors only when instructor_repo_token is
     │  set — nothing else consumes them, so without it the model is asked for
     │  the correct answer alone
+    │  Asks for a JSON object, not Markdown; buildResponseFormat() builds the
+    │  matching JSON schema, sent as response_format
     │
 callAI()
     │  POSTs to the provider's chat completions endpoint
-    │  Returns the model's response text plus response metadata
+    │  parseQuestionsReply() turns the reply into question objects; a reply
+    │  it rejects is retried unless the model stopped at its output limit
+    │  Returns the reply text, the parsed questions and response metadata
     │  (finish reason, token usage, attempts, duration)
+    │
+stripLineMarkers() → arrangeQuestions() → dropQuestionsOnUnassessedFiles()
+    → numberQuestions()
+    │  Marker columns the model copied into snippets removed, broader
+    │  questions last, the surplus over num_questions cut, questions showing
+    │  unassessed files dropped, the rest numbered once for every copy
+    │
+renderQuestions()
+    │  Writes all the Markdown from the question objects: the student view
+    │  (no answers; findLeakedAnswers() withholds any question whose text
+    │  carries an answer), the include_answers view, and the instructor view
+    │  (answers, distractors and the <!-- gmc:answer --> container the quiz
+    │  workflow parses)
     │
 formatReport(pdfUrl: null)   ← base report (PDF source)
     │
@@ -155,7 +172,7 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │
                ├── writeFileWithRetry()
                │     Writes {studentLogin}/raw-ai-output.md — the model's reply
-               │     before postprocessing, under a provenance header recording
+               │     before parsing, under a provenance header recording
                │     the request settings and response metadata; warns (never
                │     throws) on failure
                │
@@ -233,7 +250,7 @@ Validates that a SHA is 4–64 hex characters before passing it to a `git` comma
 
 Returns a filesystem-safe version of a string for use in filenames. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename from the repository name (e.g. `grill-my-code-assignment-1-jsmith.pdf`), and — through `tagGroupSlug()` — a tag group's PDF suffix and instructor-repository folder from its `submission_tags` pattern (`submit/*` → `submit`).
 
-### `callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature })`
+### `callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature, responseFormat, parse })`
 
 A thin provider abstraction over the OpenAI-compatible chat completions API. Each provider maps to a base URL and authentication header:
 
@@ -241,11 +258,11 @@ A thin provider abstraction over the OpenAI-compatible chat completions API. Eac
 |---|---|---|
 | `openrouter` | `openrouter.ai/api/v1/chat/completions` | `Authorization: Bearer <api_key>` |
 
-`openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `top_p`). `max_tokens` is deliberately omitted: on OpenRouter it restricts routing to providers that support a response of that length, and each model's own output limit is left to apply instead.
+`openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `top_p`, and `response_format` when `responseFormat` is given). `response_format` is sent without `provider.require_parameters`, so on OpenRouter it only prefers providers that support structured outputs and is ignored for a model that has none; the reply is validated either way. `max_tokens` is deliberately omitted: on OpenRouter it restricts routing to providers that support a response of that length, and each model's own output limit is left to apply instead.
 
-Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff, capped at the same 30-second `AI_RETRY_MAX_DELAY_MS` as every other wait so a long value cannot stall the run. Once generation has started OpenRouter can no longer change the HTTP status, so an upstream failure arrives as a `200` with an `{ error: { code, message } }` body; that is retried when `error.code` is one of the same retryable codes, and otherwise fails with the provider's message. A `200` whose body is not valid JSON (a dropped connection or a proxy error page) is retried like a network failure, as is a response whose first choice carries no text content. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
+Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff, capped at the same 30-second `AI_RETRY_MAX_DELAY_MS` as every other wait so a long value cannot stall the run. Once generation has started OpenRouter can no longer change the HTTP status, so an upstream failure arrives as a `200` with an `{ error: { code, message } }` body; that is retried when `error.code` is one of the same retryable codes, and otherwise fails with the provider's message. A `200` whose body is not valid JSON (a dropped connection or a proxy error page) is retried like a network failure, as is a response whose first choice carries no text content. A reply the `parse` callback rejects is retried the same way, except when `finish_reason` is `length`: the same request would stop at the same output limit. `parse` errors are logged, and the student can read the log, so they describe the reply's shape and never quote it. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
 
-`callAI` returns `{ content, metadata }`. `content` is the trimmed reply; `metadata` carries the `finish_reason` (and the upstream provider's native reason), token usage, the number of attempts spent, wall time across all of them, and the generation id, model and host OpenRouter reports serving. None of it affects the run: it is written into the provenance header of `raw-ai-output.md`, where a `finish_reason` of `length` is the only way to tell a reply cut off at the output token limit from one that simply held fewer questions.
+`callAI` returns `{ content, parsed, metadata }`. `content` is the trimmed reply and `parsed` what `parse` made of it; `metadata` carries the `finish_reason` (and the upstream provider's native reason), token usage, the number of attempts spent, wall time across all of them, and the generation id, model and host OpenRouter reports serving. None of it affects the run: it is written into the provenance header of `raw-ai-output.md`, where a `finish_reason` of `length` is the only way to tell a reply cut off at the output token limit from one that simply held fewer questions.
 
 ### `postIssue()`
 

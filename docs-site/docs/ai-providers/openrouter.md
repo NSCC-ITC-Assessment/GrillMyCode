@@ -42,6 +42,12 @@ These have been tested with GrillMyCode and cost from **less than one cent to a 
 
 Any other model works too; check its price at [openrouter.ai/models](https://openrouter.ai/models) first, because costs vary by orders of magnitude.
 
+## Structured outputs
+
+GrillMyCode asks for its questions as a JSON object and sends the format as a JSON schema too. OpenRouter routes the request to a provider that supports **structured outputs** for the model, when one does, and that provider holds the reply to the schema. All the recommended models above support it.
+
+A model without structured outputs still works: the schema is ignored and the model follows the prompt's description of the format. Such models are more likely to return a reply GrillMyCode can't use, which it retries; see [After the AI replies](../reference/code-selection.md#4-after-the-ai-replies). To check a model, filter the [model list](https://openrouter.ai/models?supported_parameters=structured_outputs) by structured outputs.
+
 ## Model routing variants
 
 Most models on OpenRouter are served by **several providers**, which differ in speed and price for the same model. By default OpenRouter chooses among them for you, weighing price and recent reliability.

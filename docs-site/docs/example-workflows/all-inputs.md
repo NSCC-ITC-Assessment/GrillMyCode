@@ -66,8 +66,10 @@ jobs:
           ai_model: "google/gemini-3.5-flash-lite"
 
           # Total number of attempts (initial + retries) when calling the AI provider.
-          # Retries are triggered by 429 (rate limit), 500, 502, 503, 504, and network
-          # failures. A 429 with a Retry-After header has that delay honoured (max 30s).
+          # Retries are triggered by 429 (rate limit), 500, 502, 503, 504, network
+          # failures, and a reply that isn't the JSON GrillMyCode asked for (unless the
+          # model stopped at its output limit). A 429 with a Retry-After header has that
+          # delay honoured (max 30s).
           # Values below 1 are clamped to 1.
           # ai_retry_max_attempts: "5"
 

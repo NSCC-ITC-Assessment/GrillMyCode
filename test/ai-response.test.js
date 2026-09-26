@@ -18,13 +18,14 @@ function respondWith(...bodies) {
  * Runs callAI with retry backoff sleeps fast-forwarded. Settles to the reply
  * text as `value`; `full` passes callAI's whole result through instead.
  */
-async function run(retryMaxAttempts, { full = false } = {}) {
+async function run(retryMaxAttempts, { full = false, ...extra } = {}) {
   const result = callAI({
     provider: 'openrouter',
     model: 'test-model',
     apiKey: 'key',
     messages: [],
     retryMaxAttempts,
+    ...extra,
   });
   const settled = result.then(
     (value) => ({ value: full ? value : value.content }),
@@ -295,5 +296,81 @@ describe('callAI Retry-After on a 429', () => {
     expect(core.warning).toHaveBeenCalledWith(
       expect.stringMatching(/in 30000ms \(Retry-After .*capped\)/),
     );
+  });
+});
+
+describe('callAI response format and parsing', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(core.warning).mockClear();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const reply = (content, finishReason = 'stop') => ({
+    choices: [{ message: { content }, finish_reason: finishReason }],
+  });
+  const strict = (content) => {
+    if (content !== 'good') throw new Error('the reply is not usable');
+    return { parsed: content };
+  };
+
+  it('sends response_format only when one is given', async () => {
+    const fetch = respondWith(ok, ok);
+    await run(1);
+    await run(1, { responseFormat: { type: 'json_object' } });
+    const bodies = fetch.mock.calls.map(([, init]) => JSON.parse(init.body));
+    expect(bodies[0]).not.toHaveProperty('response_format');
+    expect(bodies[1].response_format).toEqual({ type: 'json_object' });
+    // A routing preference, never a requirement: a model without structured
+    // outputs must still be reachable.
+    expect(bodies[1]).not.toHaveProperty('provider');
+  });
+
+  it('returns what parse made of the trimmed reply', async () => {
+    respondWith(reply('  good  '));
+    const { value } = await run(1, { full: true, parse: strict });
+    expect(value.content).toBe('good');
+    expect(value.parsed).toEqual({ parsed: 'good' });
+  });
+
+  it('passes the content through when there is no parse', async () => {
+    respondWith(ok);
+    const { value } = await run(1, { full: true });
+    expect(value.parsed).toBe('1. Question?');
+  });
+
+  it('retries a reply parse rejects', async () => {
+    const fetch = respondWith(reply('bad'), reply('good'));
+    const { value } = await run(2, { full: true, parse: strict });
+    expect(value.parsed).toEqual({ parsed: 'good' });
+    expect(value.metadata.attempts).toBe(2);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(core.warning).toHaveBeenCalledWith(
+      expect.stringContaining('AI reply could not be used (the reply is not usable)'),
+    );
+  });
+
+  it('fails once retries are exhausted', async () => {
+    respondWith(reply('bad'), reply('bad'));
+    const { error } = await run(2, { parse: strict });
+    expect(error.message).toBe('AI reply could not be used: the reply is not usable');
+  });
+
+  // The same request would hit the same output token limit again.
+  it('does not retry a reply cut off at the token limit', async () => {
+    const fetch = respondWith(reply('bad', 'length'), reply('good'));
+    const { error } = await run(2, { parse: strict });
+    expect(error.message).toMatch(/could not be used/);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands parse the finish reason', async () => {
+    respondWith(reply('good', 'length'));
+    const parse = vi.fn(() => 'ok');
+    await run(1, { parse });
+    expect(parse).toHaveBeenCalledWith('good', { finishReason: 'length' });
   });
 });

@@ -1,498 +1,351 @@
 /**
  * AI Output Post-Processing
  *
- * Pure text transforms applied to the model's Markdown between the AI call and
- * delivery: separator and numbering normalisation, answer stripping, and the
- * fail-closed guards that decide what reaches the student.
+ * The model replies with a JSON object (see prompt.js). This module turns that
+ * reply into question objects, filters them, and renders the three Markdown
+ * views of them: the instructor copy, the include_answers copy, and the
+ * student copy.
+ *
+ * GrillMyCode writes every piece of Markdown structure itself — numbering,
+ * filename headers, code fences, the answer container, the separators — so the
+ * views cannot drift from the format generate-lms-quiz.yml parses, whatever
+ * the model does. The student view is built from the question objects without
+ * their answers, rather than by removing answers from text, so no formatting
+ * slip can carry an answer into it.
  *
  * These live outside main.js so they can be tested directly. main.js is the
  * container entrypoint and runs an assessment on import, so nothing may import
- * it — which is why guarding its run() call was the wrong way round.
+ * it.
  */
 
-import * as core from '@actions/core';
-
-// The one-sentence summary the model appends after the final question (see
-// prompt.js), which becomes the Instructor Note on the report. The closing
-// marker is matched loosely — anything shaped like a closing SUMMARY comment —
-// because gemini-3.5-flash-lite has been seen closing it as
-// `<!-- /CONSAR_SUMMARY -->`. An exact matcher failed twice over on that one
-// typo: the note vanished from the report, and the region went unstripped, so
-// it rode along into the delivered Markdown where the sentence between the two
-// comments renders as stray body text in the student's issue. Neither failure
-// raised anything.
-//
-// With no closing marker at all the region ends at the blank line after the
-// summary rather than at end of input. The summary is a single sentence, so
-// that costs nothing when the marker is merely missing — while an opening
-// marker that drifted into the middle of the response would otherwise swallow
-// every question below it. Leaving one stray line is far better than silently
-// deleting questions.
-const CONTEXT_SUMMARY_RE =
-  /<!--\s*CONTEXT_SUMMARY\s*-->[ \t]*\n?([\s\S]*?)(?:\n?[ \t]*<!--\s*\/\s*[A-Z_ ]*SUMMARY[A-Z_ ]*\s*-->|(?=\n[ \t]*\n)|$)\n*/i;
-// Built from the same source so extraction and removal can never disagree about
-// where the summary ended. Only the first match is extracted, but a model that
-// emitted the markers more than once must not leave the extras behind.
-const CONTEXT_SUMMARY_RE_G = new RegExp(CONTEXT_SUMMARY_RE.source, 'gi');
-const CONTEXT_SUMMARY_CLOSE_RE = /<!--\s*\/CONTEXT_SUMMARY\s*-->/i;
+import { LINE_MARKERS } from './constants.js';
 
 /**
- * Splits the context summary out of the raw model response, returning the
- * summary text (empty when there is none) and the response with the whole
- * marked region removed. Drift in the closing marker is recovered from and
- * warned about, since a recovered summary looks identical to one that never
- * drifted and the run log is the only place the difference shows.
+ * Parses the model's reply into question objects.
+ *
+ * Lenient about the wrapper, strict about the content. The schema is only a
+ * routing preference (see buildResponseFormat), so a model without structured
+ * outputs may fence the object or add a line before it: the first parse that
+ * succeeds of the whole reply, its fenced body, or the span from the first `{`
+ * to the last `}` is used. When none parses — most often a reply cut off at
+ * the output token limit — every complete question object in the `questions`
+ * array is recovered on its own, and `salvaged` is set.
+ *
+ * Each question is then normalised (see normaliseQuestion). One without
+ * question text or an answer cannot be shown or assessed, so it is dropped and
+ * its 1-based position among the reply's `entries` is listed in `malformed`,
+ * so an instructor can find it in the raw output.
+ *
+ * Throws when no usable question remains, so callAI can retry. The message is
+ * written to the Actions log, which the student can read, so it describes the
+ * reply's shape and never quotes it — nor passes on JSON.parse's own message,
+ * which does.
+ *
+ * Returns `{ questions, contextSummary, salvaged, entries, malformed }`.
  */
-export function extractContextSummary(text) {
-  const match = text.match(CONTEXT_SUMMARY_RE);
-  if (!match) return { summary: '', rest: text };
-  if (!CONTEXT_SUMMARY_CLOSE_RE.test(text)) {
-    core.warning(
-      'The context summary did not close with <!-- /CONTEXT_SUMMARY --> — recovered it from ' +
-        'the opening marker instead. Check the Instructor Note on the report.',
+export function parseQuestionsReply(text) {
+  let reply = parseJson(text);
+  let salvaged = false;
+  if (reply === undefined) {
+    reply = { questions: salvageQuestions(text) };
+    salvaged = true;
+  }
+  const rawQuestions = Array.isArray(reply) ? reply : reply?.questions;
+  if (!Array.isArray(rawQuestions)) {
+    throw new Error('the reply is not a JSON object with a "questions" array');
+  }
+
+  const questions = [];
+  const malformed = [];
+  rawQuestions.forEach((raw, i) => {
+    const question = normaliseQuestion(raw);
+    if (question) questions.push(question);
+    else malformed.push(i + 1);
+  });
+  if (questions.length === 0) {
+    throw new Error(
+      salvaged
+        ? 'the reply is not valid JSON and holds no complete question'
+        : 'the reply holds no question with both question text and an answer',
     );
   }
-  return { summary: match[1].trim(), rest: text.replace(CONTEXT_SUMMARY_RE_G, '') };
+
+  const contextSummary = oneLine(Array.isArray(reply) ? '' : reply?.context_summary);
+  return { questions, contextSummary, salvaged, entries: rawQuestions.length, malformed };
 }
 
-// A question's bold filename header: **filename.ext** or **`filename.ext`**.
-const FILENAME_HEADER_RE = /^\*\*`?[^\s`*]+\.[^\s`*]+`?\*\*$/;
-const SEPARATOR_RE = /^-{3,}$/;
-// Spellings of a separator the model drifts into — `----`, or `---` with
-// stray indentation or trailing whitespace — that generate-lms-quiz.yml, which
-// splits on an exact `\n---\n`, does not recognise.
-const SEPARATOR_VARIANT_RE = /^[ \t]*-{3,}[ \t]*$/;
-// A Markdown heading, bold-wrapped or not: `## Broader Questions` or
-// `**## Broader Questions**`.
-const MARKDOWN_HEADING_RE = /^[ \t]*(?:\*\*)?#{1,6}\s/;
-
-/**
- * Restores a --- separator the model left out between two questions, by
- * inserting one before a filename header that follows a question stem with no
- * separator in between.
- *
- * Runs on the answer-bearing text before it is split into the student and
- * instructor copies, because both are split on --- downstream: a missing one
- * puts two questions in one block, where redactStudentQuestions can only
- * withhold them together and generate-lms-quiz.yml merges them into a single
- * quiz item carrying both questions' options.
- *
- * A header only opens a new question once a stem has been seen since the last
- * separator. A question showing two files carries two headers ahead of its one
- * stem, and splitting between them would cut the first file's snippet away
- * from the question it belongs to. The same test keeps any text ahead of the
- * first question attached to it.
- *
- * A question can also arrive with no header or snippet at all — the model
- * sometimes writes one that way, most often under a Broader Questions heading.
- * With no header to key on, a stem is the only sign a new question began, so a
- * separator is also inserted before a stem that follows a closed answer
- * container. The closed container is what makes that safe: it marks the end
- * of the question before, where a numbered line with no answer seen since the
- * last stem could still be part of it. Output without containers gets no such
- * repair. Either way, a Markdown heading sitting directly above the new
- * question moves below the inserted separator, so it stays with the question
- * it introduces instead of trailing the one before.
- *
- * A --- counts wherever the downstream splits would cut — everywhere outside
- * fenced code, including inside an answer container, so one the model placed
- * there is not doubled up. Headers and stems count only at the top level, so a
- * bold filename in a Markdown snippet or an answer is left alone.
- *
- * Every top-level separator is also rewritten to exactly `---`. The quiz parser
- * splits on nothing else, so a `----` or a `--- ` with a trailing space merged
- * its two questions into one item exactly as a missing one did. One inside an
- * answer container is left as it is: rewriting it there would make the quiz
- * parser split the container, withholding a question it currently parses.
- */
-export function normaliseSeparators(text) {
-  const raw = text.split('\n');
-  const topLevel = topLevelFlags(raw);
-  const outsideFence = topLevelFlags(raw, { answers: false });
-  const lines = raw.map((line, i) =>
-    topLevel[i] && SEPARATOR_VARIANT_RE.test(line) ? '---' : line,
-  );
-  const out = [];
-  const insertSeparator = () => {
-    const carried = [];
-    while (out.length > 0 && (out.at(-1).trim() === '' || MARKDOWN_HEADING_RE.test(out.at(-1)))) {
-      carried.unshift(out.pop());
-    }
-    while (carried.length > 0 && carried[0].trim() === '') carried.shift();
-    out.push('', '---', '', ...carried);
-  };
-  let stemSinceSeparator = false;
-  let answerClosedSinceStem = false;
-  lines.forEach((line, i) => {
-    if (outsideFence[i] && SEPARATOR_RE.test(line)) {
-      stemSinceSeparator = false;
-      answerClosedSinceStem = false;
-    } else if (topLevel[i] && QUESTION_STEM_RE.test(line)) {
-      if (stemSinceSeparator && answerClosedSinceStem) insertSeparator();
-      stemSinceSeparator = true;
-      answerClosedSinceStem = false;
-    } else if (topLevel[i] && stemSinceSeparator && FILENAME_HEADER_RE.test(line)) {
-      insertSeparator();
-      stemSinceSeparator = false;
-      answerClosedSinceStem = false;
-    } else if (outsideFence[i] && stemSinceSeparator && ANSWER_CLOSE_RE.test(line)) {
-      answerClosedSinceStem = true;
-    }
-    out.push(line);
-  });
-  return out.join('\n');
-}
-
-/**
- * Restores an opening fence the model left out of a code snippet, by inserting
- * one after the filename header when the snippet below it ends in a bare
- * closing fence that nothing opened.
- *
- * Runs first, ahead of every pass that decides what is top level. Left alone,
- * the orphaned closing fence is read as an opening one, so everything up to the
- * next bare fence — the question's stem, its answer container, the --- and the
- * next question's header — counts as code: renumbering skips the stem, and the
- * guards in redactStudentQuestions, which do not look inside code, let the
- * answer through to the student.
- *
- * A header is repaired only when the lines after it, up to that bare fence,
- * look like a snippet: no fence with an info string, stem, separator, answer
- * marker or further header in between. Anything less clear-cut is left as the
- * model wrote it, for redactStudentQuestions to withhold if it must.
- *
- * Returns `{ text, repaired }`, where `repaired` counts the fences inserted.
- */
-export function repairOrphanFences(text) {
-  const lines = text.split('\n');
-  let topLevel = topLevelFlags(lines);
-  let repaired = 0;
-  for (let i = 0; i < lines.length; i++) {
-    if (!topLevel[i] || !FILENAME_HEADER_RE.test(lines[i].trim())) continue;
-    let start = i + 1;
-    while (start < lines.length && lines[start].trim() === '') start++;
-    if (start >= lines.length || CODE_BLOCK_OPEN_RE.test(lines[start])) continue;
-    for (let j = start; j < lines.length; j++) {
-      const close = lines[j].match(CODE_BLOCK_CLOSE_RE);
-      if (close) {
-        lines.splice(start, 0, close[1]);
-        topLevel = topLevelFlags(lines);
-        repaired += 1;
-        break;
-      }
-      const line = lines[j];
-      if (
-        CODE_BLOCK_OPEN_RE.test(line) ||
-        QUESTION_STEM_RE.test(line) ||
-        SEPARATOR_VARIANT_RE.test(line) ||
-        ANSWER_OPEN_RE.test(line) ||
-        FILENAME_HEADER_RE.test(line.trim())
-      ) {
-        break;
-      }
+/** The first of the reply's candidate JSON spans that parses, or undefined. */
+function parseJson(text) {
+  const candidates = [text];
+  const fenced = text.match(/^\s*(`{3,}|~{3,})[^\n]*\n([\s\S]*?)\n[ \t]*\1\s*$/);
+  if (fenced) candidates.push(fenced[2]);
+  const first = text.indexOf('{');
+  const last = text.lastIndexOf('}');
+  if (first !== -1 && last > first) candidates.push(text.slice(first, last + 1));
+  for (const candidate of candidates) {
+    try {
+      return JSON.parse(candidate);
+    } catch {
+      // Try the next candidate.
     }
   }
-  return { text: lines.join('\n'), repaired };
+  return undefined;
 }
 
-// Markers the model wraps each answer block in (see prompt.js). They give the
-// student-facing redaction an explicit region to remove rather than inferring
-// answer boundaries from headings, and let the instructor copy drop just the
-// markers while keeping the content. Both are tolerant of whitespace drift.
-const ANSWER_REGION_RE =
-  /[ \t]*<!--\s*gmc:answer\s*-->[\s\S]*?<!--\s*\/gmc:answer\s*-->[ \t]*\n?/gi;
-export const ANSWER_MARKER_LINE_RE = /^[ \t]*<!--\s*\/?\s*gmc:answer\s*-->[ \t]*\n?/gim;
-
-// A fence opens on a run of 3+ backticks or tildes (a backtick info string may
-// not itself contain a backtick, or the line is inline code, not a fence). It
-// closes only on a run of the same character at least as long, with nothing
-// after it — so ~~~ inside a ``` block, or ``` inside a ```` block, is content.
-const CODE_BLOCK_OPEN_RE = /^[ \t]*(`{3,}(?=[^`]*$)|~{3,})/;
-const CODE_BLOCK_CLOSE_RE = /^[ \t]*(`{3,}|~{3,})\s*$/;
-// The opening marker must start its line, so a marker quoted mid-sentence in
-// question prose does not swallow every question after it. The closing marker
-// may trail the final bullet, so it is matched anywhere on the line.
-const ANSWER_OPEN_RE = /^[ \t]*<!--\s*gmc:answer\s*-->/i;
-const ANSWER_CLOSE_RE = /<!--\s*\/\s*gmc:answer\s*-->/i;
-// The same container with its interior captured, so the include_answers path
-// can trim it from the inside rather than remove it whole.
-const ANSWER_CONTAINER_RE = /(<!--\s*gmc:answer\s*-->)([\s\S]*?)(<!--\s*\/\s*gmc:answer\s*-->)/gi;
-const OPTION_BULLET_RE = /^\s*[-*+]\s/;
-const BARE_HEADING_RE = /^\s*\*\*[^*]+\*\*:?\s*$/;
-const SEPARATOR_LINE_RE = /^\s*-{3,}\s*$/;
-
 /**
- * Cuts an answer container's interior down to the correct answer alone, for the
- * include_answers view. Read positionally — the first answer is correct and
- * everything after it is a distractor — which is the rule generate-lms-quiz.yml
- * parses the same container by. Matching the distractor heading literally
- * instead let every option through whenever the model drifted on it (observed:
- * the heading emitted as `<!-- Distractors for Multiple-Choice Quiz: -->`), so
- * a student shown the answers was shown the distractors beside it too.
- *
- * The answer ends at whichever comes first: a second bullet, a line naming the
- * distractors in any form, a --- separator, or the first blank line after the
- * answer content. The blank line is what stops an inline or fenced answer —
- * neither is a bullet — from keeping the first distractor as though it were the
- * answer. A bare bold heading such as **Answer:** is not answer content. Every
- * stop errs towards dropping text: a truncated answer costs the student a line,
- * a leaked distractor misleads them.
- *
- * A --- the model placed inside the container is re-emitted rather than dropped
- * with the distractors, as pass 0 of stripAnswers does, so the rule between two
- * questions survives the trim.
+ * Recovers every complete object from the reply's `questions` array — or its
+ * top-level array, when there is no such key — from text that does not parse
+ * as a whole. A string-aware brace scan finds each top-level element, and each
+ * is parsed on its own, so a reply cut off mid-question still yields the
+ * questions before the cut.
  */
-function keepOnlyAnswer(inner) {
-  const lines = inner.split('\n');
-  let answered = false;
-  let bullets = 0;
-  let end = lines.length;
-  for (const [i, line] of lines.entries()) {
-    const blank = line.trim() === '';
-    const stop = OPTION_BULLET_RE.test(line)
-      ? ++bullets > 1
-      : /distractor/i.test(line) || SEPARATOR_LINE_RE.test(line) || (blank && answered);
-    if (stop) {
-      end = i;
+function salvageQuestions(text) {
+  const key = text.search(/"questions"\s*:\s*\[/);
+  const open = key === -1 ? text.indexOf('[') : text.indexOf('[', key);
+  if (open === -1) return [];
+  const found = [];
+  let depth = 0;
+  let start = -1;
+  let inString = false;
+  let escaped = false;
+  for (let i = open + 1; i < text.length; i++) {
+    const ch = text[i];
+    if (inString) {
+      if (escaped) escaped = false;
+      else if (ch === '\\') escaped = true;
+      else if (ch === '"') inString = false;
+    } else if (ch === '"') {
+      inString = true;
+    } else if (ch === '{') {
+      if (depth === 0) start = i;
+      depth += 1;
+    } else if (ch === '}' && depth > 0) {
+      depth -= 1;
+      if (depth === 0) {
+        try {
+          found.push(JSON.parse(text.slice(start, i + 1)));
+        } catch {
+          // An element that does not parse on its own is skipped.
+        }
+      }
+    } else if (ch === ']' && depth === 0) {
       break;
     }
-    if (!blank && !BARE_HEADING_RE.test(line)) answered = true;
   }
-  // Blank line first, so a --- under a plain-text answer is not read as a
-  // setext heading underline.
-  const separators = lines
-    .slice(end)
-    .filter((line) => SEPARATOR_LINE_RE.test(line))
-    .flatMap(() => ['', '---']);
-  return [...lines.slice(0, end), ...separators].join('\n');
+  return found;
 }
 
 /**
- * Applies `transform` to each top-level line — one outside every fenced code
- * block and every <!-- gmc:answer --> region — and returns all other lines
- * untouched. The single notion of "top level" shared by every pass that
- * rewrites question stems, so none of them can reach into student code or
- * answer content.
- *
- * An unclosed fence or answer region runs to the end of the text: its lines are
- * left alone rather than guessed at.
+ * Collapses a value to one line of text: every run of whitespace, line breaks
+ * included, becomes a single space. Answers and options are rendered as list
+ * items and the question as a numbered line, so a line break the model left in
+ * one would end it early. Null bytes are dropped too — a submission containing
+ * one is never assessed, so one here did not come from the student's code.
  */
-function mapTopLevelLines(text, transform) {
-  const lines = text.split('\n');
-  const topLevel = topLevelFlags(lines);
-  return lines.map((line, i) => (topLevel[i] ? transform(line) : line)).join('\n');
+function oneLine(value) {
+  return typeof value === 'string' ? value.replace(/\0/g, '').replace(/\s+/g, ' ').trim() : '';
 }
 
 /**
- * Marks each line true when it is top-level, as defined by mapTopLevelLines.
- * With `answers: false` only fenced code counts as nested, and every line of an
- * answer region is top-level.
+ * Trims the spaces inside each inline code span, which the model sometimes
+ * carries over from the code's indentation (`` ` $total` ``) and which would
+ * otherwise show. A span that is only spaces, or that needs its padding to
+ * hold a backtick, is left as it is.
  */
-function topLevelFlags(lines, { answers = true } = {}) {
-  let fence = null;
-  let inAnswer = false;
-  return lines.map((line) => {
-    if (fence) {
-      const close = line.match(CODE_BLOCK_CLOSE_RE);
-      if (close && close[1][0] === fence[0] && close[1].length >= fence.length) fence = null;
-      return false;
-    }
-    const open = line.match(CODE_BLOCK_OPEN_RE);
-    if (open) {
-      fence = open[1];
-      return false;
-    }
-    if (answers && ANSWER_OPEN_RE.test(line)) {
-      inAnswer = !ANSWER_CLOSE_RE.test(line);
-      return false;
-    }
-    if (inAnswer) {
-      if (ANSWER_CLOSE_RE.test(line)) inAnswer = false;
-      return false;
-    }
-    return true;
-  });
-}
-
-// A numbered stem, capturing its number. `$` as well as `\s` so a bare "2." at
-// the end of a line still counts, as it did when this was a multiline regex.
-const QUESTION_STEM_RE = /^\s*(\d+)\.(?:\s|$)/;
-
-/** Counts top-level numbered question stems, ignoring code blocks and answers. */
-export function countQuestions(text) {
-  const lines = text.split('\n');
-  const topLevel = topLevelFlags(lines);
-  return lines.filter((line, i) => topLevel[i] && QUESTION_STEM_RE.test(line)).length;
-}
-
-/**
- * Renumbers the question stems sequentially from 1.
- *
- * Some models emit every stem as `1.` because the anatomy template in the prompt shows a
- * single question numbered `1.`. Markdown then renders three questions all
- * labelled "1.". Numbering is purely presentational, so it is fixed
- * deterministically here rather than trusted to the model. Runs before
- * truncateToMaxQuestions, which needs real numbers to spot over-generation.
- *
- * Only top-level stems are touched: lines inside fenced code blocks and inside
- * <!-- gmc:answer --> regions keep whatever numbering they carry.
- */
-export function renumberQuestions(text) {
-  let n = 0;
-  return mapTopLevelLines(text, (line) => {
-    if (!/^\s*\d+\.\s/.test(line)) return line;
-    n += 1;
-    return line.replace(/^(\s*)\d+\./, `$1${n}.`);
+function trimCodeSpans(text) {
+  return text.replace(/(`+)([^`]+?)\1(?!`)/g, (span, ticks, inner) => {
+    const trimmed = inner.trim();
+    return trimmed && !/^`|`$/.test(trimmed) ? `${ticks}${trimmed}${ticks}` : span;
   });
 }
 
 /**
- * Bolds the question sentence on every numbered question line. Applied in
- * post-processing so the result is deterministic regardless of whether the
- * model followed the formatting instruction. Skips lines already wrapped in
- * bold, fenced code blocks (student code is shown verbatim), and the
- * <!-- gmc:answer --> interior so answer headings and bullets are never touched.
+ * Validates and normalises one question object from the reply, or returns
+ * null when it lacks question text or an answer.
  *
- *   1. What does `x` return?   →   1. **What does `x` return?**
+ * Clears away what the model might carry over from the Markdown it was once
+ * asked for: a number or "Question:" label on the question, a bullet or
+ * "Answer:" label on an option, bold or backticks around a file name, a code
+ * fence around a snippet, and spaces inside an inline code span. Snippets with no code are dropped. A missing
+ * `distractors` is an empty list — the quiz workflow withholds a question
+ * without options and says so.
  */
-export function boldQuestionLines(text) {
-  return mapTopLevelLines(text, (line) => line.replace(/^(\s*\d+\. )(?!\*\*)(.+)$/m, '$1**$2**'));
+function normaliseQuestion(raw) {
+  if (!raw || typeof raw !== 'object') return null;
+  const question = trimCodeSpans(
+    oneLine(raw.question)
+      .replace(/^(?:question\s*\d*\s*[:.)]\s*|\d+[.)]\s+)/i, '')
+      .trim(),
+  );
+  const answer = cleanOption(raw.answer);
+  if (!question || !answer) return null;
+
+  const snippets = (Array.isArray(raw.snippets) ? raw.snippets : [])
+    .map((s) => ({
+      file: oneLine(s?.file).replace(/[`*]/g, '').trim(),
+      language: /^[\w+#.-]+$/.test(oneLine(s?.language)) ? oneLine(s.language) : '',
+      code: cleanCode(s?.code),
+    }))
+    .filter((s) => s.code);
+  const distractors = (Array.isArray(raw.distractors) ? raw.distractors : [])
+    .map(cleanOption)
+    .filter(Boolean);
+
+  return { snippets, question, answer, distractors, broader: raw.broader === true };
+}
+
+/** One answer option on one line, without a leading bullet or Answer: label. */
+function cleanOption(value) {
+  return trimCodeSpans(
+    oneLine(value)
+      .replace(/^[-*+]\s+/, '')
+      .replace(/^\**answer:\**\s*/i, '')
+      .trim(),
+  );
 }
 
 /**
- * Splits bold markers around inline code spans on question-sentence lines so
- * that backtick-wrapped identifiers render in code style only, not bold.
- *
- * Input:  1. **What does `x` return when `y` is null?**
- * Output: 1. **What does** `x` **return when** `y` **is null?**
- *
- * Only top-level lines beginning with a question number are touched; filename
- * headers (**`file.ext`**), answer headings (**Answer:**), and anything inside
- * a fenced code block or answer region are left unchanged.
+ * A snippet's code with Unix line endings, no wrapping fence, and no blank
+ * lines or trailing whitespace at either end. Leading indentation of the first
+ * line is kept.
  */
-export function splitBoldAroundCode(text) {
-  return mapTopLevelLines(text, splitBoldLine);
-}
-
-function splitBoldLine(line) {
-  return line.replace(/^(\s*\d+\. )(\*\*.+\*\*)$/m, (_, prefix, boldText) => {
-    if (!boldText.includes('`')) return prefix + boldText;
-    const inner = boldText.slice(2, -2);
-    const rebuilt = inner
-      .split(/(`[^`]+`)/)
-      .map((part) => {
-        if (part.startsWith('`')) return part;
-        const trimmed = part.trim();
-        if (!trimmed) return part;
-        const leading = part.match(/^\s*/)[0];
-        const trailing = part.match(/\s*$/)[0];
-        return `${leading}**${trimmed}**${trailing}`;
-      })
-      .join('');
-    return prefix + rebuilt;
-  });
+function cleanCode(value) {
+  if (typeof value !== 'string') return '';
+  let code = value.replace(/\0/g, '').replace(/\r\n?/g, '\n');
+  const fenced = code.match(/^\s*(`{3,}|~{3,})[^\n]*\n([\s\S]*?)\n[ \t]*\1\s*$/);
+  if (fenced) code = fenced[2];
+  return code.replace(/^(?:[ \t]*\n)+/, '').replace(/\s+$/, '');
 }
 
 /**
- * Strips distractor content from AI-generated Q+A output.
- *
- * Incorrect options for quiz (header + bullets) are always removed — they are
- * generated solely to enable quiz-style delivery and should not appear in
- * any rendered report.
- *
- * The correct answer is removed only when keepAnswers is false
- * (i.e. when producing student-facing output without include_answers).
- * Removal is layered for resilience against model formatting drift:
- *   0. Container removal: strips each explicitly marked <!-- gmc:answer --> …
- *      <!-- /gmc:answer --> region as a unit — the reliable, primary path.
- *   1. Block fallback: strips **Answer:** heading + everything up to
- *      **Distractors for Multiple-Choice Quiz:** for any answer the model
- *      emitted without the markers.
- * An answer with neither form is not stripped at all: redactStudentQuestions
- * withholds its question instead, which is why the student view goes through
- * that and not through this function directly. It runs this one question block
- * at a time, so a --- the model placed inside a container never reaches here —
- * run over a whole report, pass 0 would remove such a --- with its container.
- *
- * With keepAnswers, each marked container is instead trimmed to its correct
- * answer by position (see keepOnlyAnswer), with a literal distractor-heading
- * match as the fallback for answers emitted without the container.
- *
- * Stray markers are always removed (so they never surface, including on the
- * keepAnswers path). Collapses any resulting triple+ blank lines to a double.
+ * Puts broader questions after the rest, as the report has always shown them,
+ * and cuts the list to `maxQuestions`. Returns the kept questions and how many
+ * were cut.
  */
-export function stripAnswers(text, { keepAnswers = false } = {}) {
-  let result = text;
+export function arrangeQuestions(questions, maxQuestions) {
+  const ordered = [...questions.filter((q) => !q.broader), ...questions.filter((q) => q.broader)];
+  return {
+    questions: ordered.slice(0, maxQuestions),
+    surplus: Math.max(0, ordered.length - maxQuestions),
+  };
+}
 
-  // Protect fenced code blocks so that marker strings embedded in student-
-  // submitted code (e.g. const MARKER = '<!-- gmc:answer -->') are never
-  // matched by the answer-region regexes and do not corrupt question output.
-  //
-  // The sentinels are load-bearing, and they are null bytes for a specific
-  // reason: collectRawFiles drops any file containing one, so a student cannot
-  // get the sentinel into their submission at all. The Private Use Area
-  // codepoints used previously had no such barrier — a student who pasted
-  // U+E001 into their source could have the model echo it back in question
-  // prose and hijack the restore pass below.
-  const fences = [];
-  result = result.replace(/^(`{3,})[^\n]*\n[\s\S]*?\n\1[ \t]*$/gm, (match) => {
-    fences.push(match);
-    return `\0FENCE${fences.length - 1}\0`;
+/** Numbers the questions from 1, in order. */
+export function numberQuestions(questions) {
+  return questions.map((q, i) => ({ ...q, number: i + 1 }));
+}
+
+/**
+ * Normalises a path, or a snippet's file name, for comparing one against the
+ * other: forward slashes, no leading ./ or /, no trailing :line or :start-end
+ * the model sometimes appends, and lower case, since the model does not
+ * reliably preserve the capitalisation of a filename it copies.
+ */
+function normalisePathForMatch(p) {
+  return p
+    .replace(/\\/g, '/')
+    .replace(/^\.?\//, '')
+    .replace(/:\d+(?:-\d+)?$/, '')
+    .toLowerCase();
+}
+
+/**
+ * A test for whether a snippet's file name is one of `paths`: that path or a
+ * trailing part of it (`app.py` for `src/app.py`), compared as
+ * normalisePathForMatch does.
+ */
+function pathMatcher(paths) {
+  const normalised = paths.map(normalisePathForMatch);
+  return (name) => {
+    const n = normalisePathForMatch(name);
+    return normalised.some((p) => p === n || p.endsWith(`/${n}`));
+  };
+}
+
+/**
+ * Removes the marker column the model copied into a snippet from a marked
+ * file (see buildAssessedCodeContent in files.js).
+ *
+ * The prompt asks the model to drop the column, and it usually does. A
+ * snippet from one of `markedFiles` still carries it when every non-blank
+ * line begins with a marker and at least one with the added-line marker —
+ * ordinary code, indented or not, virtually never does. Then the marker is
+ * cut from each line, and removed lines, which are no longer in the file, go.
+ *
+ * Returns `{ questions, stripped }`, where `stripped` counts the snippets
+ * changed.
+ */
+export function stripLineMarkers(questions, markedFiles) {
+  if (markedFiles.length === 0) return { questions, stripped: 0 };
+  const isMarked = pathMatcher(markedFiles);
+  const { added, removed, unchanged } = LINE_MARKERS;
+  const markers = new Set([added, removed, unchanged]);
+  let stripped = 0;
+
+  const result = questions.map((q) => {
+    let changed = false;
+    const snippets = q.snippets.map((s) => {
+      if (!isMarked(s.file)) return s;
+      const lines = s.code.split('\n');
+      const content = lines.filter((line) => line.trim());
+      if (!content.every((line) => markers.has(line[0]))) return s;
+      if (!content.some((line) => line[0] === added)) return s;
+      changed = true;
+      stripped += 1;
+      const code = lines
+        .filter((line) => line[0] !== removed)
+        .map((line) => line.slice(1))
+        .join('\n');
+      return { ...s, code: cleanCode(code) };
+    });
+    return changed ? { ...q, snippets } : q;
   });
+  return { questions: result, stripped };
+}
 
-  if (!keepAnswers) {
-    // Pass 0: container-based — remove each marked answer region as a unit.
-    result = result.replace(ANSWER_REGION_RE, '\n');
-    // Pass 1: block-based — strip **Answer:** heading and everything below it
-    // through to **Distractors for Multiple-Choice Quiz:**, covering all answer formats.
-    //
-    // The lookahead is anchored on the block separator and end-of-input as well
-    // as the distractor heading. Without those alternatives the lazy quantifier
-    // could not stop at the end of its own block: a block whose distractor
-    // heading the model re-worded has no match inside itself, so the region ran
-    // forward to the next block that did have one, deleting every question in
-    // between. Pass 0 normally removes the answer before this pass ever sees it,
-    // which is why the bleed stayed latent — it needs the container markers to be
-    // absent and the heading to have drifted, and it deletes neighbouring
-    // questions outright when both hold. Stopping at the separator also preserves
-    // the stray-`---`-inside-the-answer case instead of swallowing the rule.
-    result = result.replace(
-      / {0,4}\*\*Answer:\*\*[\s\S]*?(?=\n {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*|\n-{3,}\n|$)/g,
-      '',
-    );
-  } else {
-    // include_answers: trim each marked container to its correct answer. The
-    // closing marker is put back on a line of its own so the marker sweep
-    // below removes it, whatever the trim left in front of it.
-    result = result.replace(
-      ANSWER_CONTAINER_RE,
-      (_, open, inner, close) => `${open}${keepOnlyAnswer(inner)}\n${close}`,
-    );
+/**
+ * Drops every question with a snippet from a file outside the assessed set.
+ *
+ * The model also sees material that is not being assessed — assignment
+ * context, instructor context — and now and then writes a question about it,
+ * or about a file name it invented. A snippet's file matches an assessed file
+ * when it is that file's path or a trailing part of it (`app.py` for
+ * `src/app.py`), compared case-insensitively. A question showing several files
+ * goes if any one of them is unassessed. A question with no snippet is kept.
+ *
+ * `contextFiles` are the codebase context files: unchanged starter code and
+ * earlier work. A question may show one of them beside the assessed code —
+ * that is how it asks how the two fit together — so a context file is
+ * allowed, but only in a question that also shows an assessed file. A question
+ * showing context alone is about code that is not being assessed, and goes.
+ *
+ * Fails open: when every question would go, they are returned unchanged with
+ * `failedOpen` set. That outcome says more about file names the matcher does
+ * not recognise than about the questions, and an empty report helps no one.
+ *
+ * Returns `{ questions, dropped, unassessed, failedOpen }`, where `unassessed`
+ * is the distinct file names that caused a drop.
+ */
+export function dropQuestionsOnUnassessedFiles(questions, assessedFiles, contextFiles = []) {
+  const isAssessed = pathMatcher(assessedFiles);
+  const isContext = pathMatcher(contextFiles);
+
+  const kept = [];
+  const unassessed = new Set();
+  for (const q of questions) {
+    const shown = q.snippets.map((s) => s.file).filter(Boolean);
+    const assessedShown = shown.some(isAssessed);
+    const offTarget = shown.filter((f) => !isAssessed(f) && !(assessedShown && isContext(f)));
+    if (offTarget.length > 0) offTarget.forEach((f) => unassessed.add(f));
+    else kept.push(q);
   }
-  result = result.replace(ANSWER_MARKER_LINE_RE, '');
-  if (keepAnswers) {
-    // Fallback for answers the model emitted without the container: drop the
-    // distractor heading plus the bullets that immediately follow it. Matched
-    // literally, so it depends on the heading being right — the container
-    // trim above does not.
-    result = result.replace(
-      /^ {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*[^\n]*(?:\n {0,4}-[^\n]*)*\n?/gm,
-      '',
-    );
-  } else {
-    // Student view: remove the distractor heading and every remaining bullet so
-    // no answer-like content can survive.
-    result = result
-      .replace(/^ {0,4}\*\*Distractors for Multiple-Choice Quiz:\*\*[^\n]*/gm, '')
-      .replace(/^ {0,4}- [^\n]*/gm, '');
+
+  const dropped = questions.length - kept.length;
+  if (dropped === 0) return { questions, dropped: 0, unassessed: [], failedOpen: false };
+  if (kept.length === 0) {
+    return { questions, dropped: 0, unassessed: [...unassessed], failedOpen: true };
   }
-  // Restore fenced code blocks now that all marker processing is complete.
-  // An index outside the table cannot arise from the substitution above, so
-  // leave such a match as it stands rather than writing `undefined` into a
-  // student's question.
-  result = result.replace(/\0FENCE(\d+)\0/g, (match, i) => fences[Number(i)] ?? match);
-  // Nothing this function introduced still carries a sentinel by now, and a
-  // null byte from anywhere else has no business in a Markdown report.
-  return result.replace(/\0/g, '').replace(/\n{3,}/g, '\n\n');
+  return { questions: kept, dropped, unassessed: [...unassessed], failedOpen: false };
 }
 
 /** Normalises text to a lowercase alphanumeric word stream for fuzzy matching. */
@@ -503,261 +356,117 @@ function normaliseForMatch(s) {
     .trim();
 }
 
-/**
- * Extracts the correct-answer text of each question from output that still
- * contains answers (i.e. the un-stripped copy). Captures either an inline
- * answer on the **Answer:** line or the first bullet beneath it. Used as the
- * oracle for the answer-leak backstop below.
- */
-export function extractCorrectAnswers(text) {
-  const answers = [];
-  const re = /\*\*Answer:\*\*[ \t]*\n?(?: {0,4}-[ \t]*)?([^\n]+)/g;
-  let m;
-  while ((m = re.exec(text)) !== null) {
-    const answer = m[1].trim();
-    if (answer) answers.push(answer);
-  }
-  return answers;
-}
-
-/**
- * Removes code from a block before the leak check runs against it.
- *
- * The code snippet is intentionally shown to the student, so it must never be
- * treated as leaked answer text. Because `normaliseForMatch` discards all
- * punctuation, a correct answer that paraphrases the code (common for
- * output-trace and execution-flow questions) produces a run of shared
- * identifiers/keywords that collides with the visible code — a false leak.
- * Stripping fenced blocks and inline spans leaves only prose, which is the only
- * place a genuinely leaked answer could survive.
- */
-function stripCodeForLeakCheck(block) {
-  return block.replace(/^(`{3,})[^\n]*\n[\s\S]*?\n\1[ \t]*$/gm, ' ').replace(/`[^`]*`/g, ' ');
-}
-
-/** True if a long contiguous run of the answer's words appears in the block. */
-function answerLeaksInto(blockNorm, answer) {
+/** True if a long contiguous run of the answer's words appears in the text. */
+function answerLeaksInto(textNorm, answer) {
   const words = normaliseForMatch(answer).split(' ').filter(Boolean);
   // Short answers (e.g. `42`, `null`) overlap question text too often to test
-  // reliably; the structural strip already covers their bullets.
+  // reliably.
   if (words.length < 6) return false;
   const shingleSize = Math.min(8, words.length);
   for (let i = 0; i + shingleSize <= words.length; i++) {
-    if (blockNorm.includes(words.slice(i, i + shingleSize).join(' '))) return true;
+    if (textNorm.includes(words.slice(i, i + shingleSize).join(' '))) return true;
   }
   return false;
 }
 
 /**
- * Splits a report into question blocks at every --- line outside fenced code,
- * so a YAML or Markdown snippet carrying its own --- stays whole. A --- inside
- * an answer container does split: that keeps the question after it in a block
- * of its own even when the model drops a closing marker, and the torn halves
- * are still stripped by pass 1 and the bullet sweep.
+ * Returns the questions whose question text carries any question's correct
+ * answer — the one place in the student view an answer could still appear,
+ * typically because injected code talked the model into writing it there.
+ *
+ * Inline code spans are ignored: an answer that paraphrases the code shares a
+ * run of identifiers with it, and the code is shown to the student on purpose.
+ * Snippets are not checked for the same reason.
  */
-function splitQuestionBlocks(text) {
-  const lines = text.split('\n');
-  const outsideFence = topLevelFlags(lines, { answers: false });
-  const blocks = [[]];
-  lines.forEach((line, i) => {
-    if (outsideFence[i] && SEPARATOR_RE.test(line)) blocks.push([]);
-    else blocks.at(-1).push(line);
+export function findLeakedAnswers(questions) {
+  return questions.filter((q) => carriesAnswer(q.question, questions));
+}
+
+/**
+ * True when `text` carries any of the questions' correct answers, inline code
+ * aside (see findLeakedAnswers). Also used on the context summary, which the
+ * student's report shows as the Instructor Note.
+ */
+export function carriesAnswer(text, questions) {
+  const textNorm = normaliseForMatch(text.replace(/`[^`]*`/g, ' '));
+  return questions.some((q) => answerLeaksInto(textNorm, q.answer));
+}
+
+/**
+ * Bolds a question's text around its inline code spans, so identifiers render
+ * in code style only, and drops any bold the model added itself:
+ *
+ *   What does `x` return when `y` is null?
+ *   → **What does** `x` **return when** `y` **is null?**
+ */
+function boldStem(text) {
+  return text
+    .split(/(`[^`]+`)/)
+    .map((part) => {
+      if (/^`[^`]+`$/.test(part)) return part;
+      const plain = part.replace(/\*\*/g, '');
+      const trimmed = plain.trim();
+      if (!trimmed) return plain;
+      const leading = plain.match(/^\s*/)[0];
+      const trailing = plain.match(/\s*$/)[0];
+      return `${leading}**${trimmed}**${trailing}`;
+    })
+    .join('');
+}
+
+/**
+ * A code fence one backtick longer than any fence-like run at the start of a
+ * line of the code, so a snippet of Markdown cannot close it early.
+ */
+function fenceFor(code) {
+  const runs = code.match(/^[ \t]*`{3,}/gm) ?? [];
+  const longest = Math.max(0, ...runs.map((run) => run.trim().length));
+  return '`'.repeat(Math.max(3, longest + 1));
+}
+
+/**
+ * Renders numbered questions (see numberQuestions) as Markdown, one block per
+ * question, separated by `---`.
+ *
+ * `view` selects what each block carries below its question:
+ *   - 'instructor' — the answer and distractors, inside the
+ *     <!-- gmc:answer --> container generate-lms-quiz.yml reads positionally:
+ *     first bullet the answer, the rest distractors. The headings are kept as
+ *     its fallback, and for the instructor reading the file.
+ *   - 'answers'    — the correct answer alone (include_answers).
+ *   - 'student'    — nothing.
+ *
+ * Broader questions follow the rest under a `## Broader Questions` heading,
+ * which sits inside the first broader question's block.
+ */
+export function renderQuestions(questions, { view }) {
+  let broaderShown = false;
+  const blocks = questions.map((q) => {
+    const lines = [];
+    if (q.broader && !broaderShown) {
+      lines.push('## Broader Questions', '');
+      broaderShown = true;
+    }
+    for (const { file, language, code } of q.snippets) {
+      const fence = fenceFor(code);
+      if (file) lines.push(`**\`${file}\`**`, '');
+      lines.push(`${fence}${language}`, code, fence, '');
+    }
+    lines.push(`${q.number}. ${boldStem(q.question)}`);
+    if (view === 'instructor') {
+      lines.push('', '   <!-- gmc:answer -->', '   **Answer:**', `   - ${q.answer}`);
+      if (q.distractors.length > 0) {
+        lines.push(
+          '',
+          '   **Distractors for Multiple-Choice Quiz:**',
+          ...q.distractors.map((d) => `   - ${d}`),
+        );
+      }
+      lines.push('   <!-- /gmc:answer -->');
+    } else if (view === 'answers') {
+      lines.push('', '   **Answer:**', `   - ${q.answer}`);
+    }
+    return lines.join('\n');
   });
-  return blocks.map((block) => block.join('\n'));
-}
-
-/**
- * Counts the answer structures in a block that stripAnswers can reliably
- * remove, taking whichever of the two forms is more numerous:
- *   - the **Answer:** heading, which pass 1 keys on; or
- *   - a complete <!-- gmc:answer --> … <!-- /gmc:answer --> container, which
- *     pass 0 strips as a unit even when the heading inside is malformed or
- *     absent — matched by the very regex pass 0 uses, so the two cannot
- *     disagree. A lone opening marker is not stripped by pass 0, so it does
- *     not count.
- */
-function countAnswerStructures(block) {
-  const headings = block.match(/\*\*Answer:\*\*/g)?.length ?? 0;
-  const containers = block.match(ANSWER_REGION_RE)?.length ?? 0;
-  return Math.max(headings, containers);
-}
-
-// An answer heading, distractor heading or answer marker starting a line. Any
-// of these left in a block after stripAnswers means some answer escaped it —
-// typically one an unbalanced fence hid inside what looked like code, where
-// neither the stem count nor the leak check looks. Anchored to the start of a
-// line so a marker quoted inside a line of student code does not trip it.
-const ANSWER_RESIDUE_RE =
-  /^[ \t]*(?:<!--\s*\/?\s*gmc:answer\s*-->|\*\*(?:Answer|Distractors for Multiple-Choice Quiz):\*\*)/im;
-
-/**
- * Fail-closed student-facing view of the answer-bearing report. Each question
- * block is stripped on its own, and withheld when either guard trips:
- *
- *   1. Structural: the block has more question stems than answer structures,
- *      so at least one question's answer is in a form stripAnswers does not
- *      remove (covers answers the model was injected into emitting inline, or
- *      in a fenced block, with no **Answer:** heading). Counted rather than
- *      merely present, so a drifted question cannot ride through on a
- *      well-formed neighbour when a missing separator or an unclosed fence
- *      puts both in one block.
- *      It also trips when an answer heading, distractor heading or answer
- *      marker is still there after stripping — which happens when an
- *      unbalanced fence hides an answer inside what looks like code, beyond
- *      reach of both the stem count and stripAnswers. repairOrphanFences
- *      mends the common case upstream; this catches whatever it could not.
- *   2. Leak: any question's correct-answer text still appears in the stripped
- *      block (covers answers echoed outside their container alongside a normal
- *      answer block).
- *
- * Returns the surviving questions plus a per-guard breakdown (`structural`,
- * `leak`) and the total `dropped`, so callers can report which guard fired.
- * Each counts questions withheld, not blocks — a withheld block takes every
- * question in it.
- */
-export function redactStudentQuestions(originalText) {
-  const correctAnswers = extractCorrectAnswers(originalText);
-  let structural = 0;
-  let leak = 0;
-  const kept = [];
-
-  for (const block of splitQuestionBlocks(originalText)) {
-    const stems = countQuestions(block);
-    if (stems > countAnswerStructures(block)) {
-      structural += stems;
-      continue;
-    }
-    const stripped = stripAnswers(block);
-    if (ANSWER_RESIDUE_RE.test(stripped)) {
-      structural += Math.max(stems, countAnswerStructures(block), 1);
-      continue;
-    }
-    const blockNorm = normaliseForMatch(stripCodeForLeakCheck(stripped));
-    if (correctAnswers.some((answer) => answerLeaksInto(blockNorm, answer))) {
-      leak += stems || 1;
-      continue;
-    }
-    kept.push(stripped.replace(/^\n+|\n+$/g, ''));
-  }
-
-  return { text: kept.join('\n\n---\n\n'), structural, leak, dropped: structural + leak };
-}
-
-/**
- * Normalises a path, or a filename header's text, for comparing one against
- * the other: forward slashes, no leading ./ or /, no trailing :line or
- * :start-end the model sometimes appends, and lower case, since the model does
- * not reliably preserve the capitalisation of a filename it copies.
- */
-function normalisePathForMatch(p) {
-  return p
-    .replace(/\\/g, '/')
-    .replace(/^\.?\//, '')
-    .replace(/:\d+(?:-\d+)?$/, '')
-    .toLowerCase();
-}
-
-/** The file names a question block's top-level bold headers point at. */
-function headerFilenames(block) {
-  const lines = block.split('\n');
-  const topLevel = topLevelFlags(lines);
-  return lines
-    .filter((line, i) => topLevel[i] && FILENAME_HEADER_RE.test(line.trim()))
-    .map((line) => line.trim().replace(/^\*\*`?|`?\*\*$/g, ''));
-}
-
-/**
- * Drops every question whose filename header names a file outside the
- * assessed set, then renumbers what is left.
- *
- * The model also sees material that is not being assessed — assignment
- * context, instructor context — and now and then writes a question about it,
- * or about a file name it invented. A header matches an assessed file when it
- * is that file's path or a trailing part of it (`app.py` for `src/app.py`),
- * compared case-insensitively. A question showing several files goes if any
- * one of them is unassessed. A question with no recognisable header is left to
- * the structural guard and kept here.
- *
- * `contextFiles` are the codebase context files: unchanged starter code and
- * earlier work. A question may show one of them beside the assessed code —
- * that is how it asks how the two fit together — so a context file's header is
- * allowed, but only in a question that also shows an assessed file. A question
- * showing context alone is about code that is not being assessed, and goes.
- *
- * Fails open: when every question would go, the text is returned unchanged
- * with `failedOpen` set. That outcome says more about a header format the
- * matcher does not recognise than about the questions, and an empty report
- * helps no one.
- *
- * Returns `{ text, dropped, unassessed, failedOpen }`, where `unassessed` is
- * the distinct header names that caused a drop.
- */
-export function dropQuestionsOnUnassessedFiles(text, assessedFiles, contextFiles = []) {
-  const matcher = (paths) => {
-    const normalised = paths.map(normalisePathForMatch);
-    return (name) => {
-      const n = normalisePathForMatch(name);
-      return normalised.some((p) => p === n || p.endsWith(`/${n}`));
-    };
-  };
-  const isAssessed = matcher(assessedFiles);
-  const isContext = matcher(contextFiles);
-  const offTargetHeaders = (headers) => {
-    const assessedShown = headers.some(isAssessed);
-    return headers.filter((h) => !isAssessed(h) && !(assessedShown && isContext(h)));
-  };
-
-  const blocks = splitQuestionBlocks(text);
-  const kept = [];
-  const unassessed = new Set();
-  let dropped = 0;
-  let total = 0;
-
-  for (const block of blocks) {
-    const stems = countQuestions(block);
-    total += stems;
-    const offTarget = stems > 0 ? offTargetHeaders(headerFilenames(block)) : [];
-    if (offTarget.length > 0) {
-      dropped += stems;
-      offTarget.forEach((h) => unassessed.add(h));
-      continue;
-    }
-    const trimmed = block.replace(/^\n+|\n+$/g, '');
-    if (trimmed) kept.push(trimmed);
-  }
-
-  if (dropped === 0) return { text, dropped: 0, unassessed: [], failedOpen: false };
-  if (dropped === total) {
-    return { text, dropped: 0, unassessed: [...unassessed], failedOpen: true };
-  }
-  return {
-    text: renumberQuestions(kept.join('\n\n---\n\n')),
-    dropped,
-    unassessed: [...unassessed],
-    failedOpen: false,
-  };
-}
-
-/**
- * Truncates AI output to at most `maxQuestions` numbered questions.
- *
- * If the model over-generates (e.g. produces more questions than were
- * requested because it hit the token limit), this finds the start of question
- * maxQuestions+1 and removes everything from that point onward. Only top-level
- * stems count: a numbered line inside student code or an answer region is not a
- * question, and must not cut the report off mid-question.
- */
-export function truncateToMaxQuestions(text, maxQuestions) {
-  const lines = text.split('\n');
-  const topLevel = topLevelFlags(lines);
-  const overflow = lines.findIndex(
-    (line, i) => topLevel[i] && line.match(QUESTION_STEM_RE)?.[1] === String(maxQuestions + 1),
-  );
-  if (overflow !== -1) {
-    core.warning(
-      `AI generated more than ${maxQuestions} questions — truncating to the requested count.`,
-    );
-    return lines.slice(0, overflow).join('\n').trimEnd();
-  }
-  return text;
+  return blocks.join('\n\n---\n\n');
 }

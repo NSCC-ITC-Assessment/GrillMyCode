@@ -72,15 +72,14 @@ This file is created or updated automatically each time GrillMyCode runs against
 
 The AI's reply exactly as it arrived, before GrillMyCode processed it into `questions.md`. It is written on every run, and it is a diagnostic record rather than something you need to read or import — **`questions.md` is the assessment**.
 
-It is worth opening when a student's `questions.md` looks wrong, because the processing steps are lossy and this file is the only place their input survives:
+The reply is a JSON object, shown in a code block: each question's code snippets, question, answer and distractors, which GrillMyCode then numbers, formats and lays out itself. It is worth opening when a student's `questions.md` looks wrong, because the processing steps are lossy and this file is the only place their input survives:
 
-- **Fewer questions than you asked for.** Questions the model generated beyond `num_questions` are cut, and questions whose answer block could not be read are withheld. Both are visible here.
-- **Formatting that came out strangely.** Question numbering is rewritten and bold and code spans are adjusted, so an oddity in `questions.md` may be a processing artefact rather than something the model produced.
-- **A missing or malformed instructor note.** The context summary is lifted out of the reply into the report header; this file shows what the model actually emitted for it.
+- **Fewer questions than you asked for.** Questions the model generated beyond `num_questions` are cut, questions with no question text or no answer are dropped, and so are questions about files that were not assessed. All of them are visible here.
+- **A missing or malformed instructor note.** The context summary is moved from the reply into the report header; this file shows what the model actually wrote for it.
 
 The header above the reply records how it was produced. **Stopped because** is the first thing to check when questions are missing: `length` means the model hit its output limit and the reply is incomplete, which is different from a model that simply wrote fewer questions. The header also shows token counts, how many attempts the request took, and the settings used — questions requested, temperature, and a short hash identifying the prompt version, so replies from different GrillMyCode releases can be told apart.
 
-Use GitHub's **Raw** view, or `git blame`, to see markers and whitespace as the model wrote them — the rendered Markdown view hides some of what makes this file useful. If you are reporting a problem with generated questions, the contents of this file is the single most useful thing to include.
+If you are reporting a problem with generated questions, the contents of this file is the single most useful thing to include.
 
 ### `{studentLogin}/{{ASSIGNMENT_NAME}}_{studentLogin}_quiz_{questionCount}.imscc`
 
