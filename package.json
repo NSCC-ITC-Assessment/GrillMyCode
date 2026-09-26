@@ -3,7 +3,7 @@
   "version": "0.13.0",
   "description": "Analyses code changes and uses AI to generate targeted comprehension questions for viva voce or written assessments.",
   "main": "src/main.js",
-  "packageManager": "pnpm@12.3.4",
+  "packageManager": "pnpm@12.6.0",
   "engines": {
     "node": ">=24"
   },
@@ -21,7 +21,7 @@
     "@actions/core": "^3.0.1",
     "@actions/github": "^9.1.1",
     "@actions/http-client": "^4.0.1",
-    "mammoth": "^1.12.2",
+    "mammoth": "^1.12.3",
     "md-to-pdf": "^5.2.5",
     "minimatch": "^10.2.6",
     "unpdf": "^1.8.1"
@@ -38,14 +38,14 @@
     "*.{json,yml,yaml,md}": "prettier --write"
   },
   "devDependencies": {
-    "@commitlint/cli": "^21.2.2",
-    "@commitlint/config-conventional": "^21.2.2",
+    "@commitlint/cli": "^21.2.3",
+    "@commitlint/config-conventional": "^21.2.3",
     "@eslint/js": "^10.0.1",
-    "eslint": "^10.10.0",
+    "eslint": "^10.11.0",
     "eslint-config-prettier": "^10.1.8",
     "husky": "^9.1.7",
     "lint-staged": "^17.5.1",
-    "prettier": "^3.9.6",
+    "prettier": "^3.9.9",
     "vitest": "^4.1.11"
   }
 }
