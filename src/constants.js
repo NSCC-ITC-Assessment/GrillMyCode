@@ -211,12 +211,21 @@ export const PROMPT_HASH_LENGTH = 12;
 export const EMPTY_ASSESSMENT_FILE_LIST_LIMIT = 20;
 
 /**
- * Maximum number of rows rendered in the job summary's assessed-files and
- * excluded-files tables. A whole excluded tree can run to hundreds of paths,
- * and a 1 MiB summary that GitHub refuses to display helps nobody; the full
- * list is always in the run log.
+ * Maximum number of rows rendered in the job summary's assessed-files table.
+ * A 1 MiB summary that GitHub refuses to display helps nobody; the full list
+ * is always in the run log.
  */
 export const SUMMARY_FILE_TABLE_LIMIT = 50;
+
+/**
+ * Maximum number of paths listed in each file list of the job summary's
+ * configuration table (excluded files, codebase context files). These lists are
+ * collapsed, so they can be far longer than a visible table, but a committed
+ * dependency tree can run to tens of thousands of paths; at this cap a list
+ * stays around 100 KB, well inside GitHub's 1 MiB summary limit. The full list
+ * is always in the run log.
+ */
+export const SUMMARY_FILE_LIST_LIMIT = 1000;
 
 /**
  * Length at which the assessment issue body is truncated. GitHub rejects issue

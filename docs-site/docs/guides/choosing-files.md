@@ -51,7 +51,7 @@ An override always wins, so anything you list here is assessed even if another r
 
 ## Checking what was assessed
 
-The top of every assessment issue lists the files that were assessed, under **Code Files Assessed**. If a file you expected isn't there, it was left out. The run's log shows which rule removed it; see [File filtering](../reference/exclude-patterns.md#confirming-what-was-applied).
+The top of every assessment issue lists the files that were assessed, under **Code Files Assessed**. If a file you expected isn't there, it was left out. The run's summary page lists every file that was left out, grouped by the rule that removed it; see [File filtering](../reference/exclude-patterns.md#confirming-what-was-applied).
 
 ---
 
