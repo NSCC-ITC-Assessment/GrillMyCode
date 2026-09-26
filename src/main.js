@@ -14,10 +14,11 @@
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { minimatch } from 'minimatch';
+import { Minimatch } from 'minimatch';
 import {
   AI_TOP_P,
   EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
+  SUMMARY_FILE_LIST_LIMIT,
   SUMMARY_FILE_TABLE_LIMIT,
   GIT_EMPTY_TREE_SHA,
   GIT_SHA_SHORT_LENGTH,
@@ -137,6 +138,9 @@ function createRunState() {
     fileStats: [],
     excludePatterns: [],
     excludePatternOverrides: [],
+    // Changed files the exclude patterns removed, each with the first pattern
+    // that matched it: [{ filepath, pattern }].
+    excludedFiles: [],
     assignmentContextFiles: [],
     // Assessed files that existed before the range, sent with the student's
     // lines marked (see buildAssessedCodeContent).
@@ -220,10 +224,64 @@ function overflowNote(total, shown) {
   return remainder > 0 ? `\n_…and ${fmtNum(remainder)} more — full list in the run log._\n` : '';
 }
 
-/** Returns the first exclude pattern that removed a path, for the why column. */
-function matchingPattern(filepath, excludePatterns) {
+/**
+ * Pairs each changed file the filter removed with the first exclude pattern
+ * that matched it. The patterns are compiled once: a committed dependency tree
+ * can run to thousands of paths against a hundred or more patterns.
+ */
+function findExcludedFiles(allFiles, assessedFiles, excludePatterns) {
   const opts = { dot: true, matchBase: true };
-  return excludePatterns.find((p) => minimatch(filepath, p, opts)) ?? '';
+  const matchers = excludePatterns.map((p) => new Minimatch(p, opts));
+  const assessed = new Set(assessedFiles);
+  return allFiles
+    .filter((f) => !assessed.has(f))
+    .map((filepath) => ({
+      filepath,
+      pattern: matchers.find((m) => m.match(filepath))?.pattern ?? '',
+    }));
+}
+
+/**
+ * Renders a path or pattern as a code span that is safe inside a table cell:
+ * an unescaped pipe would split the cell.
+ */
+const cellCode = (text) => refCode(text).replace(/\|/g, '\\|');
+
+/**
+ * Renders labelled lists of paths as collapsed <details> blocks for a table
+ * cell. A newline would end the table row, so everything stays on one line and
+ * paths are separated with <br>. At most SUMMARY_FILE_LIST_LIMIT paths are
+ * listed across all groups, shared out smallest group first so a large group
+ * (a committed node_modules) cannot crowd out a small one (the one README that
+ * explains a missing file); the rest are counted.
+ */
+function fileListCell(groups) {
+  const nonEmpty = groups.filter((g) => g.files.length > 0);
+  const quota = new Map();
+  let budget = SUMMARY_FILE_LIST_LIMIT;
+  [...nonEmpty]
+    .sort((a, b) => a.files.length - b.files.length)
+    .forEach((g, idx, sorted) => {
+      const share = Math.min(g.files.length, Math.floor(budget / (sorted.length - idx)));
+      quota.set(g, share);
+      budget -= share;
+    });
+
+  return nonEmpty
+    .map((g) => {
+      const { label, files } = g;
+      const shown = files.slice(0, quota.get(g));
+      const remainder = files.length - shown.length;
+      const lines = shown.map(cellCode);
+      if (remainder > 0) {
+        lines.push(`_…and ${fmtNum(remainder)} more — full list in the run log_`);
+      }
+      return (
+        `<details><summary>${label} (${fmtNum(files.length)})</summary>` +
+        `${lines.join('<br>')}</details>`
+      );
+    })
+    .join('');
 }
 
 function renderHeadline(state) {
@@ -317,28 +375,6 @@ function renderAssessedFiles(state) {
   );
 }
 
-function renderExcludedFiles(state) {
-  const excluded = state.allFiles.filter((f) => !state.files.includes(f));
-  if (excluded.length === 0) return '';
-
-  const shown = excluded.slice(0, SUMMARY_FILE_TABLE_LIMIT);
-  const rows = shown.map((f) => {
-    const pattern = matchingPattern(f, state.excludePatterns);
-    return [`\`${f}\``, pattern ? `\`${pattern}\`` : '—'];
-  });
-
-  const body =
-    table(['File', 'Excluded by'], rows) +
-    overflowNote(excluded.length, shown.length) +
-    `\nRe-include any of these with \`exclude_pattern_overrides\` — pass the exact path ` +
-    `(e.g. \`${excluded[0]}\`) or the pattern that matched it.\n`;
-
-  return details(
-    `Excluded from assessment (${fmtNum(excluded.length)} of ${fmtNum(state.allFiles.length)} changed files)`,
-    body,
-  );
-}
-
 /**
  * The configuration block doubles as the run's provenance record: it shows the
  * settings the run actually used, rendered, rather than leaving them to be
@@ -385,6 +421,10 @@ function renderConfiguration(state) {
           ? `, ${fmtNum(state.excludePatternOverrides.length)} re-included by \`exclude_pattern_overrides\``
           : ''),
     ],
+    // Only once filtering has run: a run that failed before it has no answer.
+    ...(state.allFiles.length > 0 && state.excludePatterns.length > 0
+      ? [['Excluded files', renderExcludedFilesSetting(state)]]
+      : []),
     [
       'Assignment context',
       state.assignmentContextFiles.length > 0
@@ -394,12 +434,48 @@ function renderConfiguration(state) {
     ['Codebase context', renderCodebaseContextSetting(state)],
   ];
 
-  const note = i.includeAnswers
-    ? `\n⚠️ **\`include_answers\` is enabled — the student report contains the answers.** ` +
-      `This defeats the assessment; it should be \`false\` in almost all cases.\n`
-    : '';
+  let note = '';
+  if (state.excludedFiles.length > 0) {
+    note +=
+      `\nRe-include an excluded file with \`exclude_pattern_overrides\` — pass the exact path ` +
+      `(e.g. ${refCode(state.excludedFiles[0].filepath)}) or the pattern that matched it.\n`;
+  }
+  if (i.includeAnswers) {
+    note +=
+      `\n⚠️ **\`include_answers\` is enabled — the student report contains the answers.** ` +
+      `This defeats the assessment; it should be \`false\` in almost all cases.\n`;
+  }
 
   return details('Configuration used by this run', table(['Setting', 'Value'], rows) + note);
+}
+
+/**
+ * The excluded-files row: every changed file the exclude patterns removed,
+ * grouped under the pattern that matched it, largest group first. A student
+ * asking why a file was not assessed finds the answer and the pattern to
+ * override in one place.
+ */
+function renderExcludedFilesSetting(state) {
+  const excluded = state.excludedFiles;
+  if (excluded.length === 0) return 'none';
+
+  const byPattern = new Map();
+  for (const { filepath, pattern } of excluded) {
+    if (!byPattern.has(pattern)) byPattern.set(pattern, []);
+    byPattern.get(pattern).push(filepath);
+  }
+  const groups = [...byPattern]
+    .sort(([pa, a], [pb, b]) => b.length - a.length || pa.localeCompare(pb))
+    .map(([pattern, files]) => ({
+      label: pattern ? cellCode(pattern) : 'no pattern recorded',
+      files: [...files].sort(),
+    }));
+
+  return (
+    `${fmtNum(excluded.length)} of ${fmtNum(state.allFiles.length)} changed files, ` +
+    `by the pattern that matched:` +
+    fileListCell(groups)
+  );
 }
 
 /** The include_codebase_context row of the configuration table. */
@@ -414,7 +490,12 @@ function renderCodebaseContextSetting(state) {
     `${fmtNum(state.codebaseContextChars)} chars` +
     (state.codebaseContextOmitted.length > 0
       ? `, ${fmtNum(state.codebaseContextOmitted.length)} left out for size`
-      : '')
+      : '') +
+    fileListCell([
+      { label: 'Starter code', files: state.codebaseStarterFiles },
+      { label: 'Earlier work', files: state.codebaseEarlierFiles },
+      { label: 'Left out for size', files: state.codebaseContextOmitted },
+    ])
   );
 }
 
@@ -516,7 +597,6 @@ async function writeRunSummary(state) {
       banner,
       renderOverview(state),
       renderAssessedFiles(state),
-      renderExcludedFiles(state),
       renderDelivery(state),
       renderConfiguration(state),
       renderNotes(state),
@@ -865,6 +945,13 @@ async function run() {
     state.files = files;
     state.excludePatterns = excludePatterns;
     state.excludePatternOverrides = inputs.excludePatternOverrides;
+    state.excludedFiles = findExcludedFiles(allFiles, files, excludePatterns);
+    if (state.excludedFiles.length > 0) {
+      core.info(
+        `Excluded ${state.excludedFiles.length} file(s):\n` +
+          state.excludedFiles.map((e) => `  ${e.filepath}  (${e.pattern})`).join('\n'),
+      );
+    }
 
     if (files.length === 0) {
       // Two distinct failures reach this point and they need different fixes,
