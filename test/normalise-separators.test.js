@@ -110,6 +110,40 @@ describe('normaliseSeparators', () => {
     expect(normaliseSeparators(input)).toBe(input);
   });
 
+  // A question with no header or snippet — typical under a Broader Questions
+  // heading — has only its stem to show where it starts.
+  const bare = (n) => question(n).split('\n').slice(6).join('\n');
+
+  it('restores a separator before a question with no header or snippet', () => {
+    const out = normaliseSeparators(`${question(1)}\n\n${bare(2)}`);
+    expect(out).toBe(`${question(1)}\n\n---\n\n${bare(2)}`);
+  });
+
+  it.each(['## Broader Questions', '**## Broader Questions**'])(
+    'moves a %j heading below the restored separator',
+    (heading) => {
+      const out = normaliseSeparators(`${question(1)}\n\n${heading}\n\n${bare(2)}`);
+      expect(out).toBe(`${question(1)}\n\n---\n\n${heading}\n\n${bare(2)}`);
+    },
+  );
+
+  it('moves a heading above a filename header below the restored separator', () => {
+    const out = normaliseSeparators(`${question(1)}\n\n## Broader Questions\n\n${question(2)}`);
+    expect(out).toBe(`${question(1)}\n\n---\n\n## Broader Questions\n\n${question(2)}`);
+  });
+
+  it('leaves a heading after a separator where it is', () => {
+    const input = `${question(1)}\n\n---\n\n## Broader Questions\n\n${bare(2)}`;
+    expect(normaliseSeparators(input)).toBe(input);
+  });
+
+  // Without a closed container nothing marks where the question before ended,
+  // and a numbered line could still belong to it.
+  it('does not split on a stem when no answer container has closed', () => {
+    const input = `${bare(1).replace(/ *<!-- \/?gmc:answer -->\n?/g, '')}\n\n${bare(2)}`;
+    expect(normaliseSeparators(input)).toBe(input);
+  });
+
   // The reason this runs before the student view is cut: with the separator
   // restored, a drifted question sits in a block of its own and is withheld
   // alone, rather than taking its well-formed neighbour down with it.

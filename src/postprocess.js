@@ -62,6 +62,9 @@ const SEPARATOR_RE = /^-{3,}$/;
 // stray indentation or trailing whitespace — that generate-lms-quiz.yml, which
 // splits on an exact `\n---\n`, does not recognise.
 const SEPARATOR_VARIANT_RE = /^[ \t]*-{3,}[ \t]*$/;
+// A Markdown heading, bold-wrapped or not: `## Broader Questions` or
+// `**## Broader Questions**`.
+const MARKDOWN_HEADING_RE = /^[ \t]*(?:\*\*)?#{1,6}\s/;
 
 /**
  * Restores a --- separator the model left out between two questions, by
@@ -79,6 +82,17 @@ const SEPARATOR_VARIANT_RE = /^[ \t]*-{3,}[ \t]*$/;
  * stem, and splitting between them would cut the first file's snippet away
  * from the question it belongs to. The same test keeps any text ahead of the
  * first question attached to it.
+ *
+ * A question can also arrive with no header or snippet at all — the model
+ * sometimes writes one that way, most often under a Broader Questions heading.
+ * With no header to key on, a stem is the only sign a new question began, so a
+ * separator is also inserted before a stem that follows a closed answer
+ * container. The closed container is what makes that safe: it marks the end
+ * of the question before, where a numbered line with no answer seen since the
+ * last stem could still be part of it. Output without containers gets no such
+ * repair. Either way, a Markdown heading sitting directly above the new
+ * question moves below the inserted separator, so it stays with the question
+ * it introduces instead of trailing the one before.
  *
  * A --- counts wherever the downstream splits would cut — everywhere outside
  * fenced code, including inside an answer container, so one the model placed
@@ -99,16 +113,30 @@ export function normaliseSeparators(text) {
     topLevel[i] && SEPARATOR_VARIANT_RE.test(line) ? '---' : line,
   );
   const out = [];
+  const insertSeparator = () => {
+    const carried = [];
+    while (out.length > 0 && (out.at(-1).trim() === '' || MARKDOWN_HEADING_RE.test(out.at(-1)))) {
+      carried.unshift(out.pop());
+    }
+    while (carried.length > 0 && carried[0].trim() === '') carried.shift();
+    out.push('', '---', '', ...carried);
+  };
   let stemSinceSeparator = false;
+  let answerClosedSinceStem = false;
   lines.forEach((line, i) => {
     if (outsideFence[i] && SEPARATOR_RE.test(line)) {
       stemSinceSeparator = false;
+      answerClosedSinceStem = false;
     } else if (topLevel[i] && QUESTION_STEM_RE.test(line)) {
+      if (stemSinceSeparator && answerClosedSinceStem) insertSeparator();
       stemSinceSeparator = true;
+      answerClosedSinceStem = false;
     } else if (topLevel[i] && stemSinceSeparator && FILENAME_HEADER_RE.test(line)) {
-      while (out.length > 0 && out.at(-1).trim() === '') out.pop();
-      out.push('', '---', '');
+      insertSeparator();
       stemSinceSeparator = false;
+      answerClosedSinceStem = false;
+    } else if (outsideFence[i] && stemSinceSeparator && ANSWER_CLOSE_RE.test(line)) {
+      answerClosedSinceStem = true;
     }
     out.push(line);
   });

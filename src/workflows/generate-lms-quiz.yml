@@ -85,13 +85,14 @@ jobs:
           function parseQuestions(content) {
             const blocks = content.split('\n---\n');
             const results = [];
-            let lastFilePath = null;
-            let lastSnippet = null;
-            let lastSnippetLang = null;
 
             for (const block of blocks) {
               let question = null, answer = null, filePath = null, snippetLang = null;
               const incorrect = [], snippetLines = [];
+              // The latest bold line above the stem. It is only a candidate for
+              // the filename until the line after it shows what it is — see the
+              // fence and stem branches below.
+              let pendingHeader = null;
               let inInc = false, inSnippet = false, inAnswer = false;
               // Bullets collected from inside the model's
               // <!-- gmc:answer --> … <!-- /gmc:answer --> container, in order.
@@ -142,16 +143,29 @@ jobs:
                 // for fence lines, so this only ever sees snippet body lines.
                 const fpMatch = !question && !inSnippet && stripped.match(/^\*\*`?(.+?)`?\*\*\s*$/);
                 if (fpMatch) {
-                  filePath = fpMatch[1];
+                  // A bold Markdown heading (**## Broader Questions**) is never
+                  // a filename, whatever follows it.
+                  pendingHeader = /^#{1,6}\s/.test(fpMatch[1]) ? null : fpMatch[1];
                 } else if (stripped.startsWith('```') && !question) {
                   if (!inSnippet) {
                     const fenceLang = stripped.slice(3).trim();
                     if (fenceLang) snippetLang = fenceLang;
+                    // A bold line directly above a snippet is that snippet's
+                    // filename header, even one with a space in it.
+                    if (pendingHeader) filePath = pendingHeader;
+                    pendingHeader = null;
                   }
                   inSnippet = !inSnippet;
                 } else if (inSnippet) {
                   snippetLines.push(line.trimEnd());
                 } else if (!question && line && /^\d+\. /.test(line)) {
+                  // A question with no snippet may still name its file. With no
+                  // snippet to confirm it, the bold line counts only if it is
+                  // shaped like a filename, so a heading such as
+                  // **Broader Questions** does not become one.
+                  if (!filePath && pendingHeader && /^[^\s`*]+\.[^\s`*]+$/.test(pendingHeader)) {
+                    filePath = pendingHeader;
+                  }
                   question = line.split('. ').slice(1).join('. ').trim().replace(/\*\*/g, '');
                 } else if (stripped === '**Answer:**' || stripped.startsWith('**Answer:** ')) {
                   inAnswer = true;
@@ -169,12 +183,11 @@ jobs:
                 }
               }
 
-              if (filePath) lastFilePath = filePath;
-              else filePath = lastFilePath;
-              if (snippetLang) lastSnippetLang = snippetLang;
-              else snippetLang = lastSnippetLang;
-              const finalSnippet = snippetLines.length ? snippetLines : (lastSnippet || []);
-              if (snippetLines.length) lastSnippet = snippetLines;
+              // Nothing carries over from the question before. A question the
+              // model wrote without a snippet — most often one under a Broader
+              // Questions heading — is shown without one, as it is in
+              // questions.md. Borrowing the previous question's file and code
+              // put an unrelated snippet above it.
 
               // Two bullets is the threshold for trusting the container: a lone
               // bullet cannot distinguish "the model wrote only a correct answer"
@@ -211,7 +224,7 @@ jobs:
                   seen.add(key);
                   return true;
                 });
-                results.push({ question, answer, incorrect: distinct, filePath, snippetLang, snippet: finalSnippet });
+                results.push({ question, answer, incorrect: distinct, filePath, snippetLang, snippet: snippetLines });
               }
             }
 
