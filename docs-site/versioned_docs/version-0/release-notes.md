@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.16.3 — 2026-09-26
+
+### What's Changed
+
+### Chores & Maintenance
+
+- update dependencies and package manager version
+
 ## v0.16.2 — 2026-09-26
 
 ### What's Changed
