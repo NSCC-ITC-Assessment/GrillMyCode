@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.16.1 — 2026-09-26
+
+### What's Changed
+
+### Bug Fixes
+
+- parse quiz questions that have no code snippet
+
 ## v0.16.0 — 2026-09-26
 
 ### What's Changed
