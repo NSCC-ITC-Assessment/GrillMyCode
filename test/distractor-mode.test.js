@@ -89,8 +89,11 @@ describe('buildPrompt distractor mode', () => {
     expect(prompt).toContain('ANTI-TRUNCATION RULE');
   });
 
+  // Measured as the gap rather than a ratio: the distractor rules are a fixed
+  // block, so text both modes share (the opening lists, say) should not move
+  // the result. The rules run to about 14,000 characters.
   it('is substantially shorter without the distractor rules', () => {
-    expect(systemPrompt(false).length).toBeLessThan(systemPrompt(true).length * 0.6);
+    expect(systemPrompt(true).length - systemPrompt(false).length).toBeGreaterThan(10000);
   });
 });
 
