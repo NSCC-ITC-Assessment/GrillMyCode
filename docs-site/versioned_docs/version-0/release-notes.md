@@ -5,6 +5,23 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.16.0 — 2026-09-26
+
+### What's Changed
+
+### Features
+
+- enhance assessment file exclusion details and summary reporting
+
+### Bug Fixes
+
+- update run summary messages to reflect assessment questions generation
+
+### Documentation
+
+- update Workflow Wizard icon and styles for improved presentation
+- add images and update documentation
+
 ## v0.15.1 — 2026-09-25
 
 ### What's Changed

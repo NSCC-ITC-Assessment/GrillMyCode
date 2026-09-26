@@ -227,9 +227,14 @@ Exclude patterns applied (94):
   **/.gitignore
   **/node_modules/**
   ...
+Excluded 2 file(s):
+  package-lock.json  (**/package-lock.json)
+  README.md  (**/*.md)
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 ```
 
 The `Scanned …` line reflects whichever manifest matched your stack — `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — and `Using gitignore templates:` lists the resolved templates accordingly (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`).
 
-If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded — the logged pattern list shows exactly which patterns are active so you can identify the culprit and decide whether to add an override.
+If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern.
+
+The run summary shows the same list in its **Configuration used by this run** table, under **Excluded files**: one collapsed group per pattern, largest first. Each list shows at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. The **Codebase context** row lists the files sent as context the same way.

@@ -165,12 +165,12 @@ Comments are stripped unless `keep_comments` is `'true'`. Binary files are skipp
 2. Then the rest, by how many folders separate them from the nearest assessed file.
 3. Ties by path, alphabetically.
 
-A file that would go over the limit is left out, and smaller files after it are still tried. Files left out are named in the run log and counted in the run summary. Context is sent on every run, so a large limit adds to the cost of each assessment.
+A file that would go over the limit is left out, and smaller files after it are still tried. Files left out are named in the run log and the run summary. Context is sent on every run, so a large limit adds to the cost of each assessment.
 
 ### Where it shows
 
 - **Report header:** **Codebase context**, with the number of files used.
-- **Run summary:** the configuration table shows the starter and earlier-work counts, the size, and how many files were left out.
+- **Run summary:** the **Codebase context** row of the configuration table shows the starter and earlier-work counts, the size, and how many files were left out, with a collapsed list of the files of each kind.
 - **Run log:** every file sent, by kind.
 
 ## When there is nothing to assess
