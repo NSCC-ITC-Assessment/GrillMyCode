@@ -51,7 +51,7 @@ import {
 import { detectExcludePatterns } from './stack-detection.js';
 import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
 import { callAI } from './ai.js';
-import { formatReport, formatRawOutput } from './report.js';
+import { formatReport, formatRawOutput, formatPrompt } from './report.js';
 import { postIssue } from './delivery/issue.js';
 import { applyRepoLabels } from './repo-labels.js';
 import {
@@ -820,6 +820,8 @@ async function run() {
           githubToken: '[REDACTED]',
           apiKey: inputs.apiKey ? '[REDACTED]' : '',
           instructorRepoToken: inputs.instructorRepoToken ? '[REDACTED]' : '',
+          // Undocumented; kept out of the student-visible log.
+          logPrompt: undefined,
         },
         null,
         2,
@@ -1444,6 +1446,22 @@ async function run() {
         },
         response: aiResponse,
       });
+      // Undocumented (log_prompt). Formatting failures are swallowed with the
+      // write's, so the input never surfaces in the student-visible log.
+      let promptCopy;
+      if (inputs.logPrompt) {
+        try {
+          promptCopy = formatPrompt({
+            messages,
+            baseSha,
+            headSha,
+            model: inputs.aiModel,
+            studentLogin: submitter,
+          });
+        } catch {
+          promptCopy = undefined;
+        }
+      }
       try {
         await deliverToInstructorRepo({
           octokit: instructorOctokit,
@@ -1454,6 +1472,7 @@ async function run() {
           content: instructorReport,
           headSha,
           rawOutput: rawOutputCopy,
+          prompt: promptCopy,
           submission,
         });
         state.instructorDelivery = 'delivered';

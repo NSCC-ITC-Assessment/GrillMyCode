@@ -255,3 +255,43 @@ export function formatRawOutput({
     rawOutput,
   ].join('\n');
 }
+
+/**
+ * Assembles the prompt copy filed by the undocumented log_prompt input: each
+ * chat message sent to the model, under its role, verbatim.
+ *
+ * Unlike the raw output, each message is fenced — the system message is long
+ * and full of Markdown that would otherwise render as this file's own
+ * structure. The fence is one backtick longer than the longest run inside the
+ * message, so the student's code and the prompt's own examples cannot close it
+ * early.
+ *
+ * @param {Array<{role: string, content: string}>} opts.messages - As sent to callAI
+ */
+export function formatPrompt({ messages, baseSha, headSha, model, studentLogin }) {
+  const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
+  const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
+  const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
+
+  const sections = messages.map(({ role, content }) => {
+    const text = String(content ?? '');
+    const longestRun = Math.max(0, ...(text.match(/`+/g) ?? []).map((run) => run.length));
+    const fence = '`'.repeat(Math.max(3, longestRun + 1));
+    return [`### ${role}`, '', `${fence}text`, text, fence].join('\n');
+  });
+
+  return [
+    '## GrillMyCode — AI Prompt',
+    '',
+    // A list, because GitHub joins consecutive quoted lines into one paragraph.
+    `> - **Generated:** ${date}`,
+    ...(studentLogin ? [`> - **Student:** \`${studentLogin}\``] : []),
+    `> - **Commits reviewed:** \`${shortBase}\` → \`${shortHead}\``,
+    `> - **Model:** \`${model}\``,
+    '',
+    '---',
+    '',
+    sections.join('\n\n'),
+    '',
+  ].join('\n');
+}

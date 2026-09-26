@@ -204,6 +204,8 @@ export async function readSubmissionHistory({ octokit, owner, instructorRepoName
  * both up front and after a conflict, where the conflict may well have been a
  * racing run committing the very same bytes. Returns true when a commit was
  * made, false when the write was skipped as unnecessary.
+ *
+ * With `quiet`, the retry warnings are not logged; the retries still happen.
  */
 async function writeFileWithRetry({
   octokit,
@@ -213,7 +215,9 @@ async function writeFileWithRetry({
   message,
   content,
   skipIfUnchanged = false,
+  quiet = false,
 }) {
+  const warn = quiet ? () => {} : core.warning;
   let { sha, content: current } = await fetchFile(octokit, owner, repo, path);
   if (skipIfUnchanged && current === content) return false;
 
@@ -234,7 +238,7 @@ async function writeFileWithRetry({
       if (isRateLimited(err)) {
         if (lastAttempt) throw err;
         const delay = rateLimitDelayMs(err);
-        core.warning(
+        warn(
           `Instructor repository write to ${owner}/${repo}/${path} was rate limited ` +
             `(${err.status}). Attempt ${attempt + 1}/${INSTRUCTOR_WRITE_MAX_ATTEMPTS}. ` +
             `Waiting ${delay}ms before retrying…`,
@@ -252,7 +256,7 @@ async function writeFileWithRetry({
           INSTRUCTOR_WRITE_BASE_DELAY_MS,
           INSTRUCTOR_WRITE_MAX_DELAY_MS,
         );
-        core.warning(
+        warn(
           `Instructor repository write to ${owner}/${repo}/${path} hit a concurrent-write ` +
             `conflict (${err.status}). Attempt ${attempt + 1}/${INSTRUCTOR_WRITE_MAX_ATTEMPTS}. ` +
             `Re-fetching the latest revision and retrying in ${delay}ms…`,
@@ -422,6 +426,9 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * @param {string}  params.headSha             - Head commit SHA (used in commit message).
  * @param {string} [params.rawOutput]          - Verbatim model reply, filed beside the
  *                                               assessment. Omitted means no raw copy.
+ * @param {string} [params.prompt]             - The prompt sent to the model (log_prompt),
+ *                                               filed beside the assessment without a word
+ *                                               in the log. Omitted means no prompt copy.
  * @param {object} [params.submission]         - Tag runs only: `{ history, entry }`, the
  *                                               record from readSubmissionHistory and this
  *                                               run's log row. Archives the questions.md
@@ -436,6 +443,7 @@ export async function deliverToInstructorRepo({
   content,
   headSha,
   rawOutput,
+  prompt,
   submission,
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
@@ -474,6 +482,26 @@ export async function deliverToInstructorRepo({
         `Could not write the raw AI output to ${owner}/${instructorRepoName}/${rawPath}: ` +
           `${err.message}. The assessment itself is still being written.`,
       );
+    }
+  }
+
+  // log_prompt is undocumented and the run log is visible to the student, so
+  // this write says nothing either way — not on success, not on a retry, not on
+  // failure. Ahead of questions.md for the same reasons as the raw output.
+  if (prompt) {
+    try {
+      await writeFileWithRetry({
+        octokit,
+        owner,
+        repo: instructorRepoName,
+        path: `${folder}/prompt.md`,
+        message: `chore: record AI prompt for ${label} at ${shortHead}`,
+        content: prompt,
+        skipIfUnchanged: true,
+        quiet: true,
+      });
+    } catch {
+      // Deliberately silent; see above.
     }
   }
 
