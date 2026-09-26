@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.16.2 — 2026-09-26
+
+### What's Changed
+
+### Chores & Maintenance
+
+- add internal logging
+
 ## v0.16.1 — 2026-09-26
 
 ### What's Changed
