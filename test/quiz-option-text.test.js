@@ -198,3 +198,62 @@ describe('parseQuestions after normaliseSeparators', () => {
     },
   );
 });
+
+// A question the model wrote without a snippet, most often under a Broader
+// Questions heading. It must show no code in the quiz, not the code of the
+// question before it, and a heading must never be taken for its filename.
+describe('parseQuestions for a question with no snippet', () => {
+  const withSnippet = block({
+    question: 'What is $stars?',
+    answer: '4',
+    distractors: ['3', '5', '0'],
+  });
+  const bare = (question, lead = '') =>
+    [
+      lead,
+      `41. **${question}**`,
+      '',
+      '   <!-- gmc:answer -->',
+      '   **Answer:**',
+      '   - right',
+      '',
+      '   **Distractors for Multiple-Choice Quiz:**',
+      '   - wrong a',
+      '   - wrong b',
+      '   - wrong c',
+      '   <!-- /gmc:answer -->',
+    ].join('\n');
+  const parseSecond = (lead) =>
+    parseQuestions(`${withSnippet}\n---\n${bare('What does the page print?', lead)}`)[1];
+
+  it.each([
+    ['no heading', ''],
+    ['a Markdown heading', '## Broader Questions\n'],
+    ['a bold Markdown heading', '**## Broader Questions**\n'],
+    ['a bold heading', '**Broader Questions**\n'],
+  ])('shows no file or code under %s', (_label, lead) => {
+    const q = parseSecond(lead);
+    expect(q.question).toBe('What does the page print?');
+    expect(q.filePath).toBeNull();
+    expect(q.snippet).toEqual([]);
+    expect(q.answer).toBe('right');
+    expect(q.incorrect).toHaveLength(3);
+  });
+
+  it('keeps a filename header that has no snippet under it', () => {
+    expect(parseSecond('**`index.php`**\n').filePath).toBe('index.php');
+  });
+
+  it('still reads a filename with a space when a snippet confirms it', () => {
+    const q = parseSecond('## Broader Questions\n\n**My Page.php**\n\n```php\necho 1;\n```\n');
+    expect(q.filePath).toBe('My Page.php');
+    expect(q.snippet).toEqual(['echo 1;']);
+    expect(q.snippetLang).toBe('php');
+  });
+
+  it('never takes a bold Markdown heading for the filename, even above a snippet', () => {
+    const q = parseSecond('**## Broader Questions**\n\n```php\necho 1;\n```\n');
+    expect(q.filePath).toBeNull();
+    expect(q.snippet).toEqual(['echo 1;']);
+  });
+});
