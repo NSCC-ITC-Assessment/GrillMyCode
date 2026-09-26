@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import clsx from 'clsx';
+import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 
 import StepTrigger from './steps/StepTrigger';
@@ -132,12 +133,13 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [cfg, setCfg] = useState(INITIAL_CONFIG);
+  const wizardIconUrl = useBaseUrl('/img/grillmycode-wizard.svg');
 
   if (!started) {
     return (
       <div className={styles.introPage}>
         <div className={styles.introCard}>
-          <div className={styles.introIcon} aria-hidden="true">🧙</div>
+          <img className={styles.introIcon} src={wizardIconUrl} alt="" />
           <h1 className={styles.introTitle}>Workflow Wizard</h1>
           <p className={styles.introLead}>
             Generate a ready-to-use GitHub Actions workflow for{' '}
