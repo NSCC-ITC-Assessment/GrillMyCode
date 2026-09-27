@@ -77,6 +77,16 @@ describe('buildPrompt question emphasis', () => {
     expect(system({})).not.toContain(rule);
   });
 
+  // Bare What let the model ask what a call does in general or read a variable off the snippet.
+  it('narrows What to an unseen input or change under research only', () => {
+    const rule = 'must name an input, change, or condition the code does not show';
+    expect(system({ questionEmphasis: 'research' })).toMatch(
+      new RegExp(`7\\. OPENING — .*${rule}`),
+    );
+    expect(system({ questionEmphasis: 'tracing' })).not.toContain(rule);
+    expect(system({})).not.toContain(rule);
+  });
+
   it('restricts tracing to execution types', () => {
     const prompt = system({ questionEmphasis: 'tracing' });
     expect(prompt).toContain('- EVERY question must be type 1, 2, 5, or 9 — ');
@@ -98,6 +108,9 @@ describe('buildPrompt question emphasis', () => {
     );
     expect(system({ questionEmphasis: 'research' })).toContain(
       'Draw on Why, How would … change if,',
+    );
+    expect(system({ questionEmphasis: 'research' })).toContain(
+      'In what order as well as What in the forms the OPENING check allows in this run.',
     );
   });
 

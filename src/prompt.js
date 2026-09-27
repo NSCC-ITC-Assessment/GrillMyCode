@@ -227,6 +227,9 @@ function buildEmphasisRules(questionEmphasis, numQuestions) {
 
 /** The question words the question-word rule tells the model to draw on. */
 function buildDrawOnWords(questionEmphasis) {
+  if (questionEmphasis === 'research') {
+    return `${listWith(EMPHASES.research.openings)} as well as What in the forms the OPENING check allows in this run`;
+  }
   const emphasis = EMPHASES[questionEmphasis];
   const words = emphasis
     ? emphasis.openings
@@ -255,6 +258,18 @@ function buildDrawOnWords(questionEmphasis) {
 function buildResearchReasoningStep(questionEmphasis) {
   if (questionEmphasis !== 'research') return '';
   return ' In this run the step must be looking up documented behaviour of the language or a library, or working out the effect of an input, change, or condition the code does not show. Reading a condition, literal, or branch that the snippets spell out is not a step: if a student could answer by reading the snippet aloud (the string a ternary returns, the bound an `if` checks, what a loop body does), rewrite the question.';
+}
+
+/**
+ * The sentence the OPENING check adds under research. Bare What let the model
+ * ask what a call or parameter does in general ("What does the second argument
+ * of `number_format()` do"), which is recall, or what a variable holds, which
+ * is read off the snippet. Under research a What question must carry an input,
+ * change, or condition the code does not show. Empty for every other emphasis.
+ */
+function buildResearchOpeningRule(questionEmphasis) {
+  if (questionEmphasis !== 'research') return '';
+  return ' In this run a What question, whether it opens with What or with a lead-in, must name an input, change, or condition the code does not show, as in "What happens when…", "What would … if…", or "What does … return when…". Never ask what a call, parameter, or variable does, holds, or is for in general: ask Why the code relies on it, or What happens when its input or argument changes.';
 }
 
 /**
@@ -685,7 +700,7 @@ ${answerabilityIntro}
 4. SELF-CONTAINED — Students answer with their whole repository open, so a question need not show all the code its answer depends on, but the student must be able to find that code or be given the value. When the answer depends on code outside the lines the question points at (where a variable or constant is set, a helper it calls, the data a loop walks), that code must be in the user message, and the question must name the function, variable, or file clearly enough for the student to find it, unless finding it is the step the question asks for. You may also show that code in a snippet of its own when that helps. When it depends on a value no code in the user message shows (an argument you choose, database contents, user input, a network response, file-system state, timing, or environment configuration), state that value in the question. Never add a snippet that shows the answer itself: a question asking where \`$cityId\` originates must not show the line that sets it.
 5. BEHAVIOUR, NOT OPINION — Ask what the code does. Never ask what is better, cleaner, more efficient, or recommended; never ask about the author's intent or alternatives they considered; never ask for a critique, improvement, or refactor.${opinionTypeSixNote}
 6. ONE THING — Ask exactly ONE thing. Do not join sub-questions with "and", "or", commas, or semicolons (e.g. "What does X do, and what does it return?"). If a concept has several facets, pick the single most testable one.
-7. OPENING — Begin with one of these, and no other opening: ${ALLOWED_OPENINGS.join(', ')}. Or begin with a lead-in clause that sets up the scenario, followed by one of those: ${ALLOWED_LEAD_INS.map((c) => `"${c}"`).join(', ')}. Never begin with any of these, even when it starts with an allowed word: ${BANNED_OPENINGS.join(', ')}. A "How" question must be tied to a concrete input, change, or condition and answered by a value, count, order, or single effect — never by an explanation of how something works.
+7. OPENING — Begin with one of these, and no other opening: ${ALLOWED_OPENINGS.join(', ')}. Or begin with a lead-in clause that sets up the scenario, followed by one of those: ${ALLOWED_LEAD_INS.map((c) => `"${c}"`).join(', ')}. Never begin with any of these, even when it starts with an allowed word: ${BANNED_OPENINGS.join(', ')}. A "How" question must be tied to a concrete input, change, or condition and answered by a value, count, order, or single effect — never by an explanation of how something works.${buildResearchOpeningRule(questionEmphasis)}
 8. NO GIVEAWAYS — The question must not reveal its answer: no leading phrasing ("Doesn't this…"), no emphasis on the answer's key term, and no framing that only one answer grammatically fits.
 9. FINAL TEST — ${answerabilityFinalTest}
 
