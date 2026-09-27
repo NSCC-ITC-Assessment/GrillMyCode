@@ -45,9 +45,12 @@ export const PROMPT_TEMPLATE_HASH = readdirSync(PROMPT_DIR)
  * all-or-nothing, and holds even where it costs question quality.
  *
  * research — types whose answer depends on how the language or a library
- *   behaves, or on an input, change or condition the code does not show:
- *   consequence of a change (3), path conditions (4), edge cases (7), causal
- *   why (8), order of execution (9), and language and API behaviour (10).
+ *   behaves, including how that behaviour responds to an input, change or
+ *   condition the code does not show: consequence of a change (3), path
+ *   conditions (4), edge cases (7), causal why (8), order of execution (9),
+ *   and language and API behaviour (10). A type 3 change here alters how the
+ *   code uses the language or a library, not its data (see
+ *   buildResearchReasoningStep).
  * tracing — types answered by executing the code in the head or following a
  *   value through it: trace (1), state at a point (2), data flow (5), and
  *   order of execution (9).
@@ -60,7 +63,7 @@ export const EMPHASES = {
   research: {
     types: [3, 4, 7, 8, 9, 10],
     description:
-      'types whose answer depends on how the language or a library behaves, or on an input, change, or condition the code does not show',
+      'types whose answer depends on how the language or a library behaves, including how that behaviour responds to an input, change, or condition the code does not show',
   },
   tracing: {
     types: [1, 2, 5, 9],
@@ -118,15 +121,21 @@ function buildEmphasisRules(questionEmphasis, numQuestions) {
 }
 
 /**
- * The sentence REASONING STEP adds under research. The research types include
+ * The sentences REASONING STEP adds under research. The research types include
  * path conditions and edge cases, which a model can satisfy by asking what a
  * ternary returns or which bound an `if` checks, answered by reading the
- * snippet aloud. Under research the step must be a lookup or the effect of
- * something the code does not show. Empty for every other emphasis.
+ * snippet aloud. Under research the step must be a lookup, alone or combined
+ * with an input, change, or condition the code does not show.
+ *
+ * Two looser forms passed the first version of this rule. Feeding a stated
+ * value past a bound the snippet shows ("what does the clamp do to -2") is the
+ * same reading with a number filled in. A type 3 edit to a data value or record
+ * ("if Sally's rating were 5, how many five-star entries") is answered by
+ * recounting, which is tracing. Empty for every other emphasis.
  */
 function buildResearchReasoningStep(questionEmphasis) {
   if (questionEmphasis !== 'research') return '';
-  return ' In this run the step must be looking up documented behaviour of the language or a library, or working out the effect of an input, change, or condition the code does not show. Reading a condition, literal, or branch that the snippets spell out is not a step: if a student could answer by reading the snippet aloud (the string a ternary returns, the bound an `if` checks, what a loop body does), rewrite the question.';
+  return ' In this run the step must be looking up documented behaviour of the language or a library: what a call, cast, operator, or language rule does here, or how that behaviour responds to an input, change, or condition the code does not show. Reading a condition, literal, or branch that the snippets spell out is not a step: if a student could answer by reading the snippet aloud (the string a ternary returns, the bound an `if` checks, what a loop body does), rewrite the question. Checking a stated input against such a condition is the same reading with a value filled in, so it is not a step either: what `if ($n < 0) { $n = 0; }` does to -2, which word a ternary picks for a count of one, or whether a strict `>` holds for equal values. A type 3 change must alter how the code uses the language or a library (an argument, flag, cast, operator, or comparison, or one call swapped for a related one), never a data value, record, or literal whose effect is found by recounting or re-adding: that is tracing.';
 }
 
 /**

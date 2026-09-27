@@ -78,6 +78,26 @@ describe('buildPrompt question emphasis', () => {
     expect(system({})).not.toContain(rule);
   });
 
+  // Feeding a value past a bound the snippet shows is the same reading.
+  it('rules out stated inputs checked against a visible condition under research only', () => {
+    const rule = 'Checking a stated input against such a condition';
+    expect(system({ questionEmphasis: 'research' })).toMatch(
+      new RegExp(`1\\. REASONING STEP — .*${rule}`),
+    );
+    expect(system({ questionEmphasis: 'tracing' })).not.toContain(rule);
+    expect(system({})).not.toContain(rule);
+  });
+
+  // Editing a data value and recounting is tracing, not research.
+  it('limits type 3 changes to language and library use under research only', () => {
+    const rule = 'A type 3 change must alter how the code uses the language or a library';
+    expect(system({ questionEmphasis: 'research' })).toMatch(
+      new RegExp(`1\\. REASONING STEP — .*${rule}.*never a data value, record, or literal`),
+    );
+    expect(system({ questionEmphasis: 'tracing' })).not.toContain(rule);
+    expect(system({})).not.toContain(rule);
+  });
+
   const openingCheck = (opts) => system(opts).match(/7\. OPENING — .*/)[0];
 
   // Bare What let the model ask what a call does in general or read a variable off the snippet.

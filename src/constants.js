@@ -424,8 +424,9 @@ export const DEFAULT_NUM_QUESTIONS = 20;
  *   balanced — no restriction; the question types and openings are mixed as
  *              usual.
  *   research — every question turns on how the language or a library behaves,
- *              or on an input, change or condition the code does not show
- *              (causal why, language and API behaviour, edge cases).
+ *              including how that behaviour responds to an input, change or
+ *              condition the code does not show (causal why, language and API
+ *              behaviour, edge cases).
  *   tracing  — every question is answered by executing the code in the head or
  *              following a value through it.
  * research and tracing are all-or-nothing: the model never relaxes them to
