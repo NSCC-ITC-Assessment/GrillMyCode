@@ -85,9 +85,12 @@ OpenRouter also has suffixes that select a *different* model entry rather than a
 
 ## Retries and rate limits
 
-A request is retried on `429` (rate limit), `500`, `502`, `503` and `504` responses, and on network failures, up to `ai_retry_max_attempts` attempts in total. The wait between attempts grows each time, and a `Retry-After` header on a `429` is honoured. No single wait is longer than 30 seconds.
+A request is retried on `429` (rate limit), `500`, `502`, `503` and `504` responses, and on network failures, up to `ai_retry_max_attempts` attempts in total. The wait between attempts grows each time, and a `Retry-After` header on a `429` is honoured. A `429` without that header waits at least 5 seconds, then up to 10, 20 and 30 seconds on later attempts. No single wait is longer than 30 seconds.
 
-Rate limits apply to the API key, so a whole class submitting at once shares one budget. Accounts with no credit are limited far more strictly than funded ones. If 429 errors persist, check the account's balance, raise `ai_retry_max_attempts`, or try a less busy model.
+A `429` comes from one of two limits:
+
+- **Your API key's limit.** It applies to the key, so a whole class submitting at once shares one budget. Accounts with no credit are limited far more strictly than funded ones. If these errors persist, check the account's balance, raise `ai_retry_max_attempts`, or try a less busy model.
+- **The model provider's limit.** The company serving the model can rate-limit OpenRouter itself, which affects every OpenRouter user of that model at once. OpenRouter marks this with `"limit_source":"upstream_provider_shared_pool"` in the error, and GrillMyCode then fails with `The model's upstream provider (…) is rate-limiting every OpenRouter user of this model, not just this API key`. Your balance makes no difference. Re-run the workflow later, remove a `:nitro` or `:floor` [routing variant](#model-routing-variants) so OpenRouter can try other providers, or choose another model.
 
 For the `404` "No endpoints available matching your guardrail restrictions and data policy" error, see [Troubleshooting](../troubleshooting.md).
 

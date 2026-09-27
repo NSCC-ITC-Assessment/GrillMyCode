@@ -452,6 +452,14 @@ export const DEFAULT_AI_RETRY_MAX_ATTEMPTS = 5;
 export const AI_RETRY_BASE_DELAY_MS = 1000;
 
 /**
+ * Minimum wait, and backoff base, in milliseconds for a 429 that carries no
+ * Retry-After header. A rate limit — above all an upstream provider's shared
+ * pool — outlasts a sub-second jittered retry, so each wait is a full-jitter
+ * value from min(maxDelay, base * 2^attempt), raised to at least this value.
+ */
+export const AI_RETRY_RATE_LIMIT_DELAY_MS = 5000;
+
+/**
  * Maximum delay cap in milliseconds applied to every AI retry wait, including
  * a 429's Retry-After value. Prevents runaway wait times on later retry attempts.
  */

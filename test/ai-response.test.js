@@ -243,7 +243,10 @@ describe('callAI Retry-After on a 429', () => {
     vi.unstubAllGlobals();
   });
 
-  /** Stubs fetch to return one 429 with the given Retry-After, then a success. */
+  /**
+   * Stubs fetch to return one 429, then a success. The 429 carries the given
+   * Retry-After, or no header when it is undefined.
+   */
   function rateLimitedThenOk(retryAfter) {
     const fetch = vi
       .fn()
@@ -251,7 +254,7 @@ describe('callAI Retry-After on a 429', () => {
         new Response('rate limited', {
           status: 429,
           statusText: 'Too Many Requests',
-          headers: { 'Retry-After': retryAfter },
+          headers: retryAfter === undefined ? {} : { 'Retry-After': retryAfter },
         }),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(ok), { status: 200 }));
@@ -296,6 +299,31 @@ describe('callAI Retry-After on a 429', () => {
     expect(core.warning).toHaveBeenCalledWith(
       expect.stringMatching(/in 30000ms \(Retry-After .*capped\)/),
     );
+  });
+
+  it('waits at least 5 seconds when there is no Retry-After', async () => {
+    // Math.random() of 0 would make the plain backoff retry immediately.
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const fetch = rateLimitedThenOk(undefined);
+    const { result, calls } = start(fetch);
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(calls()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calls()).toBe(2);
+    expect((await result).content).toBe('1. Question?');
+    vi.restoreAllMocks();
+  });
+
+  it('waits at least 5 seconds for a 429 error body on a 200', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const fetch = respondWith({ error: { code: 429, message: 'rate limited upstream' } }, ok);
+    const { result, calls } = start(fetch);
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(calls()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calls()).toBe(2);
+    expect((await result).content).toBe('1. Question?');
+    vi.restoreAllMocks();
   });
 });
 
@@ -372,5 +400,74 @@ describe('callAI response format and parsing', () => {
     const parse = vi.fn(() => 'ok');
     await run(1, { parse });
     expect(parse).toHaveBeenCalledWith('good', { finishReason: 'length' });
+  });
+});
+
+describe('callAI final HTTP error message', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(core.warning).mockClear();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const upstreamBody = JSON.stringify({
+    error: {
+      message: 'Provider returned error',
+      code: 429,
+      metadata: {
+        provider_name: 'ExampleHost',
+        is_byok: false,
+        limit_source: 'upstream_provider_shared_pool',
+      },
+    },
+  });
+
+  /** Stubs fetch to return the same error response on every attempt. */
+  function alwaysFail(status, body, init = {}) {
+    const fetch = vi.fn(async () => new Response(body, { status, ...init }));
+    vi.stubGlobal('fetch', fetch);
+    return fetch;
+  }
+
+  it('explains an upstream shared-pool rate limit', async () => {
+    alwaysFail(429, upstreamBody);
+    const { error } = await run(2);
+    expect(error.message).toMatch(
+      /^AI API error 429: The model's upstream provider \(ExampleHost\)/,
+    );
+    expect(error.message).toMatch(/not just this API key/);
+    expect(error.message).toMatch(/openrouter#retries-and-rate-limits/);
+    expect(error.message).toMatch(/Response: \{"error"/);
+  });
+
+  it('explains an upstream rate limit sent as a 200 error body', async () => {
+    respondWith(JSON.parse(upstreamBody), JSON.parse(upstreamBody));
+    const { error } = await run(2);
+    expect(error.message).toMatch(/429: Provider returned error/);
+    expect(error.message).toMatch(/upstream provider \(ExampleHost\)/);
+  });
+
+  it('leaves a 429 on the API key itself unexplained', async () => {
+    alwaysFail(429, JSON.stringify({ error: { message: 'Rate limit exceeded', code: 429 } }));
+    const { error } = await run(1);
+    expect(error.message).toBe(
+      'AI API error 429: {"error":{"message":"Rate limit exceeded","code":429}}',
+    );
+  });
+
+  it('omits the empty status text HTTP/2 sends', async () => {
+    alwaysFail(503, 'busy');
+    const { error } = await run(2);
+    expect(error.message).toBe('AI API error 503: busy');
+    expect(core.warning).toHaveBeenCalledWith(expect.stringMatching(/^AI request returned 503\. /));
+  });
+
+  it('keeps a status text when one is sent', async () => {
+    alwaysFail(503, 'busy', { statusText: 'Service Unavailable' });
+    const { error } = await run(1);
+    expect(error.message).toBe('AI API error 503 Service Unavailable: busy');
   });
 });

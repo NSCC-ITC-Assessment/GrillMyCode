@@ -63,11 +63,12 @@ Then re-run the workflow. If it still fails, the model ID may be wrong or retire
 
 ### Runs fail with rate-limit errors (429)
 
-OpenRouter's rate limits apply to the API key, so a whole class pushing at once shares one budget. GrillMyCode already retries, but if runs still fail:
+GrillMyCode already waits and retries, so a run that still fails hit a limit that lasted longer than its retries. Check the error message for the cause:
 
-- Check the OpenRouter account has credit. Accounts with no credit are limited far more strictly.
-- Raise `ai_retry_max_attempts` so waits last longer.
-- Try a less busy model; see [Choosing a model and managing cost](guides/choosing-a-model.md).
+- **`The model's upstream provider (…) is rate-limiting every OpenRouter user of this model`**: the company serving the model is busy for everyone, not just you. Re-run later, remove a `:nitro` or `:floor` ending from `ai_model`, or try another model.
+- **Any other 429**: your key's limit, which a whole class pushing at once shares. Check the OpenRouter account has credit, because accounts with no credit are limited far more strictly. Then raise `ai_retry_max_attempts` or try a less busy model; see [Choosing a model and managing cost](guides/choosing-a-model.md).
+
+For how the two limits differ, see [Retries and rate limits](ai-providers/openrouter.md#retries-and-rate-limits).
 
 ### The run failed with `AI reply could not be used`
 
