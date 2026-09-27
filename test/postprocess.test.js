@@ -412,23 +412,27 @@ describe('renderQuestions', () => {
   it('renders the instructor view with answers and distractors', () => {
     expect(renderQuestions(parsed(raw(1), raw(2)), { view: 'instructor' })).toBe(
       [
+        '**Question 1:**',
+        '',
         '**`app.js`**, line 1',
         '',
         '```js',
         'const total1 = items.length;',
         '```',
         '',
-        '1. **What does** `total1` **hold after this line runs?**',
+        '**What does** `total1` **hold after this line runs?**',
         '',
-        '   **Answer:**',
-        '   - It holds the number of entries in the items array for question 1',
+        '**Answer:**',
+        '- It holds the number of entries in the items array for question 1',
         '',
-        '   **Distractors for Multiple-Choice Quiz:**',
-        '   - wrong 1a',
-        '   - wrong 1b',
-        '   - wrong 1c',
+        '**Distractors for Multiple-Choice Quiz:**',
+        '- wrong 1a',
+        '- wrong 1b',
+        '- wrong 1c',
         '',
         '---',
+        '',
+        '**Question 2:**',
         '',
         '**`app.js`**, line 2',
         '',
@@ -436,15 +440,15 @@ describe('renderQuestions', () => {
         'const total2 = items.length;',
         '```',
         '',
-        '2. **What does** `total2` **hold after this line runs?**',
+        '**What does** `total2` **hold after this line runs?**',
         '',
-        '   **Answer:**',
-        '   - It holds the number of entries in the items array for question 2',
+        '**Answer:**',
+        '- It holds the number of entries in the items array for question 2',
         '',
-        '   **Distractors for Multiple-Choice Quiz:**',
-        '   - wrong 2a',
-        '   - wrong 2b',
-        '   - wrong 2c',
+        '**Distractors for Multiple-Choice Quiz:**',
+        '- wrong 2a',
+        '- wrong 2b',
+        '- wrong 2c',
       ].join('\n'),
     );
   });
@@ -457,13 +461,13 @@ describe('renderQuestions', () => {
 
   it('renders the answer alone for include_answers', () => {
     const out = renderQuestions(parsed(raw(1)), { view: 'answers' });
-    expect(out).toContain('   **Answer:**\n   - It holds the number of entries');
+    expect(out).toContain('**Answer:**\n- It holds the number of entries');
     expect(out).not.toMatch(/wrong|Distractors|gmc:answer/);
   });
 
   it('renders no answer content in the student view', () => {
     const out = renderQuestions(parsed(raw(1)), { view: 'student' });
-    expect(out).toMatch(/1\. \*\*What does\*\* `total1`/);
+    expect(out).toContain('**What does** `total1`');
     expect(out).not.toMatch(/Answer|entries in the items|wrong|gmc:answer/);
   });
 
@@ -490,14 +494,16 @@ describe('renderQuestions', () => {
       [makefile],
     ).questions;
     const out = renderQuestions(numberQuestions([q]), { view: 'student' });
-    expect(out.startsWith('**`Makefile`**, line 1\n\n```\nall: build\n```\n\n1. ')).toBe(true);
+    expect(
+      out.startsWith('**Question 1:**\n\n**`Makefile`**, line 1\n\n```\nall: build\n```\n\n**'),
+    ).toBe(true);
   });
 
   it('drops bold the model added to the question and bolds around code', () => {
     const out = renderQuestions(parsed(raw(1, { question: 'Why is **`a ** b`** used?' })), {
       view: 'student',
     });
-    expect(out).toContain('1. **Why is** `a ** b` **used?**');
+    expect(out).toContain('\n**Why is** `a ** b` **used?**');
   });
 
   it('puts one Broader Questions heading above the first broader question', () => {
@@ -518,14 +524,15 @@ describe('renderQuestions', () => {
       true,
       false,
     ]);
-    expect(blocks[1]).toContain('2. **What does** `total1`');
+    expect(blocks[1]).toMatch(/^## Broader Questions\n\n\*\*Question 2:\*\*\n/);
+    expect(blocks[1]).toContain('**What does** `total1`');
   });
 
   it('keeps the numbers it was given, gaps included', () => {
     const [first, , third] = parsed(raw(1), raw(2), raw(3));
     const out = renderQuestions([first, third], { view: 'student' });
-    expect(out).toMatch(/^1\. /m);
-    expect(out).toMatch(/^3\. /m);
-    expect(out).not.toMatch(/^2\. /m);
+    expect(out).toContain('**Question 1:**');
+    expect(out).toContain('**Question 3:**');
+    expect(out).not.toContain('**Question 2:**');
   });
 });
