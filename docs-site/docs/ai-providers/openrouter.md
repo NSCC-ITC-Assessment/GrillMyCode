@@ -32,6 +32,7 @@ These have been tested with GrillMyCode and cost from **less than one cent to a 
 | Model | `ai_model` | Good to know |
 |---|---|---|
 | Google Gemini 3.5 Flash Lite (default) | `google/gemini-3.5-flash-lite` | Fast and cheap, with the best multiple-choice distractors of those tested, which is why it is the default |
+| OpenAI GPT-5.6 Luna | `openai/gpt-5.6-luna` | OpenAI's low-cost model |
 | DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | Very cheap, and a reliable alternative |
 | Minimax M2.7 | `minimax/minimax-m2.7` | Very cheap, and does well with little tuning |
 | StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` | Good quality for the price |
