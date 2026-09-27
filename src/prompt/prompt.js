@@ -58,17 +58,48 @@ export const PROMPT_TEMPLATE_HASH = readdirSync(PROMPT_DIR)
  * Order of execution sits in both: it can rest on runtime rules (the event
  * loop, middleware) or on a plain trace. Each mode's sentence starters are in
  * QUESTION_OPENINGS.
+ *
+ * `shortAnswer` is the mode's wording of the short-answer guidance, naming only
+ * its own types (see BALANCED_SHORT_ANSWER). A research run whose short-answer
+ * rules still asked for "a computed return value or variable state produced by
+ * tracing" filled those slots with traces the mode bans.
  */
 export const EMPHASES = {
   research: {
     types: [3, 4, 7, 8, 9, 10],
     description:
       'types whose answer depends on how the language or a library behaves, including how that behaviour responds to an input, change, or condition the code does not show',
+    shortAnswer: {
+      example:
+        "the value a built-in call, cast, or operator produces for a stated input (`'1'`, `false`, `[]`)",
+      types:
+        'Use a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a single value or short effect (e.g. `Overwrites the file`).',
+      slots:
+        'a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect',
+    },
   },
   tracing: {
     types: [1, 2, 5, 9],
     description: 'types answered by mentally executing the code or following a value across it',
+    shortAnswer: {
+      example:
+        "a computed return value or variable state (`3`, `-1`, `'B'`, `[]`) produced by tracing the code with a given input",
+      types:
+        'Use trace (type 1) or state-at-a-point (type 2) questions here, or an order-of-execution (type 9) question whose answer is a short sequence.',
+      slots:
+        'type 1 or type 2 questions whose answer is a computed value, or with a type 9 question whose answer is a short sequence',
+    },
   },
+};
+
+/** The short-answer guidance of a run without an emphasis; see EMPHASES. */
+const BALANCED_SHORT_ANSWER = {
+  example:
+    "a computed return value or variable state (`3`, `-1`, `'B'`, `[]`) produced by tracing the code with a given input",
+  types:
+    'Use trace (type 1) or state-at-a-point (type 2) questions here, a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a short effect (e.g. `Overwrites the file`).',
+  slots:
+    'type 1 or type 2 questions whose answer is a computed value, or with a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect',
 };
 
 /** Every question type the prompt defines, 1 to 10. */
@@ -472,6 +503,50 @@ The three incorrect options in each "distractors" array are mandatory for every 
     ? `If the four options were shown with the correct one unlabelled, could someone who understands the code identify it with certainty and prove each other option wrong by pointing to specific lines (or, for type 10, to the documented behaviour of the call)? If not, rewrite or replace the question.`
     : `Could someone who understands the code state the correct answer with certainty and prove it by pointing to specific lines (or, for type 10, to the documented behaviour of the call)? If not, rewrite or replace the question.`;
   const crossComponentTypes = includeDistractors ? 'types 5, 6, and 9' : 'types 5 and 9';
+  // Under an emphasis the prompt names no type the emphasis rules out, except in
+  // the rule that rules it out. A research run still shown the trace and
+  // state-at-a-point examples wrote its questions in their words ("What is the
+  // value of…"), so those types are left out of QUESTION TYPES, and the
+  // short-answer and scale-to-the-code rules, which recommend them, take the
+  // mode's wording or are dropped.
+  const emphasis = EMPHASES[questionEmphasis];
+  const shortAnswer = emphasis?.shortAnswer ?? BALANCED_SHORT_ANSWER;
+  const scaleRule = emphasis
+    ? ''
+    : `
+- Scale to the code: for a single script, draw on types 1–4, 7, and 8 against its logic; for code with multiple functions, classes, or files, also draw on ${crossComponentTypes} across component boundaries. Type 10 fits either.`;
+  const questionTypes = [
+    `1. Trace with a specific input — supply concrete input values and ask for a resulting output or value. Choose inputs that exercise a less-obvious path (an edge value, the second branch, a loop that runs zero or one times), never an input already shown in the code or its comments.
+   - Given \`scores = [80, 0, 95]\`, what value does \`calcAverage(scores)\` return?
+   - How many records does the query skip when \`$_GET['page']\` is \`'0'\`?`,
+    `2. State at a point — ask for the value of a variable or data structure at a specific moment in execution.
+   - How many items does \`cart\` hold after \`addItem(cart, 'pen')\` is called twice?
+   - What is the value of \`count\` at the end of the third iteration of the \`for\` loop?`,
+    `3. Consequence of a change — describe one small, concrete edit to the student's code and ask what behaviour results.
+   - When \`user\` is \`null\`, which statement runs next if the \`return\` inside the \`if (!user)\` block is removed?
+   - How would the output for \`[1, 2, 3]\` change if \`i <= arr.length\` were changed to \`i < arr.length\`?`,
+    `4. Path conditions — ask which input or state causes a particular branch, return, or exception.
+   - Under what condition does \`findCity\` return \`null\`?
+   - Which value of \`status\` causes the \`else\` branch in \`renderBadge\` to execute?`,
+    `5. Data flow — ask where a value originates, where it ends up, or what transforms it along the way.
+   - Where does the value of \`$cityId\` used in the SQL query originate?
+   - Which function's return value is stored in \`results\` before it is rendered?`,
+    typeSixRule,
+    `7. Edge-case behaviour — ask what the code actually does for an input at or beyond the boundary of what it handles.
+   - What does \`getTotal\` return when \`items\` is an empty array?
+   - When does \`parseCoordinates\` throw an error?`,
+    `8. Causal why — ask why a line or ordering is necessary, where the reason is provable from the code (something would break, a value would be wrong, an error would occur), and only when the code supports exactly one reason.
+   - Why must \`JSON.parse(raw)\` run before \`data.forEach(...)\`?
+   - Why is \`total\` initialised before the loop rather than inside it?`,
+    `9. Order of execution — ask which statement runs first, or what is logged/returned in what sequence.
+   - In what order are the three \`console.log\` calls in \`loadCities\` printed?
+   - Which runs first: the \`res.send\` in the middleware or the return from \`next()\`?`,
+    `10. Language and API behaviour — ask what a specific flag, option, argument, built-in, or language feature used in the code does here, as documented by the language or library. Frame it as the effect on this program (what happens to the file, array, string, or process), never as a dictionary definition. Choose ones whose effect cannot be guessed from their spelling: prefer single-letter flags, bare numbers, positional arguments, and defaults the code relies on implicitly over self-describing names such as \`{ recursive: true }\` or \`'utf-8'\`.
+   - When the file already exists, what does the \`'w'\` flag make \`fs.writeFileSync\` do to its contents?
+   - Which exit code does \`process.exit()\` produce when called with no argument and \`process.exitCode\` was never set?`,
+  ]
+    .filter((_, i) => !emphasis || emphasis.types.includes(i + 1))
+    .join('\n\n');
 
   const system = `
 You are an expert programming educator.
@@ -512,50 +587,13 @@ Spend questions on the parts of the submission where understanding is actually r
 QUESTION TYPES:
 Build the question set from these types.
 
-1. Trace with a specific input — supply concrete input values and ask for a resulting output or value. Choose inputs that exercise a less-obvious path (an edge value, the second branch, a loop that runs zero or one times), never an input already shown in the code or its comments.
-   - Given \`scores = [80, 0, 95]\`, what value does \`calcAverage(scores)\` return?
-   - How many records does the query skip when \`$_GET['page']\` is \`'0'\`?
-
-2. State at a point — ask for the value of a variable or data structure at a specific moment in execution.
-   - How many items does \`cart\` hold after \`addItem(cart, 'pen')\` is called twice?
-   - What is the value of \`count\` at the end of the third iteration of the \`for\` loop?
-
-3. Consequence of a change — describe one small, concrete edit to the student's code and ask what behaviour results.
-   - When \`user\` is \`null\`, which statement runs next if the \`return\` inside the \`if (!user)\` block is removed?
-   - How would the output for \`[1, 2, 3]\` change if \`i <= arr.length\` were changed to \`i < arr.length\`?
-
-4. Path conditions — ask which input or state causes a particular branch, return, or exception.
-   - Under what condition does \`findCity\` return \`null\`?
-   - Which value of \`status\` causes the \`else\` branch in \`renderBadge\` to execute?
-
-5. Data flow — ask where a value originates, where it ends up, or what transforms it along the way.
-   - Where does the value of \`$cityId\` used in the SQL query originate?
-   - Which function's return value is stored in \`results\` before it is rendered?
-
-${typeSixRule}
-
-7. Edge-case behaviour — ask what the code actually does for an input at or beyond the boundary of what it handles.
-   - What does \`getTotal\` return when \`items\` is an empty array?
-   - When does \`parseCoordinates\` throw an error?
-
-8. Causal why — ask why a line or ordering is necessary, where the reason is provable from the code (something would break, a value would be wrong, an error would occur), and only when the code supports exactly one reason.
-   - Why must \`JSON.parse(raw)\` run before \`data.forEach(...)\`?
-   - Why is \`total\` initialised before the loop rather than inside it?
-
-9. Order of execution — ask which statement runs first, or what is logged/returned in what sequence.
-   - In what order are the three \`console.log\` calls in \`loadCities\` printed?
-   - Which runs first: the \`res.send\` in the middleware or the return from \`next()\`?
-
-10. Language and API behaviour — ask what a specific flag, option, argument, built-in, or language feature used in the code does here, as documented by the language or library. Frame it as the effect on this program (what happens to the file, array, string, or process), never as a dictionary definition. Choose ones whose effect cannot be guessed from their spelling: prefer single-letter flags, bare numbers, positional arguments, and defaults the code relies on implicitly over self-describing names such as \`{ recursive: true }\` or \`'utf-8'\`.
-   - When the file already exists, what does the \`'w'\` flag make \`fs.writeFileSync\` do to its contents?
-   - Which exit code does \`process.exit()\` produce when called with no argument and \`process.exitCode\` was never set?
+${questionTypes}
 
 MIXING RULES:
 - Use at least ${Math.min(numQuestions, 4)} distinct question types across the set, and no single type more than ${Math.ceil(numQuestions / 3)} times.
 ${buildEmphasisRules(questionEmphasis, numQuestions)}
-- Fill the short-answer slots with type 1 or type 2 questions whose answer is a computed value, or with a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect.
-- When a type 4 or type 9 question falls outside the short-answer slots, write its answer as a full sentence that states the value or sequence and the statement or condition that produces it.
-- Scale to the code: for a single script, draw on types 1–4, 7, and 8 against its logic; for code with multiple functions, classes, or files, also draw on ${crossComponentTypes} across component boundaries. Type 10 fits either.
+- Fill the short-answer slots with ${shortAnswer.slots}.
+- When a type 4 or type 9 question falls outside the short-answer slots, write its answer as a full sentence that states the value or sequence and the statement or condition that produces it.${scaleRule}
 - Two questions may target the same function when they are different types and depend on different lines.
 - ${buildQuestionWordRule(openings, numQuestions)}
 
@@ -620,7 +658,7 @@ ANSWER CONSTRAINTS:${distractorQualityRules}
 - Use clear, direct language; if a technical term is needed, keep it but avoid unnecessary jargon${distractorStyleRules}
 
 SHORT-ANSWER QUESTIONS (exactly one in every three):
-- Exactly one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, a computed return value or variable state (\`3\`, \`-1\`, \`'B'\`, \`[]\`) produced by tracing the code with a given input. Use trace (type 1) or state-at-a-point (type 2) questions here, a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a short effect (e.g. \`Overwrites the file\`). No more than one-third of questions should be short-answer.${shortAnswerSymmetryRules}
+- Exactly one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, ${shortAnswer.example}. ${shortAnswer.types} No more than one-third of questions should be short-answer.${shortAnswerSymmetryRules}
 
 ${lengthRule}
 

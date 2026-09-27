@@ -118,6 +118,46 @@ describe('buildPrompt question emphasis', () => {
     expect(openingCheck({})).not.toContain('What is the direct impact of');
   });
 
+  // A research run slipped "What value does … hold" and "What is the final value of" past the bans.
+  it('bans What followed by a noun and the value forms under research only', () => {
+    const banned = openingCheck({ questionEmphasis: 'research' }).split('Never begin with')[1];
+    for (const opening of ['What [value, text, or any other noun]', 'What is the … value of']) {
+      expect(banned).toContain(opening);
+      expect(openingCheck({})).not.toContain(opening);
+    }
+  });
+
+  it('says a lead-in does not lift a ban', () => {
+    for (const mode of ['balanced', 'research', 'tracing']) {
+      expect(openingCheck({ questionEmphasis: mode })).toContain('A lead-in does not lift a ban');
+    }
+  });
+
+  // The model copied the wording of type examples the run bans.
+  it.each([
+    ['research', ['1. Trace', '2. State at a point', '5. Data flow', '6. Correct modification']],
+    [
+      'tracing',
+      ['3. Consequence', '4. Path conditions', '7. Edge-case', '8. Causal why', '10. Language'],
+    ],
+  ])('leaves the types %s rules out of QUESTION TYPES', (mode, excluded) => {
+    const types = system({ questionEmphasis: mode })
+      .split('QUESTION TYPES:')[1]
+      .split('MIXING RULES:')[0];
+    for (const heading of excluded) expect(types).not.toContain(heading);
+    expect(types).toContain('9. Order of execution');
+    expect(system({}).split('QUESTION TYPES:')[1]).toContain('1. Trace');
+  });
+
+  it('names only the research types in the short-answer rules', () => {
+    const prompt = system({ questionEmphasis: 'research' });
+    expect(prompt).toContain('- Fill the short-answer slots with a type 4, 9, or 10 question');
+    expect(prompt).not.toContain('Use trace (type 1)');
+    expect(prompt).not.toContain('produced by tracing the code');
+    expect(prompt).not.toContain('- Scale to the code:');
+    expect(system({})).toContain('- Scale to the code:');
+  });
+
   it('keeps every research What form a What opening', () => {
     for (const form of QUESTION_OPENINGS.research.what) expect(form).toMatch(/^What /);
   });

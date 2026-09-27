@@ -46,6 +46,17 @@ import { listWith } from './text.js';
  * open to argument unless the question names the value or output to observe.
  * The lead-ins still allow a plain "what": their If or Given clause supplies
  * the condition.
+ *
+ * A research run showed what the lists leave open. The model wrote "What value
+ * does … hold" past the banned "What does … hold", and "What text is
+ * displayed" and "What is the final value of" past a banned list that names no
+ * "What" followed by a noun; the research banned list now names those shapes.
+ * A lead-in does not lift a ban (see buildOpeningCheck). Bare Which stays
+ * allowed, since "Which value of `status`…" and "Which exit code…" are good
+ * questions, so only its "hold" form is banned. No opening list can finish the
+ * job: a stated input checked against a condition the snippet shows fits every
+ * allowed form ("What does the ternary return when…"), so REASONING STEP, not
+ * the opening, is what rules out those questions.
  */
 export const QUESTION_OPENINGS = {
   base: {
@@ -174,6 +185,10 @@ export const QUESTION_OPENINGS = {
       'What function does',
       'What is the exact effect of [a call, flag, or argument on its own]',
       'What is the direct impact of',
+      'What [value, text, or any other noun]',
+      'What is the value of',
+      'What is the … value of',
+      'Which … does … hold',
     ],
   },
   tracing: {
@@ -213,5 +228,5 @@ export function buildOpeningCheck(openings) {
   const brackets = openings.allowed.some((opening) => opening.includes('['))
     ? ' Square brackets describe what goes in their place.'
     : '';
-  return `Begin with one of these, and no other opening: ${openings.allowed.join(', ')}. Or begin with a lead-in clause that sets up the scenario, followed by one of those: ${openings.leadIns.map((c) => `"${c}"`).join(', ')}. Never begin with any of these, even when it starts with an allowed word: ${openings.banned.join(', ')}. A "How" question must be tied to a concrete input, change, or condition and answered by a value, count, order, or single effect — never by an explanation of how something works.${brackets}`;
+  return `Begin with one of these, and no other opening: ${openings.allowed.join(', ')}. Or begin with a lead-in clause that sets up the scenario, followed by one of those: ${openings.leadIns.map((c) => `"${c}"`).join(', ')}. Never begin with any of these, even when it starts with an allowed word: ${openings.banned.join(', ')}. A lead-in does not lift a ban: the words after it are checked against this list too, so "If…, what do you think…" is as banned as "What do you think…". A "How" question must be tied to a concrete input, change, or condition and answered by a value, count, order, or single effect — never by an explanation of how something works.${brackets}`;
 }
