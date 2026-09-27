@@ -13,7 +13,7 @@ import {
   keepsLinePositions,
   selectCodebaseContext,
 } from '../src/files.js';
-import { buildPrompt } from '../src/prompt.js';
+import { buildPrompt } from '../src/prompt/prompt.js';
 import { GIT_EMPTY_TREE_SHA } from '../src/constants.js';
 
 describe('diffLines', () => {

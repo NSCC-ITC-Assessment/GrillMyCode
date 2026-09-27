@@ -3,23 +3,15 @@
  * "Own Choice", which reasoning levels a model supports, what it does by
  * default, and what it costs.
  *
- * Two sources, fetched in parallel. The snapshot is taken when the docs site is
- * built (docs-site/scripts/fetch-openrouter-models.mjs, run nightly by
- * deploy-docs.yml) and served from the site itself, so it arrives quickly and
- * works when OpenRouter cannot be reached. The live catalogue is fetched
- * straight from OpenRouter's public, keyless API and replaces the snapshot
- * whenever it arrives. Either may be missing — a local `npm start` has no
- * snapshot — and the step falls back to listing every level.
- *
- * Both sources are in OpenRouter's own `{ data: [model, …] }` shape; the
- * snapshot keeps only the fields read here and adds `fetchedAt`.
+ * Fetched live from OpenRouter's public, keyless API once per page load, in
+ * OpenRouter's own `{ data: [model, …] }` shape. If it cannot be reached the
+ * step still works: the picker says so and the Reasoning dropdown lists every
+ * level.
  */
 
 import { useEffect, useState } from 'react';
-import useBaseUrl from '@docusaurus/useBaseUrl';
 
-const LIVE_URL = 'https://openrouter.ai/api/v1/models';
-const SNAPSHOT_PATH = '/data/openrouter-models.json';
+const CATALOG_URL = 'https://openrouter.ai/api/v1/models';
 
 /**
  * Every ai_reasoning_effort value, in the order the dropdown lists them. Mirrors
@@ -46,12 +38,11 @@ function levelLabel(value) {
 
 // One request per page load, shared by every mount of the AI step, so going
 // back to it never fetches again.
-let snapshotRequest = null;
-let liveRequest = null;
+let catalogRequest = null;
 let latest = { status: 'loading' };
 
-function fetchCatalog(url, source) {
-  return fetch(url)
+function fetchCatalog() {
+  return fetch(CATALOG_URL)
     .then((response) => {
       if (!response.ok) throw new Error(`${response.status}`);
       return response.json();
@@ -62,39 +53,30 @@ function fetchCatalog(url, source) {
         if (model && typeof model.id === 'string') models.set(model.id, model);
       }
       if (models.size === 0) throw new Error('empty catalogue');
-      return { status: 'ready', source, asOf: source === 'live' ? null : json.fetchedAt, models };
+      return { status: 'ready', models };
     });
 }
 
 /**
- * The catalogue as `{ status: 'loading' | 'ready' | 'unavailable', source,
- * asOf, models }`, where `source` is 'live' or 'snapshot', `asOf` the
- * snapshot's ISO timestamp, and `models` a Map from model ID to OpenRouter's
- * record.
+ * The catalogue as `{ status: 'loading' | 'ready' | 'unavailable', models }`,
+ * where `models` is a Map from model ID to OpenRouter's record.
  */
 export function useModelCatalog() {
-  const snapshotUrl = useBaseUrl(SNAPSHOT_PATH);
   const [catalog, setCatalog] = useState(latest);
 
   useEffect(() => {
     let active = true;
-    const publish = (next) => {
-      // A snapshot never replaces the live catalogue, whichever lands last.
-      if (next.source === 'snapshot' && latest.source === 'live') return;
-      latest = next;
-      if (active) setCatalog(next);
-    };
-    snapshotRequest ??= fetchCatalog(snapshotUrl, 'snapshot');
-    liveRequest ??= fetchCatalog(LIVE_URL, 'live');
-    snapshotRequest.then(publish, () => {});
-    liveRequest.then(publish, () => {});
-    Promise.allSettled([snapshotRequest, liveRequest]).then((results) => {
-      if (results.every((r) => r.status === 'rejected')) publish({ status: 'unavailable' });
-    });
+    catalogRequest ??= fetchCatalog();
+    catalogRequest
+      .catch(() => ({ status: 'unavailable' }))
+      .then((next) => {
+        latest = next;
+        if (active) setCatalog(next);
+      });
     return () => {
       active = false;
     };
-  }, [snapshotUrl]);
+  }, []);
 
   return catalog;
 }
@@ -195,20 +177,6 @@ export function modelPricing(model) {
   const output = perMillion(model.pricing.completion);
   if (!input || !output) return null;
   return { input, output, free: input === '$0' && output === '$0' };
-}
-
-/** "Live from OpenRouter" or "as of <date>" for the catalogue in use. */
-export function catalogAge(catalog) {
-  if (catalog.source === 'live') return 'live from OpenRouter';
-  const date = catalog.asOf ? new Date(catalog.asOf) : null;
-  if (!date || Number.isNaN(date.getTime())) return 'from a saved copy of OpenRouter’s catalogue';
-  const formatted = date.toLocaleDateString('en-CA', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    timeZone: 'UTC',
-  });
-  return `as of ${formatted}`;
 }
 
 // ── Model picker ─────────────────────────────────────────────────────────────
@@ -413,8 +381,7 @@ function fetchEndpoints(modelId) {
 /**
  * The providers serving a model, fetched live from OpenRouter when `modelId`
  * (a catalogue ID, routing variant removed) changes: `{ status: 'idle' |
- * 'loading' | 'ready' | 'unavailable', endpoints }`. Unlike the catalogue there
- * is no snapshot — it is one request per model — so the routing step simply
+ * 'loading' | 'ready' | 'unavailable', endpoints }`. The routing step simply
  * says less when this fails.
  */
 export function useModelEndpoints(modelId) {

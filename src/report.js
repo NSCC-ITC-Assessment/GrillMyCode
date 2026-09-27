@@ -5,7 +5,12 @@
  * returns the final report string. No side effects, no I/O.
  */
 
-import { GIT_SHA_SHORT_LENGTH, LOGO_HEADING_HEIGHT_PX, LOGO_URL } from './constants.js';
+import {
+  DEFAULT_QUESTION_EMPHASIS,
+  GIT_SHA_SHORT_LENGTH,
+  LOGO_HEADING_HEIGHT_PX,
+  LOGO_URL,
+} from './constants.js';
 
 /**
  * Logo beside the report heading. The report is also the PDF source, where
@@ -142,7 +147,7 @@ function provenanceComment(record) {
  * Assembles the verbatim copy of the model's reply, with a short provenance
  * header above it.
  *
- * The reply is JSON (see prompt.js), so it is fenced as JSON, unaltered. The
+ * The reply is JSON (see prompt/prompt.js), so it is fenced as JSON, unaltered. The
  * fence is one backtick longer than the longest run in the reply, as in
  * formatPrompt, so nothing the model wrote — a reply it wrapped in a fence of
  * its own, say — can close it early and corrupt the very copy this file exists
@@ -154,7 +159,8 @@ function provenanceComment(record) {
  * is bumped whenever a field changes meaning or is removed.
  *
  * @param {object} [opts.request]  - What was asked for: `numQuestions`,
- *   `temperature`, `topP`, `reasoningEffort`, `promptHash`, `actionRef`
+ *   `questionEmphasis`, `temperature`, `topP`, `reasoningEffort`, `promptHash`,
+ *   `actionRef`
  * @param {object} [opts.response] - The metadata callAI returns
  */
 export function formatRawOutput({
@@ -179,6 +185,10 @@ export function formatRawOutput({
   const requestLines = [];
   if (request) {
     const settings = [`${request.numQuestions} questions requested`];
+    // Only a tilt is worth a mention; balanced is the prompt as it always was.
+    if (request.questionEmphasis && request.questionEmphasis !== DEFAULT_QUESTION_EMPHASIS) {
+      settings.push(`${request.questionEmphasis} emphasis`);
+    }
     settings.push(`temperature ${request.temperature}`);
     // `default` sends no reasoning setting, so the model decided — say so
     // rather than print a level nobody asked for.

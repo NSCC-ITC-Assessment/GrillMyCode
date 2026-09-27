@@ -8,8 +8,8 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 
 ## Wizard Steps (9 total)
 
-1. **AI Provider** — Model selection, reasoning effort (`aiReasoningEffort`), OpenRouter model routing variant (`aiModelVariant`, appended to the model ID), and the API key secret name. Once a model is chosen, its providers are fetched live (`useModelEndpoints`, `/api/v1/models/{id}/endpoints`) and `routingSummary` shows each routing option's output price range, notes when routing makes little or no difference to cost, and warns when a provider runs a compressed copy below fp8 (fp6, fp4, int4) — flex and priority tiers are read from the endpoint tag's suffix. The reasoning dropdown lists only the levels OpenRouter's catalogue gives for the chosen model (see `modelCatalog.js`: a build-time snapshot plus a live fetch), and the step shows the model's price per million tokens with the catalogue's date. "Own Choice" adds a searchable model list (`steps/ModelPicker.js`): text-output models from the catalogue, always without OpenRouter's routers, `~…-latest` aliases, `:batch` entries, and models `modelConcerns` flags (context under 128K tokens, reply limit under 16K, a retirement date — also shown as a warning under the Model field for any model); filters for structured outputs and "Released in the last year" (both on by default), "Free models only", and an output price limit (any, $1 or $5 per million tokens); sortable by Artificial Analysis coding score (default), output price or name; the dropdown's tested models are badged. Picking a row sets `aiModel`
-2. **Questions** — num_questions, include_answers, instructor_context, assignment_context
+1. **AI Provider** — Model selection, reasoning effort (`aiReasoningEffort`), OpenRouter model routing variant (`aiModelVariant`, appended to the model ID), and the API key secret name. Once a model is chosen, its providers are fetched live (`useModelEndpoints`, `/api/v1/models/{id}/endpoints`) and `routingSummary` shows each routing option's output price range, notes when routing makes little or no difference to cost, and warns when a provider runs a compressed copy below fp8 (fp6, fp4, int4) — flex and priority tiers are read from the endpoint tag's suffix. The reasoning dropdown lists only the levels OpenRouter's catalogue gives for the chosen model (see `modelCatalog.js`, which fetches OpenRouter's catalogue live once per page load; there is no saved copy, so if OpenRouter can't be reached the dropdown lists every level), and the step shows the model's price per million tokens, marked live. "Own Choice" adds a searchable model list (`steps/ModelPicker.js`): text-output models from the catalogue, always without OpenRouter's routers, `~…-latest` aliases, `:batch` entries, and models `modelConcerns` flags (context under 128K tokens, reply limit under 16K, a retirement date — also shown as a warning under the Model field for any model); filters for structured outputs and "Released in the last year" (both on by default), "Free models only", and an output price limit (any, $1 or $5 per million tokens); sortable by Artificial Analysis coding score (default), output price or name; the dropdown's tested models are badged. Picking a row sets `aiModel`
+2. **Questions** — num_questions, question_emphasis (Balanced / Research / Tracing radio group), include_answers, instructor_context, assignment_context
 3. **Delivery** — Informational only: the assessment issue and PDF are always delivered, so there is nothing to choose
 4. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `labelRepos`
 5. **Files** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides
@@ -37,6 +37,7 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   apiKeySecret: 'OPENROUTER_API_KEY',        // required
 
   numQuestions: 5,
+  questionEmphasis: 'balanced',            // 'balanced' | 'research' | 'tracing'
   includeAnswers: false,
   instructorContext: '',
   assignmentContext: '',
@@ -97,6 +98,10 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   `cumulative` / `previous-tag`, plus the configured `tag:<name>` value appended by
   `dispatchInputLines` when one is set): it is offered on the
   Trigger step, and emitted, only in tag mode — `resolveDispatchOverrides(selected, { tagTrigger })`
+- `question_emphasis` is emitted only when not `balanced`. It is a dispatch override (`type: 'choice'`,
+  options `balanced` / `research` / `tracing`), ticked by default: it only changes which kinds of
+  question are asked, so it cannot narrow or empty the assessment. Research and Tracing are
+  all-or-nothing — the step's hint says so
 - `api_key` always emitted — OpenRouter requires it and the action fails without it
 - `ai_reasoning_effort` emitted only when not `default`. It is not a dispatch override: the
   levels on offer depend on the model, and `ai_model` can itself be overridden on the run form,

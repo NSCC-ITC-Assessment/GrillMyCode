@@ -5,124 +5,214 @@
  * Contains the full assessment rubric and formatting instructions.
  */
 import { createHash, randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   SHORT_ANSWER_MAX_CHARS,
   LONG_ANSWER_MAX_CHARS,
   PROMPT_HASH_LENGTH,
   SNIPPET_MAX_LINES,
-} from './constants.js';
+  DEFAULT_QUESTION_EMPHASIS,
+  RESEARCH_LOOKUP_QUESTION_SHARE,
+} from '../constants.js';
+import { buildOpeningCheck, buildQuestionWordRule, openingsFor } from './openings.js';
+import { listWith } from './text.js';
 
 /**
  * Identifies the prompt template a reply was generated from, recorded in
  * raw-ai-output.md so replies can be grouped and compared by prompt version.
  *
  * The rendered messages cannot be hashed for this — they embed the student's
- * code, a per-run nonce and the run's settings, so no two would match. This
- * module's own source is the template, so its hash is stable across students
- * and changes whenever the prompt does. An edit to a comment here changes it
- * too; that costs a spurious new version, never a missed one.
+ * code, a per-run nonce and the run's settings, so no two would match. The
+ * modules of this folder are the template, so the hash of their source, read
+ * in name order, is stable across students and changes whenever the prompt
+ * does, including an edit to the openings in openings.js alone. A module added
+ * here is covered without a change to this hash. An edit to a comment changes
+ * it too; that costs a spurious new version, never a missed one.
  */
-export const PROMPT_TEMPLATE_HASH = createHash('sha256')
-  .update(readFileSync(fileURLToPath(import.meta.url)))
+const PROMPT_DIR = dirname(fileURLToPath(import.meta.url));
+export const PROMPT_TEMPLATE_HASH = readdirSync(PROMPT_DIR)
+  .filter((name) => name.endsWith('.js'))
+  .sort()
+  .reduce((hash, name) => hash.update(readFileSync(join(PROMPT_DIR, name))), createHash('sha256'))
   .digest('hex')
   .substring(0, PROMPT_HASH_LENGTH);
 
 /**
- * The openings a question stem may and may not begin with, rendered into the
- * OPENING item of the question checklist. The allowed openings keep every
- * question closed, with one answer. They are only the distinct openings: a
- * phrase that starts with one ("What happens when", "Which branch") is already
- * allowed, and listing such phrases made the list mostly "What", which steered
- * the model towards it. Bare "How" is the exception: "How does this work?"
- * has no single answer, so only its closed forms are allowed, each listed in
- * full. The banned list matters most where an entry starts with an allowed
- * word ("What do you think…"): the allowed list alone would let those through.
+ * The question types of each non-balanced question_emphasis.
+ * Under either one, every question must be one of its `types`: the restriction is
+ * all-or-nothing, and holds even where it costs question quality.
+ *
+ * research — types whose answer depends on how the language or a library
+ *   behaves, including how that behaviour responds to an input, change or
+ *   condition the code does not show: consequence of a change (3), path
+ *   conditions (4), edge cases (7), causal why (8), order of execution (9),
+ *   and language and API behaviour (10). A type 3 change here alters how the
+ *   code uses the language or a library, not its data (see
+ *   buildResearchReasoningStep).
+ * tracing — types answered by executing the code in the head or following a
+ *   value through it: trace (1), state at a point (2), data flow (5), and
+ *   order of execution (9).
+ *
+ * Order of execution sits in both: it can rest on runtime rules (the event
+ * loop, middleware) or on a plain trace. Each mode's sentence starters are in
+ * QUESTION_OPENINGS.
+ *
+ * `shortAnswer` is the mode's wording of the short-answer guidance, naming only
+ * its own types (see BALANCED_SHORT_ANSWER). A research run whose short-answer
+ * rules still asked for "a computed return value or variable state produced by
+ * tracing" filled those slots with traces the mode bans.
+ *
+ * `examples` replaces the examples of a type in QUESTION TYPES, keyed by type
+ * number; a type it leaves out keeps the balanced ones. The balanced path-
+ * condition, edge-case and causal-why examples are answered by reading the code
+ * ("Under what condition does `findCity` return `null`?"), and a research run
+ * wrote its questions in their shape, past the REASONING STEP rule that bans
+ * them. Every research example turns on documented behaviour of the language or
+ * a library, and opens with a form the research OPENING check allows.
  */
-const ALLOWED_OPENINGS = [
-  'What',
-  'Which',
-  'Where',
-  'When',
-  'Why',
-  'How many',
-  'How often',
-  'How much',
-  'How long',
-  'How would … change if',
-  'How does … change when',
-  'How does … respond when',
-  'How does … order',
-  'In what order',
-  'In which order',
-  'At what point',
-  'At which point',
-  'Under what condition',
-  'Under which condition',
-];
-/** Lead-in clauses that set up a scenario before an allowed opening. */
-const ALLOWED_LEAD_INS = [
-  'Given…, what…',
-  'Given…, which…',
-  'Given…, why…',
-  'Given…, when…',
-  'If…, what…',
-  'If…, which…',
-  'If…, why…',
-  'If…, when…',
-  'If…, how many…',
-  'Given…, how many…',
-  'If…, how often…',
-  'Given…, how would … change…',
-];
-const BANNED_OPENINGS = [
-  'Explain',
-  'Describe',
-  'Discuss',
-  'Elaborate on',
-  'Summarize',
-  'Talk about',
-  'Tell me about',
-  'Tell us about',
-  'What do you think',
-  'What are your thoughts',
-  'What are your views',
-  'What is your understanding of',
-  'What is your interpretation of',
-  'What is your assessment of',
-  'What is your reasoning for',
-  'What do you know about',
-  'What can you say about',
-  'What can you tell me about',
-  'What can you explain about',
-  'Why do you think',
-  'Why might you think',
-  'In your opinion',
-  'In your view',
-  'What are some ways to',
-  'What are the ways to',
-  'What are the advantages of',
-  'What are the disadvantages of',
-  'What are the benefits of',
-  'What are the drawbacks of',
-  'What are the pros of',
-  'What are the cons of',
-  'What are the strengths of',
-  'What are the weaknesses of',
-  'What are some reasons for',
-  'What are the possible reasons for',
-  'How would you',
-  'How could you',
-  'How might you',
-  'How should you',
-  'How does … work',
-  'How is',
-  'How are',
-  'Can you',
-  'Could you',
-  'Would you',
-];
+export const EMPHASES = {
+  research: {
+    types: [3, 4, 7, 8, 9, 10],
+    description:
+      'types whose answer depends on how the language or a library behaves, including how that behaviour responds to an input, change, or condition the code does not show',
+    shortAnswer: {
+      example:
+        "the value a built-in call, cast, or operator produces for a stated input (`'1'`, `false`, `[]`)",
+      types:
+        'Use a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a single value or short effect (e.g. `Overwrites the file`).',
+      slots:
+        'a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect',
+    },
+    examples: {
+      3: [
+        "How would the file's contents after a second run change if the `'a'` flag passed to `fs.writeFileSync` were changed to `'w'`?",
+        "How would the quantity stored for `'4.9'` change if `(int) $qty` were replaced with `round($qty)`?",
+      ],
+      4: [
+        'Which non-empty string makes `if ($input)` skip its block?',
+        'Under what condition does `if (!array_search($id, $ids))` take the not-found branch even though `$id` is in `$ids`?',
+      ],
+      7: [
+        "What does `explode(',', $csv)` return when `$csv` is an empty string?",
+        'What happens when `JSON.parse(raw)` runs and `raw` is an empty string?',
+      ],
+      8: [
+        'Why must `response.json()` be awaited before `data.length` is read?',
+        'Why does `scores.sort()` need the comparator `(a, b) => a - b` to put `[10, 9, 1]` in numeric order?',
+      ],
+      9: [
+        "In what order are `'sync'`, `'promise'` and `'timeout'` logged when `setTimeout(…, 0)` and `Promise.resolve().then(…)` are both scheduled before `console.log('sync')`?",
+        'Which runs first: the `res.send` in the middleware or the return from `next()`?',
+      ],
+    },
+  },
+  tracing: {
+    types: [1, 2, 5, 9],
+    description: 'types answered by mentally executing the code or following a value across it',
+    shortAnswer: {
+      example:
+        "a computed return value or variable state (`3`, `-1`, `'B'`, `[]`) produced by tracing the code with a given input",
+      types:
+        'Use trace (type 1) or state-at-a-point (type 2) questions here, or an order-of-execution (type 9) question whose answer is a short sequence.',
+      slots:
+        'type 1 or type 2 questions whose answer is a computed value, or with a type 9 question whose answer is a short sequence',
+    },
+  },
+};
+
+/** The short-answer guidance of a run without an emphasis; see EMPHASES. */
+const BALANCED_SHORT_ANSWER = {
+  example:
+    "a computed return value or variable state (`3`, `-1`, `'B'`, `[]`) produced by tracing the code with a given input",
+  types:
+    'Use trace (type 1) or state-at-a-point (type 2) questions here, a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a short effect (e.g. `Overwrites the file`).',
+  slots:
+    'type 1 or type 2 questions whose answer is a computed value, or with a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect',
+};
+
+/**
+ * Under research, the reply opens with a "lookup_targets" list, before
+ * "questions". buildEmphasisRules has the model find every place the code
+ * relies on behaviour a student would look up before it writes any question,
+ * but a reply that is the questions alone leaves that step nowhere to happen
+ * except the model's reasoning, which a model with reasoning off does not do.
+ * The fields are written in the order the schema and the prompt's shape list
+ * them, so a field placed first makes the list exist before the first
+ * question, whatever the reasoning level. Nothing parses it: it is kept only
+ * in raw-ai-output.md, where it shows what the model found. The student never
+ * sees it.
+ */
+const LOOKUP_TARGETS_FIELD =
+  "every place the code relies on behaviour a student would need to look up, one per entry, as one line of plain text naming the call, cast, operator, or rule, its file and line, and what to look up — for example: explode(',', $csv) in src/import.php line 12: what it returns for an empty string.";
+
+/** Every question type the prompt defines, 1 to 10. */
+const QUESTION_TYPE_NUMBERS = Array.from({ length: 10 }, (_, i) => i + 1);
+
+/**
+ * The MIXING RULES lines that question_emphasis controls: the rule that sets
+ * which types the set is drawn from, and the rule about how often to use type
+ * 10. Balanced returns the rules the prompt has always carried, so a run
+ * without the input sends an unchanged prompt.
+ *
+ * research also has the model list the lookup targets in the code before
+ * writing, and bars two questions on the same one. Without both, a short
+ * script left the model restating the same few ternaries to reach the count.
+ * The research sentence of REASONING STEP (see buildResearchReasoningStep)
+ * rules out the restatements themselves.
+ *
+ * research and tracing restrict every question to the emphasis's types. That
+ * restriction is exempt from THE COUNT COMES FIRST, which otherwise relaxes the
+ * MIXING RULES quotas first when the model runs short: an emphasis relaxed
+ * whenever the code is thin would not be all-or-nothing. The other quotas and
+ * the same-function limit still give way, and broader questions are written as
+ * the emphasis's types.
+ */
+function buildEmphasisRules(questionEmphasis, numQuestions) {
+  const emphasis = EMPHASES[questionEmphasis];
+  if (!emphasis) {
+    return `- At least half of the questions must be type 1, 2, 3, 5, or 9 — types that require executing the code mentally or following data across two or more locations.
+- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.`;
+  }
+
+  const excluded = QUESTION_TYPE_NUMBERS.filter((t) => !emphasis.types.includes(t));
+  const rules = [
+    `- EVERY question must be type ${listWith(emphasis.types, 'or')} — ${emphasis.description}. Types ${listWith(excluded)} are not used in this run, whatever any other rule says about them.`,
+    `- Never relax the rule above, even where THE COUNT COMES FIRST says to relax the MIXING RULES quotas. If you run short, relax the other quotas and the limit on questions targeting the same function instead, and write any broader question as one of these types.`,
+  ];
+  if (questionEmphasis === 'research') {
+    rules.push(
+      `- At least ${Math.ceil(numQuestions * RESEARCH_LOOKUP_QUESTION_SHARE)} of the ${numQuestions} questions must be type 8 or type 10.`,
+      '- Before writing any question, go through the student\'s code and find every place it relies on behaviour a student would need to look up: built-in and library calls, casts, strict and loose comparisons, default arguments, flags and positional arguments, type coercion, mutation versus copying, async ordering, and the conditions under which a call returns an unexpected value or throws. List each one in the "lookup_targets" field, which comes before "questions" in the reply (see OUTPUT FORMAT). Spend the questions on these before any other code. Each one supports a type 10 question about its effect here, and a type 3 or 7 question about what happens when its input or arguments change.',
+      '- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.',
+      '- No two questions may turn on the same built-in, cast, operator, or condition, even when they point at different lines or are different types: three questions asking why the same escaping function is called are one question asked three times. If you run short, repeat a target with a different input or a different effect rather than write a question that fails REASONING STEP.',
+    );
+  } else {
+    rules.push(
+      '- Prefer questions whose answer follows from the code in the user message and the values stated in the question, not from documentation the student would have to look up.',
+    );
+  }
+  return rules.join('\n');
+}
+
+/**
+ * The sentences REASONING STEP adds under research. The research types include
+ * path conditions and edge cases, which a model can satisfy by asking what a
+ * ternary returns or which bound an `if` checks, answered by reading the
+ * snippet aloud. Under research the step must be a lookup, alone or combined
+ * with an input, change, or condition the code does not show.
+ *
+ * Two looser forms passed the first version of this rule. Feeding a stated
+ * value past a bound the snippet shows ("what does the clamp do to -2") is the
+ * same reading with a number filled in. A type 3 edit to a data value or record
+ * ("if Sally's rating were 5, how many five-star entries") is answered by
+ * recounting, which is tracing. Empty for every other emphasis.
+ */
+function buildResearchReasoningStep(questionEmphasis) {
+  if (questionEmphasis !== 'research') return '';
+  return ' In this run the step must be looking up documented behaviour of the language or a library: what a call, cast, operator, or language rule does here, or how that behaviour responds to an input, change, or condition the code does not show. Reading a condition, literal, or branch that the snippets spell out is not a step: if a student could answer by reading the snippet aloud (the string a ternary returns, the bound an `if` checks, what a loop body does), rewrite the question. Checking a stated input against such a condition is the same reading with a value filled in, so it is not a step either: what `if ($n < 0) { $n = 0; }` does to -2, which word a ternary picks for a count of one, or whether a strict `>` holds for equal values. A type 3 change must alter how the code uses the language or a library (an argument, flag, cast, operator, or comparison, or one call swapped for a related one), never a data value, record, or literal whose effect is found by recounting or re-adding: that is tracing.';
+}
 
 /**
  * Builds the [system, user] message array for the chat completions API.
@@ -180,6 +270,9 @@ const BANNED_OPENINGS = [
  * and so carry a marker column separating the student's lines from the code
  * they started with (see buildAssessedCodeContent).
  *
+ * `questionEmphasis` (question_emphasis) restricts every question to the
+ * research or the tracing question types — see EMPHASES and buildEmphasisRules.
+ *
  * `starterContext` and `earlierContext` are the codebase context: the rest of
  * the repository, sent so questions about the submission can draw on what it
  * works with, and never a question target on their own. Starter code is the
@@ -191,6 +284,7 @@ export function buildPrompt({
   codeContent,
   files,
   numQuestions,
+  questionEmphasis = DEFAULT_QUESTION_EMPHASIS,
   instructorContext,
   assignmentContext,
   includeDistractors = true,
@@ -206,6 +300,7 @@ export function buildPrompt({
   // everything inside is untrusted DATA to analyse, never instructions to obey.
   // Because the nonce is unguessable, injected content cannot forge the closing
   // marker to "break out" of the block.
+  const openings = openingsFor(questionEmphasis);
   const nonce = randomBytes(12).toString('hex');
   const untrustedOpen = `<<<UNTRUSTED_STUDENT_SUBMISSION ${nonce}>>>`;
   const untrustedClose = `<<<END_UNTRUSTED_STUDENT_SUBMISSION ${nonce}>>>`;
@@ -367,7 +462,7 @@ FINAL CHECK BEFORE YOU RESPOND: count your own output. You must see ${numQuestio
 Every option must read like a confident answer a student might give — include specific code elements, mechanisms, or reasoning in ALL four options. No throwaway one-liner distractors next to a detailed correct answer.
 - Each option (correct and distractors) must be at least 8 words. Answers shorter than 8 words lack the specificity needed to test comprehension.
 - SAME DEPTH FOR EVERY OPTION (this controls length — read carefully): The model's default is to lavish detail on the answer it knows is correct. Resist that, but do not overcorrect by trimming the correct answer and padding the distractors instead: a correct answer far shorter than the rest is exactly as easy to spot as one far longer. Phrase every option, the correct answer included, as economically as its content allows, and give all four the same depth of detail, so their lengths differ only because their content does.
-- ABSOLUTE WORD BUDGETS (use these directly — do not rely on relative comparisons you have to count): aim EVERY option, the correct answer and each distractor alike, at roughly 12–20 words, and keep the correct answer under the ${LONG_ANSWER_MAX_CHARS}-character cap below. All four options share one band, so none reads as the odd one out.
+- ABSOLUTE WORD BUDGETS (use these directly — do not rely on relative comparisons you have to count): aim EVERY option, the correct answer and each distractor alike, at roughly 12–20 words, and keep the correct answer under the ${LONG_ANSWER_MAX_CHARS}-character cap below. All four options share one band, so none reads as the odd one out. When the correct answer needs an embedded reason (see STRUCTURAL MATCHING), all four may run to about 25 words together.
 - CORRECT ANSWER LENGTH CAP: The correct answer for all long-answer questions (i.e. not short-answer) must be ${LONG_ANSWER_MAX_CHARS} characters or fewer. Write the correct answer concisely so it fits within this limit. Distractors are exempt from this cap and may be longer than ${LONG_ANSWER_MAX_CHARS} characters if needed to balance option lengths. Treat this cap as a hard ceiling, NOT a target.
 - VISUAL BALANCE (MANDATORY, REJECTION-LEVEL): The correct answer must never visibly stand apart from the distractors. An option that is glaringly longer or shorter than the other three draws the eye, and when that option is the correct one, it hands the student the answer. The correct answer may be the longest or the shortest option, but only by a small margin. Enforce it concretely:
   - After writing all four options, sort them by character length. If the correct answer is the longest, it must be no more than about 20% longer than the next-longest option. If it is the shortest, it must be no more than about 20% shorter than the next-shortest. If it is further out than that, lengthen or shorten the distractors nearest to it until it is not — never shorten a distractor below 8 words.
@@ -375,15 +470,15 @@ Every option must read like a confident answer a student might give — include 
   - Vary WHICH distractors are the long ones across the question set, so the position of the longest option is unpredictable.
 - STRUCTURAL MATCHING: Every distractor must mirror the syntactic and logical structure of the correct answer. This has two forms:
   - **Multi-step process**: If the correct answer describes a multi-step process (e.g. "reads X, splits by Y, stores in Z"), every distractor must also describe a multi-step process with comparable structural detail. A single-clause distractor like "creates a randomized map" next to a three-clause correct answer is a violation — rewrite it with the same clause structure (e.g. "generates random coordinates using Math.random(), assigns them to grid cells, and stores them in a 1D array").
-  - **Embedded reasoning**: If the correct answer contains a parenthetical, a "since…" clause, or a "because…" sub-clause that explains *why* something is true (e.g. "…(since \`Number('0')\` equals 0, which is not greater than 0, so it fails this guard anyway)"), EVERY distractor must also contain an embedded reasoning clause of comparable length and specificity. A short one-clause distractor like "Because JavaScript evaluates conditions from right to left" next to a correct answer with an embedded 18-word explanation is a structural mismatch — it is REJECTED. Rewrite it to include its own embedded reasoning (e.g. "Because \`coordinates.slice(1)\` returns an empty string for single-character inputs (since \`Number('')\` coerces to 0, which is not > 0 and would trigger this guard anyway)").
+  - **Embedded reasoning**: If the correct answer contains a parenthetical, a "since…" clause, or a "because…" sub-clause that explains *why* something is true (e.g. "…(since \`Number('0')\` equals 0, which is not greater than 0, so it fails this guard anyway)"), EVERY distractor must also contain an embedded reasoning clause of comparable length and specificity. A short one-clause distractor like "Because JavaScript evaluates conditions from right to left" next to a correct answer with an embedded 16-word explanation is a structural mismatch — it is REJECTED. Rewrite it to include its own embedded reasoning (e.g. "Because \`coordinates.slice(1)\` returns an empty string for single-character inputs (since \`Number('')\` coerces to 0, which is not > 0 and would trigger this guard anyway)").
 
 CONCRETE VIOLATION EXAMPLE — embedded-reasoning questions (study this before writing any distractors):
-> Correct (28 words): "Because \`A0\` would pass the numeric conversion check (since \`Number('0')\` equals 0, which is not greater than 0, so it fails this guard anyway)"
-> D1 REJECTED (13 words): "Because the order of checks determines which error message displays first" — only 46% of correct length AND no embedded reasoning clause
-> D2 REJECTED (8 words): "Because JavaScript evaluates conditions from right to left" — 29% of correct length, no reasoning clause whatsoever
+> Correct (24 words): "Because \`A0\` would pass the numeric conversion check (since \`Number('0')\` equals 0, which is not greater than 0, so it fails this guard anyway)"
+> D1 REJECTED (11 words): "Because the order of checks determines which error message displays first" — only 46% of correct length AND no embedded reasoning clause
+> D2 REJECTED (8 words): "Because JavaScript evaluates conditions from right to left" — 33% of correct length, no reasoning clause whatsoever
 > FIX — every distractor needs its own embedded reasoning clause of comparable depth:
-> D1 FIXED (28 words): "Because \`A0\` would fail the letter-position check (since \`coordinates[0]\` is a letter, making the whole input invalid before the numeric portion is re-examined)"
-> D2 FIXED (27 words): "Because \`coordinates.slice(1)\` returns an empty string for single-character inputs (since \`Number('')\` coerces to 0, which is not > 0 and would trigger this guard)"
+> D1 FIXED (23 words): "Because \`A0\` would fail the letter-position check (since \`coordinates[0]\` is a letter, making the whole input invalid before the numeric portion is re-examined)"
+> D2 FIXED (24 words): "Because \`coordinates.slice(1)\` returns an empty string for single-character inputs (since \`Number('')\` coerces to 0, which is not > 0 and would trigger this guard)"
 If your distractors lack embedded reasoning while the correct answer has it — rewrite them to match.
 - If a distractor is too short, add plausible reasoning ("because…", "which causes…", "since the function…").
 - If a distractor is too long, trim unnecessary detail.
@@ -404,6 +499,17 @@ The correct answer must read like a confident answer a student might give — in
   const summaryShape = instructorContext
     ? `,
   "context_summary": "These questions are focused towards ..."`
+    : '';
+  // See LOOKUP_TARGETS_FIELD.
+  const withLookupTargets = questionEmphasis === 'research';
+  const lookupTargetsShape = withLookupTargets
+    ? `
+  "lookup_targets": ["...", "..."],`
+    : '';
+  const lookupTargetsFieldRule = withLookupTargets
+    ? `
+
+The "lookup_targets" field comes first, and you write it in full before any question. It holds ${LOOKUP_TARGETS_FIELD} The student never sees this list, so line numbers are allowed in it.`
     : '';
   const violationMissingDistractors = includeDistractors
     ? `
@@ -453,6 +559,102 @@ The three incorrect options in each "distractors" array are mandatory for every 
     ? `If the four options were shown with the correct one unlabelled, could someone who understands the code identify it with certainty and prove each other option wrong by pointing to specific lines (or, for type 10, to the documented behaviour of the call)? If not, rewrite or replace the question.`
     : `Could someone who understands the code state the correct answer with certainty and prove it by pointing to specific lines (or, for type 10, to the documented behaviour of the call)? If not, rewrite or replace the question.`;
   const crossComponentTypes = includeDistractors ? 'types 5, 6, and 9' : 'types 5 and 9';
+  // Under an emphasis the prompt names no type the emphasis rules out, except in
+  // the rule that rules it out. A research run still shown the trace and
+  // state-at-a-point examples wrote its questions in their words ("What is the
+  // value of…"), so those types are left out of QUESTION TYPES, and the
+  // short-answer and scale-to-the-code rules, which recommend them, take the
+  // mode's wording or are dropped.
+  const emphasis = EMPHASES[questionEmphasis];
+  const shortAnswer = emphasis?.shortAnswer ?? BALANCED_SHORT_ANSWER;
+  const scaleRule = emphasis
+    ? ''
+    : `
+- Scale to the code: for a single script, draw on types 1–4, 7, and 8 against its logic; for code with multiple functions, classes, or files, also draw on ${crossComponentTypes} across component boundaries. Type 10 fits either.`;
+  // A type is its definition and two examples; an emphasis may replace the
+  // examples (see EMPHASES), since the model writes its questions in their shape.
+  const questionType = (number, definition, examples) =>
+    [
+      `${number}. ${definition}`,
+      ...(emphasis?.examples?.[number] ?? examples).map((example) => `   - ${example}`),
+    ].join('\n');
+  const questionTypes = [
+    questionType(
+      1,
+      `Trace with a specific input — supply concrete input values and ask for a resulting output or value. Choose inputs that exercise a less-obvious path (an edge value, the second branch, a loop that runs zero or one times), never an input already shown in the code or its comments.`,
+      [
+        `Given \`scores = [80, 0, 95]\`, what value does \`calcAverage(scores)\` return?`,
+        `How many records does the query skip when \`$_GET['page']\` is \`'0'\`?`,
+      ],
+    ),
+    questionType(
+      2,
+      `State at a point — ask for the value of a variable or data structure at a specific moment in execution.`,
+      [
+        `How many items does \`cart\` hold after \`addItem(cart, 'pen')\` is called twice?`,
+        `What is the value of \`count\` at the end of the third iteration of the \`for\` loop?`,
+      ],
+    ),
+    questionType(
+      3,
+      `Consequence of a change — describe one small, concrete edit to the student's code and ask what behaviour results.`,
+      [
+        `When \`user\` is \`null\`, which statement runs next if the \`return\` inside the \`if (!user)\` block is removed?`,
+        `How would the output for \`[1, 2, 3]\` change if \`i <= arr.length\` were changed to \`i < arr.length\`?`,
+      ],
+    ),
+    questionType(
+      4,
+      `Path conditions — ask which input or state causes a particular branch, return, or exception.`,
+      [
+        `Under what condition does \`findCity\` return \`null\`?`,
+        `Which value of \`status\` causes the \`else\` branch in \`renderBadge\` to execute?`,
+      ],
+    ),
+    questionType(
+      5,
+      `Data flow — ask where a value originates, where it ends up, or what transforms it along the way.`,
+      [
+        `Where does the value of \`$cityId\` used in the SQL query originate?`,
+        `Which function's return value is stored in \`results\` before it is rendered?`,
+      ],
+    ),
+    typeSixRule,
+    questionType(
+      7,
+      `Edge-case behaviour — ask what the code actually does for an input at or beyond the boundary of what it handles.`,
+      [
+        `What does \`getTotal\` return when \`items\` is an empty array?`,
+        `When does \`parseCoordinates\` throw an error?`,
+      ],
+    ),
+    questionType(
+      8,
+      `Causal why — ask why a line or ordering is necessary, where the reason is provable from the code (something would break, a value would be wrong, an error would occur), and only when the code supports exactly one reason.`,
+      [
+        `Why must \`JSON.parse(raw)\` run before \`data.forEach(...)\`?`,
+        `Why is \`total\` initialised before the loop rather than inside it?`,
+      ],
+    ),
+    questionType(
+      9,
+      `Order of execution — ask which statement runs first, or what is logged/returned in what sequence.`,
+      [
+        `In what order are the three \`console.log\` calls in \`loadCities\` printed?`,
+        `Which runs first: the \`res.send\` in the middleware or the return from \`next()\`?`,
+      ],
+    ),
+    questionType(
+      10,
+      `Language and API behaviour — ask what a specific flag, option, argument, built-in, or language feature used in the code does here, as documented by the language or library. Frame it as the effect on this program (what happens to the file, array, string, or process), never as a dictionary definition. Choose ones whose effect cannot be guessed from their spelling: prefer single-letter flags, bare numbers, positional arguments, and defaults the code relies on implicitly over self-describing names such as \`{ recursive: true }\` or \`'utf-8'\`.`,
+      [
+        `When the file already exists, what does the \`'w'\` flag make \`fs.writeFileSync\` do to its contents?`,
+        `Which exit code does \`process.exit()\` produce when called with no argument and \`process.exitCode\` was never set?`,
+      ],
+    ),
+  ]
+    .filter((_, i) => !emphasis || emphasis.types.includes(i + 1))
+    .join('\n\n');
 
   const system = `
 You are an expert programming educator.
@@ -493,70 +695,32 @@ Spend questions on the parts of the submission where understanding is actually r
 QUESTION TYPES:
 Build the question set from these types.
 
-1. Trace with a specific input — supply concrete input values and ask for a resulting output or value. Choose inputs that exercise a less-obvious path (an edge value, the second branch, a loop that runs zero or one times), never an input already shown in the code or its comments.
-   - Given \`scores = [80, 0, 95]\`, what value does \`calcAverage(scores)\` return?
-   - How many records does the query skip when \`$_GET['page']\` is \`'0'\`?
-
-2. State at a point — ask for the value of a variable or data structure at a specific moment in execution.
-   - How many items does \`cart\` hold after \`addItem(cart, 'pen')\` is called twice?
-   - What is the value of \`count\` at the end of the third iteration of the \`for\` loop?
-
-3. Consequence of a change — describe one small, concrete edit to the student's code and ask what behaviour results.
-   - When \`user\` is \`null\`, which statement runs next if the \`return\` inside the \`if (!user)\` block is removed?
-   - How would the output for \`[1, 2, 3]\` change if \`i <= arr.length\` were changed to \`i < arr.length\`?
-
-4. Path conditions — ask which input or state causes a particular branch, return, or exception.
-   - Under what condition does \`findCity\` return \`null\`?
-   - Which value of \`status\` causes the \`else\` branch in \`renderBadge\` to execute?
-
-5. Data flow — ask where a value originates, where it ends up, or what transforms it along the way.
-   - Where does the value of \`$cityId\` used in the SQL query originate?
-   - Which function's return value is stored in \`results\` before it is rendered?
-
-${typeSixRule}
-
-7. Edge-case behaviour — ask what the code actually does for an input at or beyond the boundary of what it handles.
-   - What does \`getTotal\` return when \`items\` is an empty array?
-   - When does \`parseCoordinates\` throw an error?
-
-8. Causal why — ask why a line or ordering is necessary, where the reason is provable from the code (something would break, a value would be wrong, an error would occur), and only when the code supports exactly one reason.
-   - Why must \`JSON.parse(raw)\` run before \`data.forEach(...)\`?
-   - Why is \`total\` initialised before the loop rather than inside it?
-
-9. Order of execution — ask which statement runs first, or what is logged/returned in what sequence.
-   - In what order are the three \`console.log\` calls in \`loadCities\` printed?
-   - Which runs first: the \`res.send\` in the middleware or the return from \`next()\`?
-
-10. Language and API behaviour — ask what a specific flag, option, argument, built-in, or language feature used in the code does here, as documented by the language or library. Frame it as the effect on this program (what happens to the file, array, string, or process), never as a dictionary definition. Choose ones whose effect cannot be guessed from their spelling: prefer single-letter flags, bare numbers, positional arguments, and defaults the code relies on implicitly over self-describing names such as \`{ recursive: true }\` or \`'utf-8'\`.
-   - When the file already exists, what does the \`'w'\` flag make \`fs.writeFileSync\` do to its contents?
-   - Which exit code does \`process.exit()\` produce when called with no argument and \`process.exitCode\` was never set?
+${questionTypes}
 
 MIXING RULES:
 - Use at least ${Math.min(numQuestions, 4)} distinct question types across the set, and no single type more than ${Math.ceil(numQuestions / 3)} times.
-- At least half of the questions must be type 1, 2, 3, 5, or 9 — types that require executing the code mentally or following data across two or more locations.
-- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.
-- Fill the short-answer slots with type 1 or type 2 questions whose answer is a computed value, or with a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect.
-- When a type 4 or type 9 question falls outside the short-answer slots, write its answer as a full sentence that states the value or sequence and the statement or condition that produces it.
-- Scale to the code: for a single script, draw on types 1–4, 7, and 8 against its logic; for code with multiple functions, classes, or files, also draw on ${crossComponentTypes} across component boundaries. Type 10 fits either.
+${buildEmphasisRules(questionEmphasis, numQuestions)}
+- Fill the short-answer slots with ${shortAnswer.slots}.
+- When a type 4 or type 9 question falls outside the short-answer slots, write its answer as a full sentence that states the value or sequence and the statement or condition that produces it.${scaleRule}
 - Two questions may target the same function when they are different types and depend on different lines.
-- Vary the question word. No single question word may open more than ${Math.ceil(numQuestions / 2)} of the ${numQuestions} questions; a lead-in counts as the question word that follows it, so "If…, what…" counts as What. Every "How" form (How many, How often, How does … change when, and so on) counts as How. Draw on Which, Where, When, Why, How many, How often, How much, In what order, At what point, and Under what condition as well as What.
+- ${buildQuestionWordRule(openings, numQuestions)}
 
 QUESTION CHECKLIST — EVERY QUESTION MUST PASS ALL OF THESE BEFORE YOU WRITE IT:
 ${answerabilityIntro}
-1. REASONING STEP — Name the specific step the student must carry out (e.g. "trace the loop twice with an empty second element", "follow \`$id\` from the route into the query", "look up what the \`'w'\` flag does to an existing file"). For types 1 and 2, the correct answer must not appear verbatim anywhere in its snippets; for every other type, it must not be identifiable without that step.
+1. REASONING STEP — Name the specific step the student must carry out (e.g. "trace the loop twice with an empty second element", "follow \`$id\` from the route into the query", "look up what the \`'w'\` flag does to an existing file"). For types 1 and 2, the correct answer must not appear verbatim anywhere in its snippets; for every other type, it must not be identifiable without that step.${buildResearchReasoningStep(questionEmphasis)}
 2. MISREADING — ${depthCheckMisreading}
 3. ONE PROVABLE ANSWER — The correct answer is a fact about how the code behaves or is structured, provable from the submitted code, any values stated in the question, and, for type 10, the documented behaviour of the language or library being called. Two people who fully understand the code must arrive at the same answer.${answerabilityConditionRule}${answerabilityModificationRule}
 4. SELF-CONTAINED — Students answer with their whole repository open, so a question need not show all the code its answer depends on, but the student must be able to find that code or be given the value. When the answer depends on code outside the lines the question points at (where a variable or constant is set, a helper it calls, the data a loop walks), that code must be in the user message, and the question must name the function, variable, or file clearly enough for the student to find it, unless finding it is the step the question asks for. You may also show that code in a snippet of its own when that helps. When it depends on a value no code in the user message shows (an argument you choose, database contents, user input, a network response, file-system state, timing, or environment configuration), state that value in the question. Never add a snippet that shows the answer itself: a question asking where \`$cityId\` originates must not show the line that sets it.
 5. BEHAVIOUR, NOT OPINION — Ask what the code does. Never ask what is better, cleaner, more efficient, or recommended; never ask about the author's intent or alternatives they considered; never ask for a critique, improvement, or refactor.${opinionTypeSixNote}
 6. ONE THING — Ask exactly ONE thing. Do not join sub-questions with "and", "or", commas, or semicolons (e.g. "What does X do, and what does it return?"). If a concept has several facets, pick the single most testable one.
-7. OPENING — Begin with one of these, and no other opening: ${ALLOWED_OPENINGS.join(', ')}. Or begin with a lead-in clause that sets up the scenario, followed by one of those: ${ALLOWED_LEAD_INS.map((c) => `"${c}"`).join(', ')}. Never begin with any of these, even when it starts with an allowed word: ${BANNED_OPENINGS.join(', ')}. A "How" question must be tied to a concrete input, change, or condition and answered by a value, count, order, or single effect — never by an explanation of how something works.
+7. OPENING — ${buildOpeningCheck(openings)}
 8. NO GIVEAWAYS — The question must not reveal its answer: no leading phrasing ("Doesn't this…"), no emphasis on the answer's key term, and no framing that only one answer grammatically fits.
 9. FINAL TEST — ${answerabilityFinalTest}
 
 OUTPUT FORMAT — ONE JSON OBJECT, NOTHING ELSE:
 Respond with a single JSON object and nothing else: no Markdown code fence around it, and no text before or after it. GrillMyCode builds the report from this object itself — it numbers the questions, formats them and lays out the code — so every field holds plain content, never Markdown structure. The object has this shape:
 
-{
+{${lookupTargetsShape}
   "questions": [
     {
       "snippets": [
@@ -567,7 +731,7 @@ Respond with a single JSON object and nothing else: no Markdown code fence aroun
       "broader": false
     }
   ]${summaryShape}
-}
+}${lookupTargetsFieldRule}
 
 The fields of each question:
 - "snippets": the code the question is about, as ranges of lines:
@@ -602,7 +766,7 @@ ANSWER CONSTRAINTS:${distractorQualityRules}
 - Use clear, direct language; if a technical term is needed, keep it but avoid unnecessary jargon${distractorStyleRules}
 
 SHORT-ANSWER QUESTIONS (exactly one in every three):
-- Exactly one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, a computed return value or variable state (\`3\`, \`-1\`, \`'B'\`, \`[]\`) produced by tracing the code with a given input. Use trace (type 1) or state-at-a-point (type 2) questions here, a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a short effect (e.g. \`Overwrites the file\`). No more than one-third of questions should be short-answer.${shortAnswerSymmetryRules}
+- Exactly one in every three questions must target a correct answer of ${SHORT_ANSWER_MAX_CHARS} characters or fewer — for example, ${shortAnswer.example}. ${shortAnswer.types} No more than one-third of questions should be short-answer.${shortAnswerSymmetryRules}
 
 ${lengthRule}
 
@@ -694,9 +858,15 @@ ${untrustedClose}`;
  * request over the schema. The counts the prompt asks for are checked in code
  * instead. Optional parts are left out of the schema rather than made
  * nullable: `distractors` without an instructor repository, `context_summary`
- * without instructor context.
+ * without instructor context, `lookup_targets` without the research emphasis.
+ * `lookup_targets` is listed first, since it must be written before the
+ * questions (see LOOKUP_TARGETS_FIELD).
  */
-export function buildResponseFormat({ includeDistractors = true, includeContextSummary = false }) {
+export function buildResponseFormat({
+  includeDistractors = true,
+  includeContextSummary = false,
+  questionEmphasis = DEFAULT_QUESTION_EMPHASIS,
+}) {
   const snippet = {
     type: 'object',
     properties: {
@@ -726,6 +896,15 @@ export function buildResponseFormat({ includeDistractors = true, includeContextS
     broader: { type: 'boolean', description: 'True only for a broader question.' },
   };
   const properties = {
+    ...(questionEmphasis === 'research'
+      ? {
+          lookup_targets: {
+            type: 'array',
+            items: { type: 'string' },
+            description: `Written before any question: ${LOOKUP_TARGETS_FIELD}`,
+          },
+        }
+      : {}),
     questions: {
       type: 'array',
       items: {

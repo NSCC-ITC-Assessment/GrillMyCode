@@ -197,8 +197,8 @@ export const MAX_QUESTIONS = 50;
 export const GIT_SHA_SHORT_LENGTH = 7;
 
 /**
- * Number of hex characters kept from the SHA-256 of src/prompt.js recorded in
- * raw-ai-output.md as the prompt version. Twelve is ample to tell prompt
+ * Number of hex characters kept from the SHA-256 of the src/prompt/ modules,
+ * recorded in raw-ai-output.md as the prompt version. Twelve is ample to tell prompt
  * revisions apart while staying readable.
  */
 export const PROMPT_HASH_LENGTH = 12;
@@ -416,6 +416,40 @@ export const MIN_QUESTIONS = 1;
  * Default number of questions generated when num_questions is not supplied.
  */
 export const DEFAULT_NUM_QUESTIONS = 20;
+
+/**
+ * Accepted values of question_emphasis, which restricts the question set to
+ * questions that send the student to documentation or to questions they answer
+ * by mentally executing their own code:
+ *   balanced — no restriction; the question types and openings are mixed as
+ *              usual.
+ *   research — every question turns on how the language or a library behaves,
+ *              including how that behaviour responds to an input, change or
+ *              condition the code does not show (causal why, language and API
+ *              behaviour, edge cases).
+ *   tracing  — every question is answered by executing the code in the head or
+ *              following a value through it.
+ * research and tracing are all-or-nothing: the model never relaxes them to
+ * reach the question count, even at some cost to question quality. See
+ * EMPHASES and buildEmphasisRules in prompt/prompt.js and QUESTION_OPENINGS
+ * in prompt/openings.js.
+ */
+export const QUESTION_EMPHASIS_MODES = ['balanced', 'research', 'tracing'];
+
+/**
+ * Default question_emphasis. Balanced leaves the prompt exactly as it was
+ * before the input existed, so existing workflows are unaffected.
+ */
+export const DEFAULT_QUESTION_EMPHASIS = 'balanced';
+
+/**
+ * Under research, the minimum share of questions (rounded up) that must be
+ * causal-why or language-and-API questions (types 8 and 10) — the two types
+ * most likely to send a student to documentation. Kept below the per-type cap
+ * of one-third so two types can always meet it. Unlike the restriction to the
+ * research types, it is an ordinary MIXING RULES quota the model may relax.
+ */
+export const RESEARCH_LOOKUP_QUESTION_SHARE = 1 / 4;
 
 /**
  * Suffix appended to the assignment name to form the instructor repository

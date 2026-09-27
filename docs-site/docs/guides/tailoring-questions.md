@@ -15,13 +15,22 @@ Each question quotes a short snippet of the student's code.
 The AI can't guarantee every one, so you may choose to read them before relying on them for marks. [Your choice of model](choosing-a-model.md) matters.
 :::
 
-You can steer the questions in five ways, all in the [Workflow Wizard](../workflow-wizard.mdx)'s **Questions** step unless noted.
+You can steer the questions in six ways, all in the [Workflow Wizard](../workflow-wizard.mdx)'s **Questions** step unless noted.
 
 ## How many questions
 
 The default is 20, and you can choose anywhere from 1 to 50.
 
 For a conversation, 20 gives you plenty to choose from; you don't have to ask them all. For a written check where the student answers every question, a smaller number such as 5 to 8 is usually better.
+
+## Research or tracing
+
+**Question emphasis** limits the questions to one kind:
+
+- **Research:** only questions that send the student to the documentation or ask about edge cases, such as why a line is needed or what a library call does here.
+- **Tracing:** only questions the student answers by running the code in their head, such as what a function returns or how many times a loop runs.
+
+The default, **Balanced**, mixes both. With a small submission, Research or Tracing may give some easier or repetitive questions, because the AI won't switch to the other kind.
 
 ## Tell the AI about the assignment
 
@@ -74,4 +83,4 @@ The **Include answers** option shows the answers to the student, right under eac
 
 ---
 
-**Go deeper:** [Inputs and outputs](../reference/inputs-outputs.md) (`num_questions`, `instructor_context`, `assignment_context`, `keep_comments`) · [Codebase context](../reference/code-selection.md#codebase-context) · Recipe: [Assignment brief as context](../example-workflows/assignment-context.md)
+**Go deeper:** [Inputs and outputs](../reference/inputs-outputs.md) (`num_questions`, `question_emphasis`, `instructor_context`, `assignment_context`, `keep_comments`) · [Codebase context](../reference/code-selection.md#codebase-context) · Recipes: [Assignment brief as context](../example-workflows/assignment-context.md) · [Research or tracing questions](../example-workflows/6-question-emphasis.md)

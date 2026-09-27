@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { buildPrompt, buildResponseFormat } from '../src/prompt.js';
+import { buildPrompt, buildResponseFormat } from '../src/prompt/prompt.js';
 
 const BASE = {
   codeContent: '**app.js**\n\n```js\nconst total = items.length;\n```',

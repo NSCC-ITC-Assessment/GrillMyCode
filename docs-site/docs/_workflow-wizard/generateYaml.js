@@ -120,6 +120,7 @@ const DEFAULTS = {
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   numQuestions: 20,
+  questionEmphasis: 'balanced',
   includeAnswers: false,
   instructorContext: '',
   assignmentContext: '',
@@ -419,6 +420,7 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
 
   // ── Question generation ────────────────────────────────────────────────────
   pushInput('num_questions', 'numQuestions', yamlStr(cfg.numQuestions));
+  pushInput('question_emphasis', 'questionEmphasis', yamlStr(cfg.questionEmphasis));
   pushInput('include_answers', 'includeAnswers', yamlStr(cfg.includeAnswers));
   // Normalised on the way out like the other glob-list inputs, so a value typed
   // with newlines emits as the comma-separated form the action parses.

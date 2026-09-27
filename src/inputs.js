@@ -24,6 +24,8 @@ import {
   TAG_DIFF_BASE_NAMED_PREFIX,
   DEFAULT_LABEL_REPOS,
   DEFAULT_LOG_PROMPT,
+  DEFAULT_QUESTION_EMPHASIS,
+  QUESTION_EMPHASIS_MODES,
 } from './constants.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
@@ -113,6 +115,24 @@ function readReasoningEffort() {
   return value;
 }
 
+/**
+ * Reads question_emphasis, case-insensitively. An unrecognised value fails the
+ * run rather than falling back to balanced: an instructor who asked for an emphasis
+ * and silently got none would read the questions as that emphasis's result.
+ */
+function readQuestionEmphasis() {
+  const value = (core.getInput('question_emphasis') || DEFAULT_QUESTION_EMPHASIS)
+    .trim()
+    .toLowerCase();
+  if (!QUESTION_EMPHASIS_MODES.includes(value)) {
+    throw new Error(
+      `question_emphasis must be one of ${QUESTION_EMPHASIS_MODES.map((m) => `"${m}"`).join(', ')}; ` +
+        `got "${value}".`,
+    );
+  }
+  return value;
+}
+
 export function readInputs() {
   const excludeStr = core.getInput('additional_exclude_patterns');
   const overrideStr = core.getInput('exclude_pattern_overrides');
@@ -168,6 +188,7 @@ export function readInputs() {
     aiReasoningEffort: readReasoningEffort(),
     apiKey,
     numQuestions,
+    questionEmphasis: readQuestionEmphasis(),
     additionalExcludePatterns,
     excludePatternOverrides: overridePatterns,
     instructorContext: core.getInput('instructor_context') || '',
