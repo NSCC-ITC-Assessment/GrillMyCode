@@ -38,6 +38,7 @@ A **GrillMyCode** heading with the logo, a **Download as PDF** button, then a he
 | **Submission tag** | On tag runs, with the tag the diff started from when `tag_diff_base` is `previous-tag` or `tag:<name>` |
 | **Code Files Assessed** | Always: the files that passed filtering |
 | **Assignment Context** | When `assignment_context` matched any files |
+| **Codebase context** | When `include_codebase_context` sent any files: how many, and that answers may depend on them though they are not assessed |
 | **Instructor Note** | When `instructor_context` is set: a one-sentence summary of the question focus, written by the model |
 
 The questions follow, then a footer naming the model, provider and action version.

@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.18.0 — 2026-09-27
+
+### What's Changed
+
+### Documentation
+
+- update OpenAI model references
+
+### Refactoring
+
+- improve question prompt clarity and structure in various documentation files
+
 ## v0.17.1 — 2026-09-27
 
 ### What's Changed

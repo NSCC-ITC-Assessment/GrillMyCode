@@ -38,7 +38,7 @@ Students don't need to set anything up, but they do need to know where their que
 
 **If questions are generated on every push:**
 
-> This assignment uses GrillMyCode. A few minutes after you push your work to `main`, an issue called **GrillMyCode Questions** appears in your repository's **Issues** tab, with questions about your code. Be ready to answer them. The questions are regenerated each time you push, so always use the latest set.
+> This assignment uses GrillMyCode. A few minutes after you push your work to `main`, an issue called **GrillMyCode Questions** appears in your repository's **Issues** tab, with questions about your code. Be ready to answer them. To answer them, review all of the code in your repository, including any starter code you were given. The questions are regenerated each time you push, so always use the latest set.
 
 **If students submit with a tag:**
 
@@ -49,7 +49,7 @@ Students don't need to set anything up, but they do need to know where their que
 > git push origin phase1-complete
 > ```
 >
-> A few minutes later, an issue called **GrillMyCode Questions (tag: phase1-complete)** appears in your repository's **Issues** tab, with questions about your code. Running `gh student submit` on its own does **not** do this; you need to push the tag.
+> A few minutes later, an issue called **GrillMyCode Questions (tag: phase1-complete)** appears in your repository's **Issues** tab, with questions about your code. To answer them, review all of the code in your repository, including any starter code you were given. Running `gh student submit` on its own does **not** do this; you need to push the tag.
 >
 > To resubmit after further changes, move the tag and push it again with `git tag -f phase1-complete` and then `git push --force origin phase1-complete`. Every resubmission is recorded.
 

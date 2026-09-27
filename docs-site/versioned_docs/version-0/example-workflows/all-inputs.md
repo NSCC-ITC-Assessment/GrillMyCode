@@ -95,9 +95,8 @@ jobs:
           # Supports multi-line YAML strings.
           instructor_context: |
             Assignment 3 — Python loops.
-            Prioritize execution flow questions that trace what a loop
-            produces for a given input, conceptual questions about loop
-            design, and at least one error identification question about
+            Prioritize questions that trace what a loop produces for a
+            given input, and include at least one question about
             off-by-one errors.
 
           # Comma-separated file glob(s) whose contents are read from the repo

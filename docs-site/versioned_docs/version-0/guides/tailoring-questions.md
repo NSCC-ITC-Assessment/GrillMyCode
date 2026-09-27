@@ -4,13 +4,16 @@ sidebar_position: 2
 
 # Tailoring the questions
 
-Out of the box, GrillMyCode asks a mix of three kinds of question about any code:
+Out of the box, GrillMyCode asks questions the student must work out from the code in their repository, each with one checkable answer. For example:
 
-- **What it's for:** "What is the purpose of this function?"
-- **What happens when it runs:** "If the list is empty, which branch runs?"
-- **What could go wrong:** "Which input would make this function throw an error?"
+- "Given the list `[80, 0, 95]`, what does this function return?"
+- "When the file already exists, what does the `'w'` flag do to it?"
 
-Each question quotes a short snippet of the student's own code, so they know exactly what it's asking about.
+Each question quotes a short snippet of the student's code.
+
+:::note[The AI writes the questions]
+The AI can't guarantee every one, so you may choose to read them before relying on them for marks. [Your choice of model](choosing-a-model.md) matters.
+:::
 
 You can steer the questions in five ways, all in the [Workflow Wizard](../workflow-wizard.mdx)'s **Questions** step unless noted.
 
@@ -45,18 +48,18 @@ Two things to keep in mind:
 - **It reads the student's copy.** Keep these files in a folder that students have no reason to edit, such as a `docs/` folder in your template. A student's edits to a file listed here would change what the questions focus on.
 - **It steers the topics; it doesn't give orders.** Anything that must happen, such as "always ask about recursion", belongs in the instructions box.
 
-Very long documents are cut off after about 20,000 characters, which is roughly 3,000 words.
+Very long documents are cut off after about 20,000 characters (roughly 3,000 words).
 
 ## Let the AI see the rest of the project
 
-Turn on **Give the AI the rest of the project as context** in the Wizard's **File handling options** step. The AI then also sees every eligible file that's left once the usual exclusions are applied and the assessed files are set aside. That's:
+Turn on **Give the AI the rest of the project as context** in the Wizard's **File handling options** step. The AI then also sees every eligible file that isn't being assessed. That's:
 
 - **Your starter code** that the student hasn't changed.
 - **The student's earlier work**, when each submission tag assesses only the new work, such as phase 1 while phase 2 is assessed.
 
 It can then ask how the new code fits with the code around it.
 
-- **It's background only.** Every question is still about the assessed code.
+- **It's background only.** Questions are about the assessed code, but answers may depend on it.
 - **It costs more per run.** Large projects are trimmed to a limit you can set in the **Advanced** step.
 
 ## Keep or remove comments
