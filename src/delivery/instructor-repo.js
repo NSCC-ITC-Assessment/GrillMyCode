@@ -436,6 +436,9 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * @param {object[]} params.questions         - The numbered question objects the report
  *                                               was rendered from, filed as questions.json
  *                                               for the quiz workflow.
+ * @param {object[]} [params.droppedQuestions] - Questions dropped for not pointing at the
+ *                                               student's code, filed in questions.json
+ *                                               marked as dropped.
  * @param {string}  params.headSha             - Head commit SHA (used in commit message).
  * @param {string} [params.rawOutput]          - Verbatim model reply, filed beside the
  *                                               assessment. Omitted means no raw copy.
@@ -455,6 +458,7 @@ export async function deliverToInstructorRepo({
   tagGroup = '',
   content,
   questions,
+  droppedQuestions = [],
   headSha,
   rawOutput,
   prompt,
@@ -562,7 +566,7 @@ export async function deliverToInstructorRepo({
     repo: instructorRepoName,
     path: jsonPath,
     message: `chore: update quiz questions for ${label} at ${shortHead}`,
-    content: buildQuestionsJson(questions),
+    content: buildQuestionsJson(questions, droppedQuestions),
   });
   core.info(`Quiz questions written to ${owner}/${instructorRepoName}/${jsonPath}`);
 }
@@ -571,23 +575,32 @@ export async function deliverToInstructorRepo({
  * The questions.json filed beside questions.md: the questions the report was
  * rendered from, as data, which the quiz workflow builds the quiz from. Each
  * snippet keeps the lines of its file it was read from.
+ *
+ * The questions dropped for not pointing at the student's code follow, with
+ * `dropped: true` and no number, so an instructor can see what was asked and
+ * which lines it showed. The quiz workflow skips them.
  */
-export function buildQuestionsJson(questions) {
-  const record = {
-    questions: questions.map((q) => ({
-      number: q.number,
-      broader: q.broader,
-      snippets: q.snippets.map(({ file, start, end, language, code }) => ({
-        file,
-        start_line: start,
-        end_line: end,
-        language,
-        code,
-      })),
-      question: q.question,
-      answer: q.answer,
-      distractors: q.distractors,
+export function buildQuestionsJson(questions, droppedQuestions = []) {
+  const entry = (q, dropped) => ({
+    number: dropped ? null : q.number,
+    dropped,
+    broader: q.broader,
+    snippets: q.snippets.map(({ file, start, end, language, code }) => ({
+      file,
+      start_line: start,
+      end_line: end,
+      language,
+      code,
     })),
+    question: q.question,
+    answer: q.answer,
+    distractors: q.distractors,
+  });
+  const record = {
+    questions: [
+      ...questions.map((q) => entry(q, false)),
+      ...droppedQuestions.map((q) => entry(q, true)),
+    ],
   };
   return `${JSON.stringify(record, null, 2)}\n`;
 }

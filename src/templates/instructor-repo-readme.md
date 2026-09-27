@@ -78,13 +78,15 @@ This file is created or updated automatically each time GrillMyCode runs against
 
 The same questions as `questions.md`, as data — each question's code snippets with the file and line numbers they come from, question, answer and distractors — written alongside it on every run. The quiz is built from this file alone. You do not need to open it unless you want to correct a question in the quiz: edit it here, and committing the change rebuilds that student's quiz. Edits to `questions.md` do not reach the quiz.
 
+Questions dropped because they did not point at the student's code come last, with `"dropped": true` and no number. The student's report and the quiz leave them out; they are here so you can see what the model asked and the code it showed. A question dropped because its file or lines could not be found records only the file and line numbers, with no code. To put a dropped question in the quiz anyway, change its `dropped` to `false`.
+
 ### `{studentLogin}/data/raw-ai-output.md`
 
 The AI's reply exactly as it arrived, before GrillMyCode processed it into `questions.md`. It is written on every run, and it is a diagnostic record rather than something you need to read or import — **`questions.md` is the assessment**.
 
 The reply is a JSON object, shown in a code block: for each question, the file and line numbers of the code to show, then the question, answer and distractors. GrillMyCode copies the named lines from the student's files, then numbers, formats and lays out the questions itself. It is worth opening when a student's `questions.md` looks wrong, because the processing steps are lossy and this file is the only place their input survives:
 
-- **Fewer questions than you asked for.** Questions the model generated beyond `num_questions` are cut, questions with no question text or no answer are dropped, and so are questions whose snippets name a file or lines the model was not sent, or show none of the student's own lines in this submission. All of them are visible here.
+- **Fewer questions than you asked for.** Questions the model generated beyond `num_questions` are cut, questions with no question text or no answer are dropped, and so are questions whose snippets name a file or lines the model was not sent, or show none of the student's own lines in this submission. All of them are visible here, and the last two kinds are also listed in `questions.json`, marked as dropped.
 - **A missing or malformed instructor note.** The context summary is moved from the reply into the report header; this file shows what the model actually wrote for it.
 
 The header above the reply records how it was produced. **Stopped because** is the first thing to check when questions are missing: `length` means the model hit its output limit and the reply is incomplete, which is different from a model that simply wrote fewer questions. The header also shows token counts, how many attempts the request took, and the settings used — questions requested, temperature, and a short hash identifying the prompt version, so replies from different GrillMyCode releases can be told apart.

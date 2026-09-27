@@ -101,7 +101,9 @@ jobs:
             const list = (value) => (Array.isArray(value) ? value : []);
             const results = [];
             for (const q of data.questions) {
-              if (!q || typeof q !== 'object') continue;
+              // Dropped questions are there for the instructor to read, never
+              // to quiz on.
+              if (!q || typeof q !== 'object' || q.dropped === true) continue;
               const question = str(q.question).trim();
               const answer = str(q.answer).trim();
               if (!question || !answer) continue;

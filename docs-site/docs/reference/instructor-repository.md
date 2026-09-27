@@ -82,11 +82,13 @@ The three wrong options per question are only needed for the quiz, and every stu
 
 In the `data/` subfolder. The same questions as `questions.md`, as data: each question's code snippets with the file and line numbers they come from, question, answer, distractors, and whether it is a broader question. The quiz is built from this file alone. You don't need to open it unless you want to correct a question in the quiz: edit it here, and saving the change rebuilds that student's quiz. An edit to `questions.md` doesn't reach the quiz.
 
+Questions GrillMyCode [dropped](code-selection.md#4-after-the-ai-replies) because they didn't point at the student's code come last, with `"dropped": true` and no number. The student's report and the quiz leave them out, but you can see what the model asked and the code it showed. For a question dropped because its file or lines couldn't be found, only the file and line numbers are recorded, with no code. To put a dropped question in the quiz anyway, change its `dropped` to `false`.
+
 ## `raw-ai-output.md`
 
 In the `data/` subfolder. A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived: a JSON object, shown in a code block. Its snippets are file names and line numbers, not code. GrillMyCode has not yet checked it, copied in the code, dropped questions that don't point at the student's own code, cut questions beyond `num_questions`, or numbered and formatted the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
 
-Open it when a student's `questions.md` looks wrong. Questions that were cut or dropped are only visible here. Include its contents in any bug report about generated questions.
+Open it when a student's `questions.md` looks wrong. Questions cut for being over the count, or dropped for missing question text or an answer, are only visible here; the ones dropped for not pointing at the student's code are also in [`questions.json`](#questionsjson). Include its contents in any bug report about generated questions.
 
 The header records how the reply was produced:
 

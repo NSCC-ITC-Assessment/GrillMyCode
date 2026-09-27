@@ -189,7 +189,8 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │
                └── writeFileWithRetry()
                      Writes {studentLogin}/data/questions.json — buildQuestionsJson():
-                     the question objects the report was rendered from. Last,
+                     the question objects the report was rendered from, then
+                     those dropped by resolveSnippets, marked "dropped". Last,
                      because its commit starts the quiz workflow
                │
      applyRepoLabels()   ← only when label_repos is "true"

@@ -100,6 +100,11 @@ describe('parseQuestionsJson', () => {
     ]);
   });
 
+  it('leaves out dropped questions', () => {
+    const json = buildQuestionsJson(numberQuestions([question(1)]), [question(2)]);
+    expect(parseQuestionsJson(json).map((q) => q.answer)).toEqual(['answer 1']);
+  });
+
   it('keeps each snippet of a multi-file question under its own file', () => {
     const [q] = parse(
       question(1, {

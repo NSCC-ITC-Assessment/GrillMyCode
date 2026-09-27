@@ -257,7 +257,17 @@ describe('resolveSnippets', () => {
     const result = resolve([{ ...ask(ref('app.js', 1), ref('secret.js', 4, 6)), entry: 3 }]);
     expect(result).toEqual({
       questions: [],
-      unresolved: [{ entry: 3, snippets: [ref('secret.js', 4, 6)] }],
+      unresolved: [
+        {
+          question: 'Q',
+          entry: 3,
+          snippets: [
+            { file: 'app.js', language: '', code: '', start: 1, end: 1 },
+            { file: 'secret.js', language: '', code: '', start: 4, end: 6 },
+          ],
+          named: [ref('secret.js', 4, 6)],
+        },
+      ],
       notStudentWork: [],
     });
   });
@@ -275,6 +285,13 @@ describe('resolveSnippets', () => {
     const starter = { filepath: 'lib.php', lines: ['function f() {}'], studentLines: new Set() };
     const sources = [marked, starter, APP];
 
+    it('keeps the code a dropped question showed', () => {
+      const [dropped] = resolve([ask(ref('index.php', 3))], sources).notStudentWork;
+      expect(dropped.snippets).toEqual([
+        { file: 'index.php', language: 'php', code: '$c = 3;', start: 3, end: 3 },
+      ]);
+    });
+
     it.each([
       ['an added line of a marked file', [ref('index.php', 1, 2)], true],
       ['only unchanged lines of a marked file', [ref('index.php', 1)], false],
@@ -284,7 +301,9 @@ describe('resolveSnippets', () => {
     ])('%s', (_, snippets, kept) => {
       const result = resolve([{ ...ask(...snippets), entry: 2 }], sources);
       expect(result.questions).toHaveLength(kept ? 1 : 0);
-      expect(result.notStudentWork).toEqual(kept ? [] : [{ entry: 2, snippets }]);
+      expect(result.notStudentWork).toEqual(
+        kept ? [] : [expect.objectContaining({ entry: 2, named: snippets })],
+      );
     });
   });
 });
@@ -295,10 +314,10 @@ describe('describeDropped', () => {
   // code from one whose line numbers were off.
   it('names each dropped question by its position in the reply and the lines it named', () => {
     const dropped = [
-      { entry: 7, snippets: [{ file: 'game.js', start: 40, end: 46 }] },
+      { entry: 7, named: [{ file: 'game.js', start: 40, end: 46 }] },
       {
         entry: 9,
-        snippets: [
+        named: [
           { file: 'lib.php', start: 3, end: 3 },
           { file: 'index.php', start: 1, end: 2 },
         ],
@@ -310,7 +329,7 @@ describe('describeDropped', () => {
   });
 
   it('shows a line number that was not a whole number, and a missing file name', () => {
-    expect(describeDropped([{ entry: 1, snippets: [{ file: '', start: NaN, end: 4 }] }], 5)).toBe(
+    expect(describeDropped([{ entry: 1, named: [{ file: '', start: NaN, end: 4 }] }], 5)).toBe(
       'entry 1 of 5: (no file) lines ?–4',
     );
   });

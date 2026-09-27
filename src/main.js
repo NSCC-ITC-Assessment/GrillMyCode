@@ -1232,6 +1232,11 @@ async function run() {
     // Numbered once, here, so every copy of the report numbers a question the
     // same way — the student's copy keeps the gaps a withheld question leaves.
     const finalQuestions = numberQuestions(arranged);
+    // Filed in the instructor's questions.json, in reply order, so a dropped
+    // question can be read there rather than only named in a warning.
+    const droppedQuestions = [...resolved.unresolved, ...resolved.notStudentWork].sort(
+      (a, b) => a.entry - b.entry,
+    );
 
     if (includeDistractors) {
       const short = finalQuestions.filter((q) => q.distractors.length !== 3).length;
@@ -1512,6 +1517,7 @@ async function run() {
           tagGroup: tagSlug,
           content: instructorReport,
           questions: finalQuestions,
+          droppedQuestions,
           headSha,
           rawOutput: rawOutputCopy,
           prompt: promptCopy,

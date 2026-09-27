@@ -273,9 +273,11 @@ function findSource(name, sources) {
  * path as sent and its extension as the language.
  *
  * Returns `{ questions, unresolved, notStudentWork }`. Each dropped question is
- * listed as `{ entry, snippets }`, its position in the reply and the snippets
- * as the model named them — for `unresolved`, only the one that failed — so a
- * warning can point at it (see describeDropped).
+ * kept whole, with `named` added: the snippets as the model named them — for
+ * `unresolved`, only the one that failed — so a warning can point at it (see
+ * describeDropped). A `notStudentWork` question's snippets are read like a kept
+ * one's; an `unresolved` question's are the ranges it named, with no code, as
+ * there may be none to read.
  */
 export function resolveSnippets(questions, sources) {
   const kept = [];
@@ -312,9 +314,16 @@ export function resolveSnippets(questions, sources) {
       }
     }
     if (snippets.length < q.snippets.length) {
-      unresolved.push({ entry: q.entry, snippets: [failed] });
+      const named = q.snippets.map(({ file, start, end }) => ({
+        file,
+        language: '',
+        code: '',
+        start,
+        end,
+      }));
+      unresolved.push({ ...q, snippets: named, named: [failed] });
     } else if (snippets.length > 0 && !studentWork) {
-      notStudentWork.push({ entry: q.entry, snippets: q.snippets });
+      notStudentWork.push({ ...q, snippets, named: q.snippets });
     } else kept.push({ ...q, snippets });
   }
 
@@ -323,7 +332,7 @@ export function resolveSnippets(questions, sources) {
 
 /**
  * Where to find questions resolveSnippets dropped, for a warning: each one's
- * position among the reply's `entries` and the snippets it named, as in
+ * position among the reply's `entries` and the snippets it `named`, as in
  * `entry 7 of 12: game.js lines 40–46`. A line number that was not a whole
  * number shows as `?`.
  */
@@ -333,8 +342,8 @@ export function describeDropped(dropped, entries) {
     return start === end ? `line ${n(start)}` : `lines ${n(start)}–${n(end)}`;
   };
   return dropped
-    .map(({ entry, snippets }) => {
-      const refs = snippets.map((ref) => `${ref.file || '(no file)'} ${lines(ref)}`);
+    .map(({ entry, named }) => {
+      const refs = named.map((ref) => `${ref.file || '(no file)'} ${lines(ref)}`);
       return `entry ${entry} of ${entries}: ${refs.join(', ')}`;
     })
     .join('; ');

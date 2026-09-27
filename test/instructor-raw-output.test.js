@@ -143,10 +143,26 @@ describe('questions.json delivery', () => {
     ).questions;
     expect(record).toEqual({
       ...questions[0],
+      dropped: false,
       snippets: [
         { file: 'a.js', start_line: 3, end_line: 4, language: 'js', code: 'let a = 1;\na++;' },
       ],
     });
+  });
+
+  // An instructor reading why a report came up short needs the question the
+  // model wrote and the lines it pointed at, not just a count in the log.
+  it('records dropped questions after the others, marked and unnumbered', () => {
+    const { number, ...unnumbered } = questions[0];
+    const records = JSON.parse(
+      buildQuestionsJson(questions, [{ ...unnumbered, entry: 4, named: [] }]),
+    ).questions;
+    expect(records.map((r) => [r.number, r.dropped])).toEqual([
+      [number, false],
+      [null, true],
+    ]);
+    expect(records[1]).not.toHaveProperty('entry');
+    expect(records[1]).not.toHaveProperty('named');
   });
 });
 
