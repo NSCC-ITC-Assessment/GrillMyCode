@@ -36,7 +36,7 @@ Mostly. The questions, issue and PDF work in any GitHub repository. The private 
 
 ### What does it cost?
 
-GrillMyCode itself is free. The AI is paid through OpenRouter from a prepaid balance. With the recommended models, an assessment typically costs from less than one cent to a few cents, and a small budget typically lasts a large class a semester. Cost can vary widely depending on the model you choose. See [Choosing a model and managing cost](guides/choosing-a-model.md).
+GrillMyCode itself is free. The AI is paid through OpenRouter from a prepaid balance. An assessment can cost less than one cent, and with a low-cost model a small budget can last a large class a semester. The cost can rise sharply with the model you choose, its reasoning settings and how much code is assessed. Working out your class's cost is your responsibility, so do [trial runs](guides/choosing-a-model.md#estimate-your-cost-with-trial-runs) before rolling it out.
 
 ### What secrets do I need?
 

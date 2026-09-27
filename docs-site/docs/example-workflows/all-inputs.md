@@ -62,7 +62,8 @@ jobs:
           # serving the model is tried first — ":nitro" for the fastest (use when
           # the model's questions are good but assessments are slow to arrive;
           # check pricing first, as fast endpoints can cost more), ":floor" for
-          # the cheapest. The model itself is unchanged.
+          # the cheapest. The model is unchanged, but a cheap provider may run a
+          # compressed copy of it (e.g. fp4) that writes weaker questions.
           ai_model: "google/gemini-3.5-flash-lite"
 
           # Total number of attempts (initial + retries) when calling the AI provider.
@@ -78,6 +79,15 @@ jobs:
           # higher values produce more varied output. Most users should leave this
           # at the default.
           # ai_temperature: "0.5"
+
+          # How much the model reasons before answering: default, none, minimal,
+          # low, medium, high, xhigh or max. "default" sends no setting, so the
+          # model's own default applies — some reason at "high" unless told
+          # otherwise. Reasoning is billed as output, so a lower level can cut
+          # the cost of a run several times over. "none" fails the run on a
+          # model that always reasons; any other unsupported level is mapped to
+          # the nearest one the model has.
+          # ai_reasoning_effort: "default"
 
           # ── Question generation ───────────────────────────────────────────
 

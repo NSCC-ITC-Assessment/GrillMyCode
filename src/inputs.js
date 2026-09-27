@@ -14,6 +14,8 @@ import {
   DEFAULT_CODEBASE_CONTEXT_MAX_CHARS,
   DEFAULT_AI_RETRY_MAX_ATTEMPTS,
   DEFAULT_AI_TEMPERATURE,
+  DEFAULT_AI_REASONING_EFFORT,
+  AI_REASONING_EFFORTS,
   DEFAULT_NUM_QUESTIONS,
   DEFAULT_AI_PROVIDER,
   DEFAULT_AI_MODEL,
@@ -93,6 +95,24 @@ function readLabelRepos() {
   throw new Error(`label_repos must be "true" or "false"; got "${value}".`);
 }
 
+/**
+ * Reads ai_reasoning_effort, case-insensitively. An unknown level is a
+ * configuration error: falling back to the model's default could quietly run a
+ * whole class at a far higher effort, and cost, than the instructor meant.
+ */
+function readReasoningEffort() {
+  const value = (core.getInput('ai_reasoning_effort') || DEFAULT_AI_REASONING_EFFORT)
+    .trim()
+    .toLowerCase();
+  if (!AI_REASONING_EFFORTS.includes(value)) {
+    throw new Error(
+      `ai_reasoning_effort must be one of ${AI_REASONING_EFFORTS.map((e) => `"${e}"`).join(', ')}; ` +
+        `got "${value}".`,
+    );
+  }
+  return value;
+}
+
 export function readInputs() {
   const excludeStr = core.getInput('additional_exclude_patterns');
   const overrideStr = core.getInput('exclude_pattern_overrides');
@@ -145,6 +165,7 @@ export function readInputs() {
       1,
       Math.max(0, parseFloat(core.getInput('ai_temperature') || String(DEFAULT_AI_TEMPERATURE))),
     ),
+    aiReasoningEffort: readReasoningEffort(),
     apiKey,
     numQuestions,
     additionalExcludePatterns,

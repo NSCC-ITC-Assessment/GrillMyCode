@@ -7,6 +7,8 @@
 # Generated files
 .docusaurus
 .cache-loader
+# OpenRouter catalogue snapshot, written by scripts/fetch-openrouter-models.mjs
+/static/data/openrouter-models.json
 
 # Misc
 .DS_Store

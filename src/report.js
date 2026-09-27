@@ -154,7 +154,7 @@ function provenanceComment(record) {
  * is bumped whenever a field changes meaning or is removed.
  *
  * @param {object} [opts.request]  - What was asked for: `numQuestions`,
- *   `temperature`, `topP`, `promptHash`, `actionRef`
+ *   `temperature`, `topP`, `reasoningEffort`, `promptHash`, `actionRef`
  * @param {object} [opts.response] - The metadata callAI returns
  */
 export function formatRawOutput({
@@ -180,6 +180,15 @@ export function formatRawOutput({
   if (request) {
     const settings = [`${request.numQuestions} questions requested`];
     settings.push(`temperature ${request.temperature}`);
+    // `default` sends no reasoning setting, so the model decided — say so
+    // rather than print a level nobody asked for.
+    if (request.reasoningEffort) {
+      settings.push(
+        request.reasoningEffort === 'default'
+          ? 'reasoning: model default'
+          : `reasoning \`${request.reasoningEffort}\``,
+      );
+    }
     if (request.promptHash) settings.push(`prompt \`${request.promptHash}\``);
     if (request.actionRef) settings.push(`action \`${request.actionRef}\``);
     requestLines.push(`> - **Settings:** ${settings.join(' · ')}`);
