@@ -30,10 +30,11 @@ import { SNIPPET_MAX_LINES } from './constants.js';
  * the output token limit — every complete question object in the `questions`
  * array is recovered on its own, and `salvaged` is set.
  *
- * Each question is then normalised (see normaliseQuestion). One without
- * question text or an answer cannot be shown or assessed, so it is dropped and
- * its 1-based position among the reply's `entries` is listed in `malformed`,
- * so an instructor can find it in the raw output.
+ * Each question is then normalised (see normaliseQuestion) and given its
+ * 1-based position among the reply's `entries` as `entry`, so a warning about
+ * it can say where to find it in the raw output. One without question text or
+ * an answer cannot be shown or assessed, so it is dropped and its position is
+ * listed in `malformed`.
  *
  * Throws when no usable question remains, so callAI can retry. The message is
  * written to the Actions log, which the student can read, so it describes the
@@ -58,7 +59,7 @@ export function parseQuestionsReply(text) {
   const malformed = [];
   rawQuestions.forEach((raw, i) => {
     const question = normaliseQuestion(raw);
-    if (question) questions.push(question);
+    if (question) questions.push({ ...question, entry: i + 1 });
     else malformed.push(i + 1);
   });
   if (questions.length === 0) {
@@ -271,24 +272,24 @@ function findSource(name, sources) {
  * Each kept snippet is `{ file, language, code, start, end }`, with the file's
  * path as sent and its extension as the language.
  *
- * Returns `{ questions, unresolved, notStudentWork, unknownFiles }`, where
- * `unknownFiles` is the distinct names that matched no file.
+ * Returns `{ questions, unresolved, notStudentWork }`. Each dropped question is
+ * listed as `{ entry, snippets }`, its position in the reply and the snippets
+ * as the model named them — for `unresolved`, only the one that failed — so a
+ * warning can point at it (see describeDropped).
  */
 export function resolveSnippets(questions, sources) {
   const kept = [];
-  const unknownFiles = new Set();
-  let unresolved = 0;
-  let notStudentWork = 0;
+  const unresolved = [];
+  const notStudentWork = [];
 
   for (const q of questions) {
     const snippets = [];
     let studentWork = false;
+    let failed;
     for (const ref of q.snippets) {
+      failed = ref;
       const source = findSource(ref.file, sources);
-      if (!source) {
-        if (ref.file) unknownFiles.add(ref.file);
-        break;
-      }
+      if (!source) break;
       let { start } = ref;
       let end = Math.min(ref.end, source.lines.length);
       if (!(start >= 1 && start <= end && end - start < SNIPPET_MAX_LINES)) break;
@@ -310,12 +311,33 @@ export function resolveSnippets(questions, sources) {
         studentWork = studentLines === 'all' || studentLines.has(n);
       }
     }
-    if (snippets.length < q.snippets.length) unresolved += 1;
-    else if (snippets.length > 0 && !studentWork) notStudentWork += 1;
-    else kept.push({ ...q, snippets });
+    if (snippets.length < q.snippets.length) {
+      unresolved.push({ entry: q.entry, snippets: [failed] });
+    } else if (snippets.length > 0 && !studentWork) {
+      notStudentWork.push({ entry: q.entry, snippets: q.snippets });
+    } else kept.push({ ...q, snippets });
   }
 
-  return { questions: kept, unresolved, notStudentWork, unknownFiles: [...unknownFiles] };
+  return { questions: kept, unresolved, notStudentWork };
+}
+
+/**
+ * Where to find questions resolveSnippets dropped, for a warning: each one's
+ * position among the reply's `entries` and the snippets it named, as in
+ * `entry 7 of 12: game.js lines 40–46`. A line number that was not a whole
+ * number shows as `?`.
+ */
+export function describeDropped(dropped, entries) {
+  const lines = ({ start, end }) => {
+    const n = (v) => (Number.isInteger(v) ? v : '?');
+    return start === end ? `line ${n(start)}` : `lines ${n(start)}–${n(end)}`;
+  };
+  return dropped
+    .map(({ entry, snippets }) => {
+      const refs = snippets.map((ref) => `${ref.file || '(no file)'} ${lines(ref)}`);
+      return `entry ${entry} of ${entries}: ${refs.join(', ')}`;
+    })
+    .join('; ');
 }
 
 /**

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   arrangeQuestions,
   carriesAnswer,
+  describeDropped,
   findLeakedAnswers,
   numberQuestions,
   parseQuestionsReply,
@@ -41,6 +42,7 @@ describe('parseQuestionsReply', () => {
         answer: 'It holds the number of entries in the items array for question 1',
         distractors: ['wrong 1a', 'wrong 1b', 'wrong 1c'],
         broader: false,
+        entry: 1,
       },
     ]);
     expect(contextSummary).toBe('These questions are focused.');
@@ -223,7 +225,7 @@ describe('resolveSnippets', () => {
   ])('drops a question naming %s', (_, snippet) => {
     const result = resolve([ask(snippet), ask(ref('app.js', 1))]);
     expect(result.questions).toHaveLength(1);
-    expect(result.unresolved).toBe(1);
+    expect(result.unresolved).toHaveLength(1);
   });
 
   it('drops a question whose range is longer than a snippet may be', () => {
@@ -233,13 +235,13 @@ describe('resolveSnippets', () => {
       [ask(ref('long.js', 1, SNIPPET_MAX_LINES + 1)), ask(ref('long.js', 1, SNIPPET_MAX_LINES))],
       [source],
     );
-    expect(result.unresolved).toBe(1);
+    expect(result.unresolved).toHaveLength(1);
     expect(result.questions[0].snippets[0].end).toBe(SNIPPET_MAX_LINES);
   });
 
   it('drops a question whose range holds only blank lines', () => {
     const source = { filepath: 'b.py', lines: ['x = 1', '', ''], studentLines: 'all' };
-    expect(resolve([ask(ref('b.py', 2, 3))], [source]).unresolved).toBe(1);
+    expect(resolve([ask(ref('b.py', 2, 3))], [source]).unresolved).toHaveLength(1);
   });
 
   it('drops a question when a name matches more than one file', () => {
@@ -247,17 +249,16 @@ describe('resolveSnippets', () => {
       { ...APP, filepath: 'a/index.php' },
       { ...APP, filepath: 'b/index.php' },
     ];
-    expect(resolve([ask(ref('index.php', 1))], sources).unresolved).toBe(1);
-    expect(resolve([ask(ref('a/index.php', 1))], sources).unresolved).toBe(0);
+    expect(resolve([ask(ref('index.php', 1))], sources).unresolved).toHaveLength(1);
+    expect(resolve([ask(ref('a/index.php', 1))], sources).unresolved).toEqual([]);
   });
 
-  it('drops a question when any one of its snippets cannot be read, and names the file', () => {
-    const result = resolve([ask(ref('app.js', 1), ref('secret.js', 1))]);
+  it('drops a question when any one of its snippets cannot be read, and names that snippet', () => {
+    const result = resolve([{ ...ask(ref('app.js', 1), ref('secret.js', 4, 6)), entry: 3 }]);
     expect(result).toEqual({
       questions: [],
-      unresolved: 1,
-      notStudentWork: 0,
-      unknownFiles: ['secret.js'],
+      unresolved: [{ entry: 3, snippets: [ref('secret.js', 4, 6)] }],
+      notStudentWork: [],
     });
   });
 
@@ -281,10 +282,37 @@ describe('resolveSnippets', () => {
       ['codebase context beside a new file', [ref('lib.php', 1), ref('app.js', 1)], true],
       ['codebase context beside unchanged lines', [ref('lib.php', 1), ref('index.php', 3)], false],
     ])('%s', (_, snippets, kept) => {
-      const result = resolve([ask(...snippets)], sources);
+      const result = resolve([{ ...ask(...snippets), entry: 2 }], sources);
       expect(result.questions).toHaveLength(kept ? 1 : 0);
-      expect(result.notStudentWork).toBe(kept ? 0 : 1);
+      expect(result.notStudentWork).toEqual(kept ? [] : [{ entry: 2, snippets }]);
     });
+  });
+});
+
+describe('describeDropped', () => {
+  // The warning has to say where the question is in data/raw-ai-output.md and
+  // what it pointed at, so an instructor can tell a question about the wrong
+  // code from one whose line numbers were off.
+  it('names each dropped question by its position in the reply and the lines it named', () => {
+    const dropped = [
+      { entry: 7, snippets: [{ file: 'game.js', start: 40, end: 46 }] },
+      {
+        entry: 9,
+        snippets: [
+          { file: 'lib.php', start: 3, end: 3 },
+          { file: 'index.php', start: 1, end: 2 },
+        ],
+      },
+    ];
+    expect(describeDropped(dropped, 12)).toBe(
+      'entry 7 of 12: game.js lines 40–46; entry 9 of 12: lib.php line 3, index.php lines 1–2',
+    );
+  });
+
+  it('shows a line number that was not a whole number, and a missing file name', () => {
+    expect(describeDropped([{ entry: 1, snippets: [{ file: '', start: NaN, end: 4 }] }], 5)).toBe(
+      'entry 1 of 5: (no file) lines ?–4',
+    );
   });
 });
 

@@ -73,6 +73,7 @@ import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
   arrangeQuestions,
   carriesAnswer,
+  describeDropped,
   findLeakedAnswers,
   numberQuestions,
   parseQuestionsReply,
@@ -1193,29 +1194,30 @@ async function run() {
           `answer and were dropped (${where}).`,
       );
     }
+    // Each dropped question is named by its position in the reply and the
+    // file and lines it pointed at, so the log alone says whether the model
+    // asked about the wrong code or named the wrong lines.
     const { resolved } = reply;
-    if (resolved.unresolved > 0) {
-      const unknown =
-        resolved.unknownFiles.length > 0
-          ? ` Files not sent to the AI: ${resolved.unknownFiles.join(', ')}.`
-          : '';
+    if (resolved.unresolved.length > 0) {
+      const where = describeDropped(resolved.unresolved, reply.entries);
       core.warning(
-        `Dropped ${resolved.unresolved} question(s) whose snippets named a file the AI was not ` +
-          `sent or lines that file does not have.${unknown}`,
+        `Dropped ${resolved.unresolved.length} question(s) whose snippets named a file the AI ` +
+          `was not sent or lines that file does not have (${where}).`,
       );
       state.diagnostics.push(
-        `${resolved.unresolved} question(s) were dropped because their snippets did not point ` +
-          `at the submitted code.`,
+        `${resolved.unresolved.length} question(s) were dropped because their snippets did not ` +
+          `point at the submitted code (${where}).`,
       );
     }
-    if (resolved.notStudentWork > 0) {
+    if (resolved.notStudentWork.length > 0) {
+      const where = describeDropped(resolved.notStudentWork, reply.entries);
       core.warning(
-        `Dropped ${resolved.notStudentWork} question(s) whose snippets showed none of the ` +
-          `student's own lines in this submission.`,
+        `Dropped ${resolved.notStudentWork.length} question(s) whose snippets showed none of the ` +
+          `student's own lines in this submission (${where}).`,
       );
       state.diagnostics.push(
-        `${resolved.notStudentWork} question(s) were dropped because they showed only code the ` +
-          `student did not write in this submission.`,
+        `${resolved.notStudentWork.length} question(s) were dropped because they showed only ` +
+          `code the student did not write in this submission (${where}).`,
       );
     }
     const { questions: arranged, surplus } = arrangeQuestions(
