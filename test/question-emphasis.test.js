@@ -59,6 +59,24 @@ describe('buildPrompt question emphasis', () => {
     expect(prompt).not.toContain('At least half of the questions must be type 1, 2, 3, 5, or 9');
   });
 
+  it('has research list lookup targets and bar repeats of one', () => {
+    const prompt = system({ questionEmphasis: 'research' });
+    expect(prompt).toContain("- Before writing any question, go through the student's code");
+    expect(prompt).toContain(
+      '- No two questions may turn on the same built-in, cast, operator, or condition',
+    );
+  });
+
+  // A question a student can answer by reading the snippet aloud needs no research.
+  it('rules out snippet restatements under research only', () => {
+    const rule = 'if a student could answer by reading the snippet aloud';
+    expect(system({ questionEmphasis: 'research' })).toMatch(
+      new RegExp(`1\\. REASONING STEP — .*${rule}`),
+    );
+    expect(system({ questionEmphasis: 'tracing' })).not.toContain(rule);
+    expect(system({})).not.toContain(rule);
+  });
+
   it('restricts tracing to execution types', () => {
     const prompt = system({ questionEmphasis: 'tracing' });
     expect(prompt).toContain('- EVERY question must be type 1, 2, 5, or 9 — ');

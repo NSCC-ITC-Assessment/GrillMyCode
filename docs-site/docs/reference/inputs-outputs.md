@@ -53,10 +53,10 @@ GrillMyCode builds each question set from a range of question kinds. `question_e
 How each value changes the prompt:
 
 - **`balanced`** sends the same prompt as a workflow that doesn't set the input.
-- **`research`** allows only the research kinds. At least a quarter of the questions (rounded up) must be causal "why" questions or questions about how the language or a library behaves. It also points the AI at code that relies on default arguments, flags, type coercion, mutation versus copying, async ordering, and the conditions under which a call throws or returns something unexpected.
+- **`research`** allows only the research kinds. At least a quarter of the questions (rounded up) must be causal "why" questions or questions about how the language or a library behaves. Before writing, the AI lists every place the code relies on behaviour a student would need to look up: built-in and library calls, casts, comparisons, default arguments, flags, type coercion, mutation versus copying, async ordering, and the conditions under which a call throws or returns something unexpected. It spends the questions on those first. No two questions may test the same call or condition, and a question the student could answer by reading the snippet aloud (the text a condition returns, the limit an `if` checks) is rewritten.
 - **`tracing`** allows only the tracing kinds, so there are no "why" questions and no questions about how the language or a library behaves.
 
-`research` and `tracing` are all-or-nothing. When the submitted code can't supply enough good questions of those kinds, the AI doesn't switch to other kinds. It first uses fewer distinct kinds and asks more than one question about the same function. Then it writes simpler "broader" questions of the same kinds. On a small or simple submission, expect some questions to be easier or more repetitive than under `balanced`.
+`research` and `tracing` are all-or-nothing. When the submitted code can't supply enough good questions of those kinds, the AI doesn't switch to other kinds. It first uses fewer distinct kinds and asks more than one question about the same function. Under `research`, it may also test the same call or condition again with a different input. Then it writes simpler "broader" questions of the same kinds. On a small or simple submission, expect some questions to be easier or more repetitive than under `balanced`.
 
 Some things don't change with the setting. Every question still uses an allowed opening and has one provable answer. One in every three is still short-answer.
 

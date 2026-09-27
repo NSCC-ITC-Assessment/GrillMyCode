@@ -185,6 +185,12 @@ function listWith(items, conjunction = 'and') {
  * 10. Balanced returns the rules the prompt has always carried, so a run
  * without the input sends an unchanged prompt.
  *
+ * research also has the model list the lookup targets in the code before
+ * writing, and bars two questions on the same one. Without both, a short
+ * script left the model restating the same few ternaries to reach the count.
+ * The research sentence of REASONING STEP (see buildResearchReasoningStep)
+ * rules out the restatements themselves.
+ *
  * research and tracing restrict every question to the emphasis's types. That
  * restriction is exempt from THE COUNT COMES FIRST, which otherwise relaxes the
  * MIXING RULES quotas first when the model runs short: an emphasis relaxed
@@ -207,8 +213,9 @@ function buildEmphasisRules(questionEmphasis, numQuestions) {
   if (questionEmphasis === 'research') {
     rules.push(
       `- At least ${Math.ceil(numQuestions * RESEARCH_LOOKUP_QUESTION_SHARE)} of the ${numQuestions} questions must be type 8 or type 10.`,
-      '- Aim at code that relies on behaviour a student would need to look up: default arguments, flags and positional arguments, type coercion, mutation versus copying, async ordering, and the conditions under which a built-in or library call returns an unexpected value or throws.',
+      "- Before writing any question, go through the student's code and find every place it relies on behaviour a student would need to look up: built-in and library calls, casts, strict and loose comparisons, default arguments, flags and positional arguments, type coercion, mutation versus copying, async ordering, and the conditions under which a call returns an unexpected value or throws. Spend the questions on these before any other code. Each one supports a type 10 question about its effect here, and a type 3 or 7 question about what happens when its input or arguments change.",
       '- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.',
+      '- No two questions may turn on the same built-in, cast, operator, or condition, even when they point at different lines or are different types: three questions asking why the same escaping function is called are one question asked three times. If you run short, repeat a target with a different input or a different effect rather than write a question that fails REASONING STEP.',
     );
   } else {
     rules.push(
@@ -236,6 +243,18 @@ function buildDrawOnWords(questionEmphasis) {
         'Under what condition',
       ];
   return `${listWith(words)} as well as What`;
+}
+
+/**
+ * The sentence REASONING STEP adds under research. The research types include
+ * path conditions and edge cases, which a model can satisfy by asking what a
+ * ternary returns or which bound an `if` checks, answered by reading the
+ * snippet aloud. Under research the step must be a lookup or the effect of
+ * something the code does not show. Empty for every other emphasis.
+ */
+function buildResearchReasoningStep(questionEmphasis) {
+  if (questionEmphasis !== 'research') return '';
+  return ' In this run the step must be looking up documented behaviour of the language or a library, or working out the effect of an input, change, or condition the code does not show. Reading a condition, literal, or branch that the snippets spell out is not a step: if a student could answer by reading the snippet aloud (the string a ternary returns, the bound an `if` checks, what a loop body does), rewrite the question.';
 }
 
 /**
@@ -660,7 +679,7 @@ ${buildEmphasisRules(questionEmphasis, numQuestions)}
 
 QUESTION CHECKLIST — EVERY QUESTION MUST PASS ALL OF THESE BEFORE YOU WRITE IT:
 ${answerabilityIntro}
-1. REASONING STEP — Name the specific step the student must carry out (e.g. "trace the loop twice with an empty second element", "follow \`$id\` from the route into the query", "look up what the \`'w'\` flag does to an existing file"). For types 1 and 2, the correct answer must not appear verbatim anywhere in its snippets; for every other type, it must not be identifiable without that step.
+1. REASONING STEP — Name the specific step the student must carry out (e.g. "trace the loop twice with an empty second element", "follow \`$id\` from the route into the query", "look up what the \`'w'\` flag does to an existing file"). For types 1 and 2, the correct answer must not appear verbatim anywhere in its snippets; for every other type, it must not be identifiable without that step.${buildResearchReasoningStep(questionEmphasis)}
 2. MISREADING — ${depthCheckMisreading}
 3. ONE PROVABLE ANSWER — The correct answer is a fact about how the code behaves or is structured, provable from the submitted code, any values stated in the question, and, for type 10, the documented behaviour of the language or library being called. Two people who fully understand the code must arrive at the same answer.${answerabilityConditionRule}${answerabilityModificationRule}
 4. SELF-CONTAINED — Students answer with their whole repository open, so a question need not show all the code its answer depends on, but the student must be able to find that code or be given the value. When the answer depends on code outside the lines the question points at (where a variable or constant is set, a helper it calls, the data a loop walks), that code must be in the user message, and the question must name the function, variable, or file clearly enough for the student to find it, unless finding it is the step the question asks for. You may also show that code in a snippet of its own when that helps. When it depends on a value no code in the user message shows (an argument you choose, database contents, user input, a network response, file-system state, timing, or environment configuration), state that value in the question. Never add a snippet that shows the answer itself: a question asking where \`$cityId\` originates must not show the line that sets it.
