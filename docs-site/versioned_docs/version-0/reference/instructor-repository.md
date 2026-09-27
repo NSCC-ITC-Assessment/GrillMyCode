@@ -93,9 +93,9 @@ Open it when a student's `questions.md` looks wrong. Questions cut for being ove
 The header records how the reply was produced:
 
 - why the model stopped. A `length` stop means it hit its output limit and the reply is incomplete.
-- how many tokens went in and out
+- how many tokens went in and out, and how many of those out were reasoning
 - how many attempts the request took
-- the settings used: questions requested, temperature, and a short hash identifying the prompt version
+- the settings used: questions requested, temperature, reasoning effort, and a short hash identifying the prompt version
 
 The same facts, with full commit SHAs, are embedded as JSON in a `<!-- gmc:provenance … -->` comment for tooling. It is invisible in the rendered view.
 
@@ -111,7 +111,7 @@ Each student's quiz is built from their [`questions.json`](#questionsjson). A fo
 
 Each quiz question shows its code snippets, each under the name of the file it comes from and the lines it covers, such as `index.php, lines 28–37`. The model occasionally writes a question without a snippet, most often under a **Broader Questions** heading near the end when the requested count is large for the size of the submission. That question appears in the quiz as text only.
 
-A question without distractors, or with a blank option, is left out of the quiz rather than imported with a single option, and the run log names it. The count in the file name is the number of questions the quiz actually holds, so a short quiz can be spotted without opening it.
+A question without distractors, or with a blank option, is left out of the quiz rather than imported with a single option, and the run log names it. A placeholder or duplicate distractor is removed, and the question stays in the quiz with its remaining options. The count in the file name is the number of questions the quiz actually holds, so a short quiz can be spotted without opening it.
 
 ## Submission tag folders
 

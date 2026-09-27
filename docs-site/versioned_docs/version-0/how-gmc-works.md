@@ -43,7 +43,7 @@ GrillMyCode sends the student's code to an AI model through [OpenRouter](https:/
 
 The model writes 20 questions by default, each about a specific file and each with an answer. GrillMyCode checks the result before anyone sees it. The code shown with each question is copied from the student's own files, never retyped by the AI, and any question that isn't about code the student wrote is dropped.
 
-You pay OpenRouter from a prepaid balance, and one account covers your whole class. With the recommended models, an assessment typically costs from less than one cent to a few cents. Cost can vary widely depending on the model you choose.
+You pay OpenRouter from a prepaid balance, and one account covers your whole class. An assessment can cost less than one cent, but the cost can rise sharply with the model you choose, its reasoning settings and how much code is assessed. Working out your class's cost is up to you: do [trial runs](guides/choosing-a-model.md#estimate-your-cost-with-trial-runs) first.
 
 **Go deeper:** [Choosing a model and managing cost](guides/choosing-a-model.md) · [OpenRouter](ai-providers/openrouter.md)
 

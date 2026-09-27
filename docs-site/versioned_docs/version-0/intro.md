@@ -19,7 +19,7 @@ GrillMyCode does not grade anything. It does the preparation, and you have the c
 3. **Each student gets their own questions.** They appear as a GitHub issue in the student's repository, with a PDF copy. You choose when: on every push, when the student says they're done, or only when you start it.
 4. **You can also get the answers.** An optional private repository, which only instructors can see, holds every student's questions with answers, plus a quiz file you can import into your LMS.
 
-With the recommended AI models, an assessment typically costs from less than one cent to a few cents. Cost can vary widely depending on the model you choose.
+An assessment can cost less than one cent, but the cost can rise sharply with the AI model you choose, its reasoning settings and how much code is assessed. Working out your class's cost is up to you: do [trial runs](guides/choosing-a-model.md#estimate-your-cost-with-trial-runs) first.
 
 ## Built for Classroom 50
 

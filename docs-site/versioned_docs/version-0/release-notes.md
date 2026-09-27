@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.19.0 — 2026-09-27
+
+### What's Changed
+
+### Features
+
+- add ai_reasoning_effort input and live OpenRouter data in the Wizard
+
+### Refactoring
+
+- enhance handling of placeholder distractors in quiz generation and related tests
+- simplify distractor examples and clarify length rules for options
+
 ## v0.18.0 — 2026-09-27
 
 ### What's Changed
