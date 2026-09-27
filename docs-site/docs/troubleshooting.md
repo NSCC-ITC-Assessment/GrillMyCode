@@ -116,7 +116,9 @@ Delivery isn't retried later on its own, but nothing is lost: the student's next
 
 ### `Could not update .github/workflows/generate-lms-quiz.yml in …`
 
-The token can't write under `.github/workflows/`, which needs the `workflow` scope (classic token) or Workflows: Read and Write (fine-grained). The assessment itself still arrives; only the sync of the action-owned files is skipped. The repository keeps working with whatever version of the quiz workflow it started with, and never receives later fixes. See [Upgrade notes](reference/upgrade-notes.md#already-have-an-instructor-pat) to fix the token.
+The token can't write under `.github/workflows/`, which needs the `workflow` scope (classic token) or Workflows: Read and Write (fine-grained). The assessment itself still arrives; only the sync of the action-owned files is skipped. The repository keeps working with whatever version of the quiz workflow it started with, and never receives later fixes.
+
+To fix it, edit the token (**Settings → Developer settings → Tokens (classic) → your token**) and tick **`workflow`** alongside **`repo`**, or add **Workflows: Read and Write** to a fine-grained token. If that produced a new value, update the `INSTRUCTOR_REPO_TOKEN` secret.
 
 The same warning naming `README.md` instead means a broader permission problem, since that file needs no special scope.
 
@@ -138,10 +140,10 @@ To use the feature anyway, create the repository by hand. Name it exactly `{assi
 
 ### Quizzes are missing or out of date
 
-The quiz files are built by the **Generate LMS Quiz** workflow in the instructor repository, not by the student's run. Check that repository's **Actions** tab. To rebuild every student's quiz, run the workflow by hand. See [Instructor repository internals](reference/instructor-repository.md#quiz-files).
+The quiz files are built by the **Generate LMS Quiz** workflow in the instructor repository, not by the student's run. Check that repository's **Actions** tab. To rebuild every student's quiz, run the workflow by hand. A student folder without a `data/questions.json`, such as one assessed by an earlier release, gets no quiz until that student is assessed again; see [Upgrade notes](reference/upgrade-notes.md#quizzes-are-built-from-dataquestionsjson). See [Instructor repository internals](reference/instructor-repository.md#quiz-files).
 
 ## Getting more detail
 
 - **Turn on debug logging** to see every resolved input and the exact prompt sent to the AI. See [Debug mode](reference/debug-mode.md).
-- **Read `raw-ai-output.md`** in the instructor repository to see the model's reply before any processing. See [Instructor repository internals](reference/instructor-repository.md#raw-ai-outputmd).
+- **Read `data/raw-ai-output.md`** in the student's folder in the instructor repository to see the model's reply before any processing. See [Instructor repository internals](reference/instructor-repository.md#raw-ai-outputmd).
 - **After an upgrade,** check [Upgrade notes](reference/upgrade-notes.md) for changes that need action.

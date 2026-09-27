@@ -3,9 +3,10 @@ name: Generate LMS Quiz
 on:
   push:
     paths:
-      - "*/questions.md"
+      # GrillMyCode files the data it builds quizzes from in a data/ subfolder.
+      - "*/data/questions.json"
       # A run started by a submission tag files under {student}/{tag group}/.
-      - "*/*/questions.md"
+      - "*/*/data/questions.json"
   workflow_dispatch:
 
 concurrency:
@@ -75,168 +76,70 @@ jobs:
               const full = path.join(dir, entry.name);
               if (entry.isDirectory()) {
                 results.push(...findQuestionsFiles(full));
-              } else if (entry.name === 'questions.md') {
+              } else if (
+                entry.name === 'questions.json' && path.basename(dir) === 'data' &&
+                // A data/ folder at the top of the repository is no student's.
+                path.dirname(dir) !== '.'
+              ) {
                 results.push(full);
               }
             }
             return results;
           }
 
-          function parseQuestions(content) {
-            const blocks = content.split('\n---\n');
-            const results = [];
-
-            for (const block of blocks) {
-              let question = null, answer = null, filePath = null, snippetLang = null;
-              const incorrect = [], snippetLines = [];
-              // The latest bold line above the stem. It is only a candidate for
-              // the filename until the line after it shows what it is — see the
-              // fence and stem branches below.
-              let pendingHeader = null;
-              let inInc = false, inSnippet = false, inAnswer = false;
-              // The backtick run that opened the current snippet. Only a bare
-              // run at least as long closes it, as in Markdown itself — so a
-              // ``` line in the student's own code, which GrillMyCode fences
-              // with a longer run, stays code. Toggling on any ``` line let such
-              // code end the snippet early, and answer markers written below it
-              // in the student's code were then read as the question's options.
-              let fence = '';
-              // Bullets collected from inside the model's
-              // <!-- gmc:answer --> … <!-- /gmc:answer --> container, in order.
-              // The container is the only answer boundary the model marks
-              // explicitly, so reading it positionally — first bullet correct,
-              // the rest distractors — survives any drift in the heading text
-              // that the literal matches below cannot. The headings remain the
-              // fallback for files generated before the markers were carried
-              // through to the instructor copy.
-              const containerBullets = [];
-              let inContainer = false;
-
-              for (const line of block.split('\n')) {
-                const stripped = line.trim();
-                // Marker lines are inert in the chain below, but are consumed
-                // here so nothing downstream has to reason about them. The
-                // !inSnippet guard keeps a marker pasted into a student's own
-                // code from opening a container.
-                if (!inSnippet && /^<!--\s*gmc:answer\s*-->$/i.test(stripped)) {
-                  inContainer = true;
-                  continue;
-                }
-                if (!inSnippet && /^<!--\s*\/\s*gmc:answer\s*-->$/i.test(stripped)) {
-                  inContainer = false;
-                  continue;
-                }
-                // Deliberately not `continue`: the heading-based chain below
-                // must still see these bullets so it can act as the fallback
-                // when the container turns out to be unusable.
-                if (inContainer && !inSnippet && stripped.startsWith('- ')) {
-                  containerBullets.push(stripped.slice(2).trim());
-                }
-                // The model occasionally prefixes the distractor heading with a
-                // stray list marker (observed from gemini-3.5-flash-lite:
-                // "-- **Distractors for Multiple-Choice Quiz:**"). An exact
-                // startsWith() misses it, so the heading never opens the
-                // distractor section, every option bullet below it is dropped,
-                // and the question exports as a single-choice item — the correct
-                // answer alone, which every student scores. Stripping a leading
-                // marker that sits directly before the bold heading recovers it
-                // without letting an ordinary option bullet look like a heading.
-                const unmarked = stripped.replace(/^[-*+]{1,3}\s+(?=\*\*)/, '');
-                // !inSnippet matters for Markdown snippets: a bold line such as
-                // "**Setup**" inside a fence is snippet content, not a filename
-                // header. Without the guard it was consumed as the filename,
-                // corrupting both the heading shown above the snippet and the
-                // code shown to the student. The fence check below runs first
-                // for fence lines, so this only ever sees snippet body lines.
-                const fpMatch = !question && !inSnippet && stripped.match(/^\*\*`?(.+?)`?\*\*\s*$/);
-                if (fpMatch) {
-                  // A bold Markdown heading (**## Broader Questions**) is never
-                  // a filename, whatever follows it.
-                  pendingHeader = /^#{1,6}\s/.test(fpMatch[1]) ? null : fpMatch[1];
-                } else if (!inSnippet && !question && /^`{3,}/.test(stripped)) {
-                  const [, run, fenceLang] = stripped.match(/^(`{3,})(.*)$/);
-                  if (fenceLang.trim()) snippetLang = fenceLang.trim();
-                  // A bold line directly above a snippet is that snippet's
-                  // filename header, even one with a space in it.
-                  if (pendingHeader) filePath = pendingHeader;
-                  pendingHeader = null;
-                  fence = run;
-                  inSnippet = true;
-                } else if (inSnippet && /^`{3,}$/.test(stripped) && stripped.length >= fence.length) {
-                  inSnippet = false;
-                } else if (inSnippet) {
-                  snippetLines.push(line.trimEnd());
-                } else if (!question && line && /^\d+\. /.test(line)) {
-                  // A question with no snippet may still name its file. With no
-                  // snippet to confirm it, the bold line counts only if it is
-                  // shaped like a filename, so a heading such as
-                  // **Broader Questions** does not become one.
-                  if (!filePath && pendingHeader && /^[^\s`*]+\.[^\s`*]+$/.test(pendingHeader)) {
-                    filePath = pendingHeader;
-                  }
-                  question = line.split('. ').slice(1).join('. ').trim().replace(/\*\*/g, '');
-                } else if (stripped === '**Answer:**' || stripped.startsWith('**Answer:** ')) {
-                  inAnswer = true;
-                  inInc = false;
-                  const inline = stripped.slice('**Answer:**'.length).trim();
-                  if (inline) { answer = inline; inAnswer = false; }
-                } else if (inAnswer && stripped.startsWith('- ')) {
-                  answer = stripped.slice(2).trim();
-                  inAnswer = false;
-                } else if (unmarked.startsWith('**Distractors for Multiple-Choice Quiz:**')) {
-                  inAnswer = false;
-                  inInc = true;
-                } else if (inInc && stripped.startsWith('- ')) {
-                  incorrect.push(stripped.slice(2).trim());
-                }
-              }
-
-              // Nothing carries over from the question before. A question the
-              // model wrote without a snippet — most often one under a Broader
-              // Questions heading — is shown without one, as it is in
-              // questions.md. Borrowing the previous question's file and code
-              // put an unrelated snippet above it.
-
-              // Two bullets is the threshold for trusting the container: a lone
-              // bullet cannot distinguish "the model wrote only a correct answer"
-              // from "the distractors drifted outside the container", and in the
-              // latter case the heading path may have found them. A single bullet
-              // is therefore used only to supply an answer the headings missed —
-              // which is what rescues a block whose **Answer:** heading drifted
-              // too, and which previously vanished with no warning at all.
-              if (containerBullets.length >= 2) {
-                answer = containerBullets[0];
-                incorrect.length = 0;
-                incorrect.push(...containerBullets.slice(1));
-              } else if (containerBullets.length === 1 && !answer) {
-                answer = containerBullets[0];
-              }
-
-              if (question && answer) {
-                // A distractor identical to the correct answer is a grading trap
-                // rather than a wrong option: both render the same text, one
-                // scores 100 and the other 0, so a student picking the duplicate
-                // is marked wrong for the right answer and has no way of seeing
-                // why. Observed from gemini-3.5-flash-lite, which repeated the
-                // answer among the distractors. Compared after the stripping the
-                // packages render with, so `entry` and entry count as the same
-                // option, and case-insensitively. Duplicates among the
-                // distractors themselves go the same way. A question left with
-                // no distractors is then caught by the withhold-and-warn
-                // backstop, the same as one that never parsed any.
-                const optionKey = (text) => stripInlineMarkdown(String(text)).trim().toLowerCase();
-                const seen = new Set([optionKey(answer)]);
-                const distinct = incorrect.filter((text) => {
-                  const key = optionKey(text);
-                  if (seen.has(key)) return false;
-                  seen.add(key);
-                  return true;
-                });
-                results.push({ question, answer, incorrect: distinct, filePath, snippetLang, snippet: snippetLines });
-              }
+          // Reads the quiz questions from the data/questions.json GrillMyCode
+          // writes beside questions.md: the same questions as structured data. Every
+          // field is checked, since the file can be edited by hand. Throws when
+          // the file is not a JSON object with a questions array.
+          function parseQuestionsJson(text) {
+            const data = JSON.parse(text);
+            if (!data || !Array.isArray(data.questions)) {
+              throw new Error('questions.json has no "questions" array');
             }
 
+            const str = (value) => (typeof value === 'string' ? value : '');
+            const list = (value) => (Array.isArray(value) ? value : []);
+            const results = [];
+            for (const q of data.questions) {
+              if (!q || typeof q !== 'object') continue;
+              const question = str(q.question).trim();
+              const answer = str(q.answer).trim();
+              if (!question || !answer) continue;
+              const snippets = list(q.snippets)
+                .filter((s) => s && typeof s === 'object' && (str(s.code) || str(s.file)))
+                .map((s) => ({
+                  file: str(s.file) || null,
+                  lang: str(s.language) || null,
+                  lines: str(s.code) ? str(s.code).split('\n') : [],
+                }));
+              // A distractor that is not text becomes a blank option, which
+              // withholds the question rather than silently shortening it.
+              const incorrect = list(q.distractors).map((d) => str(d).trim());
+              results.push({ question, answer, incorrect: distinctOptions(answer, incorrect), snippets });
+            }
             return results;
+          }
+
+          // A distractor identical to the correct answer is a grading trap
+          // rather than a wrong option: both render the same text, one
+          // scores 100 and the other 0, so a student picking the duplicate
+          // is marked wrong for the right answer and has no way of seeing
+          // why. Observed from gemini-3.5-flash-lite, which repeated the
+          // answer among the distractors. Compared after the stripping the
+          // packages render with, so `entry` and entry count as the same
+          // option, and case-insensitively. Duplicates among the
+          // distractors themselves go the same way. A question left with
+          // no distractors is then caught by the withhold-and-warn
+          // backstop, the same as one that never parsed any.
+          function distinctOptions(answer, incorrect) {
+            const optionKey = (text) => stripInlineMarkdown(String(text)).trim().toLowerCase();
+            const seen = new Set([optionKey(answer)]);
+            return incorrect.filter((text) => {
+              const key = optionKey(text);
+              if (seen.has(key)) return false;
+              seen.add(key);
+              return true;
+            });
           }
 
           function escapeXml(str) {
@@ -260,7 +163,7 @@ jobs:
           }
 
           // Strips Markdown inline-code/bold markers so `identifiers` and
-          // **emphasis** from questions.md don't leak as literal punctuation
+          // **emphasis** in the questions don't leak as literal punctuation
           // into the plain-text quiz shown to students.
           //
           // The + quantifiers are load-bearing. With [^*]* the bold pattern also
@@ -361,22 +264,36 @@ jobs:
             return html;
           }
 
-          function highlightCode(code, lang) {
-            const grammar = lang && Prism.languages[lang];
+          // The snippet's own language when Prism knows it, else the one its
+          // file extension suggests. Prism.languages also holds helper
+          // functions (extend, insertBefore), so only an object is a grammar.
+          function grammarFor(lang, file) {
+            for (const name of [lang, detectLang(file)]) {
+              if (!name || !Object.prototype.hasOwnProperty.call(Prism.languages, name)) continue;
+              const grammar = Prism.languages[name];
+              if (grammar && typeof grammar === 'object') return grammar;
+            }
+            return null;
+          }
+
+          function highlightCode(code, grammar) {
             return grammar ? renderPrismTokens(Prism.tokenize(code, grammar)) : escapeHtmlText(code);
           }
 
-          // Builds the full question HTML (filename + colorized snippet +
-          // question text) as a plain HTML fragment. The Brightspace CSV uses
-          // it as-is; the QTI package wraps it in buildQuestionHtml() below.
+          // Builds the full question HTML (each snippet under its filename,
+          // colorized, then the question text) as a plain HTML fragment. The
+          // Brightspace CSV uses it as-is; the QTI package wraps it in
+          // buildQuestionHtml() below.
           function buildQuestionFragment(q) {
             const parts = [];
-            if (q.filePath) {
-              parts.push('<p><strong>' + escapeHtmlText(stripInlineMarkdown(q.filePath)) + '</strong></p>');
-            }
-            if (q.snippet && q.snippet.length) {
-              const lang = q.snippetLang || detectLang(q.filePath);
-              parts.push('<pre><code>' + highlightCode(q.snippet.join('\n'), lang) + '</code></pre>');
+            for (const s of q.snippets) {
+              if (s.file) {
+                parts.push('<p><strong>' + escapeHtmlText(stripInlineMarkdown(s.file)) + '</strong></p>');
+              }
+              if (s.lines.length) {
+                const grammar = grammarFor(s.lang, s.file);
+                parts.push('<pre><code>' + highlightCode(s.lines.join('\n'), grammar) + '</code></pre>');
+              }
             }
             parts.push('<p>' + escapeHtmlText(stripInlineMarkdown(q.question)) + '</p>');
             return parts.join('');
@@ -559,9 +476,7 @@ jobs:
           async function readContentHash(buffer) {
             try {
               const zip = await JSZip.loadAsync(buffer);
-              // Matches both the current flat "quiz.xml" and the nested
-              // "quiz/<id>/qti_<id>.xml" written by earlier versions.
-              const [qtiEntry] = zip.file(/^quiz(\/.*)?\.xml$/);
+              const qtiEntry = zip.file('quiz.xml');
               if (!qtiEntry) return null;
               const qtiXml = await qtiEntry.async('string');
               const match = qtiXml.match(/<fieldlabel>gmc_content_hash<\/fieldlabel>\s*<fieldentry>([a-f0-9]+)<\/fieldentry>/);
@@ -589,7 +504,7 @@ jobs:
           // The CSV format has no equivalent of QTI's shuffle="Yes", so options
           // are written in shuffled order instead. The shuffle is seeded from
           // the content hash and question position, so an unchanged
-          // questions.md always yields a byte-identical file rather than a
+          // questions.json always yields a byte-identical file rather than a
           // spurious diff on every regeneration. Options number in single
           // digits, so the modulo bias from reading one hash byte is immaterial.
           function seededShuffle(items, seed) {
@@ -637,21 +552,10 @@ jobs:
             return match ? match[1] : null;
           }
 
-          // Bumped whenever the generated package changes shape — or whenever
-          // the parser changes what it extracts, since that alters the quiz
-          // without altering questions.md, which the hash alone cannot see.
-          // v2: empty <organizations>, DEFLATE compression, flat quiz.xml,
-          // merged syntax-highlight spans.
-          // v3: bold lines inside a fenced snippet are no longer read as the
-          // filename header.
-          // v4: a Brightspace CSV is written alongside each .imscc.
-          // v5: the <!-- gmc:answer --> container is read positionally.
-          // v6: a bare run of asterisks in an option is no longer stripped to an
-          // empty option, a question with a blank option is withheld, and a
-          // distractor that repeats the correct answer is dropped.
-          // v7: a snippet closes only on a fence at least as long as the one
-          // that opened it, so a ``` line in the student's code stays code.
-          const PACKAGE_FORMAT = 'v7';
+          // Bumped whenever the generated package changes shape, or what is read
+          // from questions.json, so every stored hash stops matching and every
+          // student's quiz is rebuilt once.
+          const PACKAGE_FORMAT = 'v8';
 
           // The instructor repo is named {assignment}-grillmycode-instructor,
           // so the assignment name can be recovered from GITHUB_REPOSITORY
@@ -669,7 +573,7 @@ jobs:
             const allFiles = findQuestionsFiles('.');
             const failures = [];
 
-            for (const qmd of allFiles) {
+            for (const qjson of allFiles) {
               // One student's failure must not discard everyone else's work:
               // an uncaught throw here would fail the step, and the commit step
               // would never run, so every package built earlier in the same run
@@ -677,37 +581,36 @@ jobs:
               // and the run is failed at the end instead — after the packages
               // that did build have been written and committed.
               try {
-                const studentDir = path.dirname(qmd);
-                // {student}/questions.md, or {student}/{tag group}/questions.md
-                // for a run started by a submission tag. The group joins the
-                // student in every name below, so each milestone's package is
-                // told apart from the student's others once out of this folder.
+                // {student}/data/questions.json, or
+                // {student}/{tag group}/data/questions.json for a run started by
+                // a submission tag. The quiz files go beside questions.md, in the
+                // folder above data/. The group joins the student in every name
+                // below, so each milestone's package is told apart from the
+                // student's others once out of this folder.
+                const studentDir = path.dirname(path.dirname(qjson));
                 const [student, ...groupParts] = studentDir.split(path.sep);
                 const group = groupParts.join('-');
                 const quizId = group ? student + '_' + group : student;
                 const quizTitle = assignment + ' - ' + student + (group ? ' (' + group + ')' : '');
 
-                const content = fs.readFileSync(qmd, 'utf8');
-                const parsed = parseQuestions(content);
+                const content = fs.readFileSync(qjson, 'utf8');
+                const parsed = parseQuestionsJson(content);
 
-                // A question whose distractors did not parse would export as a
-                // single-choice item — the correct answer on its own, which every
-                // student scores — so it is withheld and raised as a run
-                // annotation instead. The markers this parser matches are only
-                // the drift seen so far; this is the backstop for the drift that
-                // has not been seen, turning a silent wrong quiz into a visibly
-                // short one that says which question to go and fix.
+                // A question without distractors would export as a single-choice
+                // item — the correct answer on its own, which every student
+                // scores — so it is withheld and raised as a run annotation
+                // instead, turning a silent wrong quiz into a visibly short one
+                // that says which question to go and fix.
                 const questions = parsed.filter((q) => q.incorrect.length > 0 && !hasBlankOption(q));
                 for (const q of parsed) {
                   if (q.incorrect.length === 0) {
                     console.log(
-                      '::warning file=' + qmd + '::No distractors parsed for question "' +
-                      annotate(q.question) + '" — withheld from the quiz. Check that its ' +
-                      'distractor heading and option bullets match the expected format.',
+                      '::warning file=' + qjson + '::No distractors found for question "' +
+                      annotate(q.question) + '" — withheld from the quiz.',
                     );
                   } else if (hasBlankOption(q)) {
                     console.log(
-                      '::warning file=' + qmd + '::Blank option text for question "' +
+                      '::warning file=' + qjson + '::Blank option text for question "' +
                       annotate(q.question) + '" — withheld from the quiz. Brightspace rejects ' +
                       'the whole file over an Option row with no text, so one blank option ' +
                       'would cost every question in it.',
@@ -716,7 +619,7 @@ jobs:
                 }
 
                 if (questions.length === 0) {
-                  console.log('Skipped (no complete questions found): ' + qmd);
+                  console.log('Skipped (no complete questions found): ' + qjson);
                   continue;
                 }
 
@@ -724,7 +627,7 @@ jobs:
                 // quiz is obvious from the file listing alone. A question can be
                 // withheld for missing distractors (see the warning above), and
                 // the only other signal is a run annotation that scrolls away —
-                // whereas `…_quiz_23.imscc` next to a 30-question questions.md
+                // whereas `…_quiz_23.imscc` beside a 30-question questions.md
                 // states the problem at a glance, months later, to whoever is
                 // importing it.
                 const out = path.join(studentDir, assignment + '_' + quizId + '_quiz_' + questions.length + '.imscc');
@@ -735,10 +638,9 @@ jobs:
                 // the previous pair would otherwise sit beside the new one
                 // forever — two importable packages for one student, the stale
                 // one indistinguishable from the current except by its count.
-                // Matches this student's own packages at any count, plus the
-                // pre-count names, so the first run after this change migrates
-                // them. String tests rather than a regex: the assignment name is
-                // interpolated and would need escaping.
+                // Matches this student's own packages at any count. String tests
+                // rather than a regex: the assignment name is interpolated and
+                // would need escaping.
                 const isSupersededPackage = (name) => {
                   for (const [prefix, ext] of [
                     [assignment + '_' + quizId + '_quiz', '.imscc'],
@@ -746,7 +648,7 @@ jobs:
                   ]) {
                     if (!name.startsWith(prefix) || !name.endsWith(ext)) continue;
                     const middle = name.slice(prefix.length, name.length - ext.length);
-                    if (middle === '' || /^_\d+$/.test(middle)) return true;
+                    if (/^_\d+$/.test(middle)) return true;
                   }
                   return false;
                 };
@@ -763,21 +665,11 @@ jobs:
                   }
                 };
 
-                // Clean up the pre-rename filename so it doesn't linger as a
-                // stale duplicate once a student's package regenerates under
-                // the new name.
-                const legacyOut = path.join(studentDir, 'brightspace_quiz.imscc');
-                if (fs.existsSync(legacyOut)) {
-                  fs.unlinkSync(legacyOut);
-                  console.log('Removed legacy file: ' + legacyOut);
-                }
-
                 // PACKAGE_FORMAT is folded into the hash so that changing how a
                 // package is built invalidates every stored hash. Without it a
-                // student whose questions.md has not changed keeps the package
+                // student whose questions.json has not changed keeps the package
                 // built by the previous format forever, since the skip below
-                // would still match — the trap that made earlier parser fixes
-                // require deleting the .imscc files by hand.
+                // would still match.
                 const contentHash = crypto
                   .createHash('sha256')
                   .update(PACKAGE_FORMAT + '\n' + content)
@@ -805,20 +697,21 @@ jobs:
                 sweepSupersededPackages();
                 const withheld = parsed.length - questions.length;
                 console.log(
-                  'Generated: ' + out + ' and ' + path.basename(csvOut) + ' (' + questions.length + ' questions' +
-                  (withheld ? ', ' + withheld + ' withheld for missing distractors' : '') + ')',
+                  'Generated: ' + out + ' and ' + path.basename(csvOut) +
+                  ' (' + questions.length + ' questions' +
+                  (withheld ? ', ' + withheld + ' withheld for missing distractors or blank options' : '') + ')',
                 );
               } catch (err) {
-                failures.push(qmd);
+                failures.push(qjson);
                 // The annotation is the signal in the Actions UI; the stack goes
                 // to the plain log, since annotate() truncates to 120 characters.
-                console.log('::error file=' + qmd + '::Quiz generation failed for this student — ' + annotate((err && err.message) || String(err)));
+                console.log('::error file=' + qjson + '::Quiz generation failed for this student — ' + annotate((err && err.message) || String(err)));
                 console.error(err && err.stack ? err.stack : err);
               }
             }
 
             if (allFiles.length === 0) {
-              console.log('No questions.md files found — nothing to generate.');
+              console.log('No questions.json files found — nothing to generate.');
             }
 
             // Non-zero so the run goes red and someone looks, but only once every
@@ -852,9 +745,9 @@ jobs:
           # is staged as a deletion rather than left behind in the tree. One
           # pathspec per invocation because a single pathspec matching nothing is
           # fatal to the whole `git add` — batching them would stage nothing at
-          # all on any run where one shape is absent, which is most runs.
-          for spec in '*_quiz_*.imscc' '*_brightspace_quiz_*.csv' '*_quiz.imscc' '*_brightspace_quiz.csv' '*/brightspace_quiz.imscc'; do
-            git add -A -- "$spec" 2>/dev/null || true # unmatched shapes are expected
+          # all on any run where one shape is absent.
+          for spec in '*_quiz_*.imscc' '*_brightspace_quiz_*.csv'; do
+            git add -A -- "$spec" 2>/dev/null || true # an unmatched shape is expected
           done
 
           if git diff --staged --quiet; then
@@ -864,7 +757,7 @@ jobs:
           git commit -m "chore: regenerate LMS quizzes [skip ci]"
 
           # The concurrency group only serialises this workflow against itself. A
-          # student's action writing questions.md through the Contents API can
+          # student's action writing questions.json through the Contents API can
           # land a commit in the window between the pull and the push, and the
           # push is then rejected non-fast-forward. That needs no human action —
           # the next run's full sweep plus the content-hash check would recover

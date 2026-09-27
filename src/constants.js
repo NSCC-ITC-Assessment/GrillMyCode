@@ -245,8 +245,7 @@ export const GIT_MAX_BUFFER = 20 * 1024 * 1024; // 20 MB
 export const COMMENT_STRIP_TIMEOUT_MS = 10_000;
 
 /**
- * Default AI provider. OpenRouter is currently the only supported provider:
- * GitHub Models, formerly the default, was permanently discontinued by GitHub.
+ * Default AI provider. OpenRouter is currently the only supported provider.
  * Overridable via the ai_provider action input.
  */
 export const DEFAULT_AI_PROVIDER = 'openrouter';
@@ -507,8 +506,8 @@ export const DEFAULT_LABEL_REPOS = false;
 
 /**
  * Default for log_prompt, an undocumented diagnostic input. When on, the chat
- * messages sent to the model are filed as prompt.md beside the instructor
- * assessment. Off by default: the prompt repeats the student's whole diff and
+ * messages sent to the model are filed as data/prompt.md in the instructor
+ * assessment's folder. Off by default: the prompt repeats the student's whole diff and
  * any assignment context, so it is only worth the space while investigating
  * how a prompt produced the questions it did.
  */

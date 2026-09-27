@@ -45,5 +45,5 @@ This enables `ACTIONS_STEP_DEBUG` only for that run, with no permanent repositor
 
 ## What it does not log
 
-- The raw AI response. When the [instructor repository](instructor-repository.md#raw-ai-outputmd) is configured, it is saved there as `raw-ai-output.md` on every run, debug mode or not
+- The raw AI response. When the [instructor repository](instructor-repository.md#raw-ai-outputmd) is configured, it is saved there as `data/raw-ai-output.md` on every run, debug mode or not
 - Code content before comment stripping

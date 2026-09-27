@@ -32,8 +32,6 @@ permissions:
   issues: write    # assessment issue
 ```
 
-Earlier versions also needed `models: read`. It is no longer used and can be removed; see [Upgrade notes](upgrade-notes.md#github-models-was-discontinued).
-
 `github_token` is not used to generate questions, and OpenRouter can't be reached with it.
 
 ## `api_key`
@@ -65,4 +63,3 @@ Select the **`repo`** scope (creating private organization repositories and writ
 Fine-grained tokens require the organization to allow them. Check **Org → Settings → Personal access tokens → Allow access via fine-grained personal access tokens**.
 :::
 
-A token created before the `workflow` scope was required needs updating; see [Upgrade notes](upgrade-notes.md#already-have-an-instructor-pat).

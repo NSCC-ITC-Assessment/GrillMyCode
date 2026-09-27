@@ -18,11 +18,15 @@ For each assignment, GrillMyCode creates a private repository in your classroom'
 - **`questions.md`**: their questions and answers. This is the file to read.
 - **A quiz file** (`.imscc`), ready to import into Brightspace, Canvas, Moodle or most other LMSs. See [Importing quizzes into your LMS](lms-quizzes.md).
 - **A Brightspace-only alternative** (`.csv`), which you can ignore on any other LMS.
-- **`raw-ai-output.md`**: the AI's reply before GrillMyCode tidied it. You only need it when something looks wrong.
+- **A `data` folder** of files you don't need to read: the questions in the form the quiz is built from, and the AI's reply before GrillMyCode tidied it, which helps when something looks wrong.
 
 Every new run for a student replaces their files, so each folder always holds exactly one up-to-date assessment. Students can't see this repository.
 
 ![Top: the private instructor repository web101-lab-3-grillmycode-instructor, with a .github/workflows folder and one folder per student. Bottom: one student's folder, containing the Brightspace CSV quiz, the .imscc quiz, questions.md and raw-ai-output.md.](/img/screenshots/instructor-repository.png)
+
+:::note[Screenshot needed]
+Retake this screenshot so the student's folder shows the `data` folder in place of `raw-ai-output.md`.
+:::
 
 ## One-time setup
 

@@ -7,9 +7,8 @@
  * student copy.
  *
  * GrillMyCode writes every piece of Markdown structure itself — numbering,
- * filename headers, code fences, the answer container, the separators — so the
- * views cannot drift from the format generate-lms-quiz.yml parses, whatever
- * the model does. The student view is built from the question objects without
+ * filename headers, code fences, the separators — so the layout is the same
+ * whatever the model does. The student view is built from the question objects without
  * their answers, rather than by removing answers from text, so no formatting
  * slip can carry an answer into it.
  *
@@ -163,21 +162,17 @@ function trimCodeSpans(text) {
  * Validates and normalises one question object from the reply, or returns
  * null when it lacks question text or an answer.
  *
- * Clears away what the model might carry over from the Markdown it was once
- * asked for: a number or "Question:" label on the question, a bullet or
- * "Answer:" label on an option, bold or backticks around a file name, a code
- * fence around a snippet, and spaces inside an inline code span. Snippets with no code are dropped. A missing
- * `distractors` is an empty list — the quiz workflow withholds a question
- * without options and says so.
+ * Every text field is collapsed to one line with its inline code spans
+ * trimmed. Backticks and asterisks are removed from a file name, which is
+ * rendered inside a bold code span they would break. A language is kept only
+ * when it is a plain word, since it becomes a code fence's info string.
+ * Snippets with no code are dropped. A missing `distractors` is an empty list —
+ * the quiz workflow withholds a question without options and says so.
  */
 function normaliseQuestion(raw) {
   if (!raw || typeof raw !== 'object') return null;
-  const question = trimCodeSpans(
-    oneLine(raw.question)
-      .replace(/^(?:question\s*\d*\s*[:.)]\s*|\d+[.)]\s+)/i, '')
-      .trim(),
-  );
-  const answer = cleanOption(raw.answer);
+  const question = cleanText(raw.question);
+  const answer = cleanText(raw.answer);
   if (!question || !answer) return null;
 
   const snippets = (Array.isArray(raw.snippets) ? raw.snippets : [])
@@ -188,32 +183,24 @@ function normaliseQuestion(raw) {
     }))
     .filter((s) => s.code);
   const distractors = (Array.isArray(raw.distractors) ? raw.distractors : [])
-    .map(cleanOption)
+    .map(cleanText)
     .filter(Boolean);
 
   return { snippets, question, answer, distractors, broader: raw.broader === true };
 }
 
-/** One answer option on one line, without a leading bullet or Answer: label. */
-function cleanOption(value) {
-  return trimCodeSpans(
-    oneLine(value)
-      .replace(/^[-*+]\s+/, '')
-      .replace(/^\**answer:\**\s*/i, '')
-      .trim(),
-  );
+/** One line of text with its inline code spans trimmed. */
+function cleanText(value) {
+  return trimCodeSpans(oneLine(value));
 }
 
 /**
- * A snippet's code with Unix line endings, no wrapping fence, and no blank
- * lines or trailing whitespace at either end. Leading indentation of the first
- * line is kept.
+ * A snippet's code with Unix line endings and no blank lines or trailing
+ * whitespace at either end. Leading indentation of the first line is kept.
  */
 function cleanCode(value) {
   if (typeof value !== 'string') return '';
-  let code = value.replace(/\0/g, '').replace(/\r\n?/g, '\n');
-  const fenced = code.match(/^\s*(`{3,}|~{3,})[^\n]*\n([\s\S]*?)\n[ \t]*\1\s*$/);
-  if (fenced) code = fenced[2];
+  const code = value.replace(/\0/g, '').replace(/\r\n?/g, '\n');
   return code.replace(/^(?:[ \t]*\n)+/, '').replace(/\s+$/, '');
 }
 
@@ -429,10 +416,7 @@ function fenceFor(code) {
  * question, separated by `---`.
  *
  * `view` selects what each block carries below its question:
- *   - 'instructor' — the answer and distractors, inside the
- *     <!-- gmc:answer --> container generate-lms-quiz.yml reads positionally:
- *     first bullet the answer, the rest distractors. The headings are kept as
- *     its fallback, and for the instructor reading the file.
+ *   - 'instructor' — the answer and distractors.
  *   - 'answers'    — the correct answer alone (include_answers).
  *   - 'student'    — nothing.
  *
@@ -454,7 +438,7 @@ export function renderQuestions(questions, { view }) {
     }
     lines.push(`${q.number}. ${boldStem(q.question)}`);
     if (view === 'instructor') {
-      lines.push('', '   <!-- gmc:answer -->', '   **Answer:**', `   - ${q.answer}`);
+      lines.push('', '   **Answer:**', `   - ${q.answer}`);
       if (q.distractors.length > 0) {
         lines.push(
           '',
@@ -462,7 +446,6 @@ export function renderQuestions(questions, { view }) {
           ...q.distractors.map((d) => `   - ${d}`),
         );
       }
-      lines.push('   <!-- /gmc:answer -->');
     } else if (view === 'answers') {
       lines.push('', '   **Answer:**', `   - ${q.answer}`);
     }

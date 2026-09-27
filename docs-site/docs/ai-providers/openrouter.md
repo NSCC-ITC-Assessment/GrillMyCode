@@ -11,8 +11,6 @@ To create an account and key, see [Get started: Set up an OpenRouter key](../get
 
 :::info[An API key is required]
 OpenRouter can't be reached with the built-in `GITHUB_TOKEN`. Every workflow must supply `api_key`, and the action fails immediately with a setup message if it is missing.
-
-Upgrading a workflow that used GitHub Models? See [Upgrade notes](../reference/upgrade-notes.md#github-models-was-discontinued).
 :::
 
 ## Inputs

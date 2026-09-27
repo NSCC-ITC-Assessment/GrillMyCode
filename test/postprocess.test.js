@@ -101,15 +101,15 @@ describe('parseQuestionsReply', () => {
     expect(() => parseQuestionsReply(reply())).toThrow(/no question/);
   });
 
-  it('clears away Markdown the model carried over into the fields', () => {
+  it('normalises the fields for rendering', () => {
     const [q] = parseQuestionsReply(
       reply(
         raw(1, {
-          question: '3.  What does\n`x` return?',
-          answer: '- **Answer:** It returns\n  the count',
-          distractors: ['* wrong one', '', 'wrong two', 7],
+          question: 'What does\n`x` return?',
+          answer: 'It returns\n  the count',
+          distractors: ['wrong one', '', 'wrong two', 7],
           snippets: [
-            { file: '**`src/app.js`**', language: 'js', code: '```js\r\nconst x = 1;\r\n```' },
+            { file: '`src/app.js`', language: 'js', code: 'const x = 1;\r\nx++;\r\n' },
             { file: 'empty.js', language: 'js', code: '\n  \n' },
             { file: 'b.js', language: 'not a language!', code: '\n\n    indented();  \n\n' },
           ],
@@ -120,7 +120,7 @@ describe('parseQuestionsReply', () => {
     expect(q.answer).toBe('It returns the count');
     expect(q.distractors).toEqual(['wrong one', 'wrong two']);
     expect(q.snippets).toEqual([
-      { file: 'src/app.js', language: 'js', code: 'const x = 1;' },
+      { file: 'src/app.js', language: 'js', code: 'const x = 1;\nx++;' },
       { file: 'b.js', language: '', code: '    indented();' },
     ]);
   });
@@ -302,7 +302,7 @@ describe('renderQuestions', () => {
   const parsed = (...questions) =>
     numberQuestions(parseQuestionsReply(reply(...questions)).questions);
 
-  it('renders the instructor view with the answer container', () => {
+  it('renders the instructor view with answers and distractors', () => {
     expect(renderQuestions(parsed(raw(1), raw(2)), { view: 'instructor' })).toBe(
       [
         '**`app.js`**',
@@ -313,7 +313,6 @@ describe('renderQuestions', () => {
         '',
         '1. **What does** `total1` **hold after this line runs?**',
         '',
-        '   <!-- gmc:answer -->',
         '   **Answer:**',
         '   - It holds the number of entries in the items array for question 1',
         '',
@@ -321,7 +320,6 @@ describe('renderQuestions', () => {
         '   - wrong 1a',
         '   - wrong 1b',
         '   - wrong 1c',
-        '   <!-- /gmc:answer -->',
         '',
         '---',
         '',
@@ -333,7 +331,6 @@ describe('renderQuestions', () => {
         '',
         '2. **What does** `total2` **hold after this line runs?**',
         '',
-        '   <!-- gmc:answer -->',
         '   **Answer:**',
         '   - It holds the number of entries in the items array for question 2',
         '',
@@ -341,7 +338,6 @@ describe('renderQuestions', () => {
         '   - wrong 2a',
         '   - wrong 2b',
         '   - wrong 2c',
-        '   <!-- /gmc:answer -->',
       ].join('\n'),
     );
   });
@@ -349,7 +345,7 @@ describe('renderQuestions', () => {
   it('leaves the distractor heading out when there are none', () => {
     const out = renderQuestions(parsed(raw(1, { distractors: [] })), { view: 'instructor' });
     expect(out).not.toContain('Distractors');
-    expect(out).toContain('<!-- /gmc:answer -->');
+    expect(out).toContain('**Answer:**');
   });
 
   it('renders the answer alone for include_answers', () => {

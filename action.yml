@@ -24,7 +24,6 @@ inputs:
     description: >
       AI provider to use for question generation.
       Supported values: openrouter
-      (GitHub Models is no longer supported — GitHub permanently discontinued it.)
     required: false
     default: "openrouter"
 

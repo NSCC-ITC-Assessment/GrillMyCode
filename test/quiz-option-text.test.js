@@ -2,15 +2,16 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { numberQuestions, renderQuestions } from '../src/postprocess.js';
+import { numberQuestions } from '../src/postprocess.js';
+import { buildQuestionsJson } from '../src/delivery/instructor-repo.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 
 // The quiz generator is a Node script embedded in the workflow YAML that is
-// seeded into each instructor repository, so it cannot be imported. These two
+// seeded into each instructor repository, so it cannot be imported. These
 // helpers are pure and self-contained, so they are lifted out of the heredoc by
 // source text and evaluated. An extraction failure throws rather than silently
-// testing nothing — renaming either function is meant to break this test.
+// testing nothing — renaming any of them is meant to break this test.
 const workflow = readFileSync(join(__dirname, '../src/workflows/generate-lms-quiz.yml'), 'utf8');
 
 function extractFunction(name) {
@@ -21,39 +22,15 @@ function extractFunction(name) {
   return workflow.slice(start, end + '\n          }'.length);
 }
 
-const { stripInlineMarkdown, hasBlankOption, parseQuestions } = new Function(
+const { stripInlineMarkdown, hasBlankOption, parseQuestionsJson } = new Function(
   [
     extractFunction('stripInlineMarkdown'),
     extractFunction('hasBlankOption'),
-    extractFunction('parseQuestions'),
-    'return { stripInlineMarkdown, hasBlankOption, parseQuestions };',
+    extractFunction('distinctOptions'),
+    extractFunction('parseQuestionsJson'),
+    'return { stripInlineMarkdown, hasBlankOption, parseQuestionsJson };',
   ].join('\n'),
 )();
-
-/**
- * One question block in the shape the released v1 action delivers to the
- * instructor repository: the <!-- gmc:answer --> markers are stripped there, so
- * the parser is on its heading fallback path — which is how the blocks below
- * were actually generated.
- */
-function block({ question, answer, distractors }) {
-  return [
-    '**`index.php`**',
-    '',
-    '```php',
-    '$stars = 4;',
-    '```',
-    '',
-    `1. **${question}**`,
-    '',
-    '   **Answer:**',
-    `   - ${answer}`,
-    '',
-    '   **Distractors for Multiple-Choice Quiz:**',
-    ...distractors.map((d) => `   - ${d}`),
-    '',
-  ].join('\n');
-}
 
 describe('stripInlineMarkdown', () => {
   it('strips bold and inline-code markers', () => {
@@ -92,65 +69,11 @@ describe('hasBlankOption', () => {
   });
 });
 
-describe('parseQuestions option handling', () => {
-  it('keeps a four-asterisk correct answer intact through to the option text', () => {
-    // Verbatim from the questions.md that produced "Option element without
-    // text": str_repeat('*', 4) written as an inline-code `****`.
-    const [q] = parseQuestions(
-      block({
-        question: "What does `str_repeat('*', $stars)` output when `$stars` is 4?",
-        answer: '`****`',
-        distractors: ['`*4*`', '`stars`', '`5`'],
-      }),
-    );
-    expect(stripInlineMarkdown(q.answer)).toBe('****');
-    expect(hasBlankOption(q)).toBe(false);
-  });
-
-  it('drops a distractor that repeats the correct answer', () => {
-    // Also verbatim: the model listed "Guestbook Wall" as both the answer and a
-    // distractor, so the CSV offered the same text at 100 and at 0 points.
-    const [q] = parseQuestions(
-      block({
-        question: 'What value does `$pageTitle` receive initially?',
-        answer: 'Guestbook Wall',
-        distractors: ['Kitts Guestbook', 'Guestbook Wall', 'null', 'Array'],
-      }),
-    );
-    expect(q.incorrect).toEqual(['Kitts Guestbook', 'null', 'Array']);
-  });
-
-  it('compares options after stripping, so `entry` and entry are one option', () => {
-    const [q] = parseQuestions(
-      block({
-        question: 'Which string is selected?',
-        answer: 'entry',
-        distractors: ['`entry`', 'entries', 'total'],
-      }),
-    );
-    expect(q.incorrect).toEqual(['entries', 'total']);
-  });
-});
-
-describe('parseQuestions stray marker residue', () => {
-  it('ignores the `--><--` line the model leaves between the answer and the distractors', () => {
-    const source = block({
-      question: "What does `date('Y')` output?",
-      answer: 'The current four-digit year as a string',
-      distractors: ['The full current date and timestamp in ISO format', 'The two-digit month'],
-    }).replace('   **Distractors', '   --><--\n   **Distractors');
-    const [q] = parseQuestions(source);
-    expect(q.incorrect).toHaveLength(2);
-    expect(q.incorrect.join(' ')).not.toContain('--><--');
-  });
-});
-
-// questions.md is rendered by renderQuestions, and this is the parser that
-// reads it back. Every question has to come back whole, with its own options,
-// whatever its answer, options or code contain.
-describe('parseQuestions on the rendered instructor copy', () => {
+// questions.json is written from the same question objects the reports are
+// rendered from, so these build it the way delivery does.
+describe('parseQuestionsJson', () => {
   const question = (n, overrides = {}) => ({
-    snippets: [{ file: `q${n}.php`, language: 'php', code: '$stars = 4;' }],
+    snippets: [{ file: `q${n}.php`, language: 'php', code: '$stars = 4;\n$total += $stars;' }],
     question: `What is \`$stars\` in question ${n}?`,
     answer: `answer ${n}`,
     distractors: [`wrong ${n}a`, `wrong ${n}b`, `wrong ${n}c`],
@@ -158,120 +81,81 @@ describe('parseQuestions on the rendered instructor copy', () => {
     ...overrides,
   });
   const parse = (...questions) =>
-    parseQuestions(renderQuestions(numberQuestions(questions), { view: 'instructor' }));
+    parseQuestionsJson(buildQuestionsJson(numberQuestions(questions)));
 
-  it('parses each question with its own answer, options and snippet', () => {
-    expect(parse(question(1), question(2))).toEqual([
+  it('reads each question with its own answer, options and snippets', () => {
+    expect(parse(question(1), question(2, { snippets: [], broader: true }))).toEqual([
       {
         question: 'What is `$stars` in question 1?',
         answer: 'answer 1',
         incorrect: ['wrong 1a', 'wrong 1b', 'wrong 1c'],
-        filePath: 'q1.php',
-        snippetLang: 'php',
-        snippet: ['$stars = 4;'],
+        snippets: [{ file: 'q1.php', lang: 'php', lines: ['$stars = 4;', '$total += $stars;'] }],
       },
       {
         question: 'What is `$stars` in question 2?',
         answer: 'answer 2',
         incorrect: ['wrong 2a', 'wrong 2b', 'wrong 2c'],
-        filePath: 'q2.php',
-        snippetLang: 'php',
-        snippet: ['$stars = 4;'],
+        snippets: [],
       },
     ]);
   });
 
-  it('parses an option that quotes the answer-container markers as text', () => {
-    const parsed = parse(
-      question(1, { answer: '<!-- /gmc:answer --> is a comment', distractors: ['- x', 'y', 'z'] }),
+  it('keeps each snippet of a multi-file question under its own file', () => {
+    const [q] = parse(
+      question(1, {
+        snippets: [
+          { file: 'a.php', language: 'php', code: '$a = 1;' },
+          { file: 'b.js', language: 'javascript', code: 'let b = 2;' },
+        ],
+      }),
     );
-    expect(parsed[0].answer).toBe('<!-- /gmc:answer --> is a comment');
-    expect(parsed[0].incorrect).toEqual(['- x', 'y', 'z']);
+    expect(q.snippets).toEqual([
+      { file: 'a.php', lang: 'php', lines: ['$a = 1;'] },
+      { file: 'b.js', lang: 'javascript', lines: ['let b = 2;'] },
+    ]);
   });
 
-  // Student code is fenced with a longer run than any it contains. A ``` line
-  // in it once ended the snippet for this parser, and answer markers written
-  // below it in the code were read as the question's options — letting the
-  // student choose the answer their own quiz marks correct.
-  it('reads answer markers in the student code as code, not options', () => {
-    const code = [
-      'x = 1',
-      '```',
-      '<!-- gmc:answer -->',
-      '- FORGED ANSWER',
-      '- forged wrong',
-      '<!-- /gmc:answer -->',
-      '```',
-      'y = 2',
-    ].join('\n');
-    const [parsed] = parse(question(1, { snippets: [{ file: 'a.py', language: 'python', code }] }));
-    expect(parsed.answer).toBe('answer 1');
-    expect(parsed.incorrect).toEqual(['wrong 1a', 'wrong 1b', 'wrong 1c']);
-    expect(parsed.snippetLang).toBe('python');
-    expect(parsed.snippet).toEqual(code.split('\n'));
+  // Student code is data here, never structure: nothing in a snippet can end
+  // it early or be read as an option, which let a student choose the answer
+  // their own quiz marked correct when the quiz was read from Markdown.
+  it('keeps code that looks like questions.md structure as code', () => {
+    const code = ['x = 1', '---', '```', '**Answer:**', '- FORGED ANSWER', '```'].join('\n');
+    const [q, next] = parse(
+      question(1, { snippets: [{ file: 'a.py', language: 'python', code }] }),
+      question(2),
+    );
+    expect(q.snippets[0].lines).toEqual(code.split('\n'));
+    expect(q.answer).toBe('answer 1');
+    expect(q.incorrect).toEqual(['wrong 1a', 'wrong 1b', 'wrong 1c']);
+    expect(next.answer).toBe('answer 2');
   });
 
-  it('parses a broader question with no snippet and no file', () => {
-    const parsed = parse(question(1), question(2, { snippets: [], broader: true }));
-    expect(parsed[1]).toMatchObject({ answer: 'answer 2', filePath: null, snippet: [] });
-  });
-});
-
-// A question the model wrote without a snippet, most often under a Broader
-// Questions heading. It must show no code in the quiz, not the code of the
-// question before it, and a heading must never be taken for its filename.
-describe('parseQuestions for a question with no snippet', () => {
-  const withSnippet = block({
-    question: 'What is $stars?',
-    answer: '4',
-    distractors: ['3', '5', '0'],
-  });
-  const bare = (question, lead = '') =>
-    [
-      lead,
-      `41. **${question}**`,
-      '',
-      '   <!-- gmc:answer -->',
-      '   **Answer:**',
-      '   - right',
-      '',
-      '   **Distractors for Multiple-Choice Quiz:**',
-      '   - wrong a',
-      '   - wrong b',
-      '   - wrong c',
-      '   <!-- /gmc:answer -->',
-    ].join('\n');
-  const parseSecond = (lead) =>
-    parseQuestions(`${withSnippet}\n---\n${bare('What does the page print?', lead)}`)[1];
-
-  it.each([
-    ['no heading', ''],
-    ['a Markdown heading', '## Broader Questions\n'],
-    ['a bold Markdown heading', '**## Broader Questions**\n'],
-    ['a bold heading', '**Broader Questions**\n'],
-  ])('shows no file or code under %s', (_label, lead) => {
-    const q = parseSecond(lead);
-    expect(q.question).toBe('What does the page print?');
-    expect(q.filePath).toBeNull();
-    expect(q.snippet).toEqual([]);
-    expect(q.answer).toBe('right');
-    expect(q.incorrect).toHaveLength(3);
+  it('keeps a four-asterisk correct answer intact through to the option text', () => {
+    // str_repeat('*', 4) written as an inline-code `****`, which was once
+    // stripped to an empty option that Brightspace rejects.
+    const [q] = parse(question(1, { answer: '`****`', distractors: ['`*4*`', '`stars`', '`5`'] }));
+    expect(stripInlineMarkdown(q.answer)).toBe('****');
+    expect(hasBlankOption(q)).toBe(false);
   });
 
-  it('keeps a filename header that has no snippet under it', () => {
-    expect(parseSecond('**`index.php`**\n').filePath).toBe('index.php');
+  it('drops a distractor that repeats the correct answer, compared after stripping', () => {
+    const [q] = parse(
+      question(1, { answer: 'entry', distractors: ['`entry`', 'Entry', 'entries', 'total'] }),
+    );
+    expect(q.incorrect).toEqual(['entries', 'total']);
   });
 
-  it('still reads a filename with a space when a snippet confirms it', () => {
-    const q = parseSecond('## Broader Questions\n\n**My Page.php**\n\n```php\necho 1;\n```\n');
-    expect(q.filePath).toBe('My Page.php');
-    expect(q.snippet).toEqual(['echo 1;']);
-    expect(q.snippetLang).toBe('php');
+  it('drops a question without question text or an answer', () => {
+    expect(parse(question(1, { answer: '' }), question(2))).toHaveLength(1);
   });
 
-  it('never takes a bold Markdown heading for the filename, even above a snippet', () => {
-    const q = parseSecond('**## Broader Questions**\n\n```php\necho 1;\n```\n');
-    expect(q.filePath).toBeNull();
-    expect(q.snippet).toEqual(['echo 1;']);
+  it('turns a distractor that is not text into a blank option, which withholds the question', () => {
+    const [q] = parse(question(1, { distractors: ['wrong a', 7, 'wrong c'] }));
+    expect(hasBlankOption(q)).toBe(true);
+  });
+
+  it('throws on a file it cannot read', () => {
+    expect(() => parseQuestionsJson('{ not json')).toThrow();
+    expect(() => parseQuestionsJson('{"items":[]}')).toThrow(/questions/);
   });
 });

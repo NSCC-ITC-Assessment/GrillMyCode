@@ -135,8 +135,7 @@ renderQuestions()
     │  Writes all the Markdown from the question objects: the student view
     │  (no answers; findLeakedAnswers() withholds any question whose text
     │  carries an answer), the include_answers view, and the instructor view
-    │  (answers, distractors and the <!-- gmc:answer --> container the quiz
-    │  workflow parses)
+    │  (answers and distractors)
     │
 formatReport(pdfUrl: null)   ← base report (PDF source)
     │
@@ -171,14 +170,19 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │     from the copies shipped in src/; warns (never throws) on failure.
                │
                ├── writeFileWithRetry()
-               │     Writes {studentLogin}/raw-ai-output.md — the model's reply
+               │     Writes {studentLogin}/data/raw-ai-output.md — the model's reply
                │     before parsing, under a provenance header recording
                │     the request settings and response metadata; warns (never
                │     throws) on failure
                │
+               ├── writeFileWithRetry()
+               │     Writes {studentLogin}/questions.md, retrying on 409/422
+               │     conflicts and backing off on rate limits
+               │
                └── writeFileWithRetry()
-                     Writes {studentLogin}/questions.md, retrying on 409/422
-                     conflicts and backing off on rate limits
+                     Writes {studentLogin}/data/questions.json — buildQuestionsJson():
+                     the question objects the report was rendered from. Last,
+                     because its commit starts the quiz workflow
                │
      applyRepoLabels()   ← only when label_repos is "true"
                │  Marks the STUDENT repository, on the instructor PAT (repository
@@ -303,8 +307,8 @@ built, `main.js` calls `readSubmissionHistory()` for `{student}/{tagGroup}/`, an
 in `src/submission-history.js` turn its `submissions.md` rows into this run's row and a
 resubmission note for the report header. `deliverToInstructorRepo({ submission })` then archives
 the `questions.md` being replaced to `history/<#>-questions.md`, rewrites `submissions.md` with the
-new row, and only then writes `questions.md` — so the quiz workflow's trigger is still the last
-commit. Like the raw-output copy, a failure in the record warns and never costs the assessment. A
+new row, and only then writes `questions.md` and `data/questions.json` — so the quiz workflow's
+trigger, `data/questions.json`, is still the last commit. Like the raw-output copy, a failure in the record warns and never costs the assessment. A
 tag push always counts as a submission; a manual run counts only when the triggering actor is the
 student (always, in a team repo).
 

@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as core from '@actions/core';
-import { deliverToInstructorRepo } from '../src/delivery/instructor-repo.js';
+import { buildQuestionsJson, deliverToInstructorRepo } from '../src/delivery/instructor-repo.js';
 import { formatRawOutput } from '../src/report.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), warning: vi.fn(), error: vi.fn() }));
@@ -35,7 +35,7 @@ function fakeOctokit({ failPath } = {}) {
   };
 }
 
-function deliver(octokit, { rawOutput, tagGroup } = {}) {
+function deliver(octokit, { rawOutput, tagGroup, questions = [] } = {}) {
   return deliverToInstructorRepo({
     octokit,
     owner: 'org',
@@ -43,6 +43,7 @@ function deliver(octokit, { rawOutput, tagGroup } = {}) {
     studentLogin: 'student',
     tagGroup,
     content: '## GrillMyCode\n\n1. Question?',
+    questions,
     headSha: 'abcdef1234567890',
     rawOutput,
   });
@@ -62,21 +63,25 @@ describe('raw AI output delivery', () => {
     const octokit = fakeOctokit();
     await deliver(octokit, { rawOutput: 'verbatim model reply' });
 
-    expect(studentWrites(octokit)).toEqual(['student/raw-ai-output.md', 'student/questions.md']);
+    expect(studentWrites(octokit)).toEqual([
+      'student/data/raw-ai-output.md',
+      'student/questions.md',
+      'student/data/questions.json',
+    ]);
   });
 
   it('omits the raw copy when no raw output is supplied', async () => {
     const octokit = fakeOctokit();
     await deliver(octokit);
 
-    expect(studentWrites(octokit)).toEqual(['student/questions.md']);
+    expect(studentWrites(octokit)).toEqual(['student/questions.md', 'student/data/questions.json']);
   });
 
   it('still writes the assessment when the raw copy fails', async () => {
-    const octokit = fakeOctokit({ failPath: 'student/raw-ai-output.md' });
+    const octokit = fakeOctokit({ failPath: 'student/data/raw-ai-output.md' });
     await deliver(octokit, { rawOutput: 'verbatim model reply' });
 
-    expect(studentWrites(octokit)).toEqual(['student/questions.md']);
+    expect(studentWrites(octokit)).toEqual(['student/questions.md', 'student/data/questions.json']);
     expect(core.warning).toHaveBeenCalledWith(
       expect.stringContaining('Could not write the raw AI output'),
     );
@@ -87,8 +92,9 @@ describe('raw AI output delivery', () => {
     await deliver(octokit, { rawOutput: 'verbatim model reply', tagGroup: 'phase1' });
 
     expect(studentWrites(octokit)).toEqual([
-      'student/phase1/raw-ai-output.md',
+      'student/phase1/data/raw-ai-output.md',
       'student/phase1/questions.md',
+      'student/phase1/data/questions.json',
     ]);
   });
 
@@ -98,6 +104,40 @@ describe('raw AI output delivery', () => {
     await expect(deliver(octokit, { rawOutput: 'verbatim model reply' })).rejects.toThrow(
       'Validation failed',
     );
+  });
+});
+
+describe('questions.json delivery', () => {
+  const questions = [
+    {
+      number: 1,
+      snippets: [{ file: 'a.js', language: 'javascript', code: 'let a = 1;' }],
+      question: 'What is `a`?',
+      answer: '1',
+      distractors: ['0', '2', '3'],
+      broader: false,
+    },
+  ];
+
+  it('writes questions.json last, since its commit starts the quiz', async () => {
+    const octokit = fakeOctokit();
+    await deliver(octokit, { rawOutput: 'verbatim model reply', questions });
+
+    expect(studentWrites(octokit)).toEqual([
+      'student/data/raw-ai-output.md',
+      'student/questions.md',
+      'student/data/questions.json',
+    ]);
+  });
+
+  it('fails the delivery when questions.json cannot be written', async () => {
+    const octokit = fakeOctokit({ failPath: 'student/data/questions.json' });
+
+    await expect(deliver(octokit, { questions })).rejects.toThrow('Validation failed');
+  });
+
+  it('records the question objects', () => {
+    expect(JSON.parse(buildQuestionsJson(questions))).toEqual({ questions });
   });
 });
 

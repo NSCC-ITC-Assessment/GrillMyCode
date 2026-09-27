@@ -1148,7 +1148,7 @@ async function run() {
     if (reply.salvaged) {
       core.warning(
         `The AI reply was not complete JSON; recovered ${reply.questions.length} complete ` +
-          `question(s) from it. Check raw-ai-output.md in the instructor repository.`,
+          `question(s) from it. Check data/raw-ai-output.md in the instructor repository.`,
       );
       state.diagnostics.push(
         `The AI reply was not complete JSON, so only the ${reply.questions.length} complete ` +
@@ -1383,9 +1383,8 @@ async function run() {
         headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
       });
       const instructorRepoName = assignmentName + INSTRUCTOR_REPO_SUFFIX;
-      // Answers, distractors and the answer-container markers, which
-      // generate-lms-quiz.yml parses this exact file by. The markers are HTML
-      // comments, invisible in rendered Markdown.
+      // Answers and distractors. The quiz is built from the same questions,
+      // filed as data/questions.json beside this copy.
       const instructorQuestions = renderQuestions(finalQuestions, { view: 'instructor' });
 
       // ── Submission record (tag runs only) ─────────────────────────────────
@@ -1487,6 +1486,7 @@ async function run() {
           studentLogin: submitter,
           tagGroup: tagSlug,
           content: instructorReport,
+          questions: finalQuestions,
           headSha,
           rawOutput: rawOutputCopy,
           prompt: promptCopy,

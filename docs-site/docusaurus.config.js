@@ -26,9 +26,6 @@ const releasedVersions = JSON.parse(
 );
 const latestVersion = releasedVersions[0];
 const latestVersionPath = `/docs/v${latestVersion}`;
-// Retired version paths that may still be linked to. Each is redirected to the
-// latest release, page for page.
-const legacyVersionPaths = ['/docs/v1'];
 
 // ── Redirects for removed doc pages ───────────────────────────────────────────
 // The release workflow regenerates versioned_docs from docs/ on every tag, so a
@@ -44,27 +41,9 @@ function existsInLatestVersion(docPath) {
   return ['.md', '.mdx'].some((ext) => fs.existsSync(base + ext));
 }
 
-const removedPages = [
-  // Removed when GitHub discontinued GitHub Models.
-  {
-    path: 'ai-providers/github-models',
-    to: 'reference/upgrade-notes#github-models-was-discontinued',
-    fallbackTo:
-      'faq#ive-used-github-models-with-grillmycode-in-the-past-and-now-they-no-longer-function-why',
-  },
-  // Merged into "The assessment issue and PDF" in the docs reorganization.
-  { path: 'reference/pdf-asset-naming', to: 'reference/assessment-output#the-pdf' },
-  // Renamed when repository markers became repository labels.
-  { path: 'reference/repository-marker', to: 'reference/repository-labels' },
-  { path: 'example-workflows/repo-marker', to: 'example-workflows/repo-labels' },
-  // Folded into "Choosing a model": the recipe only changed ai_model.
-  {
-    path: 'example-workflows/openrouter-provider',
-    to: 'guides/choosing-a-model#using-a-more-capable-model',
-  },
-  // Renamed to match its title, "How GrillMyCode works".
-  { path: 'how-it-works', to: 'how-gmc-works' },
-];
+// Each entry: { path, to, fallbackTo? } — doc paths without extension, `to`
+// and `fallbackTo` optionally with an #anchor.
+const removedPages = [];
 
 function removedPageRedirects() {
   const redirects = [];
@@ -76,8 +55,7 @@ function removedPageRedirects() {
     if (!target) continue;
     // The unversioned /docs/* alias is normally produced by createRedirects
     // below, but only for paths that exist in the latest release.
-    const aliases = ['/docs', ...legacyVersionPaths].map((p) => `${p}/${docPath}`);
-    for (const from of [`${latestVersionPath}/${docPath}`, ...aliases]) {
+    for (const from of [`${latestVersionPath}/${docPath}`, `/docs/${docPath}`]) {
       redirects.push({ from, to: `${latestVersionPath}/${target}` });
     }
   }
@@ -186,17 +164,14 @@ const config = {
         ],
         // Redirect bare /docs and every unversioned /docs/* path to the current
         // released version. Target is derived from latestVersion, so it follows
-        // the latest major automatically when a new version is cut. Legacy
-        // version paths (see legacyVersionPaths) are redirected the same way.
+        // the latest major automatically when a new version is cut.
         /** @param {string} existingPath */
         createRedirects(existingPath) {
           if (
             existingPath === latestVersionPath ||
             existingPath.startsWith(`${latestVersionPath}/`)
           ) {
-            return ['/docs', ...legacyVersionPaths].map((p) =>
-              existingPath.replace(latestVersionPath, p),
-            );
+            return [existingPath.replace(latestVersionPath, '/docs')];
           }
           return undefined;
         },

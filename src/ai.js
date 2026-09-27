@@ -136,16 +136,6 @@ export async function callAI({
       headers['X-Title'] = 'GrillMyCode';
       break;
 
-    // GitHub Models was permanently discontinued by GitHub. Workflows that
-    // still specify it get a migration message rather than a generic
-    // "unknown provider" error, since it was the default for a long time.
-    case 'github-models':
-      throw new Error(
-        'ai_provider "github-models" is no longer supported: GitHub permanently ' +
-          'discontinued GitHub Models. Set ai_provider to "openrouter" and supply an ' +
-          'OpenRouter api_key. See https://grillmycode.org/docs/ai-providers/openrouter',
-      );
-
     default:
       throw new Error(`Unknown ai_provider: "${provider}". Valid values: openrouter`);
   }
