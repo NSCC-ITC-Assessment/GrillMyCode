@@ -7,6 +7,7 @@ import { effectiveAiModel, MODEL_ROUTING_VARIANTS } from '../generateYaml';
 // The first entry is the action's default model.
 const OPENROUTER_MODELS = [
   { label: 'Google Gemini 3.5 Flash Lite — Recommended', value: 'google/gemini-3.5-flash-lite' },
+  { label: 'OpenAI GPT-5.6 Luna', value: 'openai/gpt-5.6-luna' },
   { label: 'Deepseek V4 Flash', value: 'deepseek/deepseek-v4-flash' },
   { label: 'Minimax 2.7', value: 'minimax/minimax-m2.7' },
   { label: 'Step 3.7 Flash', value: 'stepfun/step-3.7-flash' },

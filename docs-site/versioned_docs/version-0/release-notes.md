@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.17.1 — 2026-09-27
+
+### What's Changed
+
+### Documentation
+
+- add OpenAI GPT-5.6 Luna model to OpenRouter integration and documentation
+
+### Refactoring
+
+- label each question block with its number above the snippet
+
 ## v0.17.0 — 2026-09-27
 
 ### What's Changed
