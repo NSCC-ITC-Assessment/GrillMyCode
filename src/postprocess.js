@@ -456,7 +456,8 @@ function fenceFor(code) {
 
 /**
  * Renders numbered questions (see numberQuestions) as Markdown, one block per
- * question, separated by `---`.
+ * question, separated by `---`. Each block opens with its `**Question N:**`
+ * label, then the snippets, then the question text.
  *
  * `view` selects what each block carries below its question:
  *   - 'instructor' — the answer and distractors.
@@ -474,23 +475,24 @@ export function renderQuestions(questions, { view }) {
       lines.push('## Broader Questions', '');
       broaderShown = true;
     }
+    lines.push(`**Question ${q.number}:**`, '');
     for (const { file, language, code, start, end } of q.snippets) {
       const fence = fenceFor(code);
       if (file) lines.push(`**\`${file}\`**, ${describeLines(start, end)}`, '');
       lines.push(`${fence}${language}`, code, fence, '');
     }
-    lines.push(`${q.number}. ${boldStem(q.question)}`);
+    lines.push(boldStem(q.question));
     if (view === 'instructor') {
-      lines.push('', '   **Answer:**', `   - ${q.answer}`);
+      lines.push('', '**Answer:**', `- ${q.answer}`);
       if (q.distractors.length > 0) {
         lines.push(
           '',
-          '   **Distractors for Multiple-Choice Quiz:**',
-          ...q.distractors.map((d) => `   - ${d}`),
+          '**Distractors for Multiple-Choice Quiz:**',
+          ...q.distractors.map((d) => `- ${d}`),
         );
       }
     } else if (view === 'answers') {
-      lines.push('', '   **Answer:**', `   - ${q.answer}`);
+      lines.push('', '**Answer:**', `- ${q.answer}`);
     }
     return lines.join('\n');
   });
