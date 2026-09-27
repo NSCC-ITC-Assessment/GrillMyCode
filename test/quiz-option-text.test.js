@@ -2,7 +2,10 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { numberQuestions } from '../src/postprocess.js';
+import {
+  isPlaceholderOption as isPlaceholderOptionInSrc,
+  numberQuestions,
+} from '../src/postprocess.js';
 import { buildQuestionsJson } from '../src/delivery/instructor-repo.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -22,16 +25,18 @@ function extractFunction(name) {
   return workflow.slice(start, end + '\n          }'.length);
 }
 
-const { stripInlineMarkdown, hasBlankOption, parseQuestionsJson } = new Function(
-  [
-    extractFunction('stripInlineMarkdown'),
-    extractFunction('hasBlankOption'),
-    extractFunction('distinctOptions'),
-    extractFunction('lineRange'),
-    extractFunction('parseQuestionsJson'),
-    'return { stripInlineMarkdown, hasBlankOption, parseQuestionsJson };',
-  ].join('\n'),
-)();
+const { stripInlineMarkdown, hasBlankOption, isPlaceholderOption, parseQuestionsJson } =
+  new Function(
+    [
+      extractFunction('stripInlineMarkdown'),
+      extractFunction('hasBlankOption'),
+      extractFunction('isPlaceholderOption'),
+      extractFunction('distinctOptions'),
+      extractFunction('lineRange'),
+      extractFunction('parseQuestionsJson'),
+      'return { stripInlineMarkdown, hasBlankOption, isPlaceholderOption, parseQuestionsJson };',
+    ].join('\n'),
+  )();
 
 describe('stripInlineMarkdown', () => {
   it('strips bold and inline-code markers', () => {
@@ -67,6 +72,32 @@ describe('hasBlankOption', () => {
 
   it('flags a blank distractor', () => {
     expect(hasBlankOption({ answer: 'a', incorrect: ['b', ''] })).toBe(true);
+  });
+});
+
+// The same rule as src/postprocess.js, which keeps its own copy: both are run
+// against the same cases so the two cannot drift apart unnoticed. What each
+// case should give is tested in postprocess.test.js.
+describe('isPlaceholderOption', () => {
+  it.each([
+    'distractors_placeholder',
+    '`distractors_placeholder`',
+    '[placeholder]',
+    'TODO',
+    'n/a',
+    'Distractor 3',
+    '...',
+    '…',
+    '',
+    "''",
+    '[]',
+    '`...`',
+    '-1',
+    'null',
+    'It sets the `placeholder` attribute on the input',
+    'The third distractor option described in the loop',
+  ])('matches src/postprocess.js for %j', (text) => {
+    expect(isPlaceholderOption(text)).toBe(isPlaceholderOptionInSrc(text));
   });
 });
 
@@ -162,6 +193,15 @@ describe('parseQuestionsJson', () => {
       question(1, { answer: 'entry', distractors: ['`entry`', 'Entry', 'entries', 'total'] }),
     );
     expect(q.incorrect).toEqual(['entries', 'total']);
+  });
+
+  // Written before postprocess.js dropped placeholders, or edited by hand.
+  it('drops a placeholder distractor and keeps the question with its real options', () => {
+    const [q] = parse(
+      question(1, { distractors: ['wrong 1a', 'distractors_placeholder', 'wrong 1c'] }),
+    );
+    expect(q.incorrect).toEqual(['wrong 1a', 'wrong 1c']);
+    expect(hasBlankOption(q)).toBe(false);
   });
 
   it('drops a question without question text or an answer', () => {

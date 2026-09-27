@@ -168,7 +168,8 @@ function trimCodeSpans(text) {
  * file and the first and last line to show — which resolveSnippets turns into
  * code. A line number that is not a whole number is kept as NaN, so the
  * question fails there. A missing `distractors` is an empty list — the quiz
- * workflow withholds a question without options and says so.
+ * workflow withholds a question without options and says so. A placeholder
+ * distractor is dropped too (see isPlaceholderOption).
  */
 function normaliseQuestion(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -183,9 +184,28 @@ function normaliseQuestion(raw) {
   }));
   const distractors = (Array.isArray(raw.distractors) ? raw.distractors : [])
     .map(cleanText)
-    .filter(Boolean);
+    .filter((d) => d && !isPlaceholderOption(d));
 
   return { snippets, question, answer, distractors, broader: raw.broader === true };
+}
+
+/**
+ * True when a distractor is filler the model wrote in place of a wrong answer
+ * — `distractors_placeholder`, `TODO`, `Distractor 3`, `...` — to make up the
+ * three the prompt demands. Left in, it reaches the quiz as an option every
+ * student can rule out at a glance, so it is dropped and the question keeps
+ * its real options. Kept narrow: a real option caught by mistake costs the
+ * question one option, but a pattern that also matched bare values such as
+ * `''` or `[]` would cost far more of them. A copy of this function in
+ * generate-lms-quiz.yml applies the same rule to questions.json files written
+ * before it existed; change both together.
+ */
+export function isPlaceholderOption(text) {
+  if (/^(?:\.{3}|…)$/.test(text)) return true;
+  const bare = text.replace(/^[`'"[(<{]+|[`'")\]>}]+$/g, '');
+  if (/^(?:todo|tbd|tba|n\/a)$/i.test(bare)) return true;
+  if (/^(?:distractor|placeholder)\s*#?\d+$/i.test(bare)) return true;
+  return !/\s/.test(bare) && /placeholder|distractor/i.test(bare);
 }
 
 /** One line of text with its inline code spans trimmed. */

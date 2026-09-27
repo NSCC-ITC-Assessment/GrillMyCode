@@ -126,6 +126,20 @@ re-applied without re-deriving it.
   Well-formed output is left byte-identical, so no stored hash changes because
   of it. `questions.md` files written before this release are not rewritten.
 
+- **A placeholder distractor reached the quiz as a real option.** The model
+  filled one of the three distractor slots with `distractors_placeholder`,
+  which the prompt forbids but nothing checked: it was non-empty text, so it
+  passed both the parser and `hasBlankOption`, and every student could rule it
+  out at a glance. `isPlaceholderOption` now drops it — in `postprocess.js`
+  before `questions.json` is written, and in the quiz workflow for files
+  written earlier or edited by hand — and the question keeps its real options
+  rather than being withheld. The match is kept narrow (a no-space token naming
+  a placeholder or distractor, `TODO`/`TBD`/`N/A`, `Distractor 3`, a bare
+  ellipsis), because bare values such as `''` and `[]` are real options; filler
+  written as an ordinary sentence still gets through. The two copies must be
+  changed together, and a test checks they agree. `PACKAGE_FORMAT` is bumped
+  to `v10` so every quiz rebuilds under it.
+
 ---
 
 ## Partly addressed — the same failure mode via other formatting drift

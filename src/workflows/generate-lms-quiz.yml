@@ -124,11 +124,30 @@ jobs:
                   lines: str(s.code) ? str(s.code).split('\n') : [],
                 }));
               // A distractor that is not text becomes a blank option, which
-              // withholds the question rather than silently shortening it.
-              const incorrect = list(q.distractors).map((d) => str(d).trim());
+              // withholds the question rather than silently shortening it. A
+              // placeholder is dropped instead (see isPlaceholderOption).
+              const incorrect = list(q.distractors)
+                .map((d) => str(d).trim())
+                .filter((d) => !isPlaceholderOption(d));
               results.push({ question, answer, incorrect: distinctOptions(answer, incorrect), snippets });
             }
             return results;
+          }
+
+          // Filler the model wrote in place of a wrong answer —
+          // `distractors_placeholder`, `TODO`, `Distractor 3`, `...` — to make up
+          // the three it was asked for. Left in, every student can rule it out
+          // at a glance, so it is dropped and the question keeps its real
+          // options. A copy of
+          // isPlaceholderOption in GrillMyCode's src/postprocess.js drops it
+          // before questions.json is written; this one cleans files written
+          // before that, or edited by hand. Change both together.
+          function isPlaceholderOption(text) {
+            if (/^(?:\.{3}|…)$/.test(text)) return true;
+            const bare = text.replace(/^[`'"[(<{]+|[`'")\]>}]+$/g, '');
+            if (/^(?:todo|tbd|tba|n\/a)$/i.test(bare)) return true;
+            if (/^(?:distractor|placeholder)\s*#?\d+$/i.test(bare)) return true;
+            return !/\s/.test(bare) && /placeholder|distractor/i.test(bare);
           }
 
           // A distractor identical to the correct answer is a grading trap
@@ -567,7 +586,7 @@ jobs:
           // Bumped whenever the generated package changes shape, or what is read
           // from questions.json, so every stored hash stops matching and every
           // student's quiz is rebuilt once.
-          const PACKAGE_FORMAT = 'v9';
+          const PACKAGE_FORMAT = 'v10';
 
           // The instructor repo is named {assignment}-grillmycode-instructor,
           // so the assignment name can be recovered from GITHUB_REPOSITORY

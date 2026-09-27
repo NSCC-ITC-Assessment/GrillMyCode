@@ -6,6 +6,7 @@ import {
   describeLines,
   findLeakedAnswers,
   findLineReferences,
+  isPlaceholderOption,
   numberQuestions,
   parseQuestionsReply,
   renderQuestions,
@@ -357,6 +358,42 @@ describe('findLineReferences', () => {
   it('passes text that only mentions lines', () => {
     const plain = q({ question: 'How many lines does the loop print?', answer: 'Two lines' });
     expect(findLineReferences([plain])).toEqual([]);
+  });
+});
+
+describe('isPlaceholderOption', () => {
+  it.each([
+    'distractors_placeholder',
+    '`distractors_placeholder`',
+    '[placeholder]',
+    'TODO',
+    'n/a',
+    'Distractor 3',
+    '...',
+    '…',
+  ])('flags %j', (text) => {
+    expect(isPlaceholderOption(text)).toBe(true);
+  });
+
+  // Bare values are real options in short-answer questions, and a sentence
+  // that mentions a placeholder is a real option too.
+  it.each([
+    "''",
+    '[]',
+    '`...`',
+    '-1',
+    'null',
+    'It sets the `placeholder` attribute on the input',
+    'The third distractor option described in the loop',
+  ])('passes %j', (text) => {
+    expect(isPlaceholderOption(text)).toBe(false);
+  });
+
+  it('is dropped from the reply, leaving the question its real options', () => {
+    const { questions } = parseQuestionsReply(
+      reply(raw(1, { distractors: ['wrong a', 'distractors_placeholder', 'wrong c'] })),
+    );
+    expect(questions[0].distractors).toEqual(['wrong a', 'wrong c']);
   });
 });
 
