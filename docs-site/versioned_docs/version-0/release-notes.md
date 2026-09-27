@@ -5,6 +5,31 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.17.0 — 2026-09-27
+
+### What's Changed
+
+### Features
+
+- improve retry logic and error handling for rate limits in OpenRouter integration
+- enhance code snippet handling and reporting
+- implement handling for questions in questions.json and update related documentation
+- enhance question handling by adding detailed logging for dropped questions
+- add questions.json support for quiz generation
+
+### Documentation
+
+- clarify line number handling in questions.json and instructor repository documentation
+
+### Refactoring
+
+- prompt.js includes line numbers in snippets and updates related documentation (p3)
+- refine formatting for ai output (p1)
+
+### Chores & Maintenance
+
+- **deps:** update renovatebot/github-action action to v46.3.3
+
 ## v0.16.3 — 2026-09-26
 
 ### What's Changed

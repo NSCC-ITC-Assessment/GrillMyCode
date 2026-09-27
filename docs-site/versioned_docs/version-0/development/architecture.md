@@ -79,14 +79,19 @@ collectRawFiles()
 stripCommentsFromFiles()
     │  Writes each file to /tmp, runs the rmcm binary on it
     │  Falls back silently to original content for unsupported types
-    │  Falls back to raw diff if stripping produces no output at all
+    │  Fails the run if no changed file could be read as text (all deleted
+    │  or binary): snippets are read back out of the files by line number
     │
 collectFilesAt(baseSha) → buildAssessedCodeContent()
     │  Reads each assessed file at baseSha, processed like the head copy
     │  A file that existed there is diffed against it (diffLines, via
     │  `git diff --no-index`) and rendered whole with a +/-/space marker column;
     │  a file new in the range is a plain fenced block
-    │  Nothing marked at all (comment-only edits) → plain blocks for every file
+    │  Every line is numbered ("12 | code"; removed lines have no number), and
+    │  each file's lines are returned as a source, with the student's line
+    │  numbers (all of a new file, the added lines of a marked one)
+    │  Nothing marked at all (comment-only edits) → buildNumberedCodeContent()
+    │  for every file, all lines the student's
     │
 readAssignmentContextFiles()
     │  Reads files from GITHUB_WORKSPACE that match assignment_context globs
@@ -102,7 +107,8 @@ loadCodebaseContext()   ← only when include_codebase_context is true
     │  include_initial_commit is true), otherwise 'earlier' — student work
     │  from before a later base (tag_diff_base, base_sha)
     │  selectCodebaseContext() orders both kinds by folder distance from the
-    │  assessed files and adds whole files up to codebase_context_max_chars
+    │  assessed files and adds whole files up to codebase_context_max_chars,
+    │  numbered like the submission; none of their lines are the student's
     │  Nothing to add when the base is the empty tree
     │
 buildPrompt()
@@ -115,11 +121,29 @@ buildPrompt()
     │  Asks for multiple-choice distractors only when instructor_repo_token is
     │  set — nothing else consumes them, so without it the model is asked for
     │  the correct answer alone
+    │  Asks for a JSON object, not Markdown, with each snippet as a file and a
+    │  line range rather than code; buildResponseFormat() builds the matching
+    │  JSON schema, sent as response_format
     │
 callAI()
     │  POSTs to the provider's chat completions endpoint
-    │  Returns the model's response text plus response metadata
+    │  parseQuestionsReply() turns the reply into question objects, and
+    │  resolveSnippets() copies each snippet's lines from the sources, dropping
+    │  questions naming a file or lines that weren't sent, or showing none of
+    │  the student's lines; a reply with nothing left is retried unless the
+    │  model stopped at its output limit
+    │  Returns the reply text, the parsed questions and response metadata
     │  (finish reason, token usage, attempts, duration)
+    │
+arrangeQuestions() → numberQuestions()
+    │  Broader questions last, the surplus over num_questions cut, the rest
+    │  numbered once for every copy
+    │
+renderQuestions()
+    │  Writes all the Markdown from the question objects: the student view
+    │  (no answers; findLeakedAnswers() withholds any question whose text
+    │  carries an answer), the include_answers view, and the instructor view
+    │  (answers and distractors)
     │
 formatReport(pdfUrl: null)   ← base report (PDF source)
     │
@@ -154,14 +178,20 @@ formatReport(pdfUrl)    ← issue body (base + PDF download link)
                │     from the copies shipped in src/; warns (never throws) on failure.
                │
                ├── writeFileWithRetry()
-               │     Writes {studentLogin}/raw-ai-output.md — the model's reply
-               │     before postprocessing, under a provenance header recording
+               │     Writes {studentLogin}/data/raw-ai-output.md — the model's reply
+               │     before parsing, under a provenance header recording
                │     the request settings and response metadata; warns (never
                │     throws) on failure
                │
+               ├── writeFileWithRetry()
+               │     Writes {studentLogin}/questions.md, retrying on 409/422
+               │     conflicts and backing off on rate limits
+               │
                └── writeFileWithRetry()
-                     Writes {studentLogin}/questions.md, retrying on 409/422
-                     conflicts and backing off on rate limits
+                     Writes {studentLogin}/data/questions.json — buildQuestionsJson():
+                     the question objects the report was rendered from, then
+                     those dropped by resolveSnippets, marked "dropped". Last,
+                     because its commit starts the quiz workflow
                │
      applyRepoLabels()   ← only when label_repos is "true"
                │  Marks the STUDENT repository, on the instructor PAT (repository
@@ -233,7 +263,7 @@ Validates that a SHA is 4–64 hex characters before passing it to a `git` comma
 
 Returns a filesystem-safe version of a string for use in filenames. Special characters are replaced with hyphens; consecutive hyphens are collapsed; leading and trailing hyphens are stripped. Used to derive the PDF asset filename from the repository name (e.g. `grill-my-code-assignment-1-jsmith.pdf`), and — through `tagGroupSlug()` — a tag group's PDF suffix and instructor-repository folder from its `submission_tags` pattern (`submit/*` → `submit`).
 
-### `callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature })`
+### `callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature, responseFormat, parse })`
 
 A thin provider abstraction over the OpenAI-compatible chat completions API. Each provider maps to a base URL and authentication header:
 
@@ -241,11 +271,11 @@ A thin provider abstraction over the OpenAI-compatible chat completions API. Eac
 |---|---|---|
 | `openrouter` | `openrouter.ai/api/v1/chat/completions` | `Authorization: Bearer <api_key>` |
 
-`openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `top_p`). `max_tokens` is deliberately omitted: on OpenRouter it restricts routing to providers that support a response of that length, and each model's own output limit is left to apply instead.
+`openrouter` is currently the only supported provider. The `switch` in `src/ai.js` is retained as the extension point for adding others — see [Contributing](./contributing.md). Any provider added there uses the same request body shape (`model`, `messages`, `temperature`, `top_p`, and `response_format` when `responseFormat` is given). `response_format` is sent without `provider.require_parameters`, so on OpenRouter it only prefers providers that support structured outputs and is ignored for a model that has none; the reply is validated either way. `max_tokens` is deliberately omitted: on OpenRouter it restricts routing to providers that support a response of that length, and each model's own output limit is left to apply instead.
 
-Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff, capped at the same 30-second `AI_RETRY_MAX_DELAY_MS` as every other wait so a long value cannot stall the run. Once generation has started OpenRouter can no longer change the HTTP status, so an upstream failure arrives as a `200` with an `{ error: { code, message } }` body; that is retried when `error.code` is one of the same retryable codes, and otherwise fails with the provider's message. A `200` whose body is not valid JSON (a dropped connection or a proxy error page) is retried like a network failure, as is a response whose first choice carries no text content. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
+Transient failures are retried automatically up to `retryMaxAttempts` total attempts using **exponential backoff with full jitter**. The following status codes are retried: `429`, `500`, `502`, `503`, `504`. Network-level failures (e.g. DNS, socket errors) are also retried. A `429` response that includes a `Retry-After` header has that delay honoured in preference to the calculated backoff, capped at the same 30-second `AI_RETRY_MAX_DELAY_MS` as every other wait so a long value cannot stall the run. A `429` without one backs off from the larger `AI_RETRY_RATE_LIMIT_DELAY_MS` base (5 seconds), and that value is also its minimum wait, because full jitter from a 1-second base can retry a rate limit within milliseconds. When the final error body's `error.metadata.limit_source` is `upstream_provider_shared_pool` (the model's provider rate-limiting OpenRouter itself, not the key), the thrown message explains that before the raw body. Status lines omit `statusText` when it is empty, as it always is over HTTP/2. Once generation has started OpenRouter can no longer change the HTTP status, so an upstream failure arrives as a `200` with an `{ error: { code, message } }` body; that is retried when `error.code` is one of the same retryable codes, and otherwise fails with the provider's message. A `200` whose body is not valid JSON (a dropped connection or a proxy error page) is retried like a network failure, as is a response whose first choice carries no text content. A reply the `parse` callback rejects is retried the same way, except when `finish_reason` is `length`: the same request would stop at the same output limit. `parse` errors are logged, and the student can read the log, so they describe the reply's shape and never quote it. A `core.warning()` is logged before each retry, showing the attempt number, status code, and delay.
 
-`callAI` returns `{ content, metadata }`. `content` is the trimmed reply; `metadata` carries the `finish_reason` (and the upstream provider's native reason), token usage, the number of attempts spent, wall time across all of them, and the generation id, model and host OpenRouter reports serving. None of it affects the run: it is written into the provenance header of `raw-ai-output.md`, where a `finish_reason` of `length` is the only way to tell a reply cut off at the output token limit from one that simply held fewer questions.
+`callAI` returns `{ content, parsed, metadata }`. `content` is the trimmed reply and `parsed` what `parse` made of it; `metadata` carries the `finish_reason` (and the upstream provider's native reason), token usage, the number of attempts spent, wall time across all of them, and the generation id, model and host OpenRouter reports serving. None of it affects the run: it is written into the provenance header of `raw-ai-output.md`, where a `finish_reason` of `length` is the only way to tell a reply cut off at the output token limit from one that simply held fewer questions.
 
 ### `postIssue()`
 
@@ -286,8 +316,8 @@ built, `main.js` calls `readSubmissionHistory()` for `{student}/{tagGroup}/`, an
 in `src/submission-history.js` turn its `submissions.md` rows into this run's row and a
 resubmission note for the report header. `deliverToInstructorRepo({ submission })` then archives
 the `questions.md` being replaced to `history/<#>-questions.md`, rewrites `submissions.md` with the
-new row, and only then writes `questions.md` — so the quiz workflow's trigger is still the last
-commit. Like the raw-output copy, a failure in the record warns and never costs the assessment. A
+new row, and only then writes `questions.md` and `data/questions.json` — so the quiz workflow's
+trigger, `data/questions.json`, is still the last commit. Like the raw-output copy, a failure in the record warns and never costs the assessment. A
 tag push always counts as a submission; a manual run counts only when the triggering actor is the
 student (always, in a team repo).
 

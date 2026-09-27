@@ -18,7 +18,7 @@ The top of the issue has a **Download as PDF** button and a short header:
 - the **Instructor Note**: a one-sentence summary of your [instructions](tailoring-questions.md#tell-the-ai-about-the-assignment), if you wrote any
 - which files were assessed, and any assignment brief that was used
 
-Each question comes after it, with the name of the file it's about and a short snippet of the student's own code.
+Each question comes after it, with a short snippet of the student's own code, headed by the file name and the line numbers it covers, so they can find it in their editor.
 
 ### Questions held back
 
