@@ -569,14 +569,21 @@ export async function deliverToInstructorRepo({
 
 /**
  * The questions.json filed beside questions.md: the questions the report was
- * rendered from, as data, which the quiz workflow builds the quiz from.
+ * rendered from, as data, which the quiz workflow builds the quiz from. Each
+ * snippet keeps the lines of its file it was read from.
  */
 export function buildQuestionsJson(questions) {
   const record = {
     questions: questions.map((q) => ({
       number: q.number,
       broader: q.broader,
-      snippets: q.snippets.map(({ file, language, code }) => ({ file, language, code })),
+      snippets: q.snippets.map(({ file, start, end, language, code }) => ({
+        file,
+        start_line: start,
+        end_line: end,
+        language,
+        code,
+      })),
       question: q.question,
       answer: q.answer,
       distractors: q.distractors,

@@ -283,6 +283,14 @@ export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
 export const SHORT_ANSWER_MAX_CHARS = 20;
 
 /**
+ * Most lines one snippet may show. The model names a snippet by its first and
+ * last line rather than copying the code, and a range any longer than this is
+ * most often a whole file named instead of the lines a question is about, so a
+ * question showing one is dropped.
+ */
+export const SNIPPET_MAX_LINES = 50;
+
+/**
  * Maximum character count for a "long" correct answer (i.e. all non-short-answer
  * questions).  Distractors are exempt from this cap and may be longer to allow
  * for visual balance across the four options.

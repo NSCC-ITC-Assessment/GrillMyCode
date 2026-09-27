@@ -17,7 +17,7 @@
  * it.
  */
 
-import { LINE_MARKERS } from './constants.js';
+import { SNIPPET_MAX_LINES } from './constants.js';
 
 /**
  * Parses the model's reply into question objects.
@@ -163,11 +163,11 @@ function trimCodeSpans(text) {
  * null when it lacks question text or an answer.
  *
  * Every text field is collapsed to one line with its inline code spans
- * trimmed. Backticks and asterisks are removed from a file name, which is
- * rendered inside a bold code span they would break. A language is kept only
- * when it is a plain word, since it becomes a code fence's info string.
- * Snippets with no code are dropped. A missing `distractors` is an empty list —
- * the quiz workflow withholds a question without options and says so.
+ * trimmed. A snippet is only a reference here — `{ file, start, end }`, the
+ * file and the first and last line to show — which resolveSnippets turns into
+ * code. A line number that is not a whole number is kept as NaN, so the
+ * question fails there. A missing `distractors` is an empty list — the quiz
+ * workflow withholds a question without options and says so.
  */
 function normaliseQuestion(raw) {
   if (!raw || typeof raw !== 'object') return null;
@@ -175,13 +175,11 @@ function normaliseQuestion(raw) {
   const answer = cleanText(raw.answer);
   if (!question || !answer) return null;
 
-  const snippets = (Array.isArray(raw.snippets) ? raw.snippets : [])
-    .map((s) => ({
-      file: oneLine(s?.file).replace(/[`*]/g, '').trim(),
-      language: /^[\w+#.-]+$/.test(oneLine(s?.language)) ? oneLine(s.language) : '',
-      code: cleanCode(s?.code),
-    }))
-    .filter((s) => s.code);
+  const snippets = (Array.isArray(raw.snippets) ? raw.snippets : []).map((s) => ({
+    file: oneLine(s?.file),
+    start: lineNumber(s?.start_line),
+    end: lineNumber(s?.end_line),
+  }));
   const distractors = (Array.isArray(raw.distractors) ? raw.distractors : [])
     .map(cleanText)
     .filter(Boolean);
@@ -194,14 +192,10 @@ function cleanText(value) {
   return trimCodeSpans(oneLine(value));
 }
 
-/**
- * A snippet's code with Unix line endings and no blank lines or trailing
- * whitespace at either end. Leading indentation of the first line is kept.
- */
-function cleanCode(value) {
-  if (typeof value !== 'string') return '';
-  const code = value.replace(/\0/g, '').replace(/\r\n?/g, '\n');
-  return code.replace(/^(?:[ \t]*\n)+/, '').replace(/\s+$/, '');
+/** A line number from the reply — a whole number, or one written as a string — or NaN. */
+function lineNumber(value) {
+  const n = typeof value === 'string' && /^\s*\d+\s*$/.test(value) ? Number(value) : value;
+  return Number.isInteger(n) ? n : NaN;
 }
 
 /**
@@ -224,12 +218,14 @@ export function numberQuestions(questions) {
 
 /**
  * Normalises a path, or a snippet's file name, for comparing one against the
- * other: forward slashes, no leading ./ or /, no trailing :line or :start-end
- * the model sometimes appends, and lower case, since the model does not
- * reliably preserve the capitalisation of a filename it copies.
+ * other: forward slashes, no leading ./ or /, no backticks or asterisks, no
+ * trailing :line or :start-end the model sometimes appends, and lower case,
+ * since the model does not reliably preserve the capitalisation of a filename
+ * it copies.
  */
 function normalisePathForMatch(p) {
   return p
+    .replace(/[`*]/g, '')
     .replace(/\\/g, '/')
     .replace(/^\.?\//, '')
     .replace(/:\d+(?:-\d+)?$/, '')
@@ -237,102 +233,99 @@ function normalisePathForMatch(p) {
 }
 
 /**
- * A test for whether a snippet's file name is one of `paths`: that path or a
- * trailing part of it (`app.py` for `src/app.py`), compared as
- * normalisePathForMatch does.
+ * The source a snippet's file name refers to: the one whose path it is, or
+ * else the only one whose path ends with it (`app.py` for `src/app.py`),
+ * compared as normalisePathForMatch does. A name that matches several files,
+ * or none, refers to nothing.
  */
-function pathMatcher(paths) {
-  const normalised = paths.map(normalisePathForMatch);
-  return (name) => {
-    const n = normalisePathForMatch(name);
-    return normalised.some((p) => p === n || p.endsWith(`/${n}`));
-  };
+function findSource(name, sources) {
+  const n = normalisePathForMatch(name);
+  if (!n) return undefined;
+  const exact = sources.filter((s) => normalisePathForMatch(s.filepath) === n);
+  if (exact.length === 1) return exact[0];
+  const suffix = sources.filter((s) => normalisePathForMatch(s.filepath).endsWith(`/${n}`));
+  return exact.length === 0 && suffix.length === 1 ? suffix[0] : undefined;
 }
 
 /**
- * Removes the marker column the model copied into a snippet from a marked
- * file (see buildAssessedCodeContent in files.js).
+ * Turns each question's snippet references into code, read from the files the
+ * model was sent, and drops the questions that cannot be shown or are not
+ * about the student's work.
  *
- * The prompt asks the model to drop the column, and it usually does. A
- * snippet from one of `markedFiles` still carries it when every non-blank
- * line begins with a marker and at least one with the added-line marker —
- * ordinary code, indented or not, virtually never does. Then the marker is
- * cut from each line, and removed lines, which are no longer in the file, go.
+ * The model names a snippet by file and line numbers instead of copying it, so
+ * what the report shows is always the submitted code itself — never a line the
+ * model misremembered, cut short or made up. `sources` are the files it was
+ * sent, from buildAssessedCodeContent and selectCodebaseContext in files.js.
  *
- * Returns `{ questions, stripped }`, where `stripped` counts the snippets
- * changed.
+ * A question is dropped as `unresolved` when any of its snippets names a file
+ * it was not sent, a line outside that file, a range that runs backwards, one
+ * longer than SNIPPET_MAX_LINES, or only blank lines. An end past the last line
+ * is read as the last line. Blank lines at either end of a range are left out.
+ *
+ * A question is dropped as `notStudentWork` when none of its snippets shows a
+ * line the student wrote in this submission: any line of a new file, or an
+ * added line of a marked one. Codebase context counts for nothing, so a
+ * question showing only context, or only the unchanged lines of a starter
+ * file, goes. A question with no snippet — a broader question — is kept.
+ *
+ * Each kept snippet is `{ file, language, code, start, end }`, with the file's
+ * path as sent and its extension as the language.
+ *
+ * Returns `{ questions, unresolved, notStudentWork, unknownFiles }`, where
+ * `unknownFiles` is the distinct names that matched no file.
  */
-export function stripLineMarkers(questions, markedFiles) {
-  if (markedFiles.length === 0) return { questions, stripped: 0 };
-  const isMarked = pathMatcher(markedFiles);
-  const { added, removed, unchanged } = LINE_MARKERS;
-  const markers = new Set([added, removed, unchanged]);
-  let stripped = 0;
-
-  const result = questions.map((q) => {
-    let changed = false;
-    const snippets = q.snippets.map((s) => {
-      if (!isMarked(s.file)) return s;
-      const lines = s.code.split('\n');
-      const content = lines.filter((line) => line.trim());
-      if (!content.every((line) => markers.has(line[0]))) return s;
-      if (!content.some((line) => line[0] === added)) return s;
-      changed = true;
-      stripped += 1;
-      const code = lines
-        .filter((line) => line[0] !== removed)
-        .map((line) => line.slice(1))
-        .join('\n');
-      return { ...s, code: cleanCode(code) };
-    });
-    return changed ? { ...q, snippets } : q;
-  });
-  return { questions: result, stripped };
-}
-
-/**
- * Drops every question with a snippet from a file outside the assessed set.
- *
- * The model also sees material that is not being assessed — assignment
- * context, instructor context — and now and then writes a question about it,
- * or about a file name it invented. A snippet's file matches an assessed file
- * when it is that file's path or a trailing part of it (`app.py` for
- * `src/app.py`), compared case-insensitively. A question showing several files
- * goes if any one of them is unassessed. A question with no snippet is kept.
- *
- * `contextFiles` are the codebase context files: unchanged starter code and
- * earlier work. A question may show one of them beside the assessed code —
- * that is how it asks how the two fit together — so a context file is
- * allowed, but only in a question that also shows an assessed file. A question
- * showing context alone is about code that is not being assessed, and goes.
- *
- * Fails open: when every question would go, they are returned unchanged with
- * `failedOpen` set. That outcome says more about file names the matcher does
- * not recognise than about the questions, and an empty report helps no one.
- *
- * Returns `{ questions, dropped, unassessed, failedOpen }`, where `unassessed`
- * is the distinct file names that caused a drop.
- */
-export function dropQuestionsOnUnassessedFiles(questions, assessedFiles, contextFiles = []) {
-  const isAssessed = pathMatcher(assessedFiles);
-  const isContext = pathMatcher(contextFiles);
-
+export function resolveSnippets(questions, sources) {
   const kept = [];
-  const unassessed = new Set();
+  const unknownFiles = new Set();
+  let unresolved = 0;
+  let notStudentWork = 0;
+
   for (const q of questions) {
-    const shown = q.snippets.map((s) => s.file).filter(Boolean);
-    const assessedShown = shown.some(isAssessed);
-    const offTarget = shown.filter((f) => !isAssessed(f) && !(assessedShown && isContext(f)));
-    if (offTarget.length > 0) offTarget.forEach((f) => unassessed.add(f));
-    else kept.push(q);
+    const snippets = [];
+    let studentWork = false;
+    for (const ref of q.snippets) {
+      const source = findSource(ref.file, sources);
+      if (!source) {
+        if (ref.file) unknownFiles.add(ref.file);
+        break;
+      }
+      let { start } = ref;
+      let end = Math.min(ref.end, source.lines.length);
+      if (!(start >= 1 && start <= end && end - start < SNIPPET_MAX_LINES)) break;
+      while (start <= end && !source.lines[start - 1].trim()) start += 1;
+      while (end >= start && !source.lines[end - 1].trim()) end -= 1;
+      if (start > end) break;
+      snippets.push({
+        file: source.filepath,
+        language: languageOf(source.filepath),
+        code: source.lines
+          .slice(start - 1, end)
+          .join('\n')
+          .replace(/\s+$/, ''),
+        start,
+        end,
+      });
+      const { studentLines } = source;
+      for (let n = start; n <= end && !studentWork; n++) {
+        studentWork = studentLines === 'all' || studentLines.has(n);
+      }
+    }
+    if (snippets.length < q.snippets.length) unresolved += 1;
+    else if (snippets.length > 0 && !studentWork) notStudentWork += 1;
+    else kept.push({ ...q, snippets });
   }
 
-  const dropped = questions.length - kept.length;
-  if (dropped === 0) return { questions, dropped: 0, unassessed: [], failedOpen: false };
-  if (kept.length === 0) {
-    return { questions, dropped: 0, unassessed: [...unassessed], failedOpen: true };
-  }
-  return { questions: kept, dropped, unassessed: [...unassessed], failedOpen: false };
+  return { questions: kept, unresolved, notStudentWork, unknownFiles: [...unknownFiles] };
+}
+
+/**
+ * The code fence language for a file: its extension, which GitHub, the PDF's
+ * highlighter and the quiz's highlighter all take, or '' when it has none a
+ * fence can carry.
+ */
+function languageOf(filepath) {
+  const ext = filepath.split('/').pop().split('.').slice(1).pop() ?? '';
+  return /^[\w+#-]+$/.test(ext) ? ext.toLowerCase() : '';
 }
 
 /** Normalises text to a lowercase alphanumeric word stream for fuzzy matching. */

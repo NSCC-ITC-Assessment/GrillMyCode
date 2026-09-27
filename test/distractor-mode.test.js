@@ -75,7 +75,8 @@ describe('buildPrompt distractor mode', () => {
       '"questions"',
       '"snippets"',
       '"file"',
-      '"code"',
+      '"start_line"',
+      '"end_line"',
       '"question"',
       '"answer"',
       '"broader"',
@@ -83,6 +84,13 @@ describe('buildPrompt distractor mode', () => {
       expect(prompt).toContain(field);
     }
     expect(prompt).not.toContain('gmc:answer');
+    expect(prompt).not.toContain('"code"');
+  });
+
+  // The model names lines instead of copying code, so it has to be told what
+  // the numbers in front of each line are.
+  it('explains the line numbers it names snippets by', () => {
+    expect(systemPrompt(true)).toContain('CODE LINE NUMBERS');
   });
 
   it.each([true, false])('keeps the answer rules the student is graded on (%s)', (mode) => {
@@ -107,6 +115,14 @@ describe('buildResponseFormat', () => {
     expect(questionSchema({ includeDistractors: false }).properties).not.toHaveProperty(
       'distractors',
     );
+  });
+
+  it('asks for each snippet as a file and a range of line numbers', () => {
+    expect(questionSchema({}).properties.snippets.items.properties).toEqual({
+      file: expect.objectContaining({ type: 'string' }),
+      start_line: expect.objectContaining({ type: 'integer' }),
+      end_line: expect.objectContaining({ type: 'integer' }),
+    });
   });
 
   it('asks for the context summary only with instructor context', () => {

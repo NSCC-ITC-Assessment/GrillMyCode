@@ -80,11 +80,11 @@ The three wrong options per question are only needed for the quiz, and every stu
 
 ## `questions.json`
 
-In the `data/` subfolder. The same questions as `questions.md`, as data: each question's code snippets, question, answer, distractors, and whether it is a broader question. The quiz is built from this file alone. You don't need to open it unless you want to correct a question in the quiz: edit it here, and saving the change rebuilds that student's quiz. An edit to `questions.md` doesn't reach the quiz.
+In the `data/` subfolder. The same questions as `questions.md`, as data: each question's code snippets with the file and line numbers they come from, question, answer, distractors, and whether it is a broader question. The quiz is built from this file alone. You don't need to open it unless you want to correct a question in the quiz: edit it here, and saving the change rebuilds that student's quiz. An edit to `questions.md` doesn't reach the quiz.
 
 ## `raw-ai-output.md`
 
-In the `data/` subfolder. A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived: a JSON object, shown in a code block. GrillMyCode has not yet checked it, cut questions beyond `num_questions`, dropped questions about unassessed files, or numbered and formatted the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
+In the `data/` subfolder. A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived: a JSON object, shown in a code block. Its snippets are file names and line numbers, not code. GrillMyCode has not yet checked it, copied in the code, dropped questions that don't point at the student's own code, cut questions beyond `num_questions`, or numbered and formatted the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
 
 Open it when a student's `questions.md` looks wrong. Questions that were cut or dropped are only visible here. Include its contents in any bug report about generated questions.
 

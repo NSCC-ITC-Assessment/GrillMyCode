@@ -79,14 +79,19 @@ collectRawFiles()
 stripCommentsFromFiles()
     │  Writes each file to /tmp, runs the rmcm binary on it
     │  Falls back silently to original content for unsupported types
-    │  Falls back to raw diff if stripping produces no output at all
+    │  Fails the run if no changed file could be read as text (all deleted
+    │  or binary): snippets are read back out of the files by line number
     │
 collectFilesAt(baseSha) → buildAssessedCodeContent()
     │  Reads each assessed file at baseSha, processed like the head copy
     │  A file that existed there is diffed against it (diffLines, via
     │  `git diff --no-index`) and rendered whole with a +/-/space marker column;
     │  a file new in the range is a plain fenced block
-    │  Nothing marked at all (comment-only edits) → plain blocks for every file
+    │  Every line is numbered ("12 | code"; removed lines have no number), and
+    │  each file's lines are returned as a source, with the student's line
+    │  numbers (all of a new file, the added lines of a marked one)
+    │  Nothing marked at all (comment-only edits) → buildNumberedCodeContent()
+    │  for every file, all lines the student's
     │
 readAssignmentContextFiles()
     │  Reads files from GITHUB_WORKSPACE that match assignment_context globs
@@ -102,7 +107,8 @@ loadCodebaseContext()   ← only when include_codebase_context is true
     │  include_initial_commit is true), otherwise 'earlier' — student work
     │  from before a later base (tag_diff_base, base_sha)
     │  selectCodebaseContext() orders both kinds by folder distance from the
-    │  assessed files and adds whole files up to codebase_context_max_chars
+    │  assessed files and adds whole files up to codebase_context_max_chars,
+    │  numbered like the submission; none of their lines are the student's
     │  Nothing to add when the base is the empty tree
     │
 buildPrompt()
@@ -115,21 +121,23 @@ buildPrompt()
     │  Asks for multiple-choice distractors only when instructor_repo_token is
     │  set — nothing else consumes them, so without it the model is asked for
     │  the correct answer alone
-    │  Asks for a JSON object, not Markdown; buildResponseFormat() builds the
-    │  matching JSON schema, sent as response_format
+    │  Asks for a JSON object, not Markdown, with each snippet as a file and a
+    │  line range rather than code; buildResponseFormat() builds the matching
+    │  JSON schema, sent as response_format
     │
 callAI()
     │  POSTs to the provider's chat completions endpoint
-    │  parseQuestionsReply() turns the reply into question objects; a reply
-    │  it rejects is retried unless the model stopped at its output limit
+    │  parseQuestionsReply() turns the reply into question objects, and
+    │  resolveSnippets() copies each snippet's lines from the sources, dropping
+    │  questions naming a file or lines that weren't sent, or showing none of
+    │  the student's lines; a reply with nothing left is retried unless the
+    │  model stopped at its output limit
     │  Returns the reply text, the parsed questions and response metadata
     │  (finish reason, token usage, attempts, duration)
     │
-stripLineMarkers() → arrangeQuestions() → dropQuestionsOnUnassessedFiles()
-    → numberQuestions()
-    │  Marker columns the model copied into snippets removed, broader
-    │  questions last, the surplus over num_questions cut, questions showing
-    │  unassessed files dropped, the rest numbered once for every copy
+arrangeQuestions() → numberQuestions()
+    │  Broader questions last, the surplus over num_questions cut, the rest
+    │  numbered once for every copy
     │
 renderQuestions()
     │  Writes all the Markdown from the question objects: the student view

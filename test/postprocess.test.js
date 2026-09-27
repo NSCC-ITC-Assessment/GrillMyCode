@@ -2,17 +2,25 @@ import { describe, expect, it } from 'vitest';
 import {
   arrangeQuestions,
   carriesAnswer,
-  dropQuestionsOnUnassessedFiles,
   findLeakedAnswers,
   numberQuestions,
   parseQuestionsReply,
   renderQuestions,
-  stripLineMarkers,
+  resolveSnippets,
 } from '../src/postprocess.js';
+import { SNIPPET_MAX_LINES } from '../src/constants.js';
 
-/** One question object as the model is asked to write it. */
+/** The files the model was sent, as buildAssessedCodeContent describes them. */
+const APP = {
+  filepath: 'app.js',
+  lines: [1, 2, 3, 4, 5].map((n) => `const total${n} = items.length;`),
+  studentLines: 'all',
+};
+const SOURCES = [APP];
+
+/** One question object as the model is asked to write it: line n of app.js. */
 const raw = (n, overrides = {}) => ({
-  snippets: [{ file: 'app.js', language: 'javascript', code: `const total${n} = items.length;` }],
+  snippets: [{ file: 'app.js', start_line: n, end_line: n }],
   question: `What does \`total${n}\` hold after this line runs?`,
   answer: `It holds the number of entries in the items array for question ${n}`,
   distractors: [`wrong ${n}a`, `wrong ${n}b`, `wrong ${n}c`],
@@ -28,9 +36,7 @@ describe('parseQuestionsReply', () => {
     );
     expect(questions).toEqual([
       {
-        snippets: [
-          { file: 'app.js', language: 'javascript', code: 'const total1 = items.length;' },
-        ],
+        snippets: [{ file: 'app.js', start: 1, end: 1 }],
         question: 'What does `total1` hold after this line runs?',
         answer: 'It holds the number of entries in the items array for question 1',
         distractors: ['wrong 1a', 'wrong 1b', 'wrong 1c'],
@@ -101,7 +107,7 @@ describe('parseQuestionsReply', () => {
     expect(() => parseQuestionsReply(reply())).toThrow(/no question/);
   });
 
-  it('normalises the fields for rendering', () => {
+  it('normalises the fields', () => {
     const [q] = parseQuestionsReply(
       reply(
         raw(1, {
@@ -109,9 +115,8 @@ describe('parseQuestionsReply', () => {
           answer: 'It returns\n  the count',
           distractors: ['wrong one', '', 'wrong two', 7],
           snippets: [
-            { file: '`src/app.js`', language: 'js', code: 'const x = 1;\r\nx++;\r\n' },
-            { file: 'empty.js', language: 'js', code: '\n  \n' },
-            { file: 'b.js', language: 'not a language!', code: '\n\n    indented();  \n\n' },
+            { file: ' src/app.js ', start_line: 3, end_line: '7' },
+            { file: 'b.js', start_line: 2.5, end_line: 'seven' },
           ],
         }),
       ),
@@ -120,8 +125,8 @@ describe('parseQuestionsReply', () => {
     expect(q.answer).toBe('It returns the count');
     expect(q.distractors).toEqual(['wrong one', 'wrong two']);
     expect(q.snippets).toEqual([
-      { file: 'src/app.js', language: 'js', code: 'const x = 1;\nx++;' },
-      { file: 'b.js', language: '', code: '    indented();' },
+      { file: 'src/app.js', start: 3, end: 7 },
+      { file: 'b.js', start: NaN, end: NaN },
     ]);
   });
 
@@ -170,94 +175,115 @@ describe('arrangeQuestions', () => {
   });
 });
 
-describe('stripLineMarkers', () => {
-  const on = (file, code) => ({ question: 'Q', snippets: [{ file, language: 'php', code }] });
+describe('resolveSnippets', () => {
+  const ask = (...snippets) => ({ question: 'Q', snippets });
+  const ref = (file, start, end = start) => ({ file, start, end });
+  const resolve = (questions, sources = SOURCES) => resolveSnippets(questions, sources);
 
-  it('removes the marker column the model copied from a marked file', () => {
-    const questions = [
-      on('data/entries.php', "+    ['author' => 'Billy'],\n     ['author' => 'Anita'],\n+"),
-      on('index.php', '-$old = 1;\n+$new = 2;\n echo $new;'),
-    ];
-    const { questions: result, stripped } = stripLineMarkers(questions, [
-      'data/entries.php',
-      'index.php',
+  it('reads each snippet out of the file it names', () => {
+    const { questions } = resolve([ask(ref('app.js', 2, 3))]);
+    expect(questions[0].snippets).toEqual([
+      {
+        file: 'app.js',
+        language: 'js',
+        code: 'const total2 = items.length;\nconst total3 = items.length;',
+        start: 2,
+        end: 3,
+      },
     ]);
-    expect(stripped).toBe(2);
-    expect(result[0].snippets[0].code).toBe(
-      "    ['author' => 'Billy'],\n    ['author' => 'Anita'],",
+  });
+
+  it('leaves out blank lines at either end and reads an end past the file as its last line', () => {
+    const source = {
+      filepath: 'b.py',
+      lines: ['', '    x = 1  ', 'y = 2', ''],
+      studentLines: 'all',
+    };
+    const [q] = resolve([ask(ref('b.py', 1, 99))], [source]).questions;
+    expect(q.snippets[0]).toMatchObject({ code: '    x = 1  \ny = 2', start: 2, end: 3 });
+  });
+
+  it('matches a file name case-insensitively, by the end of its path, and without decoration', () => {
+    const source = { ...APP, filepath: 'src/App.js' };
+    const names = ['src/app.js', 'App.js', './src/App.js', '`src/App.js`', 'src/App.js:12-20'];
+    const { questions } = resolve(
+      names.map((name) => ask(ref(name, 1))),
+      [source],
     );
-    // A removed line is no longer in the file, so it goes.
-    expect(result[1].snippets[0].code).toBe('$new = 2;\necho $new;');
+    expect(questions.map((q) => q.snippets[0].file)).toEqual(names.map(() => 'src/App.js'));
   });
 
-  it('leaves code the model already cleaned up', () => {
-    const questions = [
-      on('index.php', '    $total += $stars;\n    $count++;'),
-      on('index.php', '$a = 1;\n+$b = 2;'),
-    ];
-    const result = stripLineMarkers(questions, ['index.php']);
-    expect(result.stripped).toBe(0);
-    expect(result.questions.map((q) => q.snippets[0].code)).toEqual([
-      '    $total += $stars;\n    $count++;',
-      '$a = 1;\n+$b = 2;',
-    ]);
-  });
-
-  it('only touches snippets from marked files', () => {
-    const questions = [on('new.php', '+$x = 1;\n+$y = 2;')];
-    expect(stripLineMarkers(questions, ['index.php']).stripped).toBe(0);
-    expect(stripLineMarkers(questions, []).questions).toBe(questions);
-  });
-});
-
-describe('dropQuestionsOnUnassessedFiles', () => {
-  const on = (...files) => ({ snippets: files.map((file) => ({ file, code: 'x' })) });
-
-  it('keeps questions that all show assessed files', () => {
-    const questions = [on('src/app.py'), on('app.py')];
-    const result = dropQuestionsOnUnassessedFiles(questions, ['src/app.py']);
-    expect(result).toEqual({ questions, dropped: 0, unassessed: [], failedOpen: false });
-  });
-
-  it('drops a question about an unassessed file', () => {
-    const result = dropQuestionsOnUnassessedFiles([on('app.py'), on('README.md')], ['app.py']);
+  it.each([
+    ['a file it was not sent', ref('secret.js', 1)],
+    ['only the end of a file name', ref('pp.js', 1)],
+    ['line 0', ref('app.js', 0, 1)],
+    ['a line past the end of the file', ref('app.js', 9, 12)],
+    ['a range that runs backwards', ref('app.js', 3, 2)],
+    ['a line number that is not a whole number', ref('app.js', NaN, 2)],
+  ])('drops a question naming %s', (_, snippet) => {
+    const result = resolve([ask(snippet), ask(ref('app.js', 1))]);
     expect(result.questions).toHaveLength(1);
-    expect(result.dropped).toBe(1);
-    expect(result.unassessed).toEqual(['README.md']);
+    expect(result.unresolved).toBe(1);
   });
 
-  it('matches case-insensitively and ignores a trailing line number', () => {
-    const result = dropQuestionsOnUnassessedFiles([on('./SRC/App.py:12-20')], ['src/app.py']);
-    expect(result.dropped).toBe(0);
-    expect(result.failedOpen).toBe(false);
-  });
-
-  it('does not match a name that is only a suffix of a file name', () => {
-    const result = dropQuestionsOnUnassessedFiles([on('pp.py'), on('app.py')], ['app.py']);
-    expect(result.dropped).toBe(1);
-  });
-
-  it('drops a multi-file question when any of its files is unassessed', () => {
-    const result = dropQuestionsOnUnassessedFiles(
-      [on('app.py', 'secret.py'), on('app.py')],
-      ['app.py'],
+  it('drops a question whose range is longer than a snippet may be', () => {
+    const lines = Array.from({ length: SNIPPET_MAX_LINES + 1 }, (_, i) => `line ${i}`);
+    const source = { filepath: 'long.js', lines, studentLines: 'all' };
+    const result = resolve(
+      [ask(ref('long.js', 1, SNIPPET_MAX_LINES + 1)), ask(ref('long.js', 1, SNIPPET_MAX_LINES))],
+      [source],
     );
-    expect(result.dropped).toBe(1);
-    expect(result.unassessed).toEqual(['secret.py']);
+    expect(result.unresolved).toBe(1);
+    expect(result.questions[0].snippets[0].end).toBe(SNIPPET_MAX_LINES);
+  });
+
+  it('drops a question whose range holds only blank lines', () => {
+    const source = { filepath: 'b.py', lines: ['x = 1', '', ''], studentLines: 'all' };
+    expect(resolve([ask(ref('b.py', 2, 3))], [source]).unresolved).toBe(1);
+  });
+
+  it('drops a question when a name matches more than one file', () => {
+    const sources = [
+      { ...APP, filepath: 'a/index.php' },
+      { ...APP, filepath: 'b/index.php' },
+    ];
+    expect(resolve([ask(ref('index.php', 1))], sources).unresolved).toBe(1);
+    expect(resolve([ask(ref('a/index.php', 1))], sources).unresolved).toBe(0);
+  });
+
+  it('drops a question when any one of its snippets cannot be read, and names the file', () => {
+    const result = resolve([ask(ref('app.js', 1), ref('secret.js', 1))]);
+    expect(result).toEqual({
+      questions: [],
+      unresolved: 1,
+      notStudentWork: 0,
+      unknownFiles: ['secret.js'],
+    });
   });
 
   it('keeps a question with no snippet', () => {
-    expect(dropQuestionsOnUnassessedFiles([on(), on('x.py')], ['app.py']).dropped).toBe(1);
+    expect(resolve([ask()]).questions).toHaveLength(1);
   });
 
-  it('fails open when every question would be dropped', () => {
-    const questions = [on('a.py'), on('b.py')];
-    const result = dropQuestionsOnUnassessedFiles(questions, ['app.py']);
-    expect(result).toEqual({
-      questions,
-      dropped: 0,
-      unassessed: ['a.py', 'b.py'],
-      failedOpen: true,
+  describe("the student's own lines", () => {
+    const marked = {
+      filepath: 'index.php',
+      lines: ['$a = 1;', '$b = 2;', '$c = 3;'],
+      studentLines: new Set([2]),
+    };
+    const starter = { filepath: 'lib.php', lines: ['function f() {}'], studentLines: new Set() };
+    const sources = [marked, starter, APP];
+
+    it.each([
+      ['an added line of a marked file', [ref('index.php', 1, 2)], true],
+      ['only unchanged lines of a marked file', [ref('index.php', 1)], false],
+      ['only codebase context', [ref('lib.php', 1)], false],
+      ['codebase context beside a new file', [ref('lib.php', 1), ref('app.js', 1)], true],
+      ['codebase context beside unchanged lines', [ref('lib.php', 1), ref('index.php', 3)], false],
+    ])('%s', (_, snippets, kept) => {
+      const result = resolve([ask(...snippets)], sources);
+      expect(result.questions).toHaveLength(kept ? 1 : 0);
+      expect(result.notStudentWork).toBe(kept ? 0 : 1);
     });
   });
 });
@@ -300,14 +326,16 @@ describe('carriesAnswer', () => {
 
 describe('renderQuestions', () => {
   const parsed = (...questions) =>
-    numberQuestions(parseQuestionsReply(reply(...questions)).questions);
+    numberQuestions(
+      resolveSnippets(parseQuestionsReply(reply(...questions)).questions, SOURCES).questions,
+    );
 
   it('renders the instructor view with answers and distractors', () => {
     expect(renderQuestions(parsed(raw(1), raw(2)), { view: 'instructor' })).toBe(
       [
         '**`app.js`**',
         '',
-        '```javascript',
+        '```js',
         'const total1 = items.length;',
         '```',
         '',
@@ -325,7 +353,7 @@ describe('renderQuestions', () => {
         '',
         '**`app.js`**',
         '',
-        '```javascript',
+        '```js',
         'const total2 = items.length;',
         '```',
         '',
@@ -362,20 +390,28 @@ describe('renderQuestions', () => {
 
   // Snippets are the student's own code, so they can carry anything.
   it('keeps a snippet carrying fences and markers inside a longer fence', () => {
-    const code = '<!-- gmc:answer -->\n```\n**Answer:**\n```';
-    const out = renderQuestions(
-      parsed(raw(1, { snippets: [{ file: 'README.md', language: 'markdown', code }] })),
-      { view: 'student' },
-    );
-    expect(out).toContain('````markdown\n' + code + '\n````');
+    const lines = ['<!-- gmc:answer -->', '```', '**Answer:**', '```'];
+    const readme = { filepath: 'README.md', lines, studentLines: 'all' };
+    const [q] = resolveSnippets(
+      parseQuestionsReply(
+        reply(raw(1, { snippets: [{ file: 'README.md', start_line: 1, end_line: 4 }] })),
+      ).questions,
+      [readme],
+    ).questions;
+    const out = renderQuestions(numberQuestions([q]), { view: 'student' });
+    expect(out).toContain('````md\n' + lines.join('\n') + '\n````');
   });
 
-  it('shows a snippet without a file name without a header', () => {
-    const out = renderQuestions(
-      parsed(raw(1, { snippets: [{ file: '', language: '', code: 'x = 1' }] })),
-      { view: 'student' },
-    );
-    expect(out.startsWith('```\nx = 1\n```\n\n1. ')).toBe(true);
+  it('shows a snippet from a file without an extension without a language', () => {
+    const makefile = { filepath: 'Makefile', lines: ['all: build'], studentLines: 'all' };
+    const [q] = resolveSnippets(
+      parseQuestionsReply(
+        reply(raw(1, { snippets: [{ file: 'Makefile', start_line: 1, end_line: 1 }] })),
+      ).questions,
+      [makefile],
+    ).questions;
+    const out = renderQuestions(numberQuestions([q]), { view: 'student' });
+    expect(out.startsWith('**`Makefile`**\n\n```\nall: build\n```\n\n1. ')).toBe(true);
   });
 
   it('drops bold the model added to the question and bolds around code', () => {
@@ -388,8 +424,11 @@ describe('renderQuestions', () => {
   it('puts one Broader Questions heading above the first broader question', () => {
     const questions = numberQuestions(
       arrangeQuestions(
-        parseQuestionsReply(
-          reply(raw(1, { broader: true, snippets: [] }), raw(2), raw(3, { broader: true })),
+        resolveSnippets(
+          parseQuestionsReply(
+            reply(raw(1, { broader: true, snippets: [] }), raw(2), raw(3, { broader: true })),
+          ).questions,
+          SOURCES,
         ).questions,
         3,
       ).questions,

@@ -136,8 +136,17 @@ describe('questions.json delivery', () => {
     await expect(deliver(octokit, { questions })).rejects.toThrow('Validation failed');
   });
 
-  it('records the question objects', () => {
-    expect(JSON.parse(buildQuestionsJson(questions))).toEqual({ questions });
+  it('records the question objects, with the lines each snippet was read from', () => {
+    const snippet = { file: 'a.js', start: 3, end: 4, language: 'js', code: 'let a = 1;\na++;' };
+    const [record] = JSON.parse(
+      buildQuestionsJson([{ ...questions[0], snippets: [snippet] }]),
+    ).questions;
+    expect(record).toEqual({
+      ...questions[0],
+      snippets: [
+        { file: 'a.js', start_line: 3, end_line: 4, language: 'js', code: 'let a = 1;\na++;' },
+      ],
+    });
   });
 });
 

@@ -91,11 +91,11 @@ The exclude patterns combine the always-excluded list, the patterns detected for
 
 ## 3. Comment stripping and line marking
 
-The AI is given the **full content** of each remaining file at the head commit, not only the changed lines. In a file that already existed at the base, the student's lines are marked; see [Files that existed at the base](#files-that-existed-at-the-base).
+The AI is given the **full content** of each remaining file at the head commit, not only the changed lines. Every line is numbered, so the AI can name the lines each question shows instead of copying them (see [After the AI replies](#4-after-the-ai-replies)). In a file that already existed at the base, the student's lines are marked; see [Files that existed at the base](#files-that-existed-at-the-base).
 
 Unless `keep_comments` is `'true'`, comments are removed first, and runs of blank lines are collapsed. Stripping is done per file by a comment remover in the action's Docker image. A file type the remover doesn't support is sent unchanged, as is any file it can't process within 10 seconds.
 
-If processing leaves no code at all, the run falls back to sending the raw diff, and says so in the run summary.
+If none of the changed files can be read as text, because they were all deleted or are binary, the run fails: there is no code to ask about.
 
 ### Files that existed at the base
 
@@ -103,13 +103,13 @@ A file that already existed at the base commit, such as a starter file the stude
 
 | Marker | Meaning | Used for |
 |---|---|---|
-| `+` | Added or changed by the student in the range | Questions: every question about the file must be about at least one of these lines |
+| `+` | Added or changed by the student in the range | Questions: every question about the file must show at least one of these lines |
 | (space) | Unchanged since the base | Context only |
 | `-` | Removed by the student | Context only. It shows what the student replaced, and never appears in a question's snippet |
 
 Files that are new in the range have no markers: every line is the student's.
 
-The markers never reach the report. The AI is asked to leave them out of its snippets, and GrillMyCode removes any it copies in anyway, along with any removed lines.
+The markers never reach the report: GrillMyCode copies the lines a question shows from the file itself. Line numbers count the file as it is now, so a removed line has none and can't be shown.
 
 The comparison is made **after** comment stripping, between the base and head versions processed the same way. Differences in line endings (CRLF and LF) and a missing final newline are ignored. So an edit that only touches comments or whitespace marks nothing.
 
@@ -155,7 +155,7 @@ Comments are stripped unless `keep_comments` is `'true'`. Binary files are skipp
 
 ### How the AI is told to use it
 
-- **Never a question target on its own.** Every question must show, and be about, code being assessed. A question may also show a context snippet when the answer depends on it. A question that shows **only** context files is dropped after the reply (see step 3 of [After the AI replies](#4-after-the-ai-replies)).
+- **Never a question target on its own.** Every question must show, and be about, code being assessed. A question may also show a context snippet when the answer depends on it. A question that shows **only** context files is dropped after the reply (see step 3 of [After the AI replies](#4-after-the-ai-replies)). Context files are numbered like the submission, so their lines can be shown the same way.
 - **Starter code** is sent in its own block, marked as reference data. Its content is identical to the first commit, which the student can't rewrite.
 - **Earlier work** is the student's own writing, so it is held to the same untrusted-input rules as the submission: the AI analyses it but never follows any instruction in it.
 
@@ -188,20 +188,21 @@ Both are normal straight after an assignment is accepted, so by default such a r
 
 ## 4. After the AI replies
 
-The model replies with a JSON object rather than a finished report. It holds each question's code snippets, with the file each one comes from, then the question, its answer and, when there is an [instructor repository](instructor-repository.md), three multiple-choice distractors. GrillMyCode writes the report from it, so the numbering, code blocks and layout are always the same whatever model you use.
+The model replies with a JSON object rather than a finished report. For each question it names the code to show, as a file and a range of line numbers, then gives the question, its answer and, when there is an [instructor repository](instructor-repository.md), three multiple-choice distractors. GrillMyCode copies the named lines from the student's files and writes the report itself. So every snippet is exactly the code the student submitted, never code the AI retyped or made up, and the numbering, code blocks and layout are the same whatever model you use.
 
 GrillMyCode asks for the format twice: in the prompt, and as a JSON schema. Models on OpenRouter that support [structured outputs](../ai-providers/openrouter.md#structured-outputs) are held to the schema. Others follow the prompt alone and occasionally need a retry.
 
 The reply goes through these steps before anything is delivered:
 
-1. **Reply checked.** A reply that isn't the JSON asked for is retried, and each retry counts towards `ai_retry_max_attempts`. If the model stopped at its output limit it isn't retried, since a retry would stop at the same place. The complete questions before the cut are used instead, and the run summary says so. A question with no question text or no answer is dropped, and the warning gives its position in the reply, such as `entry 23 of 30`, so you can find it in `data/raw-ai-output.md`. If nothing usable is left, the run fails with `AI reply could not be used`.
-2. **Extra questions cut.** Questions beyond `num_questions` are removed. Any "broader" questions, about the code as a whole rather than one snippet, are placed last, under a **Broader Questions** heading.
-3. **Questions about files outside the assessment dropped.** Every snippet names the file it comes from. A question showing a file that wasn't assessed, such as an `assignment_context` file or a file that doesn't exist, is dropped. A [codebase context](#codebase-context) file may be shown only alongside an assessed file. A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. Dropped questions are logged as a warning and listed in the run summary, so a report can hold fewer than `num_questions`. If every question would be dropped, none are, and a warning asks you to check the file names in `data/raw-ai-output.md`. The questions left are numbered in order.
-4. **Answers left out for the student.** The student's copy is written without answers or multiple-choice distractors. A question whose own text would reveal an answer is **withheld** from the student's copy, and the report says how many were withheld. It keeps its number, so questions are numbered the same in every copy. The **Instructor Note** gets the same check, and is left out of the student's copy if it would reveal an answer. The instructor repository copy is never affected.
+1. **Reply checked.** A reply that isn't the JSON asked for is retried, and each retry counts towards `ai_retry_max_attempts`. If the model stopped at its output limit it isn't retried, since a retry would stop at the same place. The complete questions before the cut are used instead, and the run summary says so. A question with no question text or no answer is dropped, and the warning gives its position in the reply, such as `entry 23 of 30`, so you can find it in `data/raw-ai-output.md`. If nothing usable is left, including when no question passes steps 2 and 3, the reply is retried, and once attempts run out the run fails with `AI reply could not be used`.
+2. **Code copied in.** Each snippet's lines are copied from the file it names. A question is dropped if a snippet names a file the AI wasn't sent, such as an `assignment_context` file or one that doesn't exist, lines that file doesn't have, or more than 50 lines. A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. A name that matches two files, such as `index.php` when there are two, matches neither.
+3. **Questions about other code dropped.** Every question must show at least one line the student wrote in the range: any line of a new file, or a `+` line of a [file that existed at the base](#files-that-existed-at-the-base). A question showing only unchanged lines, or only [codebase context](#codebase-context), is dropped. Questions dropped here and in step 2 are logged as warnings and listed in the run summary, so a report can hold fewer than `num_questions`.
+4. **Extra questions cut.** Questions beyond `num_questions` are removed. Any "broader" questions, about the code as a whole rather than one snippet, are placed last, under a **Broader Questions** heading. The questions left are numbered in order.
+5. **Answers left out for the student.** The student's copy is written without answers or multiple-choice distractors. A question whose own text would reveal an answer is **withheld** from the student's copy, and the report says how many were withheld. It keeps its number, so questions are numbered the same in every copy. The **Instructor Note** gets the same check, and is left out of the student's copy if it would reveal an answer. The instructor repository copy is never affected.
 
 The instructor repository keeps the model's reply exactly as it arrived, before any of these steps, as `data/raw-ai-output.md`; see [Instructor repository internals](instructor-repository.md).
 
-This filename check can't catch a file that *is* being assessed but shouldn't be, for example a file type none of the patterns knows about. Add such files to `additional_exclude_patterns`.
+These checks can't catch a file that *is* being assessed but shouldn't be, for example a file type none of the patterns knows about. Add such files to `additional_exclude_patterns`.
 
 ## Repositories not created by Classroom 50
 

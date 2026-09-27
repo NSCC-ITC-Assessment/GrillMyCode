@@ -44,6 +44,7 @@ import {
   stripCommentsFromFiles,
   buildAssessedCodeContent,
   buildCodeContent,
+  buildNumberedCodeContent,
   findCodebaseContextFiles,
   readAssignmentContextFiles,
   selectCodebaseContext,
@@ -71,13 +72,12 @@ import { generatePdf } from './delivery/pdf.js';
 import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
   arrangeQuestions,
-  dropQuestionsOnUnassessedFiles,
   carriesAnswer,
   findLeakedAnswers,
   numberQuestions,
   parseQuestionsReply,
   renderQuestions,
-  stripLineMarkers,
+  resolveSnippets,
 } from './postprocess.js';
 
 // ─── Run Summary ─────────────────────────────────────────────────────────────
@@ -748,7 +748,7 @@ function loadCodebaseContext({
   files,
   excludePatterns,
 }) {
-  const none = { starterContent: '', earlierContent: '' };
+  const none = { starterContent: '', earlierContent: '', sources: [] };
   if (baseSha === GIT_EMPTY_TREE_SHA) {
     core.info(
       'Codebase context: the whole history is being assessed, so there is no other code to add.',
@@ -774,7 +774,8 @@ function loadCodebaseContext({
     files,
     inputs.codebaseContextMaxChars,
   );
-  const { starterContent, earlierContent, starterFiles, earlierFiles, omitted } = selection;
+  const { starterContent, earlierContent, sources, starterFiles, earlierFiles, omitted } =
+    selection;
   state.codebaseStarterFiles = starterFiles;
   state.codebaseEarlierFiles = earlierFiles;
   state.codebaseContextOmitted = omitted;
@@ -797,7 +798,7 @@ function loadCodebaseContext({
         `\`codebase_context_max_chars\`.`,
     );
   }
-  return { starterContent, earlierContent };
+  return { starterContent, earlierContent, sources };
 }
 
 // ─── Entry Point ─────────────────────────────────────────────────────────────
@@ -990,6 +991,15 @@ async function run() {
     state.rawChars = rawContent.length;
     core.info(`Code size before comment stripping: ${rawContent.length} characters`);
 
+    if (rawFiles.length === 0) {
+      // Every changed file was deleted or binary. Snippets are read back out
+      // of the files by line number, so there is no code to ask about.
+      throw new Error(
+        'None of the changed files could be read as text — they were deleted or are binary — ' +
+          'so there is no code to ask questions about.',
+      );
+    }
+
     let processedFiles;
     if (inputs.keepComments) {
       core.info('Comment stripping skipped (keep_comments is true).');
@@ -1025,12 +1035,16 @@ async function run() {
       new Map(baseFiles.map((f) => [f.filepath, f.content])),
     );
 
+    // The files the AI is sent, line by line, so the snippets it names by line
+    // number can be read back out of them (see resolveSnippets).
     let codeContent;
+    let assessedSources;
     if (assessed.markedFiles.length > 0 && assessed.addedLines === 0) {
       // Every change was to comments, whitespace or deletions, so no line is
       // the student's to ask about. Assess the files whole rather than send
       // the AI a submission with nothing in it to question.
-      codeContent = buildCodeContent(processedFiles);
+      ({ content: codeContent, sources: assessedSources } =
+        buildNumberedCodeContent(processedFiles));
       state.diagnostics.push(
         'No lines of code were added or changed once comments were set aside, so the ' +
           "assessed files were sent whole, without the student's lines marked.",
@@ -1041,6 +1055,7 @@ async function run() {
       );
     } else {
       codeContent = assessed.content;
+      assessedSources = assessed.sources;
       state.markedFiles = assessed.markedFiles;
       if (assessed.markedFiles.length > 0) {
         core.info(
@@ -1048,12 +1063,6 @@ async function run() {
             `before this submission: ${assessed.markedFiles.join(', ')}`,
         );
       }
-    }
-    // Fall back to the raw diff if processing produced no output
-    if (codeContent.trim() === '') {
-      codeContent = diff;
-      state.diagnostics.push('Processed code was empty, so the raw diff was assessed instead.');
-      core.warning('Code content was empty after processing — falling back to raw diff.');
     }
 
     // ── Generate questions using AI ─────────────────────────────────────────
@@ -1072,19 +1081,23 @@ async function run() {
     // Paths only — the contents are instructor material and never rendered.
     state.assignmentContextFiles = assignmentContextFiles;
 
-    const { starterContent: starterContext, earlierContent: earlierContext } =
-      inputs.includeCodebaseContext
-        ? loadCodebaseContext({
-            state,
-            inputs,
-            baseSha,
-            headSha,
-            skippedRange,
-            files,
-            excludePatterns,
-          })
-        : { starterContent: '', earlierContent: '' };
+    const {
+      starterContent: starterContext,
+      earlierContent: earlierContext,
+      sources: codebaseSources,
+    } = inputs.includeCodebaseContext
+      ? loadCodebaseContext({
+          state,
+          inputs,
+          baseSha,
+          headSha,
+          skippedRange,
+          files,
+          excludePatterns,
+        })
+      : { starterContent: '', earlierContent: '', sources: [] };
     const codebaseContextFiles = [...state.codebaseStarterFiles, ...state.codebaseEarlierFiles];
+    const codeSources = [...assessedSources, ...codebaseSources];
 
     // Distractors are stripped from every student-facing copy and are never
     // set as an output, so the instructor repository is the only place they
@@ -1141,7 +1154,19 @@ async function run() {
         includeDistractors,
         includeContextSummary: Boolean(inputs.instructorContext),
       }),
-      parse: parseQuestionsReply,
+      // Snippets are resolved against the submitted code here, inside the
+      // retry loop, so a reply in which no question points at it is retried
+      // like one that is not JSON.
+      parse: (text) => {
+        const parsed = parseQuestionsReply(text);
+        const resolved = resolveSnippets(parsed.questions, codeSources);
+        if (resolved.questions.length === 0) {
+          throw new Error(
+            "no question in the reply shows lines of the student's code that were sent to it",
+          );
+        }
+        return { ...parsed, resolved };
+      },
     });
     const { contextSummary } = reply;
 
@@ -1168,45 +1193,43 @@ async function run() {
           `answer and were dropped (${where}).`,
       );
     }
-    const { questions: unmarked, stripped } = stripLineMarkers(reply.questions, state.markedFiles);
-    if (stripped > 0) {
-      core.info(`Removed the line markers the AI copied into ${stripped} snippet(s).`);
+    const { resolved } = reply;
+    if (resolved.unresolved > 0) {
+      const unknown =
+        resolved.unknownFiles.length > 0
+          ? ` Files not sent to the AI: ${resolved.unknownFiles.join(', ')}.`
+          : '';
+      core.warning(
+        `Dropped ${resolved.unresolved} question(s) whose snippets named a file the AI was not ` +
+          `sent or lines that file does not have.${unknown}`,
+      );
+      state.diagnostics.push(
+        `${resolved.unresolved} question(s) were dropped because their snippets did not point ` +
+          `at the submitted code.`,
+      );
     }
-    const { questions: arranged, surplus } = arrangeQuestions(unmarked, inputs.numQuestions);
+    if (resolved.notStudentWork > 0) {
+      core.warning(
+        `Dropped ${resolved.notStudentWork} question(s) whose snippets showed none of the ` +
+          `student's own lines in this submission.`,
+      );
+      state.diagnostics.push(
+        `${resolved.notStudentWork} question(s) were dropped because they showed only code the ` +
+          `student did not write in this submission.`,
+      );
+    }
+    const { questions: arranged, surplus } = arrangeQuestions(
+      resolved.questions,
+      inputs.numQuestions,
+    );
     if (surplus > 0) {
       core.warning(
         `AI generated more than ${inputs.numQuestions} questions — truncating to the requested count.`,
       );
     }
-
-    // The model also sees assignment and instructor context, and now and then
-    // asks about a file from there — or one it made up — instead of the code
-    // under assessment. Such questions are dropped from both copies, as is one
-    // that shows codebase context without any assessed code beside it.
-    const {
-      questions: onTarget,
-      dropped: offTarget,
-      unassessed,
-      failedOpen,
-    } = dropQuestionsOnUnassessedFiles(arranged, files, codebaseContextFiles);
-    if (offTarget > 0) {
-      core.warning(
-        `Dropped ${offTarget} question(s) about files that are not being assessed: ` +
-          `${unassessed.join(', ')}.`,
-      );
-      state.diagnostics.push(
-        `${offTarget} question(s) about files outside the assessed set were dropped ` +
-          `(${unassessed.map((f) => `\`${f}\``).join(', ')}).`,
-      );
-    } else if (failedOpen) {
-      core.warning(
-        `Every question named a file that is not being assessed (${unassessed.join(', ')}), ` +
-          `so none were dropped — check the file names in the raw AI output.`,
-      );
-    }
     // Numbered once, here, so every copy of the report numbers a question the
     // same way — the student's copy keeps the gaps a withheld question leaves.
-    const finalQuestions = numberQuestions(onTarget);
+    const finalQuestions = numberQuestions(arranged);
 
     if (includeDistractors) {
       const short = finalQuestions.filter((q) => q.distractors.length !== 3).length;
