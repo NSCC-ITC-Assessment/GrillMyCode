@@ -256,6 +256,17 @@ describe('buildPrompt codebase context and marked files', () => {
     expect(user.content).not.toContain('EARLIER_STUDENT_CODE');
   });
 
+  // The student answers with the whole repository open, so without codebase
+  // context the model has to be told there is code it cannot see.
+  it('warns of unseen code only when there is no codebase context', () => {
+    expect(buildPrompt(base)[0].content).toContain('OTHER CODE YOU WERE NOT SENT');
+    for (const context of [{ starterContext: 'S' }, { earlierContext: 'E' }]) {
+      expect(buildPrompt({ ...base, ...context })[0].content).not.toContain(
+        'OTHER CODE YOU WERE NOT SENT',
+      );
+    }
+  });
+
   it('explains the marker column when a file is marked', () => {
     const [system] = buildPrompt({ ...base, markedFiles: ['a.js'] });
     expect(system.content).toContain('marker column');

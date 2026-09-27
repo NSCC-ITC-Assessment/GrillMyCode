@@ -43,10 +43,9 @@ jobs:
           # ai_model: "google/gemini-3.5-flash-lite"
           num_questions: "20"
           instructor_context: |
-            Assignment 3 — Python loops. Prioritize execution flow
-            questions that trace what a loop produces for a given input,
-            and at least one error identification question about
-            off-by-one errors or incorrect loop bounds.
+            Assignment 3 — Python loops. Prioritize questions that trace
+            what a loop produces for a given input, and include at least
+            one question about off-by-one errors or incorrect loop bounds.
 ```
 
 ## Change these

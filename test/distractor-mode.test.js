@@ -110,9 +110,107 @@ describe('buildPrompt distractor mode', () => {
     expect(prompt).toContain('ANTI-TRUNCATION RULE');
   });
 
+  // Measured as the gap rather than a ratio: the distractor rules are a fixed
+  // block, so text both modes share (the opening lists, say) should not move
+  // the result. The rules run to about 14,000 characters.
   it('is substantially shorter without the distractor rules', () => {
-    expect(systemPrompt(false).length).toBeLessThan(systemPrompt(true).length * 0.6);
+    expect(systemPrompt(true).length - systemPrompt(false).length).toBeGreaterThan(10000);
   });
+});
+
+describe('buildPrompt question rules', () => {
+  /** The one line of the system prompt that starts with `prefix`. */
+  function lineStarting(prompt, prefix) {
+    return prompt.split('\n').find((line) => line.startsWith(prefix)) ?? '';
+  }
+
+  it.each([true, false])('holds every question to the checklist (distractors: %s)', (mode) => {
+    const prompt = systemPrompt(mode);
+    for (const item of [
+      'QUESTION DEPTH',
+      'QUESTION CHECKLIST',
+      '1. REASONING STEP',
+      '3. ONE PROVABLE ANSWER',
+      '5. BEHAVIOUR, NOT OPINION',
+      '6. ONE THING',
+      '9. FINAL TEST',
+    ]) {
+      expect(prompt).toContain(item);
+    }
+  });
+
+  // The banned list matters most where an entry starts with an allowed word:
+  // "What" alone would let "What do you think…" through.
+  it('lists the allowed and banned openings', () => {
+    const opening = lineStarting(systemPrompt(true), '7. OPENING');
+    const [allowed, banned] = opening.split('Never begin with any of these');
+    expect(allowed).toContain('What, Which, Where, When, Why, How many');
+    expect(allowed).toContain('"If…, what…"');
+    expect(banned).toContain('Explain');
+    expect(banned).toContain('What do you think');
+    expect(banned).toContain('How does … work');
+    expect(allowed).not.toContain('Explain');
+  });
+
+  // Students answer with the whole repository open, starter code included, so
+  // code an answer depends on may be named rather than shown, but it has to be
+  // code the model was sent, and never the code that answers the question.
+  it('lets an answer depend on code the question names but does not show', () => {
+    const prompt = systemPrompt(true);
+    expect(lineStarting(prompt, 'Every question must require')).toContain(
+      'review all of the code in their repository — their own and any starter code',
+    );
+    const selfContained = lineStarting(prompt, '4. SELF-CONTAINED');
+    expect(selfContained).toContain('Students answer with their whole repository open');
+    expect(selfContained).toContain('that code must be in the user message');
+    expect(selfContained).toContain('You may also show that code in a snippet');
+    expect(selfContained).toContain('Never add a snippet that shows the answer itself');
+    expect(prompt).toContain('code you can see in full in the user message');
+  });
+
+  // Asked without options, more than one change could meet the goal, so a
+  // correct-modification question has no single answer in answers-only mode.
+  it('uses correct-modification questions only with distractors', () => {
+    const withOptions = systemPrompt(true);
+    expect(withOptions).toContain('6. Correct modification — ask which of several described');
+    expect(withOptions).toContain('For correct-modification questions, exactly one');
+    expect(withOptions).toContain('also draw on types 5, 6, and 9');
+
+    const without = systemPrompt(false);
+    expect(without).toContain('6. Correct modification — not used in this run');
+    expect(without).not.toContain('For correct-modification questions');
+    expect(without).toContain('also draw on types 5 and 9');
+    expect(without).not.toContain('types 5, 6, and 9');
+  });
+
+  it.each([
+    [true, 'Every question will be delivered as a multiple-choice item'],
+    [false, 'written so that it could be delivered as a multiple-choice item'],
+  ])('asks for closed questions (distractors: %s)', (mode, intro) => {
+    expect(systemPrompt(mode)).toContain(intro);
+    expect(userPrompt(mode)).toContain(
+      'Every question must be a closed, multiple-choice-ready question',
+    );
+  });
+
+  // The quotas are derived, so a non-default question count has to carry
+  // through or the model is handed quotas it cannot meet.
+  it.each([
+    [2, 2, 1, 1],
+    [6, 4, 2, 3],
+    [20, 4, 7, 10],
+  ])(
+    'scales the mixing quotas to %i questions',
+    (numQuestions, minTypes, maxPerType, maxPerWord) => {
+      const prompt = buildPrompt({ ...BASE, numQuestions, includeDistractors: true })[0].content;
+      expect(prompt).toContain(
+        `at least ${minTypes} distinct question types across the set, and no single type more than ${maxPerType} times`,
+      );
+      expect(prompt).toContain(
+        `No single question word may open more than ${maxPerWord} of the ${numQuestions} questions`,
+      );
+    },
+  );
 });
 
 describe('buildResponseFormat', () => {
