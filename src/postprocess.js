@@ -391,8 +391,9 @@ function answerLeaksInto(textNorm, answer) {
 /**
  * Returns the questions that name a line number — "line 28", "lines 14–16" —
  * in their question, answer or distractors. The prompt forbids it: the report
- * shows snippets without line numbers, so the student would have to go and
- * count lines in their own file to follow the question.
+ * gives each snippet's range in its caption but no number on each line, so
+ * the student would have to count down the snippet, or open the file, to
+ * follow the question.
  */
 export function findLineReferences(questions) {
   const namesLine = (text) => /\blines?\s+\d/i.test(text);

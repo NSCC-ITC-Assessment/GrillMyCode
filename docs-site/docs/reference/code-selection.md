@@ -97,7 +97,7 @@ Unless `keep_comments` is `'true'`, comments are removed first. Stripping is don
 
 A removed comment leaves its lines behind empty, so every line keeps its place, and the line numbers in warnings and in [`questions.json`](instructor-repository.md#questionsjson) are those of the student's file at the head commit. Runs of blank lines are shown to the AI once, with the numbers skipping over the rest. Each stripped file is checked line by line against the original, and one whose lines moved is sent with its comments instead, with a warning naming it.
 
-The student's report shows snippets without line numbers, so the AI is told never to write a line number in a question, answer or distractor, and to point to code by what it does or by name instead. A question that names a line anyway is kept, and the run logs a warning listing it.
+The student's report gives each snippet's line range in its caption, but no number on each line, so the AI is told never to write a line number in a question, answer or distractor, and to point to code by what it does or by name instead. A question that names a line anyway is kept, and the run logs a warning listing it.
 
 If none of the changed files can be read as text, because they were all deleted or are binary, the run fails: there is no code to ask about.
 
@@ -125,7 +125,7 @@ The run summary's **Files assessed** section says how many files were marked. A 
 
 ## Codebase context
 
-By default the AI sees only the code being assessed. With `include_codebase_context: 'true'` it is also sent **the rest of the project** as background: every eligible file that's left once the exclusions are applied and the assessed files are set aside. It can then ask how the assessed code fits with the code around it: what it calls, extends or overrides, what calls it, and how data passes between them.
+By default the AI sees only the code being assessed. It is told that the repository may hold other code it wasn't sent, such as starter code, and never to assume what that code does: it states any value it depends on in the question, or asks something else. With `include_codebase_context: 'true'` it is also sent **the rest of the project** as background: every eligible file that's left once the exclusions are applied and the assessed files are set aside. It can then ask how the assessed code fits with the code around it: what it calls, extends or overrides, what calls it, and how data passes between them.
 
 ### What is sent
 
@@ -192,7 +192,7 @@ Both are normal straight after an assignment is accepted, so by default such a r
 
 ## 4. After the AI replies
 
-The model replies with a JSON object rather than a finished report. For each question it names the code to show, as a file and a range of line numbers, then gives the question, its answer and, when there is an [instructor repository](instructor-repository.md), three multiple-choice distractors. GrillMyCode copies the named lines from the student's files and writes the report itself. So every snippet is exactly the code the student submitted, never code the AI retyped or made up, and the numbering, code blocks and layout are the same whatever model you use.
+The model replies with a JSON object rather than a finished report. For each question it names the code to show, as one or more ranges, each a file and its first and last line numbers, then gives the question, its answer and, when there is an [instructor repository](instructor-repository.md), three multiple-choice distractors. GrillMyCode copies the named lines from the student's files and writes the report itself. So every snippet is exactly the code the student submitted, never code the AI retyped or made up, and the numbering, code blocks and layout are the same whatever model you use.
 
 GrillMyCode asks for the format twice: in the prompt, and as a JSON schema. Models on OpenRouter that support [structured outputs](../ai-providers/openrouter.md#structured-outputs) are held to the schema. Others follow the prompt alone and occasionally need a retry.
 

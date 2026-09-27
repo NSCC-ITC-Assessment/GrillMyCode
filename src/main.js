@@ -1263,8 +1263,8 @@ async function run() {
     const citesLines = findLineReferences(finalQuestions);
     if (citesLines.length > 0) {
       core.warning(
-        `${citesLines.length} question(s) name a line number, which the student's report does ` +
-          `not show beside the code (question(s) ${citesLines.map((q) => q.number).join(', ')}).`,
+        `${citesLines.length} question(s) name a line number, but the student's report numbers ` +
+          `only each snippet's range, not its lines (question(s) ${citesLines.map((q) => q.number).join(', ')}).`,
       );
     }
 

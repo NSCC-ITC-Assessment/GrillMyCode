@@ -185,7 +185,7 @@ jobs:
     env:
       GMC_DEFAULT_INSTRUCTOR_CONTEXT: |
         Assignment 3 — Python loops.
-        Prioritize execution flow questions that trace what a loop produces.
+        Prioritize questions that trace what a loop produces for a given input.
         Include at least one question about off-by-one errors.
     steps:
       # ...

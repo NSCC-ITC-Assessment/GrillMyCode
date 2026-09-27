@@ -67,10 +67,11 @@ export function formatReport({
       : '';
 
   // A count rather than a list: the rest of a codebase can run to dozens of
-  // files, and the run log carries the names.
+  // files, and the run log carries the names. "Not assessed" alone would read
+  // to a student as safe to ignore, but an answer may depend on those files.
   const codebaseContextNote =
     codebaseContextFiles && codebaseContextFiles.length > 0
-      ? `> **Codebase context:** ${codebaseContextFiles.length} other file${codebaseContextFiles.length === 1 ? '' : 's'}, not assessed\n`
+      ? `> **Codebase context:** ${codebaseContextFiles.length} other file${codebaseContextFiles.length === 1 ? '' : 's'}, not assessed; answers may depend on ${codebaseContextFiles.length === 1 ? 'it' : 'them'}\n`
       : '';
 
   const instructorContextNote = contextSummary ? `> **Instructor Note:** ${contextSummary}\n` : '';
