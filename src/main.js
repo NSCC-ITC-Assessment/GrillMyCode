@@ -1171,6 +1171,7 @@ async function run() {
       responseFormat: buildResponseFormat({
         includeDistractors,
         includeContextSummary: Boolean(inputs.instructorContext),
+        questionEmphasis: inputs.questionEmphasis,
       }),
       // Snippets are resolved against the submitted code here, inside the
       // retry loop, so a reply in which no question points at it is retried

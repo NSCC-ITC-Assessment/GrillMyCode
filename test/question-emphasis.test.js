@@ -1,7 +1,8 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { readInputs } from '../src/inputs.js';
-import { buildPrompt, EMPHASES } from '../src/prompt/prompt.js';
+import { buildPrompt, buildResponseFormat, EMPHASES } from '../src/prompt/prompt.js';
 import { openingsFor, QUESTION_OPENINGS } from '../src/prompt/openings.js';
+import { parseQuestionsReply } from '../src/postprocess.js';
 import { formatRawOutput } from '../src/report.js';
 
 const ENV_KEYS = ['INPUT_GITHUB_TOKEN', 'INPUT_API_KEY', 'INPUT_QUESTION_EMPHASIS'];
@@ -230,6 +231,44 @@ describe('buildPrompt question emphasis', () => {
     for (const { suggest } of Object.values(modes)) {
       for (const opening of suggest) expect(base.allowed).toContain(opening);
     }
+  });
+});
+
+// Research has the model list what a student would look up before any question.
+// The list gets its own field, first in the reply, so it is written out even by
+// a model that does not reason first.
+describe('research lookup_targets field', () => {
+  const schema = (questionEmphasis) =>
+    buildResponseFormat({ includeContextSummary: true, questionEmphasis }).json_schema.schema;
+
+  it('puts lookup_targets first in the research schema only', () => {
+    expect(schema('research').required).toEqual(['lookup_targets', 'questions', 'context_summary']);
+    expect(schema('research').properties.lookup_targets.items).toEqual({ type: 'string' });
+    expect(schema('balanced').required).toEqual(['questions', 'context_summary']);
+    expect(schema('tracing').required).toEqual(['questions', 'context_summary']);
+    expect(buildResponseFormat({}).json_schema.schema.required).toEqual(['questions']);
+  });
+
+  it('shows lookup_targets before questions in the research prompt only', () => {
+    const prompt = system({ questionEmphasis: 'research' });
+    expect(prompt).toMatch(
+      /\{\n {2}"lookup_targets": \["\.\.\.", "\.\.\."\],\n {2}"questions": \[/,
+    );
+    expect(prompt).toContain('The "lookup_targets" field comes first');
+    expect(prompt).toContain('List each one in the "lookup_targets" field');
+    expect(system({ questionEmphasis: 'tracing' })).not.toContain('lookup_targets');
+    expect(system({})).not.toContain('lookup_targets');
+  });
+
+  it('is ignored when the reply is parsed', () => {
+    const question = { snippets: [], question: 'Why?', answer: 'Because.', broader: true };
+    const reply = { lookup_targets: ['explode() in a.php line 3'], questions: [question] };
+    expect(parseQuestionsReply(JSON.stringify(reply)).questions).toHaveLength(1);
+    // Cut off mid-question: the complete question before the cut is still salvaged.
+    const cut = JSON.stringify({ ...reply, questions: [question, question] }).slice(0, -20);
+    const salvaged = parseQuestionsReply(cut);
+    expect(salvaged.salvaged).toBe(true);
+    expect(salvaged.questions).toHaveLength(1);
   });
 });
 

@@ -126,6 +126,21 @@ const BALANCED_SHORT_ANSWER = {
     'Use trace (type 1) or state-at-a-point (type 2) questions here, a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a short effect (e.g. `Overwrites the file`).',
 };
 
+/**
+ * Under research, the reply opens with a "lookup_targets" list, before
+ * "questions". buildEmphasisRules has the model find every place the code
+ * relies on behaviour a student would look up before it writes any question,
+ * but a reply that is the questions alone leaves that step nowhere to happen
+ * except the model's reasoning, which a model with reasoning off does not do.
+ * The fields are written in the order the schema and the prompt's shape list
+ * them, so a field placed first makes the list exist before the first
+ * question, whatever the reasoning level. Nothing parses it: it is kept only
+ * in raw-ai-output.md, where it shows what the model found. The student never
+ * sees it.
+ */
+const LOOKUP_TARGETS_FIELD =
+  "every place the code relies on behaviour a student would need to look up, one per entry, as one line of plain text naming the call, cast, operator, or rule, its file and line, and what to look up — for example: explode(',', $csv) in src/import.php line 12: what it returns for an empty string.";
+
 /** Every question type the prompt defines, 1 to 10. */
 const QUESTION_TYPE_NUMBERS = Array.from({ length: 10 }, (_, i) => i + 1);
 
@@ -163,7 +178,7 @@ function buildEmphasisRules(questionEmphasis, numQuestions) {
   if (questionEmphasis === 'research') {
     rules.push(
       `- At least ${Math.ceil(numQuestions * RESEARCH_LOOKUP_QUESTION_SHARE)} of the ${numQuestions} questions must be type 8 or type 10.`,
-      "- Before writing any question, go through the student's code and find every place it relies on behaviour a student would need to look up: built-in and library calls, casts, strict and loose comparisons, default arguments, flags and positional arguments, type coercion, mutation versus copying, async ordering, and the conditions under which a call returns an unexpected value or throws. Spend the questions on these before any other code. Each one supports a type 10 question about its effect here, and a type 3 or 7 question about what happens when its input or arguments change.",
+      '- Before writing any question, go through the student\'s code and find every place it relies on behaviour a student would need to look up: built-in and library calls, casts, strict and loose comparisons, default arguments, flags and positional arguments, type coercion, mutation versus copying, async ordering, and the conditions under which a call returns an unexpected value or throws. List each one in the "lookup_targets" field, which comes before "questions" in the reply (see OUTPUT FORMAT). Spend the questions on these before any other code. Each one supports a type 10 question about its effect here, and a type 3 or 7 question about what happens when its input or arguments change.',
       '- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.',
       '- No two questions may turn on the same built-in, cast, operator, or condition, even when they point at different lines or are different types: three questions asking why the same escaping function is called are one question asked three times. If you run short, repeat a target with a different input or a different effect rather than write a question that fails REASONING STEP.',
     );
@@ -467,6 +482,17 @@ The correct answer must read like a confident answer a student might give — in
     ? `,
   "context_summary": "These questions are focused towards ..."`
     : '';
+  // See LOOKUP_TARGETS_FIELD.
+  const withLookupTargets = questionEmphasis === 'research';
+  const lookupTargetsShape = withLookupTargets
+    ? `
+  "lookup_targets": ["...", "..."],`
+    : '';
+  const lookupTargetsFieldRule = withLookupTargets
+    ? `
+
+The "lookup_targets" field comes first, and you write it in full before any question. It holds ${LOOKUP_TARGETS_FIELD} The student never sees this list, so line numbers are allowed in it.`
+    : '';
   const userDistractorMandate = includeDistractors
     ? `
 
@@ -656,7 +682,7 @@ ${answerabilityIntro}
 OUTPUT FORMAT — ONE JSON OBJECT, NOTHING ELSE:
 Respond with a single JSON object and nothing else: no Markdown code fence around it, and no text before or after it. GrillMyCode builds the report from this object itself — it numbers the questions, formats them and lays out the code — so every field holds plain content, never Markdown structure. The object has this shape:
 
-{
+{${lookupTargetsShape}
   "questions": [
     {
       "snippets": [
@@ -667,7 +693,7 @@ Respond with a single JSON object and nothing else: no Markdown code fence aroun
       "broader": false
     }
   ]${summaryShape}
-}
+}${lookupTargetsFieldRule}
 
 The fields of each question:
 - "snippets": the code the question is about, as ranges of lines:
@@ -779,9 +805,15 @@ ${untrustedClose}`;
  * request over the schema. The counts the prompt asks for are checked in code
  * instead. Optional parts are left out of the schema rather than made
  * nullable: `distractors` without an instructor repository, `context_summary`
- * without instructor context.
+ * without instructor context, `lookup_targets` without the research emphasis.
+ * `lookup_targets` is listed first, since it must be written before the
+ * questions (see LOOKUP_TARGETS_FIELD).
  */
-export function buildResponseFormat({ includeDistractors = true, includeContextSummary = false }) {
+export function buildResponseFormat({
+  includeDistractors = true,
+  includeContextSummary = false,
+  questionEmphasis = DEFAULT_QUESTION_EMPHASIS,
+}) {
   const snippet = {
     type: 'object',
     properties: {
@@ -811,6 +843,15 @@ export function buildResponseFormat({ includeDistractors = true, includeContextS
     broader: { type: 'boolean', description: 'True only for a broader question.' },
   };
   const properties = {
+    ...(questionEmphasis === 'research'
+      ? {
+          lookup_targets: {
+            type: 'array',
+            items: { type: 'string' },
+            description: `Written before any question: ${LOOKUP_TARGETS_FIELD}`,
+          },
+        }
+      : {}),
     questions: {
       type: 'array',
       items: {
