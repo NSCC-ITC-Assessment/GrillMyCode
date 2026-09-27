@@ -63,6 +63,14 @@ export const PROMPT_TEMPLATE_HASH = readdirSync(PROMPT_DIR)
  * its own types (see BALANCED_SHORT_ANSWER). A research run whose short-answer
  * rules still asked for "a computed return value or variable state produced by
  * tracing" filled those slots with traces the mode bans.
+ *
+ * `examples` replaces the examples of a type in QUESTION TYPES, keyed by type
+ * number; a type it leaves out keeps the balanced ones. The balanced path-
+ * condition, edge-case and causal-why examples are answered by reading the code
+ * ("Under what condition does `findCity` return `null`?"), and a research run
+ * wrote its questions in their shape, past the REASONING STEP rule that bans
+ * them. Every research example turns on documented behaviour of the language or
+ * a library, and opens with a form the research OPENING check allows.
  */
 export const EMPHASES = {
   research: {
@@ -76,6 +84,28 @@ export const EMPHASES = {
         'Use a path-condition (type 4) or order-of-execution (type 9) question whose answer is a single value or sequence, or a language-and-API (type 10) question whose answer is a single value or short effect (e.g. `Overwrites the file`).',
       slots:
         'a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect',
+    },
+    examples: {
+      3: [
+        "How would the file's contents after a second run change if the `'a'` flag passed to `fs.writeFileSync` were changed to `'w'`?",
+        "How would the quantity stored for `'4.9'` change if `(int) $qty` were replaced with `round($qty)`?",
+      ],
+      4: [
+        'Which non-empty string makes `if ($input)` skip its block?',
+        'Under what condition does `if (!array_search($id, $ids))` take the not-found branch even though `$id` is in `$ids`?',
+      ],
+      7: [
+        "What does `explode(',', $csv)` return when `$csv` is an empty string?",
+        'What happens when `JSON.parse(raw)` runs and `raw` is an empty string?',
+      ],
+      8: [
+        'Why must `response.json()` be awaited before `data.length` is read?',
+        'Why does `scores.sort()` need the comparator `(a, b) => a - b` to put `[10, 9, 1]` in numeric order?',
+      ],
+      9: [
+        "In what order are `'sync'`, `'promise'` and `'timeout'` logged when `setTimeout(…, 0)` and `Promise.resolve().then(…)` are both scheduled before `console.log('sync')`?",
+        'Which runs first: the `res.send` in the middleware or the return from `next()`?',
+      ],
     },
   },
   tracing: {
@@ -515,35 +545,87 @@ The three incorrect options in each "distractors" array are mandatory for every 
     ? ''
     : `
 - Scale to the code: for a single script, draw on types 1–4, 7, and 8 against its logic; for code with multiple functions, classes, or files, also draw on ${crossComponentTypes} across component boundaries. Type 10 fits either.`;
+  // A type is its definition and two examples; an emphasis may replace the
+  // examples (see EMPHASES), since the model writes its questions in their shape.
+  const questionType = (number, definition, examples) =>
+    [
+      `${number}. ${definition}`,
+      ...(emphasis?.examples?.[number] ?? examples).map((example) => `   - ${example}`),
+    ].join('\n');
   const questionTypes = [
-    `1. Trace with a specific input — supply concrete input values and ask for a resulting output or value. Choose inputs that exercise a less-obvious path (an edge value, the second branch, a loop that runs zero or one times), never an input already shown in the code or its comments.
-   - Given \`scores = [80, 0, 95]\`, what value does \`calcAverage(scores)\` return?
-   - How many records does the query skip when \`$_GET['page']\` is \`'0'\`?`,
-    `2. State at a point — ask for the value of a variable or data structure at a specific moment in execution.
-   - How many items does \`cart\` hold after \`addItem(cart, 'pen')\` is called twice?
-   - What is the value of \`count\` at the end of the third iteration of the \`for\` loop?`,
-    `3. Consequence of a change — describe one small, concrete edit to the student's code and ask what behaviour results.
-   - When \`user\` is \`null\`, which statement runs next if the \`return\` inside the \`if (!user)\` block is removed?
-   - How would the output for \`[1, 2, 3]\` change if \`i <= arr.length\` were changed to \`i < arr.length\`?`,
-    `4. Path conditions — ask which input or state causes a particular branch, return, or exception.
-   - Under what condition does \`findCity\` return \`null\`?
-   - Which value of \`status\` causes the \`else\` branch in \`renderBadge\` to execute?`,
-    `5. Data flow — ask where a value originates, where it ends up, or what transforms it along the way.
-   - Where does the value of \`$cityId\` used in the SQL query originate?
-   - Which function's return value is stored in \`results\` before it is rendered?`,
+    questionType(
+      1,
+      `Trace with a specific input — supply concrete input values and ask for a resulting output or value. Choose inputs that exercise a less-obvious path (an edge value, the second branch, a loop that runs zero or one times), never an input already shown in the code or its comments.`,
+      [
+        `Given \`scores = [80, 0, 95]\`, what value does \`calcAverage(scores)\` return?`,
+        `How many records does the query skip when \`$_GET['page']\` is \`'0'\`?`,
+      ],
+    ),
+    questionType(
+      2,
+      `State at a point — ask for the value of a variable or data structure at a specific moment in execution.`,
+      [
+        `How many items does \`cart\` hold after \`addItem(cart, 'pen')\` is called twice?`,
+        `What is the value of \`count\` at the end of the third iteration of the \`for\` loop?`,
+      ],
+    ),
+    questionType(
+      3,
+      `Consequence of a change — describe one small, concrete edit to the student's code and ask what behaviour results.`,
+      [
+        `When \`user\` is \`null\`, which statement runs next if the \`return\` inside the \`if (!user)\` block is removed?`,
+        `How would the output for \`[1, 2, 3]\` change if \`i <= arr.length\` were changed to \`i < arr.length\`?`,
+      ],
+    ),
+    questionType(
+      4,
+      `Path conditions — ask which input or state causes a particular branch, return, or exception.`,
+      [
+        `Under what condition does \`findCity\` return \`null\`?`,
+        `Which value of \`status\` causes the \`else\` branch in \`renderBadge\` to execute?`,
+      ],
+    ),
+    questionType(
+      5,
+      `Data flow — ask where a value originates, where it ends up, or what transforms it along the way.`,
+      [
+        `Where does the value of \`$cityId\` used in the SQL query originate?`,
+        `Which function's return value is stored in \`results\` before it is rendered?`,
+      ],
+    ),
     typeSixRule,
-    `7. Edge-case behaviour — ask what the code actually does for an input at or beyond the boundary of what it handles.
-   - What does \`getTotal\` return when \`items\` is an empty array?
-   - When does \`parseCoordinates\` throw an error?`,
-    `8. Causal why — ask why a line or ordering is necessary, where the reason is provable from the code (something would break, a value would be wrong, an error would occur), and only when the code supports exactly one reason.
-   - Why must \`JSON.parse(raw)\` run before \`data.forEach(...)\`?
-   - Why is \`total\` initialised before the loop rather than inside it?`,
-    `9. Order of execution — ask which statement runs first, or what is logged/returned in what sequence.
-   - In what order are the three \`console.log\` calls in \`loadCities\` printed?
-   - Which runs first: the \`res.send\` in the middleware or the return from \`next()\`?`,
-    `10. Language and API behaviour — ask what a specific flag, option, argument, built-in, or language feature used in the code does here, as documented by the language or library. Frame it as the effect on this program (what happens to the file, array, string, or process), never as a dictionary definition. Choose ones whose effect cannot be guessed from their spelling: prefer single-letter flags, bare numbers, positional arguments, and defaults the code relies on implicitly over self-describing names such as \`{ recursive: true }\` or \`'utf-8'\`.
-   - When the file already exists, what does the \`'w'\` flag make \`fs.writeFileSync\` do to its contents?
-   - Which exit code does \`process.exit()\` produce when called with no argument and \`process.exitCode\` was never set?`,
+    questionType(
+      7,
+      `Edge-case behaviour — ask what the code actually does for an input at or beyond the boundary of what it handles.`,
+      [
+        `What does \`getTotal\` return when \`items\` is an empty array?`,
+        `When does \`parseCoordinates\` throw an error?`,
+      ],
+    ),
+    questionType(
+      8,
+      `Causal why — ask why a line or ordering is necessary, where the reason is provable from the code (something would break, a value would be wrong, an error would occur), and only when the code supports exactly one reason.`,
+      [
+        `Why must \`JSON.parse(raw)\` run before \`data.forEach(...)\`?`,
+        `Why is \`total\` initialised before the loop rather than inside it?`,
+      ],
+    ),
+    questionType(
+      9,
+      `Order of execution — ask which statement runs first, or what is logged/returned in what sequence.`,
+      [
+        `In what order are the three \`console.log\` calls in \`loadCities\` printed?`,
+        `Which runs first: the \`res.send\` in the middleware or the return from \`next()\`?`,
+      ],
+    ),
+    questionType(
+      10,
+      `Language and API behaviour — ask what a specific flag, option, argument, built-in, or language feature used in the code does here, as documented by the language or library. Frame it as the effect on this program (what happens to the file, array, string, or process), never as a dictionary definition. Choose ones whose effect cannot be guessed from their spelling: prefer single-letter flags, bare numbers, positional arguments, and defaults the code relies on implicitly over self-describing names such as \`{ recursive: true }\` or \`'utf-8'\`.`,
+      [
+        `When the file already exists, what does the \`'w'\` flag make \`fs.writeFileSync\` do to its contents?`,
+        `Which exit code does \`process.exit()\` produce when called with no argument and \`process.exitCode\` was never set?`,
+      ],
+    ),
   ]
     .filter((_, i) => !emphasis || emphasis.types.includes(i + 1))
     .join('\n\n');

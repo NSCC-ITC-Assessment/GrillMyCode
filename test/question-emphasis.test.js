@@ -1,7 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { readInputs } from '../src/inputs.js';
-import { buildPrompt } from '../src/prompt/prompt.js';
-import { QUESTION_OPENINGS } from '../src/prompt/openings.js';
+import { buildPrompt, EMPHASES } from '../src/prompt/prompt.js';
+import { openingsFor, QUESTION_OPENINGS } from '../src/prompt/openings.js';
 import { formatRawOutput } from '../src/report.js';
 
 const ENV_KEYS = ['INPUT_GITHUB_TOKEN', 'INPUT_API_KEY', 'INPUT_QUESTION_EMPHASIS'];
@@ -147,6 +147,33 @@ describe('buildPrompt question emphasis', () => {
     for (const heading of excluded) expect(types).not.toContain(heading);
     expect(types).toContain('9. Order of execution');
     expect(system({}).split('QUESTION TYPES:')[1]).toContain('1. Trace');
+  });
+
+  // A research run wrote its questions in the shape of the balanced read-off examples.
+  it('shows the research examples in place of the balanced ones under research only', () => {
+    const types = (opts) => system(opts).split('QUESTION TYPES:')[1].split('MIXING RULES:')[0];
+    const research = types({ questionEmphasis: 'research' });
+    for (const example of Object.values(EMPHASES.research.examples).flat()) {
+      expect(research).toContain(`   - ${example}`);
+    }
+    for (const readOff of ['return `null`?', 'initialised before the loop', '`getTotal` return']) {
+      expect(research).not.toContain(readOff);
+      expect(types({})).toContain(readOff);
+    }
+    expect(research).toContain("what does the `'w'` flag make `fs.writeFileSync` do");
+  });
+
+  // A bracketed form ("What [value, text, or any other noun]") names a kind of
+  // phrase, so only the literal forms are checked; "…" stands for any words.
+  it('opens every research example with an allowed form and no literal banned one', () => {
+    const { allowed, leadIns, banned } = openingsFor('research');
+    const opens = (example, form) =>
+      new RegExp(`^${form.split('…').map(RegExp.escape).join('.+')}`, 'i').test(example);
+    const literal = (forms) => forms.filter((form) => !form.includes('['));
+    for (const example of Object.values(EMPHASES.research.examples).flat()) {
+      expect(literal([...allowed, ...leadIns]).some((form) => opens(example, form))).toBe(true);
+      expect(literal(banned).filter((form) => opens(example, form))).toEqual([]);
+    }
   });
 
   it('names only the research types in the short-answer rules', () => {
