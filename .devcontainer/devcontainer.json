@@ -6,7 +6,7 @@
   // ─── Lifecycle ─────────────────────────────────────────────────────────────
   // No corepack step: the Node 26 image does not ship corepack, and its
   // preinstalled pnpm switches itself to the packageManager version on first use.
-  "postCreateCommand": "pnpm install && git config merge.ours.driver true",
+  "postCreateCommand": "pnpm install",
   "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder}",
 
   // ─── VS Code ───────────────────────────────────────────────────────────────

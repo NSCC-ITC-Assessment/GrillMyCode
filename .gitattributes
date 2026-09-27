@@ -1,9 +1,3 @@
-# Keep main's action.yml during branch merges — prevents any accidental
-# branch-specific changes to this file from overwriting the canonical
-# major-tag reference when a branch is merged via PR.
-action.yml merge=ours
-
-
 # =============================================================================
 # GLOBAL REPOSITORY DEFAULTS
 # =============================================================================

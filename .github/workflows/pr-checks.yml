@@ -141,7 +141,7 @@ jobs:
         run: |
           tag=$(grep -oP '(?<=grillmycode:)[^"]+' action.yml)
           if [[ "$tag" != "v0" ]]; then
-            echo "::error file=action.yml::action.yml image tag must be ':v0' on main, but found ':${tag}'. Restore it by running: git checkout origin/main -- action.yml && git commit -m 'fix: restore action.yml image tag to :v0'"
+            echo "::error file=action.yml::action.yml image tag must be ':v0' on main, but found ':${tag}'. Set the runs.image line back to docker://ghcr.io/nscc-itc-assessment/grillmycode:v0 and keep the rest of the file, which may hold new inputs."
             exit 1
           fi
 
