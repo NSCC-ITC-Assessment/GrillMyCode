@@ -331,19 +331,27 @@ export function resolveSnippets(questions, sources) {
 }
 
 /**
+ * A snippet's lines as the student's file numbers them: `line 12` or
+ * `lines 28–37`. The numbers are the file's own (see stripCommentsFromFiles in
+ * files.js), so the student can find the code in their editor.
+ */
+export function describeLines(start, end) {
+  return start === end ? `line ${start}` : `lines ${start}–${end}`;
+}
+
+/**
  * Where to find questions resolveSnippets dropped, for a warning: each one's
  * position among the reply's `entries` and the snippets it `named`, as in
  * `entry 7 of 12: game.js lines 40–46`. A line number that was not a whole
  * number shows as `?`.
  */
 export function describeDropped(dropped, entries) {
-  const lines = ({ start, end }) => {
-    const n = (v) => (Number.isInteger(v) ? v : '?');
-    return start === end ? `line ${n(start)}` : `lines ${n(start)}–${n(end)}`;
-  };
+  const n = (v) => (Number.isInteger(v) ? v : '?');
   return dropped
     .map(({ entry, named }) => {
-      const refs = named.map((ref) => `${ref.file || '(no file)'} ${lines(ref)}`);
+      const refs = named.map(
+        ({ file, start, end }) => `${file || '(no file)'} ${describeLines(n(start), n(end))}`,
+      );
       return `entry ${entry} of ${entries}: ${refs.join(', ')}`;
     })
     .join('; ');
@@ -378,6 +386,17 @@ function answerLeaksInto(textNorm, answer) {
     if (textNorm.includes(words.slice(i, i + shingleSize).join(' '))) return true;
   }
   return false;
+}
+
+/**
+ * Returns the questions that name a line number — "line 28", "lines 14–16" —
+ * in their question, answer or distractors. The prompt forbids it: the report
+ * shows snippets without line numbers, so the student would have to go and
+ * count lines in their own file to follow the question.
+ */
+export function findLineReferences(questions) {
+  const namesLine = (text) => /\blines?\s+\d/i.test(text);
+  return questions.filter((q) => [q.question, q.answer, ...q.distractors].some(namesLine));
 }
 
 /**
@@ -455,9 +474,9 @@ export function renderQuestions(questions, { view }) {
       lines.push('## Broader Questions', '');
       broaderShown = true;
     }
-    for (const { file, language, code } of q.snippets) {
+    for (const { file, language, code, start, end } of q.snippets) {
       const fence = fenceFor(code);
-      if (file) lines.push(`**\`${file}\`**`, '');
+      if (file) lines.push(`**\`${file}\`**, ${describeLines(start, end)}`, '');
       lines.push(`${fence}${language}`, code, fence, '');
     }
     lines.push(`${q.number}. ${boldStem(q.question)}`);

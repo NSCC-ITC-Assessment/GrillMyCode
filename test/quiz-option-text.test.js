@@ -27,6 +27,7 @@ const { stripInlineMarkdown, hasBlankOption, parseQuestionsJson } = new Function
     extractFunction('stripInlineMarkdown'),
     extractFunction('hasBlankOption'),
     extractFunction('distinctOptions'),
+    extractFunction('lineRange'),
     extractFunction('parseQuestionsJson'),
     'return { stripInlineMarkdown, hasBlankOption, parseQuestionsJson };',
   ].join('\n'),
@@ -89,7 +90,9 @@ describe('parseQuestionsJson', () => {
         question: 'What is `$stars` in question 1?',
         answer: 'answer 1',
         incorrect: ['wrong 1a', 'wrong 1b', 'wrong 1c'],
-        snippets: [{ file: 'q1.php', lang: 'php', lines: ['$stars = 4;', '$total += $stars;'] }],
+        snippets: [
+          { file: 'q1.php', range: null, lang: 'php', lines: ['$stars = 4;', '$total += $stars;'] },
+        ],
       },
       {
         question: 'What is `$stars` in question 2?',
@@ -98,6 +101,17 @@ describe('parseQuestionsJson', () => {
         snippets: [],
       },
     ]);
+  });
+
+  // The quiz names the lines as the student's report does, so a student can
+  // find the code in their own file.
+  it('names the lines each snippet shows', () => {
+    const snippets = [
+      { file: 'a.php', start: 28, end: 37, language: 'php', code: '$a = 1;' },
+      { file: 'b.js', start: 4, end: 4, language: 'javascript', code: 'let b = 2;' },
+    ];
+    const [q] = parse(question(1, { snippets }));
+    expect(q.snippets.map((s) => s.range)).toEqual(['lines 28–37', 'line 4']);
   });
 
   it('leaves out dropped questions', () => {
@@ -115,8 +129,8 @@ describe('parseQuestionsJson', () => {
       }),
     );
     expect(q.snippets).toEqual([
-      { file: 'a.php', lang: 'php', lines: ['$a = 1;'] },
-      { file: 'b.js', lang: 'javascript', lines: ['let b = 2;'] },
+      { file: 'a.php', range: null, lang: 'php', lines: ['$a = 1;'] },
+      { file: 'b.js', range: null, lang: 'javascript', lines: ['let b = 2;'] },
     ]);
   });
 

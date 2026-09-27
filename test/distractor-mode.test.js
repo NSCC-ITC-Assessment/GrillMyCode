@@ -93,6 +93,15 @@ describe('buildPrompt distractor mode', () => {
     expect(systemPrompt(true)).toContain('CODE LINE NUMBERS');
   });
 
+  // The numbers count the code after comments are stripped, so a question that
+  // cites one can send the student to the wrong line of their own file.
+  it.each([true, false])('forbids line numbers in the question text (%s)', (mode) => {
+    const prompt = systemPrompt(mode);
+    const fields = mode ? 'a question, answer or distractor' : 'a question or answer';
+    expect(prompt).toContain(`Never write a line number in ${fields}:`);
+    expect(prompt).toContain(`- A line number anywhere in ${fields}\n`);
+  });
+
   it.each([true, false])('keeps the answer rules the student is graded on (%s)', (mode) => {
     const prompt = systemPrompt(mode);
     expect(prompt).toContain('SHORT-ANSWER QUESTIONS (exactly one in every three)');

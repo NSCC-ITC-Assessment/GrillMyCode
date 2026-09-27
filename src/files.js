@@ -86,10 +86,17 @@ export function collectFilesAt(paths, sha) {
  * stripped entries. Falls back silently to the original content when the
  * file type is unsupported or the binary is unavailable.
  *
- * Returns the stripped file entries and cumulative character count.
+ * Every line stays where it was: rmcm is run without collapsing blank lines,
+ * so a removed comment leaves its lines behind empty, and the line numbers the
+ * AI names snippets by are the student's own. A file whose stripped copy fails
+ * that check (see keepsLinePositions) is sent with its comments, with a warning.
+ *
+ * Returns the stripped file entries, cumulative character count, and
+ * `commentsKept`, the paths that failed the check.
  */
 export function stripCommentsFromFiles(rawFiles) {
   const strippedFiles = [];
+  const commentsKept = [];
   let strippedCharCount = 0;
 
   for (const { filepath, content } of rawFiles) {
@@ -98,12 +105,20 @@ export function stripCommentsFromFiles(rawFiles) {
 
     try {
       fs.writeFileSync(tmpFile, content, 'utf-8');
-      const result = spawnSync(COMMENT_REMOVER_BIN, ['--collapse-whitespace', '1', tmpFile], {
+      const result = spawnSync(COMMENT_REMOVER_BIN, [tmpFile], {
         encoding: 'utf-8',
         timeout: COMMENT_STRIP_TIMEOUT_MS,
       });
       if (result.status === 0) {
-        stripped = result.stdout;
+        if (keepsLinePositions(content, result.stdout)) {
+          stripped = result.stdout;
+        } else {
+          commentsKept.push(filepath);
+          core.warning(
+            `Comments were kept in ${filepath}: removing them moved its lines, and the ` +
+              `line numbers the questions are built from must match the student's file.`,
+          );
+        }
       }
       // Non-zero exit means unsupported/unrecognised type — silently use original
     } catch {
@@ -120,7 +135,35 @@ export function stripCommentsFromFiles(rawFiles) {
     strippedFiles.push({ filepath, content: stripped });
   }
 
-  return { strippedFiles, strippedCharCount };
+  return { strippedFiles, strippedCharCount, commentsKept };
+}
+
+/** A text's lines, splitting at every line break an editor would: CRLF, LF or a lone CR. */
+function splitLines(text) {
+  return text.split(/\r\n|\r|\n/);
+}
+
+/**
+ * Whether `stripped` keeps every line of `original` where it was: as many
+ * lines, each one the original line with only characters taken out. A final
+ * line break on one and not the other is ignored.
+ */
+export function keepsLinePositions(original, stripped) {
+  const lines = (text) => splitLines(text.replace(/(\r\n|\r|\n)$/, ''));
+  const before = lines(original);
+  const after = lines(stripped);
+  return after.length === before.length && after.every((line, i) => isSubsequence(line, before[i]));
+}
+
+/** Whether every character of `part` appears in `whole`, in order. */
+function isSubsequence(part, whole) {
+  let j = 0;
+  for (const ch of part) {
+    j = whole.indexOf(ch, j);
+    if (j === -1) return false;
+    j += ch.length;
+  }
+  return true;
 }
 
 /**
@@ -139,8 +182,8 @@ function codeSection({ filepath, content }) {
 
 /** A file's lines as the prompt numbers them, with no trailing blank lines. */
 function splitFileLines(content) {
-  const text = content.replace(/\r\n?/g, '\n').replace(/\s+$/, '');
-  return text ? text.split('\n') : [];
+  const text = content.replace(/\s+$/, '');
+  return text ? splitLines(text) : [];
 }
 
 /**
@@ -149,10 +192,21 @@ function splitFileLines(content) {
  * them. `entries` are `{ number, text }`, plus `marker` in a marked file, where
  * the marker column (LINE_MARKERS) comes first and a removed line, no longer in
  * the file, has no number.
+ *
+ * Only the first of a run of blank lines is shown — the lines a removed
+ * comment leaves behind — and a removed blank line not at all. The numbers
+ * skip over them, so each line keeps its number in the student's file.
  */
 function numberedSection(filepath, entries, heading = '') {
   const width = String(Math.max(1, ...entries.map((e) => e.number ?? 0))).length;
-  const body = entries
+  let previousBlank = false;
+  const shown = entries.filter(({ number, text }) => {
+    const blank = !text.trim();
+    const show = !blank || (number !== null && !previousBlank);
+    if (show) previousBlank = blank;
+    return show;
+  });
+  const body = shown
     .map(({ marker, number, text }) => {
       const lead = marker === undefined ? '' : `${marker} `;
       const num = number === null ? ' '.repeat(width) : String(number).padStart(width);
@@ -207,7 +261,8 @@ export function buildNumberedCodeContent(files, { student = true } = {}) {
  * with markers, their lines (see buildNumberedCodeContent; a marked file's
  * `studentLines` is the set of its added line numbers), and how many lines
  * across the whole submission the student wrote, which the caller uses to tell
- * a submission with nothing to mark from one that has work in it.
+ * a submission with nothing to mark from one that has work in it. Blank lines
+ * are never counted as the student's.
  */
 export function buildAssessedCodeContent(files, baseByPath) {
   const sections = [];
@@ -220,7 +275,7 @@ export function buildAssessedCodeContent(files, baseByPath) {
       const numbered = buildNumberedCodeContent([file]);
       sections.push(numbered.content);
       sources.push(...numbered.sources);
-      addedLines += numbered.sources[0].lines.length;
+      addedLines += numbered.sources[0].lines.filter((line) => line.trim()).length;
       continue;
     }
 
@@ -230,7 +285,9 @@ export function buildAssessedCodeContent(files, baseByPath) {
       ({ marker, text }) => {
         if (marker === LINE_MARKERS.removed) return { marker, number: null, text };
         lines.push(text);
-        if (marker === LINE_MARKERS.added) added.add(lines.length);
+        // A blank line is nobody's work: it is often all a changed comment
+        // leaves behind once stripped.
+        if (marker === LINE_MARKERS.added && text.trim()) added.add(lines.length);
         return { marker, number: lines.length, text };
       },
     );

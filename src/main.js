@@ -75,6 +75,7 @@ import {
   carriesAnswer,
   describeDropped,
   findLeakedAnswers,
+  findLineReferences,
   numberQuestions,
   parseQuestionsReply,
   renderQuestions,
@@ -1002,13 +1003,16 @@ async function run() {
     }
 
     let processedFiles;
+    let commentsKept = [];
     if (inputs.keepComments) {
       core.info('Comment stripping skipped (keep_comments is true).');
       core.debug('No comments were removed from the code (keep_comments is true).');
       state.strippedChars = rawContent.length;
       processedFiles = rawFiles;
     } else {
-      const { strippedFiles, strippedCharCount } = stripCommentsFromFiles(rawFiles);
+      const stripped = stripCommentsFromFiles(rawFiles);
+      const { strippedFiles, strippedCharCount } = stripped;
+      ({ commentsKept } = stripped);
       core.info(`Code size after comment stripping: ${strippedCharCount} characters`);
       core.debug(
         `--- CODE AFTER COMMENT STRIPPING ---\n${buildCodeContent(strippedFiles)}\n--- END CODE AFTER COMMENT STRIPPING ---`,
@@ -1028,8 +1032,14 @@ async function run() {
             processedFiles.map((f) => f.filepath),
             baseSha,
           );
+    // A file sent with its comments is compared with its base copy unstripped
+    // too, or the base's comments would be marked as the student's lines.
     if (!inputs.keepComments && baseFiles.length > 0) {
-      baseFiles = stripCommentsFromFiles(baseFiles).strippedFiles;
+      const toStrip = baseFiles.filter((f) => !commentsKept.includes(f.filepath));
+      const stripped = new Map(
+        stripCommentsFromFiles(toStrip).strippedFiles.map((f) => [f.filepath, f]),
+      );
+      baseFiles = baseFiles.map((f) => stripped.get(f.filepath) ?? f);
     }
     const assessed = buildAssessedCodeContent(
       processedFiles,
@@ -1246,6 +1256,16 @@ async function run() {
             `withholds any question that has none.`,
         );
       }
+    }
+
+    // Only warned about, since the question itself is sound: this measures how
+    // well the model keeps to the prompt's rule against citing line numbers.
+    const citesLines = findLineReferences(finalQuestions);
+    if (citesLines.length > 0) {
+      core.warning(
+        `${citesLines.length} question(s) name a line number, which the student's report does ` +
+          `not show beside the code (question(s) ${citesLines.map((q) => q.number).join(', ')}).`,
+      );
     }
 
     // Distractors never reach the student copy; the correct answer only with

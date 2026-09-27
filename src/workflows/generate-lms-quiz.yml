@@ -91,6 +91,14 @@ jobs:
           // writes beside questions.md: the same questions as structured data. Every
           // field is checked, since the file can be edited by hand. Throws when
           // the file is not a JSON object with a questions array.
+          // A snippet's lines as the student's file numbers them, as the
+          // report shows them: "line 12" or "lines 28–37". Null when the
+          // numbers are missing or not whole numbers.
+          function lineRange(start, end) {
+            if (!Number.isInteger(start) || !Number.isInteger(end)) return null;
+            return start === end ? 'line ' + start : 'lines ' + start + '–' + end;
+          }
+
           function parseQuestionsJson(text) {
             const data = JSON.parse(text);
             if (!data || !Array.isArray(data.questions)) {
@@ -111,6 +119,7 @@ jobs:
                 .filter((s) => s && typeof s === 'object' && (str(s.code) || str(s.file)))
                 .map((s) => ({
                   file: str(s.file) || null,
+                  range: lineRange(s.start_line, s.end_line),
                   lang: str(s.language) || null,
                   lines: str(s.code) ? str(s.code).split('\n') : [],
                 }));
@@ -290,7 +299,8 @@ jobs:
             const parts = [];
             for (const s of q.snippets) {
               if (s.file) {
-                parts.push('<p><strong>' + escapeHtmlText(stripInlineMarkdown(s.file)) + '</strong></p>');
+                const range = s.range ? ', ' + escapeHtmlText(s.range) : '';
+                parts.push('<p><strong>' + escapeHtmlText(stripInlineMarkdown(s.file)) + '</strong>' + range + '</p>');
               }
               if (s.lines.length) {
                 const grammar = grammarFor(s.lang, s.file);
@@ -557,7 +567,7 @@ jobs:
           // Bumped whenever the generated package changes shape, or what is read
           // from questions.json, so every stored hash stops matching and every
           // student's quiz is rebuilt once.
-          const PACKAGE_FORMAT = 'v8';
+          const PACKAGE_FORMAT = 'v9';
 
           // The instructor repo is named {assignment}-grillmycode-instructor,
           // so the assignment name can be recovered from GITHUB_REPOSITORY

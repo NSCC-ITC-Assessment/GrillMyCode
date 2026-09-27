@@ -80,7 +80,7 @@ The three wrong options per question are only needed for the quiz, and every stu
 
 ## `questions.json`
 
-In the `data/` subfolder. The same questions as `questions.md`, as data: each question's code snippets with the file and line numbers they come from ([counted after comments are removed](code-selection.md#3-comment-stripping-and-line-marking)), question, answer, distractors, and whether it is a broader question. The quiz is built from this file alone. You don't need to open it unless you want to correct a question in the quiz: edit it here, and saving the change rebuilds that student's quiz. An edit to `questions.md` doesn't reach the quiz.
+In the `data/` subfolder. The same questions as `questions.md`, as data: each question's code snippets with the file and line numbers they come from, question, answer, distractors, and whether it is a broader question. The quiz is built from this file alone. You don't need to open it unless you want to correct a question in the quiz: edit it here, and saving the change rebuilds that student's quiz. An edit to `questions.md` doesn't reach the quiz.
 
 Questions GrillMyCode [dropped](code-selection.md#4-after-the-ai-replies) because they didn't point at the student's code come last, with `"dropped": true` and no number. The student's report and the quiz leave them out, but you can see what the model asked and the code it showed. For a question dropped because its file or lines couldn't be found, only the file and line numbers are recorded, with no code. To put a dropped question in the quiz anyway, change its `dropped` to `false`.
 
@@ -109,7 +109,7 @@ The `.imscc` is an IMS Common Cartridge package with a QTI quiz, titled `{assign
 
 Each student's quiz is built from their [`questions.json`](#questionsjson). A folder without one gets no quiz. A `questions.json` that isn't valid JSON fails that student's quiz with an error on the run; every other student's quiz is still built.
 
-Each quiz question shows its code snippets, each under the name of the file it comes from. The model occasionally writes a question without a snippet, most often under a **Broader Questions** heading near the end when the requested count is large for the size of the submission. That question appears in the quiz as text only.
+Each quiz question shows its code snippets, each under the name of the file it comes from and the lines it covers, such as `index.php, lines 28–37`. The model occasionally writes a question without a snippet, most often under a **Broader Questions** heading near the end when the requested count is large for the size of the submission. That question appears in the quiz as text only.
 
 A question without distractors, or with a blank option, is left out of the quiz rather than imported with a single option, and the run log names it. The count in the file name is the number of questions the quiz actually holds, so a short quiz can be spotted without opening it.
 

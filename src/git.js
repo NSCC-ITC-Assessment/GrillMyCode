@@ -81,8 +81,9 @@ export function readFileAt(sha, filepath) {
  */
 export function diffLines(oldRaw, newRaw) {
   // A missing final newline or a switch to CRLF line endings would otherwise
-  // mark lines the student never touched as theirs.
-  const normalise = (text) => text.replace(/\r\n/g, '\n').replace(/\n?$/, '\n');
+  // mark lines the student never touched as theirs. A lone CR is a line break
+  // too, as it is in an editor, so the lines are numbered as the student sees.
+  const normalise = (text) => text.replace(/\r\n?/g, '\n').replace(/\n?$/, '\n');
   const oldText = normalise(oldRaw);
   const newText = normalise(newRaw);
   const splitLines = (text) => text.replace(/\n$/, '').split('\n');

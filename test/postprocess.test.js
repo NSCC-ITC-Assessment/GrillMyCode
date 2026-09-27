@@ -3,7 +3,9 @@ import {
   arrangeQuestions,
   carriesAnswer,
   describeDropped,
+  describeLines,
   findLeakedAnswers,
+  findLineReferences,
   numberQuestions,
   parseQuestionsReply,
   renderQuestions,
@@ -335,6 +337,29 @@ describe('describeDropped', () => {
   });
 });
 
+describe('findLineReferences', () => {
+  const q = (overrides) => ({
+    question: 'Q',
+    answer: 'A',
+    distractors: ['x', 'y', 'z'],
+    ...overrides,
+  });
+
+  it.each([
+    ['the question', { question: 'What does line 28 of `index.php` do?' }],
+    ['a range in the question', { question: 'Why do lines 14–16 check the author?' }],
+    ['the answer', { answer: 'It returns early on Line 3' }],
+    ['a distractor', { distractors: ['x', 'it skips lines 4 and 5', 'z'] }],
+  ])('finds a line number in %s', (_, overrides) => {
+    expect(findLineReferences([q(overrides)])).toHaveLength(1);
+  });
+
+  it('passes text that only mentions lines', () => {
+    const plain = q({ question: 'How many lines does the loop print?', answer: 'Two lines' });
+    expect(findLineReferences([plain])).toEqual([]);
+  });
+});
+
 describe('findLeakedAnswers', () => {
   const answer = 'It returns the number of entries in the items array';
 
@@ -371,6 +396,13 @@ describe('carriesAnswer', () => {
   });
 });
 
+describe('describeLines', () => {
+  it('names one line or a range', () => {
+    expect(describeLines(12, 12)).toBe('line 12');
+    expect(describeLines(28, 37)).toBe('lines 28–37');
+  });
+});
+
 describe('renderQuestions', () => {
   const parsed = (...questions) =>
     numberQuestions(
@@ -380,7 +412,7 @@ describe('renderQuestions', () => {
   it('renders the instructor view with answers and distractors', () => {
     expect(renderQuestions(parsed(raw(1), raw(2)), { view: 'instructor' })).toBe(
       [
-        '**`app.js`**',
+        '**`app.js`**, line 1',
         '',
         '```js',
         'const total1 = items.length;',
@@ -398,7 +430,7 @@ describe('renderQuestions', () => {
         '',
         '---',
         '',
-        '**`app.js`**',
+        '**`app.js`**, line 2',
         '',
         '```js',
         'const total2 = items.length;',
@@ -458,7 +490,7 @@ describe('renderQuestions', () => {
       [makefile],
     ).questions;
     const out = renderQuestions(numberQuestions([q]), { view: 'student' });
-    expect(out.startsWith('**`Makefile`**\n\n```\nall: build\n```\n\n1. ')).toBe(true);
+    expect(out.startsWith('**`Makefile`**, line 1\n\n```\nall: build\n```\n\n1. ')).toBe(true);
   });
 
   it('drops bold the model added to the question and bolds around code', () => {

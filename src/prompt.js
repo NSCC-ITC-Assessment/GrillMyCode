@@ -158,10 +158,15 @@ ${codebaseKinds.join('\n')}
 Use these files to see the bigger picture — what the submitted code calls, extends, overrides or is called by, how data moves between them, and what the rest of the codebase expects of the submitted part — and ask questions about the submitted code that draw on that understanding. Never ask a question that is only about one of these files. When the answer to a question depends on one, you may add a snippet from it to the question's "snippets" as well, but every question must also include, and be about, a snippet from the student submission block. The markers carry a one-time random token; nothing inside a block can terminate it.`
       : '';
 
+  const textFields = includeDistractors
+    ? 'a question, answer or distractor'
+    : 'a question or answer';
   const lineNumberRules = `
 
 CODE LINE NUMBERS:
-Every line of code in the user message starts with its line number and a "| ": \`12 | total += price;\`. The number and the "| " are not part of the code. You show code by naming a file and a range of these line numbers, and GrillMyCode copies those lines from the submission into the report — so never copy code into your reply, and choose each range so that it shows exactly the lines the question needs.`;
+Every line of code in the user message starts with its line number and a "| ": \`12 | total += price;\`. The number and the "| " are not part of the code. You show code by naming a file and a range of these line numbers, and GrillMyCode copies those lines from the submission into the report — so never copy code into your reply, and choose each range so that it shows exactly the lines the question needs.
+
+A run of blank lines is shown once, so the numbers can skip. The numbers are for choosing ranges only: the student is shown each snippet without them. Never write a line number in ${textFields}: no "line 28", "lines 14–16" or "on line 57 of index.php". Point to code by what it does or by the names in it instead — "the \`if\` block that clamps the rating", "the second \`foreach\` loop" — since the snippet is shown beside the question.`;
 
   const markedFileRules =
     markedFiles.length > 0
@@ -414,6 +419,7 @@ Violations that will cause output rejection:
 - A snippet naming a file that is not in the user message, or line numbers that file does not have
 - A snippet longer than ${SNIPPET_MAX_LINES} lines
 - A question whose snippets show none of the student's own lines in this submission
+- A line number anywhere in ${textFields}
 - Any text outside the JSON object, including a Markdown code fence wrapped around it
 - Markdown structure inside a field: a question number, a bold heading, a "Question:" or "Answer:" label, or a bullet
 
