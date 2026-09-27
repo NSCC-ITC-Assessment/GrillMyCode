@@ -7,12 +7,6 @@ on:
     paths:
       - "docs-site/**"
 
-  # Nightly, so the Workflow Wizard's saved copy of OpenRouter's model
-  # catalogue (reasoning levels and prices) is never more than a day old.
-  # Scheduled runs use this file as it is on the default branch.
-  schedule:
-    - cron: "17 7 * * *"
-
   workflow_dispatch:
 
 permissions:
@@ -43,12 +37,6 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
-        working-directory: docs-site
-
-      # Never fails the build: without the file, the Wizard uses OpenRouter's
-      # live catalogue alone.
-      - name: Save OpenRouter model catalogue
-        run: node scripts/fetch-openrouter-models.mjs
         working-directory: docs-site
 
       - name: Build website

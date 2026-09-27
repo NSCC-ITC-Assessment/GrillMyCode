@@ -5,7 +5,6 @@ import {
   MIN_OUTPUT_TOKENS,
   PICKER_SORTS,
   PRICE_LIMITS,
-  catalogAge,
   formatContext,
   pickerModels,
   searchModels,
@@ -120,7 +119,7 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
       </div>
       <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
         {matches.length} {matches.length === 1 ? 'model' : 'models'}.{' '}
-        Prices are per million tokens, {catalogAge(catalog)}. The coding score is Artificial
+        Prices are per million tokens, live from OpenRouter. The coding score is Artificial
         Analysis's benchmark for writing code, not a test of question quality. Always left out:
         models with less than {formatContext(MIN_CONTEXT_TOKENS)} tokens of context or a reply
         limit under {formatContext(MIN_OUTPUT_TOKENS)} tokens, and models OpenRouter plans to

@@ -4,7 +4,6 @@ import ModelPicker from './ModelPicker';
 import { effectiveAiModel, MODEL_ROUTING_VARIANTS } from '../generateYaml';
 import {
   COSTLY_REASONING_LEVELS,
-  catalogAge,
   formatDollars,
   lookupModel,
   modelConcerns,
@@ -204,8 +203,7 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         <strong>📡 These details from OpenRouter change constantly:</strong> the model list, prices, reasoning
         levels and providers on this step come from OpenRouter, where models are added and retired
         and prices, defaults and providers change all the time, sometimes daily. What you see is how
-        things stood when this page loaded, or on the date shown for a saved copy. Treat it as a
-        guide: confirm your model's details on{' '}
+        things stood when this page loaded. Treat it as a guide: confirm your model's details on{' '}
         <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
           openrouter.ai/models
         </a>{' '}
@@ -342,7 +340,7 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
                 {pricing.output} per million output tokens, which include any reasoning
               </>
             )}{' '}
-            ({catalogAge(catalog)}).
+            (live from OpenRouter).
           </span>
         )}
       </div>
