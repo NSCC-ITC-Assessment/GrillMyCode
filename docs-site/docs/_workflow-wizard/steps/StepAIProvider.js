@@ -1,6 +1,19 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import styles from '../styles.module.css';
+import ModelPicker from './ModelPicker';
 import { effectiveAiModel, MODEL_ROUTING_VARIANTS } from '../generateYaml';
+import {
+  COSTLY_REASONING_LEVELS,
+  catalogAge,
+  formatDollars,
+  lookupModel,
+  modelConcerns,
+  modelPricing,
+  reasoningOptions,
+  routingSummary,
+  useModelCatalog,
+  useModelEndpoints,
+} from '../modelCatalog';
 
 // OpenRouter is currently the only supported provider, so the wizard no longer
 // offers a provider choice — it configures the model and the API key secret.
@@ -16,9 +29,10 @@ const OPENROUTER_MODELS = [
 ];
 
 // OpenRouter routing variants, appended to the model ID as a `:suffix`. They
-// change which provider serves the model, never the model itself, so question
-// quality is unaffected. Empty is the default: OpenRouter balances price,
-// uptime and speed on its own.
+// change which provider serves the model, not which model it is — but providers
+// can run compressed copies (fp4, for example) that answer less well, and the cheapest
+// often do, so routingSummary flags them. Empty is the default: OpenRouter
+// balances price, uptime and speed on its own.
 const MODEL_VARIANTS = [
   {
     value: '',
@@ -37,6 +51,61 @@ const MODEL_VARIANTS = [
   },
 ];
 
+/** What each routing option means for the chosen model's providers. */
+function RoutingNotes({ routing }) {
+  const { balanced, floor, nitro, compressed } = routing;
+  const balancedPrice =
+    balanced.min === balanced.max
+      ? formatDollars(balanced.min)
+      : `${formatDollars(balanced.min)}–${formatDollars(balanced.max)}`;
+  const hint = { marginTop: '0.4rem' };
+  const warning = { ...hint, color: 'var(--ifm-color-warning-contrast-foreground)' };
+
+  return (
+    <>
+      <span className={styles.hint} style={hint}>
+        {routing.providers === 1
+          ? 'One provider serves this model'
+          : `${routing.providers} providers serve this model`}
+        , live from OpenRouter. Output per million tokens: Lowest cost from{' '}
+        {formatDollars(floor.price)} · Balanced {balancedPrice} · Speed up to{' '}
+        {formatDollars(nitro.price)}.
+      </span>
+      {routing.endpoints === 1 ? (
+        <span className={styles.hint} style={hint}>
+          With a single provider, routing makes no difference.
+        </span>
+      ) : (
+        nitro.price <= floor.price * 1.1 && (
+          <span className={styles.hint} style={hint}>
+            Its providers charge about the same, so the choice makes little difference to cost.
+          </span>
+        )
+      )}
+      {routing.endpoints === 1 && floor.compressed ? (
+        <span className={styles.hint} style={warning}>
+          ⚠️ Its only provider runs a compressed ({floor.quantization}) copy of the model, which
+          can write weaker questions.
+        </span>
+      ) : floor.compressed ? (
+        <span className={styles.hint} style={warning}>
+          ⚠️ The cheapest provider runs a compressed ({floor.quantization}) copy of the model,
+          which can write weaker questions. {compressed.count} of {routing.endpoints} endpoints run
+          compressed copies ({compressed.precisions.join(', ')})
+          {compressed.balanced && ', and Balanced can choose them too'}.
+        </span>
+      ) : (
+        compressed.count > 0 && (
+          <span className={styles.hint} style={warning}>
+            ⚠️ {compressed.count} of {routing.endpoints} endpoints run a compressed copy of the
+            model ({compressed.precisions.join(', ')}), which can write weaker questions.
+          </span>
+        )
+      )}
+    </>
+  );
+}
+
 export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
   const isKnownModel = OPENROUTER_MODELS.some((m) => m.value === cfg.aiModel);
   const modelTrimmed = (cfg.aiModel || '').trim();
@@ -49,6 +118,32 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
   // showing a dropdown that appears to do nothing.
   const variantInModel = MODEL_ROUTING_VARIANTS.some((v) => modelTrimmed.endsWith(`:${v}`));
   const resolvedModel = effectiveAiModel({ ...cfg, aiProvider: 'openrouter' });
+
+  const catalog = useModelCatalog();
+  const modelUsable = modelTrimmed && !modelMalformed;
+  const modelInfo = modelUsable ? lookupModel(catalog, modelTrimmed) : null;
+  const reasoning = reasoningOptions(modelInfo);
+  const pricing = modelPricing(modelInfo);
+  const concerns = modelConcerns(modelInfo);
+  const endpoints = useModelEndpoints(modelInfo?.id ?? null);
+  const routing = endpoints.status === 'ready' ? routingSummary(endpoints.endpoints) : null;
+  const concernNote = concerns.length > 0 && (
+    <span
+      className={styles.hint}
+      style={{ marginTop: '0.4rem', color: 'var(--ifm-color-warning-contrast-foreground)' }}
+    >
+      ⚠️ {concerns.join(' ')}
+    </span>
+  );
+  const effort = cfg.aiReasoningEffort || 'default';
+  const effectiveEffort = effort === 'default' ? reasoning.defaultEffort : effort;
+  const allowedEfforts = reasoning.options.map((o) => o.value).join(',');
+
+  // A level the newly chosen model does not offer falls back to its default,
+  // rather than staying selected but invisible in the dropdown.
+  useEffect(() => {
+    if (!allowedEfforts.split(',').includes(effort)) onChange({ aiReasoningEffort: 'default' });
+  }, [allowedEfforts, effort]);
 
   return (
     <div>
@@ -78,10 +173,22 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         for the current pricing of your chosen model before deploying to a class of students.
         <br />
         <br />
-        The pre-defined models in the list below have been specifically chosen because they are very
-        cheap — <strong>from less than one cent to a few cents per API call</strong> — and have been tested to
-        work well with GrillMyCode. If you choose your own model, be sure to verify its pricing
-        first.
+        The pre-defined models in the list below were chosen partly for their low cost when tested,
+        and have been tested to work well with GrillMyCode. An assessment can cost{' '}
+        <strong>less than one cent</strong>, but the cost can rise sharply with the model, its
+        reasoning setting and how much code is assessed.
+        <br />
+        <br />
+        <strong>Estimating what it will cost your class is your responsibility.</strong> Before
+        rolling it out, do a few trial runs with the settings you'll use and check their cost in
+        your OpenRouter account.{' '}
+        <a
+          href={`${docsBase}/guides/choosing-a-model#estimate-your-cost-with-trial-runs`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          How to estimate your cost →
+        </a>
         <br />
         <br />
         <a
@@ -93,10 +200,23 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         </a>
       </div>
 
+      <div className={styles.notice}>
+        <strong>📡 These details from OpenRouter change constantly:</strong> the model list, prices, reasoning
+        levels and providers on this step come from OpenRouter, where models are added and retired
+        and prices, defaults and providers change all the time, sometimes daily. What you see is how
+        things stood when this page loaded, or on the date shown for a saved copy. Treat it as a
+        guide: confirm your model's details on{' '}
+        <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
+          openrouter.ai/models
+        </a>{' '}
+        before deploying, and check again before each new term.
+      </div>
+
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Model</label>
         <span className={styles.hint}>
-          Select a pre-defined model or choose "Own Choice" to enter any OpenRouter model ID.
+          Select a pre-defined model, or choose "Own Choice" to search OpenRouter's catalogue or
+          enter any OpenRouter model ID.
         </span>
         <select
           className={styles.select}
@@ -113,6 +233,7 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
           ))}
           <option value="__custom__">Own Choice…</option>
         </select>
+        {isKnownModel && concernNote}
         {!isKnownModel && (
           <>
             <div
@@ -164,7 +285,65 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
                 <code>anthropic/claude-sonnet-5</code>).
               </span>
             )}
+            {concernNote}
+            <ModelPicker
+              catalog={catalog}
+              selectedId={modelInfo?.id ?? null}
+              testedIds={OPENROUTER_MODELS.map((m) => m.value)}
+              onPick={(id) => onChange({ aiModel: id })}
+            />
           </>
+        )}
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Reasoning</label>
+        <span className={styles.hint}>
+          Many models think before they answer. That thinking is billed as output, so it can
+          multiply what each run costs several times over, and more of it doesn't always mean
+          better questions. Some models do a lot of it unless told otherwise.
+        </span>
+        <select
+          className={styles.select}
+          value={effort}
+          disabled={reasoning.options.length < 2}
+          onChange={(e) => onChange({ aiReasoningEffort: e.target.value })}
+        >
+          {reasoning.options.map((o) => (
+            <option key={o.value} value={o.value}>
+              {o.label}
+            </option>
+          ))}
+        </select>
+        {modelUsable && (
+          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+            {catalog.status === 'loading' && "Checking OpenRouter's catalogue for this model…"}
+            {catalog.status === 'unavailable' &&
+              "OpenRouter's catalogue couldn't be reached, so every level is listed. A level the model doesn't support is mapped to its nearest one, and Off fails the run on a model that always reasons."}
+            {catalog.status === 'ready' &&
+              !modelInfo &&
+              "This model isn't in OpenRouter's catalogue, so every level is listed. Check the model ID."}
+            {reasoning.note}
+          </span>
+        )}
+        {reasoning.known && COSTLY_REASONING_LEVELS.includes(effectiveEffort) && (
+          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+            ⚠️ Reasoning at this level can make a run cost many times more than the questions alone
+            would. Consider trying <strong>Low</strong> first and comparing the questions.
+          </span>
+        )}
+        {pricing && (
+          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+            {pricing.free ? (
+              <>This model is free on OpenRouter</>
+            ) : (
+              <>
+                {modelInfo.name || modelTrimmed}: {pricing.input} per million input tokens,{' '}
+                {pricing.output} per million output tokens, which include any reasoning
+              </>
+            )}{' '}
+            ({catalogAge(catalog)}).
+          </span>
         )}
       </div>
 
@@ -181,7 +360,8 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
             routing variant
           </a>{' '}
           to the model ID to say which of them should be tried first. This changes the provider, not
-          the model, so the questions are generated by the same model either way.
+          the model — but some providers run a compressed copy of the model, which can write weaker
+          questions, and the cheapest providers often do.
         </span>
         <select
           className={styles.select}
@@ -197,6 +377,12 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
           {selectedVariant.hint}
         </span>
+        {endpoints.status === 'loading' && (
+          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+            Checking which providers serve this model…
+          </span>
+        )}
+        {routing && <RoutingNotes routing={routing} />}
         {modelTrimmed && !modelMalformed && (
           <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
             {variantInModel && variant ? (

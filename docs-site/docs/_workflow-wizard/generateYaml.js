@@ -116,6 +116,7 @@ const DEFAULTS = {
   // variant on the default model counts as a change and emits the input.
   aiModel: 'google/gemini-3.5-flash-lite',
   aiModelVariant: '',
+  aiReasoningEffort: 'default',
   aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   numQuestions: 20,
@@ -407,6 +408,9 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
     lines.push(`          # If desired, uncomment this input and edit to use a different one —`);
     lines.push(`          # any model from https://openrouter.ai/models (provider/model-name).`);
     lines.push(`          # ai_model: ${yamlStr(cfg.aiModel)}`);
+  }
+  if (differ(cfg, 'aiReasoningEffort')) {
+    lines.push(`          ai_reasoning_effort: ${yamlStr(cfg.aiReasoningEffort)}`);
   }
   if (differ(cfg, 'aiRetryMaxAttempts')) {
     lines.push(`          ai_retry_max_attempts: ${yamlStr(cfg.aiRetryMaxAttempts)}`);

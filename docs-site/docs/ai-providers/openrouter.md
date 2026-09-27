@@ -13,6 +13,10 @@ To create an account and key, see [Get started: Set up an OpenRouter key](../get
 OpenRouter can't be reached with the built-in `GITHUB_TOKEN`. Every workflow must supply `api_key`, and the action fails immediately with a setup message if it is missing.
 :::
 
+:::caution[OpenRouter's catalogue changes constantly]
+Models are added and retired, and their prices, reasoning defaults, capabilities and providers change often, sometimes daily. That's why these docs don't state them for any model. The Workflow Wizard shows OpenRouter's current data, but only as of when the page loaded. Confirm a model's details at [openrouter.ai/models](https://openrouter.ai/models) before deploying it, and check again each term.
+:::
+
 ## Inputs
 
 | Input | Value |
@@ -21,31 +25,32 @@ OpenRouter can't be reached with the built-in `GITHUB_TOKEN`. Every workflow mus
 | `ai_model` | Any OpenRouter model ID, in `provider/model-name` format. Defaults to `google/gemini-3.5-flash-lite`. May end with a [routing variant](#model-routing-variants), such as `:nitro` |
 | `ai_provider` | `openrouter`, the default. May be left out |
 | `ai_temperature` | Randomness of the output, from `0.0` to `1.0`. Default `0.5` |
+| `ai_reasoning_effort` | How much the model thinks before answering. Default `default`, the model's own setting. See [Reasoning](#reasoning) |
 | `ai_retry_max_attempts` | Total attempts per request, including the first. Default `5` |
 
 Model IDs must match OpenRouter's catalogue exactly; see [openrouter.ai/models](https://openrouter.ai/models). For example: `anthropic/claude-sonnet-5`, `openai/gpt-5-mini`, `meta-llama/llama-3.1-70b-instruct`.
 
 ## Recommended models
 
-These have been tested with GrillMyCode and cost from **less than one cent to a few cents per assessment**. Cost can vary widely depending on the model you choose. They are the options pre-loaded in the [Workflow Wizard](../workflow-wizard.mdx).
+These have been tested with GrillMyCode and were chosen partly for their low cost when tested. An assessment can cost less than one cent, but the cost can rise sharply with the model, its reasoning settings and how much code is assessed. They are the options pre-loaded in the [Workflow Wizard](../workflow-wizard.mdx), which shows each one's current price. Whatever model you use, estimating your class's cost is your responsibility; see [Estimate your cost with trial runs](../guides/choosing-a-model.md#estimate-your-cost-with-trial-runs).
 
 | Model | `ai_model` | Good to know |
 |---|---|---|
-| Google Gemini 3.5 Flash Lite (default) | `google/gemini-3.5-flash-lite` | Fast and cheap, with the best multiple-choice distractors of those tested, which is why it is the default |
-| OpenAI GPT-6 Luna Pro | `openai/gpt-6-luna-pro` | OpenAI's low-cost model |
-| DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | Very cheap, and a reliable alternative |
-| Minimax M2.7 | `minimax/minimax-m2.7` | Very cheap, and does well with little tuning |
-| StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` | Good quality for the price |
-| Tencent Hy3 | `tencent/hy3` | Cheap and works, though its writing style varies more |
+| Google Gemini 3.5 Flash Lite (default) | `google/gemini-3.5-flash-lite` | Wrote the best multiple-choice distractors of those tested, which is why it is the default |
+| OpenAI GPT-6 Luna Pro | `openai/gpt-6-luna-pro` | |
+| DeepSeek V4 Flash | `deepseek/deepseek-v4-flash` | A reliable alternative |
+| Minimax M2.7 | `minimax/minimax-m2.7` | Did well with little tuning |
+| StepFun Step 3.7 Flash | `stepfun/step-3.7-flash` | Good question quality |
+| Tencent Hy3 | `tencent/hy3` | Works, though its writing style varies more |
 | Xiaomi MiMo V2.5 Pro | `xiaomi/mimo-v2.5-pro` | Good at following the required question format |
 
-Any other model works too; check its price at [openrouter.ai/models](https://openrouter.ai/models) first, because costs vary by orders of magnitude.
+Any other model works too; check its price at [openrouter.ai/models](https://openrouter.ai/models) first, because costs vary by orders of magnitude. Avoid models with a context window under 128K tokens or a reply limit under 16K tokens: a large submission can exceed the first, and a full set of questions plus any reasoning the second, which fails the run. Avoid models with a retirement date on OpenRouter too. The Workflow Wizard's **Own Choice** list leaves all of these out, and the Wizard warns about them if you type one in.
 
 ## Structured outputs
 
-GrillMyCode asks for its questions as a JSON object and sends the format as a JSON schema too. OpenRouter routes the request to a provider that supports **structured outputs** for the model, when one does, and that provider holds the reply to the schema. All the recommended models above support it.
+GrillMyCode asks for its questions as a JSON object and sends the format as a JSON schema too. OpenRouter routes the request to a provider that supports **structured outputs** for the model, when one does, and that provider holds the reply to the schema.
 
-A model without structured outputs still works: the schema is ignored and the model follows the prompt's description of the format. Such models are more likely to return a reply GrillMyCode can't use, which it retries; see [After the AI replies](../reference/code-selection.md#4-after-the-ai-replies). To check a model, filter the [model list](https://openrouter.ai/models?supported_parameters=structured_outputs) by structured outputs.
+A model without structured outputs still works: the schema is ignored and the model follows the prompt's description of the format. Such models are more likely to return a reply GrillMyCode can't use, which it retries; see [After the AI replies](../reference/code-selection.md#4-after-the-ai-replies). To check a model, filter the [model list](https://openrouter.ai/models?supported_parameters=structured_outputs) by structured outputs. The Workflow Wizard's **Own Choice** list shows only such models unless you untick its filter.
 
 ## Model routing variants
 
@@ -69,7 +74,7 @@ Appending a **routing variant** to the model ID tells it what to prioritize inst
 
 Things worth knowing before you use one:
 
-- **The model does not change.** A variant only changes which provider runs it, so the questions are generated by the same model and their quality is unaffected.
+- **The model is the same, but the copy may not be.** A variant only changes which provider runs the model. Some providers run a **compressed** copy, listed at a lower precision such as `fp4`, which is cheaper to serve and can write weaker questions. Compressed copies are often among the cheapest, so `:floor` is likeliest to pick one, but the default routing can too. Each provider's precision is on the model's page at [openrouter.ai/models](https://openrouter.ai/models). Many models are released at `fp8`, so `fp8` alone isn't a sign of compression.
 - **Fallbacks still apply.** If the first provider is unavailable, OpenRouter moves to the next one in the sorted order.
 - **Check pricing before using `:nitro`.** Billing follows the provider that actually served the request, so a priority-tier endpoint is billed at its own, higher rate — and the fastest provider is rarely the cheapest. Per-provider prices are on each model's page at [openrouter.ai/models](https://openrouter.ai/models). The same applies in reverse to `:floor`: a request served on a flex tier is billed at the flex rate.
 - **Try a different model before reaching for `:nitro`.** If assessments are slow *and* the questions are mediocre, another model is the better fix — see [Recommended models](#recommended-models). `:nitro` is for when the model is right and only the wait is wrong.
@@ -78,11 +83,38 @@ Things worth knowing before you use one:
 
 Variants are an OpenRouter feature. They live in the model ID rather than in a separate action input, so nothing changes for any other provider GrillMyCode might support later.
 
-In the [Workflow Wizard](../workflow-wizard.mdx) this is the **Model routing** setting on the AI step, which appends the suffix to the model you picked.
+In the [Workflow Wizard](../workflow-wizard.mdx) this is the **Model routing** setting on the AI step, which appends the suffix to the model you picked. Once a model is chosen, the Wizard fetches its providers live from OpenRouter and shows the output price range for each option, whether the choice makes any difference to cost, and whether any provider runs a compressed copy below `fp8`.
 
 :::note Other suffixes
 OpenRouter also has suffixes that select a *different* model entry rather than a different provider, such as `:free`. Those are outside what the Wizard offers, but `ai_model` accepts any model string OpenRouter does. See OpenRouter's [model variants](https://openrouter.ai/docs/guides/routing/model-variants/overview) documentation.
 :::
+
+## Reasoning
+
+Many models **reason** before they answer: they write out working that you never see, then the reply. Reasoning tokens are billed at the model's output rate, and they are counted in the **Tokens** line of `raw-ai-output.md` (for example `43,208 out (39,012 reasoning)`). On a model that reasons at a high level by default, reasoning can be most of what a run costs.
+
+Models differ in whether they reason unless told not to, and at what level: some reason at `high` by default, others at `minimal` or not at all. `ai_reasoning_effort` sets the level instead:
+
+| Value | Sent to OpenRouter | Effect |
+|---|---|---|
+| `default` (the default) | Nothing | The model's own default applies |
+| `none` | `reasoning: { enabled: false }` | Switches reasoning off. **Fails the run** with a `400` on a model whose reasoning can't be switched off |
+| `minimal`, `low`, `medium`, `high`, `xhigh`, `max` | `reasoning: { effort: "<value>" }` | Sets the level. A level the model doesn't support is mapped to its nearest one |
+
+Things worth knowing:
+
+- **Not every model supports every level.** OpenRouter's [model catalogue](https://openrouter.ai/api/v1/models) lists each model's levels, its default, and whether reasoning can be switched off, in its `reasoning` field. The Workflow Wizard's **Reasoning** setting reads the same catalogue and offers only the levels your model supports.
+- **Models that don't reason** ignore the setting.
+- **Less reasoning isn't always worse.** Question quality depends on the model, and reasoning doesn't always improve it. Try `low` on a few submissions and compare the questions with the model's default before settling on a level.
+
+```yaml
+- uses: NSCC-ITC-Assessment/GrillMyCode@v0
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
+    ai_model: 'anthropic/claude-sonnet-5'
+    ai_reasoning_effort: 'low'
+```
 
 ## Retries and rate limits
 

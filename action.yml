@@ -58,6 +58,18 @@ inputs:
     required: false
     default: "0.5"
 
+  ai_reasoning_effort:
+    description: >
+      How much the model thinks before answering: default, none, minimal, low,
+      medium, high, xhigh or max. "default" (the default) sends no setting, so
+      the model's own default applies — some models reason at "high" unless
+      told otherwise. Reasoning is billed as output, so a lower level can cut
+      the cost of a run several times over. A level the model does not support
+      is mapped to its nearest one; "none" fails the run for a model whose
+      reasoning cannot be switched off. Ignored by models that do not reason.
+    required: false
+    default: "default"
+
   api_key:
     description: >
       API key for the chosen AI provider. Required — create an OpenRouter key at
@@ -370,6 +382,7 @@ runs:
     INPUT_AI_MODEL: ${{ inputs.ai_model }}
     INPUT_AI_RETRY_MAX_ATTEMPTS: ${{ inputs.ai_retry_max_attempts }}
     INPUT_AI_TEMPERATURE: ${{ inputs.ai_temperature }}
+    INPUT_AI_REASONING_EFFORT: ${{ inputs.ai_reasoning_effort }}
     INPUT_API_KEY: ${{ inputs.api_key }}
     INPUT_NUM_QUESTIONS: ${{ inputs.num_questions }}
     INPUT_ADDITIONAL_EXCLUDE_PATTERNS: ${{ inputs.additional_exclude_patterns }}

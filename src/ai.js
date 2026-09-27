@@ -69,6 +69,35 @@ function upstreamRateLimitNote(error) {
   );
 }
 
+/**
+ * Returns OpenRouter's `reasoning` request field for an ai_reasoning_effort
+ * value, or null for `default`, which sends nothing so the model's own default
+ * applies. `none` is sent as `enabled: false` — the documented off switch —
+ * rather than as an effort level, since not every model that can switch
+ * reasoning off lists `none` among its efforts.
+ * https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
+ */
+export function reasoningParam(effort) {
+  if (!effort || effort === 'default') return null;
+  if (effort === 'none') return { enabled: false };
+  return { effort };
+}
+
+/**
+ * Returns a plain-language explanation for a 400 on a request that set a
+ * reasoning effort — the likeliest cause is `none` sent to a model whose
+ * reasoning cannot be switched off, which OpenRouter rejects rather than
+ * remapping — or null when no effort was set or the status is not 400.
+ */
+function reasoningRejectedNote(status, effort) {
+  if (status !== 400 || !effort || effort === 'default') return null;
+  return (
+    `The request set ai_reasoning_effort to "${effort}", which the model may not accept — ` +
+    'OpenRouter rejects "none" for a model whose reasoning cannot be switched off. Try ' +
+    '"default" or another level; the Workflow Wizard lists the levels each model supports.'
+  );
+}
+
 /** Parses an error response body as OpenRouter's { error } JSON, or returns null. */
 function parseErrorBody(text) {
   try {
@@ -149,6 +178,8 @@ function stringOrNull(value) {
  * @param {Array}  opts.messages       - Chat messages array
  * @param {number} opts.retryMaxAttempts - Total attempts (initial + retries)
  * @param {number} opts.temperature    - Sampling temperature
+ * @param {string} [opts.reasoningEffort] - An ai_reasoning_effort value; see
+ *   reasoningParam
  * @param {object} [opts.responseFormat] - Sent as `response_format` when given
  * @param {Function} [opts.parse]      - `(content, { finishReason }) => parsed`;
  *   throws when the reply is unusable. Its error message reaches the Actions
@@ -169,6 +200,7 @@ export async function callAI({
   messages,
   retryMaxAttempts,
   temperature,
+  reasoningEffort,
   responseFormat,
   parse = (content) => content,
 }) {
@@ -187,11 +219,13 @@ export async function callAI({
       throw new Error(`Unknown ai_provider: "${provider}". Valid values: openrouter`);
   }
 
+  const reasoning = reasoningParam(reasoningEffort);
   const body = JSON.stringify({
     model,
     messages,
     temperature: temperature,
     top_p: AI_TOP_P,
+    ...(reasoning ? { reasoning } : {}),
     ...(responseFormat ? { response_format: responseFormat } : {}),
   });
 
@@ -222,7 +256,9 @@ export async function callAI({
 
       if (!isRetryable || attempt === retryMaxAttempts - 1) {
         const errorText = await response.text().catch(() => '(no body)');
-        const note = upstreamRateLimitNote(parseErrorBody(errorText));
+        const note =
+          upstreamRateLimitNote(parseErrorBody(errorText)) ??
+          reasoningRejectedNote(response.status, reasoningEffort);
         throw new Error(
           note
             ? `AI API error ${statusLabel(response)}: ${note} Response: ${errorText}`

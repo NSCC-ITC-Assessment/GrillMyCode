@@ -70,6 +70,12 @@ GrillMyCode already waits and retries, so a run that still fails hit a limit tha
 
 For how the two limits differ, see [Retries and rate limits](ai-providers/openrouter.md#retries-and-rate-limits).
 
+### The run failed with `AI API error 400` after changing reasoning
+
+If the error mentions `ai_reasoning_effort`, the workflow asked the model to switch reasoning off (`ai_reasoning_effort: "none"`), and the model always reasons. OpenRouter rejects that request rather than guessing a level.
+
+Change `ai_reasoning_effort` to `default` or a low level such as `minimal` or `low`, or remove it. The Workflow Wizard's **Reasoning** setting offers **Off** only for models that allow it. See [Reasoning](ai-providers/openrouter.md#reasoning).
+
 ### The run failed with `AI reply could not be used`
 
 GrillMyCode asks the model for its questions in a fixed JSON format, and every attempt returned something else. If the log also warns that the model hit its output limit, the reply was cut off before a single question was complete.

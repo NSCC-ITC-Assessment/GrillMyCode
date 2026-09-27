@@ -268,6 +268,34 @@ export const DEFAULT_AI_MODEL = 'google/gemini-3.5-flash-lite';
 export const DEFAULT_AI_TEMPERATURE = 0.5;
 
 /**
+ * Accepted values of the ai_reasoning_effort action input — the union of the
+ * effort levels OpenRouter's catalogue lists across its models, plus two of our
+ * own: `default`, which sends no reasoning setting so the model's own default
+ * applies, and `none`, which sends `reasoning: { enabled: false }`. OpenRouter
+ * maps a level a model does not list to its nearest supported one, but rejects
+ * `none` with a 400 for a model whose reasoning cannot be switched off.
+ * https://openrouter.ai/docs/guides/best-practices/reasoning-tokens
+ */
+export const AI_REASONING_EFFORTS = [
+  'default',
+  'none',
+  'minimal',
+  'low',
+  'medium',
+  'high',
+  'xhigh',
+  'max',
+];
+
+/**
+ * Default reasoning effort. `default` leaves reasoning to the model: models
+ * differ too much for one level to suit them all — some reason at `minimal`
+ * unless told otherwise, which `low` would raise, and others at `high`.
+ * Overridable via the ai_reasoning_effort action input.
+ */
+export const DEFAULT_AI_REASONING_EFFORT = 'default';
+
+/**
  * Fallback default branch name for a newly created instructor repository,
  * used when the API response does not include a default_branch value.
  */

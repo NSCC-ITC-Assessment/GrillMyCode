@@ -472,6 +472,109 @@
   background: rgba(14, 165, 233, 0.12);
 }
 
+/* ── Model picker (AI step, under "Own Choice") ───────────────────────────── */
+
+.modelPicker {
+  margin-top: 0.75rem;
+  padding: 0.75rem;
+  border: 1px solid var(--ifm-color-emphasis-300);
+  border-radius: var(--ifm-global-radius);
+}
+
+.modelControls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.modelControls .input {
+  flex: 2 1 14rem;
+}
+
+.modelControls .select {
+  flex: 1 1 12rem;
+  width: auto;
+}
+
+.modelFilters {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  margin-top: 0.6rem;
+}
+
+.modelFilters .select {
+  max-width: 22rem;
+}
+
+.modelList {
+  max-height: 22rem;
+  overflow-y: auto;
+  border: 1px solid var(--ifm-color-emphasis-200);
+  border-radius: var(--ifm-global-radius);
+}
+
+.modelRow {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  width: 100%;
+  padding: 0.55rem 0.75rem;
+  border: none;
+  border-bottom: 1px solid var(--ifm-color-emphasis-200);
+  border-left: 3px solid transparent;
+  background: transparent;
+  color: var(--ifm-color-content);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+
+.modelRow:last-child {
+  border-bottom: none;
+}
+
+.modelRow:hover,
+.modelRow:focus-visible {
+  background: var(--ifm-color-emphasis-100);
+  outline: none;
+}
+
+.modelRowSelected {
+  border-left-color: var(--ifm-color-primary);
+  background: var(--ifm-color-emphasis-100);
+}
+
+.modelName {
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.modelId {
+  font-size: 0.75rem;
+  overflow-wrap: anywhere;
+  align-self: flex-start;
+}
+
+.modelMeta {
+  font-size: 0.78rem;
+  color: var(--ifm-color-content-secondary);
+}
+
+.testedBadge {
+  display: inline-block;
+  font-size: 0.68rem;
+  font-weight: 500;
+  color: var(--ifm-color-success-contrast-foreground);
+  background: var(--ifm-color-success-contrast-background);
+  border-radius: 3px;
+  padding: 0.05em 0.4em;
+  margin-left: 0.45em;
+  vertical-align: middle;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 600px) {

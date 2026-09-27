@@ -391,6 +391,10 @@ function renderConfiguration(state) {
     ['Model', `\`${i.aiModel}\``],
     ['Temperature', String(i.aiTemperature)],
     [
+      'Reasoning effort',
+      i.aiReasoningEffort === 'default' ? 'model default' : `\`${i.aiReasoningEffort}\``,
+    ],
+    [
       'Questions requested',
       `${fmtNum(i.numQuestions)}${
         state.questionsGenerated !== null && state.questionsGenerated !== i.numQuestions
@@ -1161,6 +1165,7 @@ async function run() {
       messages,
       retryMaxAttempts: inputs.aiRetryMaxAttempts,
       temperature: inputs.aiTemperature,
+      reasoningEffort: inputs.aiReasoningEffort,
       responseFormat: buildResponseFormat({
         includeDistractors,
         includeContextSummary: Boolean(inputs.instructorContext),
@@ -1507,6 +1512,7 @@ async function run() {
           numQuestions: inputs.numQuestions,
           temperature: inputs.aiTemperature,
           topP: AI_TOP_P,
+          reasoningEffort: inputs.aiReasoningEffort,
           promptHash: PROMPT_TEMPLATE_HASH,
           actionRef: process.env.GITHUB_ACTION_REF || null,
         },

@@ -93,9 +93,9 @@ Open it when a student's `questions.md` looks wrong. Questions cut for being ove
 The header records how the reply was produced:
 
 - why the model stopped. A `length` stop means it hit its output limit and the reply is incomplete.
-- how many tokens went in and out
+- how many tokens went in and out, and how many of those out were reasoning
 - how many attempts the request took
-- the settings used: questions requested, temperature, and a short hash identifying the prompt version
+- the settings used: questions requested, temperature, reasoning effort, and a short hash identifying the prompt version
 
 The same facts, with full commit SHAs, are embedded as JSON in a `<!-- gmc:provenance … -->` comment for tooling. It is invisible in the rendered view.
 

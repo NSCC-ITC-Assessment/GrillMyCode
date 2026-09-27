@@ -56,6 +56,9 @@ const INITIAL_CONFIG = {
   aiModel: 'google/gemini-3.5-flash-lite',
   // OpenRouter routing variant appended to the model ID: '', 'nitro' or 'floor'.
   aiModelVariant: '',
+  // ai_reasoning_effort: 'default' leaves reasoning to the model. The AI step
+  // lists only the levels OpenRouter's catalogue says the model supports.
+  aiReasoningEffort: 'default',
   apiKeySecret: 'OPENROUTER_API_KEY',
 
   // Repository label: whether the action writes a topic and a description
