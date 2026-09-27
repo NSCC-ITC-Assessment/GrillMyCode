@@ -75,6 +75,7 @@ async function submit(octokit, { headSha, questions }) {
     studentLogin: 'jsmith',
     tagGroup: 'phase1',
     content: questions,
+    questions: [],
     headSha,
     submission: { history, entry },
   });
@@ -93,7 +94,11 @@ describe('submission record in the instructor repository', () => {
     const octokit = fakeRepo();
     await submit(octokit, { headSha: 'a'.repeat(40), questions: 'first set' });
 
-    expect(folderWrites(octokit)).toEqual([`${FOLDER}/submissions.md`, `${FOLDER}/questions.md`]);
+    expect(folderWrites(octokit)).toEqual([
+      `${FOLDER}/submissions.md`,
+      `${FOLDER}/questions.md`,
+      `${FOLDER}/data/questions.json`,
+    ]);
     expect(octokit.files.get(`${FOLDER}/submissions.md`)).toContain('| 1 |');
   });
 
@@ -111,6 +116,7 @@ describe('submission record in the instructor repository', () => {
       `${FOLDER}/history/1-questions.md`,
       `${FOLDER}/submissions.md`,
       `${FOLDER}/questions.md`,
+      `${FOLDER}/data/questions.json`,
     ]);
     expect(octokit.files.get(`${FOLDER}/history/1-questions.md`)).toBe('first set');
     expect(octokit.files.get(`${FOLDER}/questions.md`)).toBe('second set');
@@ -124,11 +130,15 @@ describe('submission record in the instructor repository', () => {
     expect(history.entries.map((e) => e.number)).toEqual([1, 2]);
   });
 
-  it('archives a questions.md older than the record as 0-questions.md', async () => {
-    const octokit = fakeRepo({ [`${FOLDER}/questions.md`]: 'pre-record set' });
+  it('archives nothing for a questions.md with no log row behind it', async () => {
+    const octokit = fakeRepo({ [`${FOLDER}/questions.md`]: 'unlogged set' });
     await submit(octokit, { headSha: 'c'.repeat(40), questions: 'new set' });
 
-    expect(octokit.files.get(`${FOLDER}/history/0-questions.md`)).toBe('pre-record set');
+    expect(folderWrites(octokit)).toEqual([
+      `${FOLDER}/submissions.md`,
+      `${FOLDER}/questions.md`,
+      `${FOLDER}/data/questions.json`,
+    ]);
   });
 
   it('still writes the assessment when the record cannot be written', async () => {

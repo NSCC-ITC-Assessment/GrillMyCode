@@ -26,7 +26,7 @@ Renaming an assignment with `gh teacher assignment rename` renames its student r
 2. If the instructor repository doesn't exist, it is **created as a private repository** in the same organization.
 3. The action-owned files are synced (see [below](#action-owned-files)).
 4. The student's files are written to their folder, replacing any from an earlier run.
-5. Writing `questions.md` triggers the **Generate LMS Quiz** workflow, which builds the student's quiz files.
+5. `questions.json` is written last, and writing it triggers the **Generate LMS Quiz** workflow, which builds the student's quiz files.
 
 Creating the repository needs the student repositories to belong to an **organization**. Under a personal account the create call fails; see [Troubleshooting](../troubleshooting.md#the-instructor-repository-is-never-created-personal-accounts) for the workaround.
 
@@ -40,10 +40,14 @@ README.md                                   ← describes the repository (action
   generate-lms-quiz.yml                     ← builds the quiz files (action-owned)
 {student-login}/
   questions.md                              ← the assessment: questions and answers
-  raw-ai-output.md                          ← the AI's unprocessed reply, for diagnosis
   {assignment}_{student-login}_quiz_{count}.imscc              ← quiz package for any LMS
   {assignment}_{student-login}_brightspace_quiz_{count}.csv    ← alternative, Brightspace only
+  data/                                     ← files you don't need to read
+    questions.json                          ← the same questions as data, for the quiz
+    raw-ai-output.md                        ← the AI's unprocessed reply, for diagnosis
 ```
+
+The top of each student's folder holds only what you read or import. The `data/` subfolder holds what GrillMyCode itself uses, and what you only need when something looks wrong.
 
 For the classroom `cs-principles`, assignment `lab-3` and student `jsmith`:
 
@@ -51,15 +55,15 @@ For the classroom `cs-principles`, assignment `lab-3` and student `jsmith`:
 - Assessment: `jsmith/questions.md`
 - Quiz package: `jsmith/cs-principles-lab-3_jsmith_quiz_20.imscc`
 - Brightspace alternative: `jsmith/cs-principles-lab-3_jsmith_brightspace_quiz_20.csv`
-- Raw AI output: `jsmith/raw-ai-output.md`
+- Raw AI output: `jsmith/data/raw-ai-output.md`
 
 Each run replaces the student's files, so there is always exactly one up-to-date assessment per student (per [delivery group](triggers.md#delivery-groups)). If the question count changes, the new count appears in the quiz file names and the files carrying the old count are removed.
 
 ### Action-owned files
 
-`README.md` and `generate-lms-quiz.yml` belong to the action. Every run compares them with the copies shipped in the action and rewrites any that differ, so a repository created by an older release picks up fixes by itself. Local edits to them are replaced on the next run.
+`README.md` and `generate-lms-quiz.yml` belong to the action. Every run compares them with the copies shipped in the action and rewrites any that differ, so each repository picks up fixes by itself. Local edits to them are replaced on the next run.
 
-Writing under `.github/workflows/` needs the token's `workflow` scope. Without it the sync logs a warning, and the assessment is still delivered; see [Upgrade notes](upgrade-notes.md#already-have-an-instructor-pat).
+Writing under `.github/workflows/` needs the token's `workflow` scope. Without it the sync logs a warning, and the assessment is still delivered; see [Troubleshooting](../troubleshooting.md#could-not-update-githubworkflowsgenerate-lms-quizyml-in-).
 
 ## `questions.md`
 
@@ -74,11 +78,17 @@ The instructor's copy of the report. It has the same header as the student's iss
 
 The three wrong options per question are only needed for the quiz, and every student-facing report strips them. Runs without `instructor_repo_token` therefore ask the model for the correct answer only, which is cheaper and quicker. With the token in place, every run generates distractors. A class that adds the token mid-semester needs no other change, but assessments produced before it was added have no options to build a quiz from; re-running the workflow on those repositories regenerates them.
 
+## `questions.json`
+
+In the `data/` subfolder. The same questions as `questions.md`, as data: each question's code snippets with the file and line numbers they come from, question, answer, distractors, and whether it is a broader question. The quiz is built from this file alone. You don't need to open it unless you want to correct a question in the quiz: edit it here, and saving the change rebuilds that student's quiz. An edit to `questions.md` doesn't reach the quiz.
+
+Questions GrillMyCode [dropped](code-selection.md#4-after-the-ai-replies) because they didn't point at the student's code come last, with `"dropped": true` and no number. The student's report and the quiz leave them out, but you can see what the model asked and the code it showed. For a question dropped because its file or lines couldn't be found, only the file and line numbers are recorded, with no code. To put a dropped question in the quiz anyway, change its `dropped` to `false`.
+
 ## `raw-ai-output.md`
 
-A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived, before GrillMyCode repaired code fences, cut questions beyond `num_questions`, dropped questions about unassessed files, lifted the instructor note out of the body and renumbered the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
+In the `data/` subfolder. A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived: a JSON object, shown in a code block. Its snippets are file names and line numbers, not code. GrillMyCode has not yet checked it, copied in the code, dropped questions that don't point at the student's own code, cut questions beyond `num_questions`, or numbered and formatted the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
 
-Open it when a student's `questions.md` looks wrong. Questions that were cut or dropped, and formatting changes the processing steps made, are only visible here. Use GitHub's **Raw** view to see it as the model wrote it, and include its contents in any bug report about generated questions.
+Open it when a student's `questions.md` looks wrong. Questions cut for being over the count, or dropped for missing question text or an answer, are only visible here; the ones dropped for not pointing at the student's code are also in [`questions.json`](#questionsjson). Include its contents in any bug report about generated questions.
 
 The header records how the reply was produced:
 
@@ -91,15 +101,17 @@ The same facts, with full commit SHAs, are embedded as JSON in a `<!-- gmc:prove
 
 ## Quiz files
 
-The **Generate LMS Quiz** workflow runs whenever a `questions.md` is written, and can be started by hand from the Actions tab.
+The **Generate LMS Quiz** workflow runs whenever a `questions.json` is written, and can be started by hand from the Actions tab.
 
-It checks every student but skips any whose `questions.md` hasn't changed since their quiz was last built, so normally only the student who just pushed gets new files. It decides this by comparing a content hash stored inside each `.imscc` and `.csv`. A change to the quiz format, such as an updated workflow, leaves no matching hashes, so the next run rebuilds **every** student's quiz once; see [Upgrade notes](upgrade-notes.md#the-first-run-after-an-upgrade-regenerates-every-students-quiz).
+It checks every student but skips any whose questions haven't changed since their quiz was last built, so normally only the student who just pushed gets new files. It decides this by comparing a content hash stored inside each `.imscc` and `.csv`. A change to the quiz format, such as an updated workflow, leaves no matching hashes, so the next run rebuilds **every** student's quiz once; see [Upgrade notes](upgrade-notes.md#the-first-run-after-an-upgrade-regenerates-every-students-quiz).
 
 The `.imscc` is an IMS Common Cartridge package with a QTI quiz, titled `{assignment} - {student-login}` and limited to one attempt. The `.csv` holds the same questions in Brightspace's question-import format, with options pre-shuffled. See [Importing quizzes into your LMS](../guides/lms-quizzes.md).
 
-Each quiz question shows the file name and code snippet written with it in `questions.md`. The model occasionally writes a question without a snippet, most often under a **Broader Questions** heading near the end when the requested count is large for the size of the submission. That question appears in the quiz as text only.
+Each student's quiz is built from their [`questions.json`](#questionsjson). A folder without one gets no quiz. A `questions.json` that isn't valid JSON fails that student's quiz with an error on the run; every other student's quiz is still built.
 
-A question whose distractors can't be read from `questions.md` is left out of the quiz rather than imported with a single option. The count in the file name is the number of questions the quiz actually holds, so a short quiz can be spotted without opening it.
+Each quiz question shows its code snippets, each under the name of the file it comes from and the lines it covers, such as `index.php, lines 28–37`. The model occasionally writes a question without a snippet, most often under a **Broader Questions** heading near the end when the requested count is large for the size of the submission. That question appears in the quiz as text only.
+
+A question without distractors, or with a blank option, is left out of the quiz rather than imported with a single option, and the run log names it. The count in the file name is the number of questions the quiz actually holds, so a short quiz can be spotted without opening it.
 
 ## Submission tag folders
 
@@ -109,12 +121,14 @@ With a [tag-triggered workflow](triggers.md#submission-tags), each `submission_t
 {student-login}/
   {tag-group}/                     ← e.g. phase1 or complete
     questions.md
-    raw-ai-output.md
     submissions.md                 ← every run for this tag, with a resubmission count
     history/                       ← question sets replaced by a resubmission
       1-questions.md
     {assignment}_{student-login}_{tag-group}_quiz_{count}.imscc
     {assignment}_{student-login}_{tag-group}_brightspace_quiz_{count}.csv
+    data/
+      questions.json
+      raw-ai-output.md
 ```
 
 The tag group is the `submission_tags` entry reduced to filename-safe characters; for a wildcard entry such as `phase*`, that is `phase`. It appears in the quiz file names and in the quiz title shown in the LMS (`cs-principles-lab-3 - jsmith (phase1)`). Within one group, the one-up-to-date-assessment rule still applies: re-pushing a tag replaces that group's `questions.md` and rebuilds its quiz.

@@ -44,12 +44,13 @@ import {
   stripCommentsFromFiles,
   buildAssessedCodeContent,
   buildCodeContent,
+  buildNumberedCodeContent,
   findCodebaseContextFiles,
   readAssignmentContextFiles,
   selectCodebaseContext,
 } from './files.js';
 import { detectExcludePatterns } from './stack-detection.js';
-import { buildPrompt, PROMPT_TEMPLATE_HASH } from './prompt.js';
+import { buildPrompt, buildResponseFormat, PROMPT_TEMPLATE_HASH } from './prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput, formatPrompt } from './report.js';
 import { postIssue } from './delivery/issue.js';
@@ -70,17 +71,15 @@ import {
 import { generatePdf } from './delivery/pdf.js';
 import { uploadPdfAsset } from './delivery/release-asset.js';
 import {
-  boldQuestionLines,
-  countQuestions,
-  dropQuestionsOnUnassessedFiles,
-  extractContextSummary,
-  normaliseSeparators,
-  redactStudentQuestions,
-  renumberQuestions,
-  repairOrphanFences,
-  splitBoldAroundCode,
-  stripAnswers,
-  truncateToMaxQuestions,
+  arrangeQuestions,
+  carriesAnswer,
+  describeDropped,
+  findLeakedAnswers,
+  findLineReferences,
+  numberQuestions,
+  parseQuestionsReply,
+  renderQuestions,
+  resolveSnippets,
 } from './postprocess.js';
 
 // ─── Run Summary ─────────────────────────────────────────────────────────────
@@ -751,7 +750,7 @@ function loadCodebaseContext({
   files,
   excludePatterns,
 }) {
-  const none = { starterContent: '', earlierContent: '' };
+  const none = { starterContent: '', earlierContent: '', sources: [] };
   if (baseSha === GIT_EMPTY_TREE_SHA) {
     core.info(
       'Codebase context: the whole history is being assessed, so there is no other code to add.',
@@ -777,7 +776,8 @@ function loadCodebaseContext({
     files,
     inputs.codebaseContextMaxChars,
   );
-  const { starterContent, earlierContent, starterFiles, earlierFiles, omitted } = selection;
+  const { starterContent, earlierContent, sources, starterFiles, earlierFiles, omitted } =
+    selection;
   state.codebaseStarterFiles = starterFiles;
   state.codebaseEarlierFiles = earlierFiles;
   state.codebaseContextOmitted = omitted;
@@ -800,7 +800,7 @@ function loadCodebaseContext({
         `\`codebase_context_max_chars\`.`,
     );
   }
-  return { starterContent, earlierContent };
+  return { starterContent, earlierContent, sources };
 }
 
 // ─── Entry Point ─────────────────────────────────────────────────────────────
@@ -993,14 +993,26 @@ async function run() {
     state.rawChars = rawContent.length;
     core.info(`Code size before comment stripping: ${rawContent.length} characters`);
 
+    if (rawFiles.length === 0) {
+      // Every changed file was deleted or binary. Snippets are read back out
+      // of the files by line number, so there is no code to ask about.
+      throw new Error(
+        'None of the changed files could be read as text — they were deleted or are binary — ' +
+          'so there is no code to ask questions about.',
+      );
+    }
+
     let processedFiles;
+    let commentsKept = [];
     if (inputs.keepComments) {
       core.info('Comment stripping skipped (keep_comments is true).');
       core.debug('No comments were removed from the code (keep_comments is true).');
       state.strippedChars = rawContent.length;
       processedFiles = rawFiles;
     } else {
-      const { strippedFiles, strippedCharCount } = stripCommentsFromFiles(rawFiles);
+      const stripped = stripCommentsFromFiles(rawFiles);
+      const { strippedFiles, strippedCharCount } = stripped;
+      ({ commentsKept } = stripped);
       core.info(`Code size after comment stripping: ${strippedCharCount} characters`);
       core.debug(
         `--- CODE AFTER COMMENT STRIPPING ---\n${buildCodeContent(strippedFiles)}\n--- END CODE AFTER COMMENT STRIPPING ---`,
@@ -1020,20 +1032,30 @@ async function run() {
             processedFiles.map((f) => f.filepath),
             baseSha,
           );
+    // A file sent with its comments is compared with its base copy unstripped
+    // too, or the base's comments would be marked as the student's lines.
     if (!inputs.keepComments && baseFiles.length > 0) {
-      baseFiles = stripCommentsFromFiles(baseFiles).strippedFiles;
+      const toStrip = baseFiles.filter((f) => !commentsKept.includes(f.filepath));
+      const stripped = new Map(
+        stripCommentsFromFiles(toStrip).strippedFiles.map((f) => [f.filepath, f]),
+      );
+      baseFiles = baseFiles.map((f) => stripped.get(f.filepath) ?? f);
     }
     const assessed = buildAssessedCodeContent(
       processedFiles,
       new Map(baseFiles.map((f) => [f.filepath, f.content])),
     );
 
+    // The files the AI is sent, line by line, so the snippets it names by line
+    // number can be read back out of them (see resolveSnippets).
     let codeContent;
+    let assessedSources;
     if (assessed.markedFiles.length > 0 && assessed.addedLines === 0) {
       // Every change was to comments, whitespace or deletions, so no line is
       // the student's to ask about. Assess the files whole rather than send
       // the AI a submission with nothing in it to question.
-      codeContent = buildCodeContent(processedFiles);
+      ({ content: codeContent, sources: assessedSources } =
+        buildNumberedCodeContent(processedFiles));
       state.diagnostics.push(
         'No lines of code were added or changed once comments were set aside, so the ' +
           "assessed files were sent whole, without the student's lines marked.",
@@ -1044,6 +1066,7 @@ async function run() {
       );
     } else {
       codeContent = assessed.content;
+      assessedSources = assessed.sources;
       state.markedFiles = assessed.markedFiles;
       if (assessed.markedFiles.length > 0) {
         core.info(
@@ -1051,12 +1074,6 @@ async function run() {
             `before this submission: ${assessed.markedFiles.join(', ')}`,
         );
       }
-    }
-    // Fall back to the raw diff if processing produced no output
-    if (codeContent.trim() === '') {
-      codeContent = diff;
-      state.diagnostics.push('Processed code was empty, so the raw diff was assessed instead.');
-      core.warning('Code content was empty after processing — falling back to raw diff.');
     }
 
     // ── Generate questions using AI ─────────────────────────────────────────
@@ -1075,19 +1092,23 @@ async function run() {
     // Paths only — the contents are instructor material and never rendered.
     state.assignmentContextFiles = assignmentContextFiles;
 
-    const { starterContent: starterContext, earlierContent: earlierContext } =
-      inputs.includeCodebaseContext
-        ? loadCodebaseContext({
-            state,
-            inputs,
-            baseSha,
-            headSha,
-            skippedRange,
-            files,
-            excludePatterns,
-          })
-        : { starterContent: '', earlierContent: '' };
+    const {
+      starterContent: starterContext,
+      earlierContent: earlierContext,
+      sources: codebaseSources,
+    } = inputs.includeCodebaseContext
+      ? loadCodebaseContext({
+          state,
+          inputs,
+          baseSha,
+          headSha,
+          skippedRange,
+          files,
+          excludePatterns,
+        })
+      : { starterContent: '', earlierContent: '', sources: [] };
     const codebaseContextFiles = [...state.codebaseStarterFiles, ...state.codebaseEarlierFiles];
+    const codeSources = [...assessedSources, ...codebaseSources];
 
     // Distractors are stripped from every student-facing copy and are never
     // set as an output, so the instructor repository is the only place they
@@ -1124,108 +1145,162 @@ async function run() {
     );
 
     // Held unmodified so a verbatim copy can be filed alongside the instructor
-    // assessment. Every postprocessor below is lossy — truncateToMaxQuestions
-    // deletes surplus questions outright, renumberQuestions rewrites the
-    // numbering, extractContextSummary cuts its region out — so without this
+    // assessment. Everything below works on the parsed questions and is lossy —
+    // arrangeQuestions deletes surplus questions outright, and a question
+    // without an answer never makes it out of the parse — so without this
     // variable the model's actual reply exists nowhere after this line, and
-    // diagnosing a postprocessing bug means re-running against a live model.
-    const { content: aiOutput, metadata: aiResponse } = await callAI({
+    // diagnosing a parsing bug means re-running against a live model.
+    const {
+      content: aiOutput,
+      parsed: reply,
+      metadata: aiResponse,
+    } = await callAI({
       provider: inputs.aiProvider,
       model: inputs.aiModel,
       apiKey: inputs.apiKey,
       messages,
       retryMaxAttempts: inputs.aiRetryMaxAttempts,
       temperature: inputs.aiTemperature,
+      responseFormat: buildResponseFormat({
+        includeDistractors,
+        includeContextSummary: Boolean(inputs.instructorContext),
+      }),
+      // Snippets are resolved against the submitted code here, inside the
+      // retry loop, so a reply in which no question points at it is retried
+      // like one that is not JSON.
+      parse: (text) => {
+        const parsed = parseQuestionsReply(text);
+        const resolved = resolveSnippets(parsed.questions, codeSources);
+        if (resolved.questions.length === 0) {
+          throw new Error(
+            "no question in the reply shows lines of the student's code that were sent to it",
+          );
+        }
+        return { ...parsed, resolved };
+      },
     });
+    const { contextSummary } = reply;
 
-    // An opening fence the model left out would otherwise hide the stem and
-    // answer below it inside "code", beyond every pass that follows.
-    const { text: fencedOutput, repaired: fencesRepaired } = repairOrphanFences(aiOutput);
-    if (fencesRepaired > 0) {
+    if (reply.salvaged) {
       core.warning(
-        `Restored ${fencesRepaired} missing opening code fence(s) in the AI output — ` +
-          `check those snippets in the report against the raw AI output.`,
+        `The AI reply was not complete JSON; recovered ${reply.questions.length} complete ` +
+          `question(s) from it. Check data/raw-ai-output.md in the instructor repository.`,
       );
       state.diagnostics.push(
-        `${fencesRepaired} code snippet(s) were missing their opening fence and had one restored.`,
+        `The AI reply was not complete JSON, so only the ${reply.questions.length} complete ` +
+          `question(s) in it were used.`,
       );
     }
-    const rawQuestions = truncateToMaxQuestions(
-      renumberQuestions(fencedOutput),
+    if (reply.malformed.length > 0) {
+      // Positions only — the Actions log is readable by the student, so the
+      // entries themselves are never quoted.
+      const where = `entr${reply.malformed.length === 1 ? 'y' : 'ies'} ${reply.malformed.join(', ')} of ${reply.entries}`;
+      core.warning(
+        `Dropped ${reply.malformed.length} question(s) from the AI reply that had no question ` +
+          `text or no answer (${where} in the reply).`,
+      );
+      state.diagnostics.push(
+        `${reply.malformed.length} question(s) in the AI reply had no question text or no ` +
+          `answer and were dropped (${where}).`,
+      );
+    }
+    // Each dropped question is named by its position in the reply and the
+    // file and lines it pointed at, so the log alone says whether the model
+    // asked about the wrong code or named the wrong lines.
+    const { resolved } = reply;
+    if (resolved.unresolved.length > 0) {
+      const where = describeDropped(resolved.unresolved, reply.entries);
+      core.warning(
+        `Dropped ${resolved.unresolved.length} question(s) whose snippets named a file the AI ` +
+          `was not sent or lines that file does not have (${where}).`,
+      );
+      state.diagnostics.push(
+        `${resolved.unresolved.length} question(s) were dropped because their snippets did not ` +
+          `point at the submitted code (${where}).`,
+      );
+    }
+    if (resolved.notStudentWork.length > 0) {
+      const where = describeDropped(resolved.notStudentWork, reply.entries);
+      core.warning(
+        `Dropped ${resolved.notStudentWork.length} question(s) whose snippets showed none of the ` +
+          `student's own lines in this submission (${where}).`,
+      );
+      state.diagnostics.push(
+        `${resolved.notStudentWork.length} question(s) were dropped because they showed only ` +
+          `code the student did not write in this submission (${where}).`,
+      );
+    }
+    const { questions: arranged, surplus } = arrangeQuestions(
+      resolved.questions,
       inputs.numQuestions,
     );
-
-    // Extract the AI-generated context summary (only present when instructorContext was set).
-    // One call does both halves — reading the summary and removing its region —
-    // so a closing marker the model drifted on cannot leave the note missing
-    // and the raw block visible at the same time, which is what it did.
-    const { summary: contextSummary, rest: questionsWithoutSummary } =
-      extractContextSummary(rawQuestions);
-    // Separators are restored here, ahead of the split into the two copies,
-    // because both are cut on --- downstream: a missing one merges two
-    // questions into one quiz item in the instructor copy, and into one block
-    // that redactStudentQuestions can only withhold as a whole in the student's.
-    const normalisedQuestions = normaliseSeparators(
-      splitBoldAroundCode(boldQuestionLines(questionsWithoutSummary.trim())),
+    if (surplus > 0) {
+      core.warning(
+        `AI generated more than ${inputs.numQuestions} questions — truncating to the requested count.`,
+      );
+    }
+    // Numbered once, here, so every copy of the report numbers a question the
+    // same way — the student's copy keeps the gaps a withheld question leaves.
+    const finalQuestions = numberQuestions(arranged);
+    // Filed in the instructor's questions.json, in reply order, so a dropped
+    // question can be read there rather than only named in a warning.
+    const droppedQuestions = [...resolved.unresolved, ...resolved.notStudentWork].sort(
+      (a, b) => a.entry - b.entry,
     );
 
-    // The model also sees assignment and instructor context, and now and then
-    // asks about a file from there — or one it made up — instead of the code
-    // under assessment. Such questions are dropped from both copies, as is one
-    // that shows codebase context without any assessed code beside it.
-    const {
-      text: cleanedQuestions,
-      dropped: offTarget,
-      unassessed,
-      failedOpen,
-    } = dropQuestionsOnUnassessedFiles(normalisedQuestions, files, codebaseContextFiles);
-    if (offTarget > 0) {
+    if (includeDistractors) {
+      const short = finalQuestions.filter((q) => q.distractors.length !== 3).length;
+      if (short > 0) {
+        core.warning(
+          `${short} question(s) arrived without exactly three distractors. The quiz workflow ` +
+            `withholds any question that has none.`,
+        );
+      }
+    }
+
+    // Only warned about, since the question itself is sound: this measures how
+    // well the model keeps to the prompt's rule against citing line numbers.
+    const citesLines = findLineReferences(finalQuestions);
+    if (citesLines.length > 0) {
       core.warning(
-        `Dropped ${offTarget} question(s) about files that are not being assessed: ` +
-          `${unassessed.join(', ')}.`,
-      );
-      state.diagnostics.push(
-        `${offTarget} question(s) about files outside the assessed set were dropped ` +
-          `(${unassessed.map((f) => `\`${f}\``).join(', ')}).`,
-      );
-    } else if (failedOpen) {
-      core.warning(
-        `Every question named a file that is not being assessed (${unassessed.join(', ')}), ` +
-          `so none were dropped — check the filename headers in the raw AI output.`,
+        `${citesLines.length} question(s) name a line number, which the student's report does ` +
+          `not show beside the code (question(s) ${citesLines.map((q) => q.number).join(', ')}).`,
       );
     }
 
-    // Distractors are always stripped from the student copy; the correct answer
-    // too unless include_answers is set. cleanedQuestions retains both for the
-    // instructor copy.
+    // Distractors never reach the student copy; the correct answer only with
+    // include_answers.
     let questions;
+    // The context summary is shown to the student as the Instructor Note, so
+    // it is held to the same leak check as the question text. The instructor
+    // copy keeps it either way.
+    let studentContextSummary = contextSummary;
     if (inputs.includeAnswers) {
-      questions = stripAnswers(cleanedQuestions, { keepAnswers: true });
+      questions = renderQuestions(finalQuestions, { view: 'answers' });
+      state.questionsGenerated = finalQuestions.length;
     } else {
-      // Fail-closed: withhold any question that lacked a recognisable answer
-      // block or whose correct-answer text survived redaction (e.g. the model
-      // was injected into echoing it), rather than risk a leak.
-      const { text, structural, leak, dropped } = redactStudentQuestions(cleanedQuestions);
-      questions = text;
-      state.questionsWithheld = dropped;
-      if (structural > 0) {
+      // Fail-closed: withhold any question whose text carries a correct answer
+      // (e.g. the model was injected into echoing it), rather than risk a leak.
+      const leaked = new Set(findLeakedAnswers(finalQuestions));
+      const shown = finalQuestions.filter((q) => !leaked.has(q));
+      questions = renderQuestions(shown, { view: 'student' });
+      state.questionsGenerated = shown.length;
+      state.questionsWithheld = leaked.size;
+      if (leaked.size > 0) {
         core.warning(
-          `Structural guard: withheld ${structural} question(s) without a recognisable ` +
-            `**Answer:** heading or answer container, so the stripped view could not be ` +
-            `confirmed answer-free — check the submitted code for prompt injection.`,
+          `Answer-leak guard: withheld ${leaked.size} question(s) whose question text carries ` +
+            `a correct answer — check the submitted code for prompt injection.`,
         );
+        questions += `\n\n> [!NOTE]\n> ${leaked.size} question(s) were withheld from this report pending instructor review.`;
       }
-      if (leak > 0) {
+      if (contextSummary && carriesAnswer(contextSummary, finalQuestions)) {
+        studentContextSummary = '';
         core.warning(
-          `Answer-leak guard: withheld ${leak} question(s) whose correct-answer text survived ` +
-            `redaction in the student view — check the submitted code for prompt injection.`,
+          'Answer-leak guard: left the Instructor Note out of the student report because it ' +
+            'carries a correct answer — check the submitted code for prompt injection.',
         );
-      }
-      if (dropped > 0) {
-        questions += `\n\n> [!NOTE]\n> ${dropped} question(s) were withheld from this report pending instructor review.`;
       }
     }
-    state.questionsGenerated = countQuestions(questions);
 
     // ── Build base report (PDF source — no self-referencing link) ───────────
     const sourceRepo = `${ctx.repo.owner}/${ctx.repo.repo}`;
@@ -1242,7 +1317,7 @@ async function run() {
       previousTagName: state.previousTagName,
       assignmentContextFiles,
       codebaseContextFiles,
-      contextSummary,
+      contextSummary: studentContextSummary,
       studentLogin: submitter,
       sourceRepo,
     });
@@ -1293,7 +1368,7 @@ async function run() {
       previousTagName: state.previousTagName,
       assignmentContextFiles,
       codebaseContextFiles,
-      contextSummary,
+      contextSummary: studentContextSummary,
       studentLogin: submitter,
       sourceRepo,
       pdfUrl,
@@ -1358,18 +1433,9 @@ async function run() {
         headers: { 'X-GitHub-Api-Version': GITHUB_API_VERSION },
       });
       const instructorRepoName = assignmentName + INSTRUCTOR_REPO_SUFFIX;
-      // Keep answers, distractors AND the answer-container markers for the
-      // instructor copy. The markers used to be stripped here to keep the
-      // rendered Markdown clean, but they are HTML comments — invisible in
-      // rendered Markdown either way — and generate-lms-quiz.yml parses this
-      // exact file. Stripping them left the workflow with nothing but the
-      // **Answer:**/**Distractors…** headings to find the options by, matched
-      // literally, so a single heading the model re-worded cost the question
-      // its distractors (observed: the heading emitted as
-      // `<!-- Distractors for Multiple-Choice Quiz: -->`, 7 questions withheld
-      // from one quiz). The container is the one boundary the model marks
-      // explicitly, so it is now carried through for the parser to use.
-      const instructorQuestions = cleanedQuestions;
+      // Answers and distractors. The quiz is built from the same questions,
+      // filed as data/questions.json beside this copy.
+      const instructorQuestions = renderQuestions(finalQuestions, { view: 'instructor' });
 
       // ── Submission record (tag runs only) ─────────────────────────────────
       // Read before the report is built so the instructor copy's header can
@@ -1470,6 +1536,8 @@ async function run() {
           studentLogin: submitter,
           tagGroup: tagSlug,
           content: instructorReport,
+          questions: finalQuestions,
+          droppedQuestions,
           headSha,
           rawOutput: rawOutputCopy,
           prompt: promptCopy,

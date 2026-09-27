@@ -141,11 +141,11 @@ function provenanceComment(record) {
  * Assembles the verbatim copy of the model's reply, with a short provenance
  * header above it.
  *
- * The reply is embedded unfenced and unaltered. Wrapping it in a code fence
- * would read better in the rendered view, but the reply contains fences of its
- * own — a wrapper could be closed early by the model's own text and corrupt the
- * very copy this file exists to preserve. Verbatim bytes are the point; use
- * GitHub's raw view to see markers and whitespace as the model emitted them.
+ * The reply is JSON (see prompt.js), so it is fenced as JSON, unaltered. The
+ * fence is one backtick longer than the longest run in the reply, as in
+ * formatPrompt, so nothing the model wrote — a reply it wrapped in a fence of
+ * its own, say — can close it early and corrupt the very copy this file exists
+ * to preserve.
  *
  * The header is written twice over: readable lines for an instructor, and a
  * `<!-- gmc:provenance {...} -->` comment holding the same facts as JSON, with
@@ -216,6 +216,9 @@ export function formatRawOutput({
     responseLines.push(`> - **Attempts:** ${response.attempts}${retryNote} · ${seconds} s`);
   }
 
+  const longestRun = Math.max(0, ...(rawOutput.match(/`+/g) ?? []).map((run) => run.length));
+  const fence = '`'.repeat(Math.max(3, longestRun + 1));
+
   const provenance = provenanceComment({
     version: 1,
     generatedAt,
@@ -234,8 +237,8 @@ export function formatRawOutput({
     '',
     '> [!NOTE]',
     "> Everything below the rule is the model's reply exactly as received, before",
-    '> any renumbering, truncation, summary extraction or formatting. It is kept',
-    '> for diagnosis and is not the assessment — see `questions.md` for that.',
+    '> GrillMyCode parsed, checked, numbered or formatted it. It is kept for',
+    '> diagnosis and is not the assessment — see `questions.md` for that.',
     '',
     `> **Generated:** ${date}`,
     studentNote,
@@ -252,7 +255,10 @@ export function formatRawOutput({
     '',
     '---',
     '',
+    `${fence}json`,
     rawOutput,
+    fence,
+    '',
   ].join('\n');
 }
 

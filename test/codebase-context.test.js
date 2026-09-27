@@ -10,9 +10,9 @@ import {
   collectFilesAt,
   findCodebaseContextFiles,
   folderDistance,
+  keepsLinePositions,
   selectCodebaseContext,
 } from '../src/files.js';
-import { dropQuestionsOnUnassessedFiles } from '../src/postprocess.js';
 import { buildPrompt } from '../src/prompt.js';
 import { GIT_EMPTY_TREE_SHA } from '../src/constants.js';
 
@@ -53,6 +53,16 @@ describe('diffLines', () => {
     ]);
   });
 
+  // An editor starts a new line at a lone CR, so the marked file has to as
+  // well, or its line numbers would drift from the student's.
+  it('treats a lone CR as a line break', () => {
+    expect(diffLines('a\rb\r', 'a\rb\rc\r')).toEqual([
+      { marker: ' ', text: 'a' },
+      { marker: ' ', text: 'b' },
+      { marker: '+', text: 'c' },
+    ]);
+  });
+
   it('keeps a long file in one piece, however far apart the changes are', () => {
     const lines = Array.from({ length: 200 }, (_, i) => `line ${i}`);
     const edited = [...lines];
@@ -64,18 +74,21 @@ describe('diffLines', () => {
 });
 
 describe('buildAssessedCodeContent', () => {
-  it('renders a new file plainly and counts every line as the student’s', () => {
-    const { content, markedFiles, addedLines } = buildAssessedCodeContent(
-      [{ filepath: 'src/new.py', content: 'x = 1\ny = 2\n' }],
+  it('numbers a new file’s lines and counts every one as the student’s', () => {
+    const { content, sources, markedFiles, addedLines } = buildAssessedCodeContent(
+      [{ filepath: 'src/new.py', content: 'x = 1\r\ny = 2\n\n' }],
       new Map(),
     );
-    expect(content).toBe('### `src/new.py`\n```py\nx = 1\ny = 2\n```');
+    expect(content).toBe('### `src/new.py`\n```py\n1 | x = 1\n2 | y = 2\n```');
+    expect(sources).toEqual([
+      { filepath: 'src/new.py', lines: ['x = 1', 'y = 2'], studentLines: 'all' },
+    ]);
     expect(markedFiles).toEqual([]);
     expect(addedLines).toBe(2);
   });
 
-  it('marks the student’s lines in a file that existed at the base', () => {
-    const { content, markedFiles, addedLines } = buildAssessedCodeContent(
+  it('marks the student’s lines in a file that existed at the base, numbering the file as it is now', () => {
+    const { content, sources, markedFiles, addedLines } = buildAssessedCodeContent(
       [{ filepath: 'app.js', content: 'const a = 1;\nconst b = 3;\n' }],
       new Map([['app.js', 'const a = 1;\nconst b = 2;\n']]),
     );
@@ -83,8 +96,46 @@ describe('buildAssessedCodeContent', () => {
     expect(addedLines).toBe(1);
     expect(content).toBe(
       "### `app.js` (existed before this submission — student's lines marked)\n" +
-        '```js\n const a = 1;\n-const b = 2;\n+const b = 3;\n```',
+        '```js\n  1 | const a = 1;\n-   | const b = 2;\n+ 2 | const b = 3;\n```',
     );
+    expect(sources).toEqual([
+      { filepath: 'app.js', lines: ['const a = 1;', 'const b = 3;'], studentLines: new Set([2]) },
+    ]);
+  });
+
+  it('pads line numbers to the widest one', () => {
+    const content = Array.from({ length: 10 }, (_, i) => `line ${i + 1}`).join('\n');
+    const numbered = buildAssessedCodeContent([{ filepath: 'a.txt', content }], new Map()).content;
+    expect(numbered).toContain('\n 9 | line 9\n10 | line 10\n');
+  });
+
+  // The blank lines a removed comment leaves behind are shown once, and the
+  // numbers skip them, so each line keeps its number in the student's file.
+  it('shows one blank line of a run and keeps every line’s own number', () => {
+    const { content, sources } = buildAssessedCodeContent(
+      [{ filepath: 'a.js', content: '\nconst a = 1;\n\n\n\nconst b = 2;\n' }],
+      new Map(),
+    );
+    expect(content).toBe('### `a.js`\n```js\n1 |\n2 | const a = 1;\n3 |\n6 | const b = 2;\n```');
+    expect(sources[0].lines[5]).toBe('const b = 2;');
+  });
+
+  it('never counts a blank line as the student’s, nor shows a removed one', () => {
+    const { content, sources, addedLines } = buildAssessedCodeContent(
+      [{ filepath: 'a.js', content: 'const a = 1;\n\nconst b = 2;\n' }],
+      new Map([['a.js', 'const a = 1;\n\n\nconst b = 2;\n']]),
+    );
+    expect(addedLines).toBe(0);
+    expect(sources[0].studentLines).toEqual(new Set());
+    expect(content).not.toMatch(/^- +\|$/m);
+  });
+
+  it('counts only the non-blank lines of a new file', () => {
+    const { addedLines } = buildAssessedCodeContent(
+      [{ filepath: 'a.py', content: 'x = 1\n\ny = 2\n' }],
+      new Map(),
+    );
+    expect(addedLines).toBe(2);
   });
 
   it('counts no student lines when a starter file is unchanged after processing', () => {
@@ -94,6 +145,26 @@ describe('buildAssessedCodeContent', () => {
     );
     expect(markedFiles).toEqual(['app.js']);
     expect(addedLines).toBe(0);
+  });
+});
+
+// Output of rmcm, the comment remover, run without collapsing blank lines.
+describe('keepsLinePositions', () => {
+  const original = '<?php\n// note\n/**\n * doc\n */\n$a = 1; // why\n$b = /* x */ 2;\n';
+  const stripped = '<?php\n\n\n\n\n$a = 1; \n$b =  2;\n';
+
+  it('accepts a copy with comments taken out of lines that stay put', () => {
+    expect(keepsLinePositions(original, stripped)).toBe(true);
+    expect(keepsLinePositions(original.replace(/\n/g, '\r\n'), stripped)).toBe(true);
+    expect(keepsLinePositions(original, stripped.slice(0, -1))).toBe(true);
+  });
+
+  it('rejects a copy whose blank lines were collapsed', () => {
+    expect(keepsLinePositions(original, '<?php\n\n$a = 1; \n$b =  2;\n')).toBe(false);
+  });
+
+  it('rejects a copy with a line changed rather than cut down', () => {
+    expect(keepsLinePositions(original, stripped.replace('$a = 1;', '$a = 2;'))).toBe(false);
   });
 });
 
@@ -160,39 +231,17 @@ describe('selectCodebaseContext', () => {
     expect(earlierFiles).toEqual([]);
     expect(omitted).toEqual([]);
   });
-});
 
-describe('dropQuestionsOnUnassessedFiles with codebase context files', () => {
-  const question = (n, ...headers) =>
-    [
-      ...headers.flatMap((h) => [`**${h}**`, '', '```', 'code', '```', '']),
-      `${n}. What does this do?`,
-      '',
-      '<!-- gmc:answer -->',
-      '**Answer:**',
-      '- it works',
-      '<!-- /gmc:answer -->',
-    ].join('\n');
-  const report = (...blocks) => blocks.join('\n\n---\n\n');
-
-  it('keeps a question showing starter code beside the student’s code', () => {
-    const text = report(question(1, 'src/main.py', 'src/board.py'), question(2, 'main.py'));
-    const result = dropQuestionsOnUnassessedFiles(text, ['src/main.py'], ['src/board.py']);
-    expect(result.dropped).toBe(0);
-  });
-
-  it('drops a question that shows only codebase context', () => {
-    const text = report(question(1, 'src/board.py'), question(2, 'src/main.py'));
-    const result = dropQuestionsOnUnassessedFiles(text, ['src/main.py'], ['src/board.py']);
-    expect(result.dropped).toBe(1);
-    expect(result.unassessed).toEqual(['src/board.py']);
-  });
-
-  it('still drops a question pairing student code with a file that is neither', () => {
-    const text = report(question(1, 'src/main.py', 'README.md'), question(2, 'src/main.py'));
-    const result = dropQuestionsOnUnassessedFiles(text, ['src/main.py'], ['src/board.py']);
-    expect(result.dropped).toBe(1);
-    expect(result.unassessed).toEqual(['README.md']);
+  it('numbers the chosen files and counts none of their lines as the student’s', () => {
+    const { starterContent, sources } = selectCodebaseContext(
+      [{ filepath: 'src/board.py', content: 'rows = 3\n', kind: 'starter' }],
+      ['src/game.py'],
+      1000,
+    );
+    expect(starterContent).toBe('### `src/board.py`\n```py\n1 | rows = 3\n```');
+    expect(sources).toEqual([
+      { filepath: 'src/board.py', lines: ['rows = 3'], studentLines: new Set() },
+    ]);
   });
 });
 

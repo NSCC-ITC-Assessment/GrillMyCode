@@ -86,10 +86,17 @@ export function collectFilesAt(paths, sha) {
  * stripped entries. Falls back silently to the original content when the
  * file type is unsupported or the binary is unavailable.
  *
- * Returns the stripped file entries and cumulative character count.
+ * Every line stays where it was: rmcm is run without collapsing blank lines,
+ * so a removed comment leaves its lines behind empty, and the line numbers the
+ * AI names snippets by are the student's own. A file whose stripped copy fails
+ * that check (see keepsLinePositions) is sent with its comments, with a warning.
+ *
+ * Returns the stripped file entries, cumulative character count, and
+ * `commentsKept`, the paths that failed the check.
  */
 export function stripCommentsFromFiles(rawFiles) {
   const strippedFiles = [];
+  const commentsKept = [];
   let strippedCharCount = 0;
 
   for (const { filepath, content } of rawFiles) {
@@ -98,12 +105,20 @@ export function stripCommentsFromFiles(rawFiles) {
 
     try {
       fs.writeFileSync(tmpFile, content, 'utf-8');
-      const result = spawnSync(COMMENT_REMOVER_BIN, ['--collapse-whitespace', '1', tmpFile], {
+      const result = spawnSync(COMMENT_REMOVER_BIN, [tmpFile], {
         encoding: 'utf-8',
         timeout: COMMENT_STRIP_TIMEOUT_MS,
       });
       if (result.status === 0) {
-        stripped = result.stdout;
+        if (keepsLinePositions(content, result.stdout)) {
+          stripped = result.stdout;
+        } else {
+          commentsKept.push(filepath);
+          core.warning(
+            `Comments were kept in ${filepath}: removing them moved its lines, and the ` +
+              `line numbers the questions are built from must match the student's file.`,
+          );
+        }
       }
       // Non-zero exit means unsupported/unrecognised type — silently use original
     } catch {
@@ -120,12 +135,41 @@ export function stripCommentsFromFiles(rawFiles) {
     strippedFiles.push({ filepath, content: stripped });
   }
 
-  return { strippedFiles, strippedCharCount };
+  return { strippedFiles, strippedCharCount, commentsKept };
+}
+
+/** A text's lines, splitting at every line break an editor would: CRLF, LF or a lone CR. */
+function splitLines(text) {
+  return text.split(/\r\n|\r|\n/);
 }
 
 /**
- * Formats file entries as a series of fenced code blocks, one per file,
- * for inclusion in the AI prompt.
+ * Whether `stripped` keeps every line of `original` where it was: as many
+ * lines, each one the original line with only characters taken out. A final
+ * line break on one and not the other is ignored.
+ */
+export function keepsLinePositions(original, stripped) {
+  const lines = (text) => splitLines(text.replace(/(\r\n|\r|\n)$/, ''));
+  const before = lines(original);
+  const after = lines(stripped);
+  return after.length === before.length && after.every((line, i) => isSubsequence(line, before[i]));
+}
+
+/** Whether every character of `part` appears in `whole`, in order. */
+function isSubsequence(part, whole) {
+  let j = 0;
+  for (const ch of part) {
+    j = whole.indexOf(ch, j);
+    if (j === -1) return false;
+    j += ch.length;
+  }
+  return true;
+}
+
+/**
+ * Formats file entries as a series of fenced code blocks, one per file: the
+ * code as it is, for the code_after_strip output and size counts. The prompt
+ * numbers its lines instead (see buildNumberedCodeContent).
  */
 export function buildCodeContent(files) {
   return files.map(codeSection).join('\n\n');
@@ -136,6 +180,69 @@ function codeSection({ filepath, content }) {
   return `### \`${filepath}\`\n\`\`\`${ext}\n${content.trimEnd()}\n\`\`\``;
 }
 
+/** A file's lines as the prompt numbers them, with no trailing blank lines. */
+function splitFileLines(content) {
+  const text = content.replace(/\s+$/, '');
+  return text ? splitLines(text) : [];
+}
+
+/**
+ * One file as a fenced block for the prompt, every line led by its line number
+ * and `| `, so the model names the lines a snippet shows rather than copying
+ * them. `entries` are `{ number, text }`, plus `marker` in a marked file, where
+ * the marker column (LINE_MARKERS) comes first and a removed line, no longer in
+ * the file, has no number.
+ *
+ * Only the first of a run of blank lines is shown — the lines a removed
+ * comment leaves behind — and a removed blank line not at all. The numbers
+ * skip over them, so each line keeps its number in the student's file.
+ */
+function numberedSection(filepath, entries, heading = '') {
+  const width = String(Math.max(1, ...entries.map((e) => e.number ?? 0))).length;
+  let previousBlank = false;
+  const shown = entries.filter(({ number, text }) => {
+    const blank = !text.trim();
+    const show = !blank || (number !== null && !previousBlank);
+    if (show) previousBlank = blank;
+    return show;
+  });
+  const body = shown
+    .map(({ marker, number, text }) => {
+      const lead = marker === undefined ? '' : `${marker} `;
+      const num = number === null ? ' '.repeat(width) : String(number).padStart(width);
+      return `${lead}${num} | ${text}`.trimEnd();
+    })
+    .join('\n');
+  const ext = path.extname(filepath).slice(1);
+  return `### \`${filepath}\`${heading}\n\`\`\`${ext}\n${body}\n\`\`\``;
+}
+
+/**
+ * Formats files for the prompt with numbered lines (see numberedSection), and
+ * returns each file's lines so the snippets the model names by line number can
+ * be read back out (see resolveSnippets in postprocess.js).
+ *
+ * Returns `{ content, sources }`. Each source is `{ filepath, lines,
+ * studentLines }`: `studentLines` is 'all' when every line is the student's
+ * work in this submission, and an empty set for `student: false` — codebase
+ * context, which is never theirs to be assessed on.
+ */
+export function buildNumberedCodeContent(files, { student = true } = {}) {
+  const sections = [];
+  const sources = [];
+  for (const { filepath, content } of files) {
+    const lines = splitFileLines(content);
+    sections.push(
+      numberedSection(
+        filepath,
+        lines.map((text, i) => ({ number: i + 1, text })),
+      ),
+    );
+    sources.push({ filepath, lines, studentLines: student ? 'all' : new Set() });
+  }
+  return { content: sections.join('\n\n'), sources };
+}
+
 /**
  * Formats the assessed files for the prompt, marking the student's lines in
  * any file that already existed before the assessed range.
@@ -143,42 +250,60 @@ function codeSection({ filepath, content }) {
  * `baseByPath` maps a file path to its content at the base of the range,
  * processed the same way as `files` (comments stripped or not). A file with no
  * entry there is new in the range — every line is the student's — and is
- * rendered as a plain block. A file with one is rendered in full with a
- * marker column (LINE_MARKERS): lines the student added or changed, lines they
- * removed, and unchanged lines, which are context rather than their work.
+ * rendered as a plain numbered block. A file with one is rendered in full with
+ * a marker column (LINE_MARKERS): lines the student added or changed, lines
+ * they removed, and unchanged lines, which are context rather than their work.
  * Without the markers a one-line edit to a starter file would put the whole
- * file up for questions.
+ * file up for questions. Line numbers count the file as it is now, so a
+ * removed line has none.
  *
- * Returns `{ content, markedFiles, addedLines }`: the files rendered with
- * markers, and how many lines across the whole submission the student wrote
- * (every line of a new file, the added lines of a marked one), which the caller
- * uses to tell a submission with nothing to mark from one that has work in it.
+ * Returns `{ content, sources, markedFiles, addedLines }`: the files rendered
+ * with markers, their lines (see buildNumberedCodeContent; a marked file's
+ * `studentLines` is the set of its added line numbers), and how many lines
+ * across the whole submission the student wrote, which the caller uses to tell
+ * a submission with nothing to mark from one that has work in it. Blank lines
+ * are never counted as the student's.
  */
 export function buildAssessedCodeContent(files, baseByPath) {
   const sections = [];
+  const sources = [];
   const markedFiles = [];
   let addedLines = 0;
 
   for (const file of files) {
     if (!baseByPath.has(file.filepath)) {
-      sections.push(codeSection(file));
-      if (file.content.trim()) addedLines += file.content.trimEnd().split('\n').length;
+      const numbered = buildNumberedCodeContent([file]);
+      sections.push(numbered.content);
+      sources.push(...numbered.sources);
+      addedLines += numbered.sources[0].lines.filter((line) => line.trim()).length;
       continue;
     }
 
-    const lines = diffLines(baseByPath.get(file.filepath), file.content);
-    addedLines += lines.filter((l) => l.marker === LINE_MARKERS.added).length;
+    const lines = [];
+    const added = new Set();
+    const entries = diffLines(baseByPath.get(file.filepath), file.content).map(
+      ({ marker, text }) => {
+        if (marker === LINE_MARKERS.removed) return { marker, number: null, text };
+        lines.push(text);
+        // A blank line is nobody's work: it is often all a changed comment
+        // leaves behind once stripped.
+        if (marker === LINE_MARKERS.added && text.trim()) added.add(lines.length);
+        return { marker, number: lines.length, text };
+      },
+    );
+    addedLines += added.size;
     markedFiles.push(file.filepath);
-
-    const ext = path.extname(file.filepath).slice(1);
-    const body = lines.map((l) => `${l.marker}${l.text}`.trimEnd()).join('\n');
+    sources.push({ filepath: file.filepath, lines, studentLines: added });
     sections.push(
-      `### \`${file.filepath}\` (existed before this submission — student's lines marked)\n` +
-        `\`\`\`${ext}\n${body}\n\`\`\``,
+      numberedSection(
+        file.filepath,
+        entries,
+        " (existed before this submission — student's lines marked)",
+      ),
     );
   }
 
-  return { content: sections.join('\n\n'), markedFiles, addedLines };
+  return { content: sections.join('\n\n'), sources, markedFiles, addedLines };
 }
 
 /** Directory segments of a path's parent folder ('' for a root-level file). */
@@ -265,8 +390,9 @@ export function findCodebaseContextFiles({
  * a class or function, which is worse than not showing it. One that does not
  * fit is left out and the next, smaller one is still tried.
  *
- * Returns `{ starterContent, earlierContent, starterFiles, earlierFiles,
- * omitted }` — the formatted blocks for each kind, the paths that made it into
+ * Returns `{ starterContent, earlierContent, sources, starterFiles,
+ * earlierFiles, omitted }` — the numbered blocks for each kind, the chosen
+ * files' lines (see buildNumberedCodeContent), the paths that made it into
  * each, and the paths left out for size.
  */
 export function selectCodebaseContext(candidates, assessedFiles, maxChars) {
@@ -287,7 +413,7 @@ export function selectCodebaseContext(candidates, assessedFiles, maxChars) {
   for (const file of ordered) {
     // Counted as if every file shared one block; split across two, the
     // separators only shrink, so the total never exceeds maxChars.
-    const cost = codeSection(file).length + (used > 0 ? 2 : 0);
+    const cost = numberedContext([file]).content.length + (used > 0 ? 2 : 0);
     if (used + cost > maxChars) {
       omitted.push(file.filepath);
       continue;
@@ -296,13 +422,21 @@ export function selectCodebaseContext(candidates, assessedFiles, maxChars) {
     used += cost;
   }
 
+  const starter = numberedContext(chosen.starter);
+  const earlier = numberedContext(chosen.earlier);
   return {
-    starterContent: buildCodeContent(chosen.starter),
-    earlierContent: buildCodeContent(chosen.earlier),
+    starterContent: starter.content,
+    earlierContent: earlier.content,
+    sources: [...starter.sources, ...earlier.sources],
     starterFiles: chosen.starter.map((f) => f.filepath),
     earlierFiles: chosen.earlier.map((f) => f.filepath),
     omitted,
   };
+}
+
+/** Codebase context files, numbered like the submission but never the student's work. */
+function numberedContext(files) {
+  return buildNumberedCodeContent(files, { student: false });
 }
 
 /**

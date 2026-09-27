@@ -8,9 +8,14 @@
  * automatically using exponential backoff with full jitter. 429 responses
  * that include a Retry-After header have that value honoured in preference
  * to the calculated backoff delay, up to the same AI_RETRY_MAX_DELAY_MS cap
- * as every other wait. The same status codes are retried when a
+ * as every other wait; without one, a 429 waits at least
+ * AI_RETRY_RATE_LIMIT_DELAY_MS. The same status codes are retried when a
  * 200 response carries them in an error body (a failure after generation
  * started), as are 200 responses whose body is not valid JSON.
+ *
+ * A `parse` callback turns the reply text into what the caller needs. A reply
+ * it rejects is retried like a transport failure, unless the model stopped at
+ * the output token limit — a retry would hit the same limit again.
  *
  * Alongside the text, callAI returns the response metadata the provenance
  * header of raw-ai-output.md records — above all `finish_reason`, without
@@ -23,6 +28,7 @@ import {
   AI_TOP_P,
   AI_RETRY_BASE_DELAY_MS,
   AI_RETRY_MAX_DELAY_MS,
+  AI_RETRY_RATE_LIMIT_DELAY_MS,
   AI_RETRYABLE_STATUS_CODES,
 } from './constants.js';
 
@@ -38,6 +44,51 @@ function sleep(ms) {
 function backoffDelay(attempt, baseMs, maxMs) {
   const cap = Math.min(maxMs, baseMs * Math.pow(2, attempt));
   return Math.floor(Math.random() * cap);
+}
+
+/** "429 Too Many Requests", or just "429" when HTTP/2 sends no reason phrase. */
+function statusLabel(response) {
+  return response.statusText ? `${response.status} ${response.statusText}` : `${response.status}`;
+}
+
+/**
+ * Returns a plain-language explanation when an OpenRouter error object says the
+ * model's upstream provider is rate-limiting OpenRouter's shared pool — a limit
+ * on every OpenRouter user of the model, which no change to the API key's
+ * balance fixes — or null for any other error.
+ */
+function upstreamRateLimitNote(error) {
+  const metadata = error?.metadata;
+  if (metadata?.limit_source !== 'upstream_provider_shared_pool') return null;
+  const provider = typeof metadata.provider_name === 'string' ? ` (${metadata.provider_name})` : '';
+  return (
+    `The model's upstream provider${provider} is rate-limiting every OpenRouter user of ` +
+    'this model, not just this API key. Re-run the workflow later, remove a routing ' +
+    'variant such as :nitro so other providers can be tried, or choose another model. See ' +
+    'https://grillmycode.org/docs/ai-providers/openrouter#retries-and-rate-limits'
+  );
+}
+
+/** Parses an error response body as OpenRouter's { error } JSON, or returns null. */
+function parseErrorBody(text) {
+  try {
+    return JSON.parse(text)?.error ?? null;
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Returns the backoff delay for a retryable status: a 429 with no Retry-After
+ * waits at least AI_RETRY_RATE_LIMIT_DELAY_MS and backs off from that base;
+ * every other status uses the ordinary full-jitter backoff.
+ */
+function retryDelay(status, attempt) {
+  if (status === 429) {
+    const delay = backoffDelay(attempt, AI_RETRY_RATE_LIMIT_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+    return Math.max(AI_RETRY_RATE_LIMIT_DELAY_MS, delay);
+  }
+  return backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
 }
 
 /**
@@ -98,15 +149,29 @@ function stringOrNull(value) {
  * @param {Array}  opts.messages       - Chat messages array
  * @param {number} opts.retryMaxAttempts - Total attempts (initial + retries)
  * @param {number} opts.temperature    - Sampling temperature
- * @returns {Promise<{ content: string, metadata: object }>} `content` is the
- *   trimmed reply. `metadata` holds `finishReason`, `nativeFinishReason`,
+ * @param {object} [opts.responseFormat] - Sent as `response_format` when given
+ * @param {Function} [opts.parse]      - `(content, { finishReason }) => parsed`;
+ *   throws when the reply is unusable. Its error message reaches the Actions
+ *   log, which the student can read, so it must never quote the reply.
+ * @returns {Promise<{ content: string, parsed: any, metadata: object }>}
+ *   `content` is the trimmed reply and `parsed` what `parse` made of it (the
+ *   content itself when there is no `parse`). `metadata` holds `finishReason`, `nativeFinishReason`,
  *   `usage` (token counts, or null if the provider sent none), `attempts`
  *   (requests sent, so retries = attempts - 1), `durationMs` (wall time across
  *   every attempt, backoff included), and the `generationId`, `servedModel` and
  *   `servedProvider` OpenRouter reports — the model actually served can differ
  *   from the one requested when routing or fallbacks are in play.
  */
-export async function callAI({ provider, model, apiKey, messages, retryMaxAttempts, temperature }) {
+export async function callAI({
+  provider,
+  model,
+  apiKey,
+  messages,
+  retryMaxAttempts,
+  temperature,
+  responseFormat,
+  parse = (content) => content,
+}) {
   let url;
   const headers = { 'Content-Type': 'application/json' };
 
@@ -118,16 +183,6 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       headers['X-Title'] = 'GrillMyCode';
       break;
 
-    // GitHub Models was permanently discontinued by GitHub. Workflows that
-    // still specify it get a migration message rather than a generic
-    // "unknown provider" error, since it was the default for a long time.
-    case 'github-models':
-      throw new Error(
-        'ai_provider "github-models" is no longer supported: GitHub permanently ' +
-          'discontinued GitHub Models. Set ai_provider to "openrouter" and supply an ' +
-          'OpenRouter api_key. See https://grillmycode.org/docs/ai-providers/openrouter',
-      );
-
     default:
       throw new Error(`Unknown ai_provider: "${provider}". Valid values: openrouter`);
   }
@@ -137,6 +192,7 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
     messages,
     temperature: temperature,
     top_p: AI_TOP_P,
+    ...(responseFormat ? { response_format: responseFormat } : {}),
   });
 
   let lastError;
@@ -166,7 +222,12 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
 
       if (!isRetryable || attempt === retryMaxAttempts - 1) {
         const errorText = await response.text().catch(() => '(no body)');
-        throw new Error(`AI API error ${response.status} ${response.statusText}: ${errorText}`);
+        const note = upstreamRateLimitNote(parseErrorBody(errorText));
+        throw new Error(
+          note
+            ? `AI API error ${statusLabel(response)}: ${note} Response: ${errorText}`
+            : `AI API error ${statusLabel(response)}: ${errorText}`,
+        );
       }
 
       let delay;
@@ -182,11 +243,11 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
           cappedNote = ` (Retry-After asked for ${retryAfterMs}ms; capped)`;
         }
       } else {
-        delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+        delay = retryDelay(response.status, attempt);
       }
 
       core.warning(
-        `AI request returned ${response.status} ${response.statusText}. ` +
+        `AI request returned ${statusLabel(response)}. ` +
           `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms${cappedNote}…`,
       );
       await sleep(delay);
@@ -231,7 +292,7 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
         const code = Number(providerError.code);
         const detail = `${providerError.code ?? 'no code'}: ${providerError.message ?? 'no details'}`;
         if (AI_RETRYABLE_STATUS_CODES.includes(code) && attempt < retryMaxAttempts - 1) {
-          const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+          const delay = retryDelay(code, attempt);
           core.warning(
             `AI provider reported an error during generation (${detail}). ` +
               `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
@@ -239,7 +300,10 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
           await sleep(delay);
           continue;
         }
-        throw new Error(`AI provider reported an error during generation (${detail}).`);
+        const note = upstreamRateLimitNote(providerError);
+        throw new Error(
+          `AI provider reported an error during generation (${detail}).${note ? ` ${note}` : ''}`,
+        );
       }
       throw new Error('AI API returned an empty choices array — no questions were generated.');
     }
@@ -287,8 +351,28 @@ export async function callAI({ provider, model, apiKey, messages, retryMaxAttemp
       );
     }
 
+    let parsed;
+    try {
+      parsed = parse(content.trim(), { finishReason });
+    } catch (formatError) {
+      lastError = formatError;
+      if (finishReason !== 'length' && attempt < retryMaxAttempts - 1) {
+        const delay = backoffDelay(attempt, AI_RETRY_BASE_DELAY_MS, AI_RETRY_MAX_DELAY_MS);
+        core.warning(
+          `AI reply could not be used (${formatError.message}). ` +
+            `Attempt ${attempt + 1}/${retryMaxAttempts}. Retrying in ${delay}ms…`,
+        );
+        await sleep(delay);
+        continue;
+      }
+      throw new Error(`AI reply could not be used: ${formatError.message}`, {
+        cause: formatError,
+      });
+    }
+
     return {
       content: content.trim(),
+      parsed,
       metadata: {
         finishReason,
         nativeFinishReason: stringOrNull(choice.native_finish_reason),

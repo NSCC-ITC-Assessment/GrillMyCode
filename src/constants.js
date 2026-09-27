@@ -245,8 +245,7 @@ export const GIT_MAX_BUFFER = 20 * 1024 * 1024; // 20 MB
 export const COMMENT_STRIP_TIMEOUT_MS = 10_000;
 
 /**
- * Default AI provider. OpenRouter is currently the only supported provider:
- * GitHub Models, formerly the default, was permanently discontinued by GitHub.
+ * Default AI provider. OpenRouter is currently the only supported provider.
  * Overridable via the ai_provider action input.
  */
 export const DEFAULT_AI_PROVIDER = 'openrouter';
@@ -282,6 +281,14 @@ export const INSTRUCTOR_REPO_DEFAULT_BRANCH = 'main';
  * explanations.
  */
 export const SHORT_ANSWER_MAX_CHARS = 20;
+
+/**
+ * Most lines one snippet may show. The model names a snippet by its first and
+ * last line rather than copying the code, and a range any longer than this is
+ * most often a whole file named instead of the lines a question is about, so a
+ * question showing one is dropped.
+ */
+export const SNIPPET_MAX_LINES = 50;
 
 /**
  * Maximum character count for a "long" correct answer (i.e. all non-short-answer
@@ -445,6 +452,14 @@ export const DEFAULT_AI_RETRY_MAX_ATTEMPTS = 5;
 export const AI_RETRY_BASE_DELAY_MS = 1000;
 
 /**
+ * Minimum wait, and backoff base, in milliseconds for a 429 that carries no
+ * Retry-After header. A rate limit — above all an upstream provider's shared
+ * pool — outlasts a sub-second jittered retry, so each wait is a full-jitter
+ * value from min(maxDelay, base * 2^attempt), raised to at least this value.
+ */
+export const AI_RETRY_RATE_LIMIT_DELAY_MS = 5000;
+
+/**
  * Maximum delay cap in milliseconds applied to every AI retry wait, including
  * a 429's Retry-After value. Prevents runaway wait times on later retry attempts.
  */
@@ -507,8 +522,8 @@ export const DEFAULT_LABEL_REPOS = false;
 
 /**
  * Default for log_prompt, an undocumented diagnostic input. When on, the chat
- * messages sent to the model are filed as prompt.md beside the instructor
- * assessment. Off by default: the prompt repeats the student's whole diff and
+ * messages sent to the model are filed as data/prompt.md in the instructor
+ * assessment's folder. Off by default: the prompt repeats the student's whole diff and
  * any assignment context, so it is only worth the space while investigating
  * how a prompt produced the questions it did.
  */

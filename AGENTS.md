@@ -79,7 +79,7 @@ behaviour (defaults, limits, what is created, what fails vs. warns), check the s
   served at `/example-workflows/instructor-repo`. Link to docs by relative `.md` path, never
   by a hand-written URL.
 - **Do not rename or move doc files lightly.** `/docs/ai-providers/openrouter` is printed in
-  runtime error messages (`src/ai.js`, `src/inputs.js`) and must never break. README and the
+  runtime error messages (`src/inputs.js`) and must never break. README and the
   Wizard also link to specific pages.
 - When a page is removed or moved, add it to `removedPages` in `docs-site/docusaurus.config.js`.
   That helper handles the fact that the page still exists in the latest release snapshot
@@ -157,9 +157,6 @@ Adding a new `ai_provider` value requires changes in all of the following places
    `DEFAULTS`). Note that `generateYaml.js` emits `ai_provider` only when it differs from the
    default, and currently emits `api_key` unconditionally — revisit that if the new provider does
    not require a key.
-
-Also note: `src/ai.js` keeps a `case 'github-models'` that throws a migration error. It is not a
-supported provider — it exists so old workflows fail with an actionable message. Leave it in place.
 
 ## Constants vs Magic Numbers
 

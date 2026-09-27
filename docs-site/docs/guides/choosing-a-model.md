@@ -44,7 +44,7 @@ The model is the same either way, so the questions are just as good.
 
 ## When a whole class submits at once
 
-Everyone shares your one OpenRouter key, so a class submitting in the same few minutes shares its limits too. GrillMyCode automatically waits and retries when OpenRouter is busy. If runs still fail with rate-limit errors, check that your OpenRouter balance is above zero; accounts with no credit are limited far more strictly.
+Everyone shares your one OpenRouter key, so a class submitting in the same few minutes shares its limits too. GrillMyCode automatically waits and retries when OpenRouter is busy. If runs still fail with rate-limit errors, check that your OpenRouter balance is above zero; accounts with no credit are limited far more strictly. Sometimes the company behind the model is busy for everyone, and the error says so; re-run later or try another model.
 
 ---
 

@@ -18,13 +18,14 @@ function respondWith(...bodies) {
  * Runs callAI with retry backoff sleeps fast-forwarded. Settles to the reply
  * text as `value`; `full` passes callAI's whole result through instead.
  */
-async function run(retryMaxAttempts, { full = false } = {}) {
+async function run(retryMaxAttempts, { full = false, ...extra } = {}) {
   const result = callAI({
     provider: 'openrouter',
     model: 'test-model',
     apiKey: 'key',
     messages: [],
     retryMaxAttempts,
+    ...extra,
   });
   const settled = result.then(
     (value) => ({ value: full ? value : value.content }),
@@ -242,7 +243,10 @@ describe('callAI Retry-After on a 429', () => {
     vi.unstubAllGlobals();
   });
 
-  /** Stubs fetch to return one 429 with the given Retry-After, then a success. */
+  /**
+   * Stubs fetch to return one 429, then a success. The 429 carries the given
+   * Retry-After, or no header when it is undefined.
+   */
   function rateLimitedThenOk(retryAfter) {
     const fetch = vi
       .fn()
@@ -250,7 +254,7 @@ describe('callAI Retry-After on a 429', () => {
         new Response('rate limited', {
           status: 429,
           statusText: 'Too Many Requests',
-          headers: { 'Retry-After': retryAfter },
+          headers: retryAfter === undefined ? {} : { 'Retry-After': retryAfter },
         }),
       )
       .mockResolvedValueOnce(new Response(JSON.stringify(ok), { status: 200 }));
@@ -295,5 +299,175 @@ describe('callAI Retry-After on a 429', () => {
     expect(core.warning).toHaveBeenCalledWith(
       expect.stringMatching(/in 30000ms \(Retry-After .*capped\)/),
     );
+  });
+
+  it('waits at least 5 seconds when there is no Retry-After', async () => {
+    // Math.random() of 0 would make the plain backoff retry immediately.
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const fetch = rateLimitedThenOk(undefined);
+    const { result, calls } = start(fetch);
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(calls()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calls()).toBe(2);
+    expect((await result).content).toBe('1. Question?');
+    vi.restoreAllMocks();
+  });
+
+  it('waits at least 5 seconds for a 429 error body on a 200', async () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0);
+    const fetch = respondWith({ error: { code: 429, message: 'rate limited upstream' } }, ok);
+    const { result, calls } = start(fetch);
+    await vi.advanceTimersByTimeAsync(4_999);
+    expect(calls()).toBe(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(calls()).toBe(2);
+    expect((await result).content).toBe('1. Question?');
+    vi.restoreAllMocks();
+  });
+});
+
+describe('callAI response format and parsing', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(core.warning).mockClear();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const reply = (content, finishReason = 'stop') => ({
+    choices: [{ message: { content }, finish_reason: finishReason }],
+  });
+  const strict = (content) => {
+    if (content !== 'good') throw new Error('the reply is not usable');
+    return { parsed: content };
+  };
+
+  it('sends response_format only when one is given', async () => {
+    const fetch = respondWith(ok, ok);
+    await run(1);
+    await run(1, { responseFormat: { type: 'json_object' } });
+    const bodies = fetch.mock.calls.map(([, init]) => JSON.parse(init.body));
+    expect(bodies[0]).not.toHaveProperty('response_format');
+    expect(bodies[1].response_format).toEqual({ type: 'json_object' });
+    // A routing preference, never a requirement: a model without structured
+    // outputs must still be reachable.
+    expect(bodies[1]).not.toHaveProperty('provider');
+  });
+
+  it('returns what parse made of the trimmed reply', async () => {
+    respondWith(reply('  good  '));
+    const { value } = await run(1, { full: true, parse: strict });
+    expect(value.content).toBe('good');
+    expect(value.parsed).toEqual({ parsed: 'good' });
+  });
+
+  it('passes the content through when there is no parse', async () => {
+    respondWith(ok);
+    const { value } = await run(1, { full: true });
+    expect(value.parsed).toBe('1. Question?');
+  });
+
+  it('retries a reply parse rejects', async () => {
+    const fetch = respondWith(reply('bad'), reply('good'));
+    const { value } = await run(2, { full: true, parse: strict });
+    expect(value.parsed).toEqual({ parsed: 'good' });
+    expect(value.metadata.attempts).toBe(2);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(core.warning).toHaveBeenCalledWith(
+      expect.stringContaining('AI reply could not be used (the reply is not usable)'),
+    );
+  });
+
+  it('fails once retries are exhausted', async () => {
+    respondWith(reply('bad'), reply('bad'));
+    const { error } = await run(2, { parse: strict });
+    expect(error.message).toBe('AI reply could not be used: the reply is not usable');
+  });
+
+  // The same request would hit the same output token limit again.
+  it('does not retry a reply cut off at the token limit', async () => {
+    const fetch = respondWith(reply('bad', 'length'), reply('good'));
+    const { error } = await run(2, { parse: strict });
+    expect(error.message).toMatch(/could not be used/);
+    expect(fetch).toHaveBeenCalledTimes(1);
+  });
+
+  it('hands parse the finish reason', async () => {
+    respondWith(reply('good', 'length'));
+    const parse = vi.fn(() => 'ok');
+    await run(1, { parse });
+    expect(parse).toHaveBeenCalledWith('good', { finishReason: 'length' });
+  });
+});
+
+describe('callAI final HTTP error message', () => {
+  beforeEach(() => {
+    vi.useFakeTimers();
+    vi.mocked(core.warning).mockClear();
+  });
+  afterEach(() => {
+    vi.useRealTimers();
+    vi.unstubAllGlobals();
+  });
+
+  const upstreamBody = JSON.stringify({
+    error: {
+      message: 'Provider returned error',
+      code: 429,
+      metadata: {
+        provider_name: 'ExampleHost',
+        is_byok: false,
+        limit_source: 'upstream_provider_shared_pool',
+      },
+    },
+  });
+
+  /** Stubs fetch to return the same error response on every attempt. */
+  function alwaysFail(status, body, init = {}) {
+    const fetch = vi.fn(async () => new Response(body, { status, ...init }));
+    vi.stubGlobal('fetch', fetch);
+    return fetch;
+  }
+
+  it('explains an upstream shared-pool rate limit', async () => {
+    alwaysFail(429, upstreamBody);
+    const { error } = await run(2);
+    expect(error.message).toMatch(
+      /^AI API error 429: The model's upstream provider \(ExampleHost\)/,
+    );
+    expect(error.message).toMatch(/not just this API key/);
+    expect(error.message).toMatch(/openrouter#retries-and-rate-limits/);
+    expect(error.message).toMatch(/Response: \{"error"/);
+  });
+
+  it('explains an upstream rate limit sent as a 200 error body', async () => {
+    respondWith(JSON.parse(upstreamBody), JSON.parse(upstreamBody));
+    const { error } = await run(2);
+    expect(error.message).toMatch(/429: Provider returned error/);
+    expect(error.message).toMatch(/upstream provider \(ExampleHost\)/);
+  });
+
+  it('leaves a 429 on the API key itself unexplained', async () => {
+    alwaysFail(429, JSON.stringify({ error: { message: 'Rate limit exceeded', code: 429 } }));
+    const { error } = await run(1);
+    expect(error.message).toBe(
+      'AI API error 429: {"error":{"message":"Rate limit exceeded","code":429}}',
+    );
+  });
+
+  it('omits the empty status text HTTP/2 sends', async () => {
+    alwaysFail(503, 'busy');
+    const { error } = await run(2);
+    expect(error.message).toBe('AI API error 503: busy');
+    expect(core.warning).toHaveBeenCalledWith(expect.stringMatching(/^AI request returned 503\. /));
+  });
+
+  it('keeps a status text when one is sent', async () => {
+    alwaysFail(503, 'busy', { statusText: 'Service Unavailable' });
+    const { error } = await run(1);
+    expect(error.message).toBe('AI API error 503 Service Unavailable: busy');
   });
 });

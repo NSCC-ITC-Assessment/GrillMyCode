@@ -43,7 +43,8 @@ export default function StepAdvanced({ cfg, onChange }) {
           <label className={styles.label}>Max retry attempts <span className={styles.optionalBadge}>optional</span></label>
           <span className={styles.hint}>
             Total attempts (initial + retries) when the AI provider returns an error or rate-limit
-            response. Values below 1 are clamped to 1. Default: <code>5</code>
+            response, or a reply GrillMyCode can't use. Values below 1 are clamped to 1. Default:{' '}
+            <code>5</code>
           </span>
           <input
             type="number"

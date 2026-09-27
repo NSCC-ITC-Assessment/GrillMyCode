@@ -10,9 +10,11 @@
  * them into line with the copies shipped here, so a repository created by an
  * earlier release picks up later fixes on its own rather than by hand.
  *
- * The file is written to {studentLogin}/questions.md inside the repository,
- * alongside {studentLogin}/raw-ai-output.md — the model's unprocessed reply,
- * filed for diagnosis. A run started by a submission tag writes both one level
+ * The file is written to {studentLogin}/questions.md inside the repository.
+ * The files an instructor does not need to read go in its data/ subfolder:
+ * questions.json — the same questions as data, which the quiz workflow builds
+ * from — and raw-ai-output.md — the model's unprocessed reply, filed for
+ * diagnosis. A run started by a submission tag writes both one level
  * down, in {studentLogin}/{tagGroup}/, so each milestone's assessment is kept
  * rather than replacing the last. That folder also carries submissions.md, a
  * log of every run for the tag, and history/, the question sets each run
@@ -63,6 +65,14 @@ const INSTRUCTOR_REPO_README_TEMPLATE = readFileSync(
 );
 
 const STUDENT_QUESTIONS_WORKFLOW_PATH = '.github/workflows/generate-lms-quiz.yml';
+
+/**
+ * Subfolder of an assessment folder for the files an instructor does not need
+ * to read: questions.json, raw-ai-output.md and prompt.md. The quiz workflow
+ * looks for questions.json under a folder of this name, and puts the quiz files
+ * in the folder above it.
+ */
+export const ASSESSMENT_DATA_DIR = 'data';
 
 /**
  * The folder a student's assessment is filed in: {studentLogin}/, or
@@ -423,6 +433,12 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  *                                               tag run; files the assessment in a
  *                                               subfolder of the student's folder.
  * @param {string}  params.content             - Markdown report content to write.
+ * @param {object[]} params.questions         - The numbered question objects the report
+ *                                               was rendered from, filed as questions.json
+ *                                               for the quiz workflow.
+ * @param {object[]} [params.droppedQuestions] - Questions dropped for not pointing at the
+ *                                               student's code, filed in questions.json
+ *                                               marked as dropped.
  * @param {string}  params.headSha             - Head commit SHA (used in commit message).
  * @param {string} [params.rawOutput]          - Verbatim model reply, filed beside the
  *                                               assessment. Omitted means no raw copy.
@@ -441,6 +457,8 @@ export async function deliverToInstructorRepo({
   studentLogin,
   tagGroup = '',
   content,
+  questions,
+  droppedQuestions = [],
   headSha,
   rawOutput,
   prompt,
@@ -448,24 +466,25 @@ export async function deliverToInstructorRepo({
 }) {
   await ensureInstructorRepo(octokit, owner, instructorRepoName);
 
-  // Before the questions.md write below, so that the push it makes is handled
+  // Before the questions.json write below, so that the push it makes is handled
   // by the current workflow rather than whatever the repository was seeded with.
   await syncInstructorRepoFiles(octokit, owner, instructorRepoName);
 
   const folder = assessmentFolder(studentLogin, tagGroup);
+  const dataFolder = `${folder}/${ASSESSMENT_DATA_DIR}`;
   const label = tagGroup ? `${studentLogin} (${tagGroup})` : studentLogin;
   const filePath = `${folder}/questions.md`;
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const message = `chore: update assessment for ${label} at ${shortHead}`;
 
-  // Before questions.md, for two reasons. The quiz workflow triggers on
-  // questions.md files alone, so this commit starts nothing; landing it first
-  // keeps it clear of the quiz run that the questions.md commit kicks off and
+  // Before questions.json, for two reasons. The quiz workflow triggers on
+  // questions.json files alone, so this commit starts nothing; landing it first
+  // keeps it clear of the quiz run that the questions.json commit kicks off and
   // of the packages that run commits back. And a failure here must not cost
   // the assessment, which is the write that matters — hence the warning rather
   // than a throw, matching syncInstructorRepoFiles above.
   if (rawOutput) {
-    const rawPath = `${folder}/raw-ai-output.md`;
+    const rawPath = `${dataFolder}/raw-ai-output.md`;
     try {
       await writeFileWithRetry({
         octokit,
@@ -487,14 +506,14 @@ export async function deliverToInstructorRepo({
 
   // log_prompt is undocumented and the run log is visible to the student, so
   // this write says nothing either way — not on success, not on a retry, not on
-  // failure. Ahead of questions.md for the same reasons as the raw output.
+  // failure. Ahead of questions.json for the same reasons as the raw output.
   if (prompt) {
     try {
       await writeFileWithRetry({
         octokit,
         owner,
         repo: instructorRepoName,
-        path: `${folder}/prompt.md`,
+        path: `${dataFolder}/prompt.md`,
         message: `chore: record AI prompt for ${label} at ${shortHead}`,
         content: prompt,
         skipIfUnchanged: true,
@@ -505,7 +524,7 @@ export async function deliverToInstructorRepo({
     }
   }
 
-  // The submission record, ahead of questions.md for the same reason as the
+  // The submission record, ahead of questions.json for the same reason as the
   // raw output: neither path starts the quiz workflow, and a failure here must
   // not cost the assessment. The replaced question set is archived first, so a
   // log row never points at an archive that failed to land.
@@ -536,6 +555,54 @@ export async function deliverToInstructorRepo({
   });
 
   core.info(`Instructor assessment written to ${owner}/${instructorRepoName}/${filePath}`);
+
+  // Last, because its commit starts the quiz workflow, which then finds
+  // everything else in place. A failure throws, like questions.md's: without
+  // it the student's quiz would stay built from the previous questions.
+  const jsonPath = `${dataFolder}/questions.json`;
+  await writeFileWithRetry({
+    octokit,
+    owner,
+    repo: instructorRepoName,
+    path: jsonPath,
+    message: `chore: update quiz questions for ${label} at ${shortHead}`,
+    content: buildQuestionsJson(questions, droppedQuestions),
+  });
+  core.info(`Quiz questions written to ${owner}/${instructorRepoName}/${jsonPath}`);
+}
+
+/**
+ * The questions.json filed beside questions.md: the questions the report was
+ * rendered from, as data, which the quiz workflow builds the quiz from. Each
+ * snippet keeps the lines of its file it was read from.
+ *
+ * The questions dropped for not pointing at the student's code follow, with
+ * `dropped: true` and no number, so an instructor can see what was asked and
+ * which lines it showed. The quiz workflow skips them.
+ */
+export function buildQuestionsJson(questions, droppedQuestions = []) {
+  const entry = (q, dropped) => ({
+    number: dropped ? null : q.number,
+    dropped,
+    broader: q.broader,
+    snippets: q.snippets.map(({ file, start, end, language, code }) => ({
+      file,
+      start_line: start,
+      end_line: end,
+      language,
+      code,
+    })),
+    question: q.question,
+    answer: q.answer,
+    distractors: q.distractors,
+  });
+  const record = {
+    questions: [
+      ...questions.map((q) => entry(q, false)),
+      ...droppedQuestions.map((q) => entry(q, true)),
+    ],
+  };
+  return `${JSON.stringify(record, null, 2)}\n`;
 }
 
 /**
@@ -545,8 +612,8 @@ export async function deliverToInstructorRepo({
  *
  * The archive is numbered by the log row that produced it — the last row
  * before this run — so `history/3-questions.md` is what run #3 generated. A
- * questions.md written before this record existed has no row, and is archived
- * as `0-questions.md`.
+ * questions.md with no row behind it, left when a record write failed, is not
+ * archived: there is no run to number it by.
  */
 async function recordSubmission({
   octokit,
@@ -562,9 +629,9 @@ async function recordSubmission({
   const { history, entry } = submission;
   const location = `${owner}/${instructorRepoName}/${folder}`;
   try {
-    if (history.previousQuestions) {
-      const lastRow = history.entries[history.entries.length - 1];
-      const archivePath = `${folder}/${SUBMISSION_HISTORY_DIR}/${lastRow ? lastRow.number : 0}-questions.md`;
+    const lastRow = history.entries[history.entries.length - 1];
+    if (history.previousQuestions && lastRow) {
+      const archivePath = `${folder}/${SUBMISSION_HISTORY_DIR}/${lastRow.number}-questions.md`;
       await writeFileWithRetry({
         octokit,
         owner,

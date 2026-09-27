@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as core from '@actions/core';
-import { deliverToInstructorRepo } from '../src/delivery/instructor-repo.js';
+import { buildQuestionsJson, deliverToInstructorRepo } from '../src/delivery/instructor-repo.js';
 import { formatRawOutput } from '../src/report.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), warning: vi.fn(), error: vi.fn() }));
@@ -35,7 +35,7 @@ function fakeOctokit({ failPath } = {}) {
   };
 }
 
-function deliver(octokit, { rawOutput, tagGroup } = {}) {
+function deliver(octokit, { rawOutput, tagGroup, questions = [] } = {}) {
   return deliverToInstructorRepo({
     octokit,
     owner: 'org',
@@ -43,6 +43,7 @@ function deliver(octokit, { rawOutput, tagGroup } = {}) {
     studentLogin: 'student',
     tagGroup,
     content: '## GrillMyCode\n\n1. Question?',
+    questions,
     headSha: 'abcdef1234567890',
     rawOutput,
   });
@@ -62,21 +63,25 @@ describe('raw AI output delivery', () => {
     const octokit = fakeOctokit();
     await deliver(octokit, { rawOutput: 'verbatim model reply' });
 
-    expect(studentWrites(octokit)).toEqual(['student/raw-ai-output.md', 'student/questions.md']);
+    expect(studentWrites(octokit)).toEqual([
+      'student/data/raw-ai-output.md',
+      'student/questions.md',
+      'student/data/questions.json',
+    ]);
   });
 
   it('omits the raw copy when no raw output is supplied', async () => {
     const octokit = fakeOctokit();
     await deliver(octokit);
 
-    expect(studentWrites(octokit)).toEqual(['student/questions.md']);
+    expect(studentWrites(octokit)).toEqual(['student/questions.md', 'student/data/questions.json']);
   });
 
   it('still writes the assessment when the raw copy fails', async () => {
-    const octokit = fakeOctokit({ failPath: 'student/raw-ai-output.md' });
+    const octokit = fakeOctokit({ failPath: 'student/data/raw-ai-output.md' });
     await deliver(octokit, { rawOutput: 'verbatim model reply' });
 
-    expect(studentWrites(octokit)).toEqual(['student/questions.md']);
+    expect(studentWrites(octokit)).toEqual(['student/questions.md', 'student/data/questions.json']);
     expect(core.warning).toHaveBeenCalledWith(
       expect.stringContaining('Could not write the raw AI output'),
     );
@@ -87,8 +92,9 @@ describe('raw AI output delivery', () => {
     await deliver(octokit, { rawOutput: 'verbatim model reply', tagGroup: 'phase1' });
 
     expect(studentWrites(octokit)).toEqual([
-      'student/phase1/raw-ai-output.md',
+      'student/phase1/data/raw-ai-output.md',
       'student/phase1/questions.md',
+      'student/phase1/data/questions.json',
     ]);
   });
 
@@ -98,6 +104,65 @@ describe('raw AI output delivery', () => {
     await expect(deliver(octokit, { rawOutput: 'verbatim model reply' })).rejects.toThrow(
       'Validation failed',
     );
+  });
+});
+
+describe('questions.json delivery', () => {
+  const questions = [
+    {
+      number: 1,
+      snippets: [{ file: 'a.js', language: 'javascript', code: 'let a = 1;' }],
+      question: 'What is `a`?',
+      answer: '1',
+      distractors: ['0', '2', '3'],
+      broader: false,
+    },
+  ];
+
+  it('writes questions.json last, since its commit starts the quiz', async () => {
+    const octokit = fakeOctokit();
+    await deliver(octokit, { rawOutput: 'verbatim model reply', questions });
+
+    expect(studentWrites(octokit)).toEqual([
+      'student/data/raw-ai-output.md',
+      'student/questions.md',
+      'student/data/questions.json',
+    ]);
+  });
+
+  it('fails the delivery when questions.json cannot be written', async () => {
+    const octokit = fakeOctokit({ failPath: 'student/data/questions.json' });
+
+    await expect(deliver(octokit, { questions })).rejects.toThrow('Validation failed');
+  });
+
+  it('records the question objects, with the lines each snippet was read from', () => {
+    const snippet = { file: 'a.js', start: 3, end: 4, language: 'js', code: 'let a = 1;\na++;' };
+    const [record] = JSON.parse(
+      buildQuestionsJson([{ ...questions[0], snippets: [snippet] }]),
+    ).questions;
+    expect(record).toEqual({
+      ...questions[0],
+      dropped: false,
+      snippets: [
+        { file: 'a.js', start_line: 3, end_line: 4, language: 'js', code: 'let a = 1;\na++;' },
+      ],
+    });
+  });
+
+  // An instructor reading why a report came up short needs the question the
+  // model wrote and the lines it pointed at, not just a count in the log.
+  it('records dropped questions after the others, marked and unnumbered', () => {
+    const { number, ...unnumbered } = questions[0];
+    const records = JSON.parse(
+      buildQuestionsJson(questions, [{ ...unnumbered, entry: 4, named: [] }]),
+    ).questions;
+    expect(records.map((r) => [r.number, r.dropped])).toEqual([
+      [number, false],
+      [null, true],
+    ]);
+    expect(records[1]).not.toHaveProperty('entry');
+    expect(records[1]).not.toHaveProperty('named');
   });
 });
 
@@ -113,12 +178,19 @@ describe('formatRawOutput', () => {
 
   it('carries the reply through byte for byte', () => {
     // Fences, answer-container markers and trailing whitespace are exactly what
-    // a postprocessing bug hides, so none of them may be touched here.
+    // a parsing bug hides, so none of them may be touched here.
     const raw = '1. Q?\n\n```js\ncode`` ```\n```\n\n<!-- answer -->\n**Answer:** A   \n';
     const out = formatRawOutput({ ...opts, rawOutput: raw });
 
     expect(out).toContain(raw);
-    expect(out.endsWith(raw)).toBe(true);
+  });
+
+  // A reply that wrapped itself in a fence must not close the one around it.
+  it('fences the reply more deeply than any backtick run in it', () => {
+    const raw = '```json\n{"questions": []}\n```';
+    const out = formatRawOutput({ ...opts, rawOutput: raw });
+
+    expect(out.endsWith(`\`\`\`\`json\n${raw}\n\`\`\`\`\n`)).toBe(true);
   });
 
   it('records the provenance an instructor needs to place the file', () => {

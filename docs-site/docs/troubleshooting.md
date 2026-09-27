@@ -63,11 +63,19 @@ Then re-run the workflow. If it still fails, the model ID may be wrong or retire
 
 ### Runs fail with rate-limit errors (429)
 
-OpenRouter's rate limits apply to the API key, so a whole class pushing at once shares one budget. GrillMyCode already retries, but if runs still fail:
+GrillMyCode already waits and retries, so a run that still fails hit a limit that lasted longer than its retries. Check the error message for the cause:
 
-- Check the OpenRouter account has credit. Accounts with no credit are limited far more strictly.
-- Raise `ai_retry_max_attempts` so waits last longer.
-- Try a less busy model; see [Choosing a model and managing cost](guides/choosing-a-model.md).
+- **`The model's upstream provider (…) is rate-limiting every OpenRouter user of this model`**: the company serving the model is busy for everyone, not just you. Re-run later, remove a `:nitro` or `:floor` ending from `ai_model`, or try another model.
+- **Any other 429**: your key's limit, which a whole class pushing at once shares. Check the OpenRouter account has credit, because accounts with no credit are limited far more strictly. Then raise `ai_retry_max_attempts` or try a less busy model; see [Choosing a model and managing cost](guides/choosing-a-model.md).
+
+For how the two limits differ, see [Retries and rate limits](ai-providers/openrouter.md#retries-and-rate-limits).
+
+### The run failed with `AI reply could not be used`
+
+GrillMyCode asks the model for its questions in a fixed JSON format, and every attempt returned something else. If the log also warns that the model hit its output limit, the reply was cut off before a single question was complete.
+
+- If the reply was cut off, lower `num_questions`, or choose a model with a larger output limit.
+- Otherwise, choose a model that supports structured outputs, which holds it to the format. See [Structured outputs](ai-providers/openrouter.md#structured-outputs).
 
 ### Questions take a long time to arrive
 
@@ -77,7 +85,7 @@ If you're happy with the questions but not the wait, try the **Speed** routing o
 
 ### Some questions are missing from a student's report
 
-GrillMyCode holds back any question it can't be sure doesn't give away its own answer, and the student's report says how many. It also drops questions about files that weren't part of the assessment. Your [instructor repository](reference/instructor-repository.md) copy has every question that wasn't dropped, and `raw-ai-output.md` has the model's full original reply. See [What code is assessed](reference/code-selection.md#4-after-the-ai-replies).
+GrillMyCode holds back any question it can't be sure doesn't give away its own answer, and the student's report says how many. It also drops questions that don't point at the student's own code: ones naming a file or lines that weren't sent to the AI, and ones showing only code the student didn't write in this submission. Your [instructor repository](reference/instructor-repository.md) copy has every question that wasn't dropped. The ones dropped for not pointing at the student's code are in `data/questions.json`, marked as dropped, and `data/raw-ai-output.md` has the model's full original reply. See [What code is assessed](reference/code-selection.md#4-after-the-ai-replies).
 
 ### A file I expected isn't assessed
 
@@ -109,7 +117,9 @@ Delivery isn't retried later on its own, but nothing is lost: the student's next
 
 ### `Could not update .github/workflows/generate-lms-quiz.yml in …`
 
-The token can't write under `.github/workflows/`, which needs the `workflow` scope (classic token) or Workflows: Read and Write (fine-grained). The assessment itself still arrives; only the sync of the action-owned files is skipped. The repository keeps working with whatever version of the quiz workflow it started with, and never receives later fixes. See [Upgrade notes](reference/upgrade-notes.md#already-have-an-instructor-pat) to fix the token.
+The token can't write under `.github/workflows/`, which needs the `workflow` scope (classic token) or Workflows: Read and Write (fine-grained). The assessment itself still arrives; only the sync of the action-owned files is skipped. The repository keeps working with whatever version of the quiz workflow it started with, and never receives later fixes.
+
+To fix it, edit the token (**Settings → Developer settings → Tokens (classic) → your token**) and tick **`workflow`** alongside **`repo`**, or add **Workflows: Read and Write** to a fine-grained token. If that produced a new value, update the `INSTRUCTOR_REPO_TOKEN` secret.
 
 The same warning naming `README.md` instead means a broader permission problem, since that file needs no special scope.
 
@@ -131,10 +141,10 @@ To use the feature anyway, create the repository by hand. Name it exactly `{assi
 
 ### Quizzes are missing or out of date
 
-The quiz files are built by the **Generate LMS Quiz** workflow in the instructor repository, not by the student's run. Check that repository's **Actions** tab. To rebuild every student's quiz, run the workflow by hand. See [Instructor repository internals](reference/instructor-repository.md#quiz-files).
+The quiz files are built by the **Generate LMS Quiz** workflow in the instructor repository, not by the student's run. Check that repository's **Actions** tab. To rebuild every student's quiz, run the workflow by hand. A student folder without a `data/questions.json`, such as one assessed by an earlier release, gets no quiz until that student is assessed again; see [Upgrade notes](reference/upgrade-notes.md#quizzes-are-built-from-dataquestionsjson). See [Instructor repository internals](reference/instructor-repository.md#quiz-files).
 
 ## Getting more detail
 
 - **Turn on debug logging** to see every resolved input and the exact prompt sent to the AI. See [Debug mode](reference/debug-mode.md).
-- **Read `raw-ai-output.md`** in the instructor repository to see the model's reply before any processing. See [Instructor repository internals](reference/instructor-repository.md#raw-ai-outputmd).
+- **Read `data/raw-ai-output.md`** in the student's folder in the instructor repository to see the model's reply before any processing. See [Instructor repository internals](reference/instructor-repository.md#raw-ai-outputmd).
 - **After an upgrade,** check [Upgrade notes](reference/upgrade-notes.md) for changes that need action.

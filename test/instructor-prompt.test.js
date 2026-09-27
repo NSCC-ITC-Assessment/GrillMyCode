@@ -42,6 +42,7 @@ function deliver(octokit, { prompt } = {}) {
     instructorRepoName: 'lab-3-grillmycode-instructor',
     studentLogin: 'jsmith',
     content: '## GrillMyCode\n\n1. Question?',
+    questions: [],
     headSha: 'abcdef1234567890',
     prompt,
   });
@@ -62,8 +63,9 @@ describe('prompt delivery (log_prompt)', () => {
     await deliver(octokit, { prompt: 'the prompt' });
 
     expect(octokit.writes.filter((p) => p.startsWith('jsmith/'))).toEqual([
-      'jsmith/prompt.md',
+      'jsmith/data/prompt.md',
       'jsmith/questions.md',
+      'jsmith/data/questions.json',
     ]);
   });
 
@@ -71,7 +73,7 @@ describe('prompt delivery (log_prompt)', () => {
     const octokit = fakeOctokit();
     await deliver(octokit);
 
-    expect(octokit.writes).not.toContain('jsmith/prompt.md');
+    expect(octokit.writes).not.toContain('jsmith/data/prompt.md');
   });
 
   it('never mentions the prompt in the log', async () => {
@@ -81,7 +83,7 @@ describe('prompt delivery (log_prompt)', () => {
   });
 
   it('fails silently and still writes the assessment', async () => {
-    const octokit = fakeOctokit({ failPath: 'jsmith/prompt.md' });
+    const octokit = fakeOctokit({ failPath: 'jsmith/data/prompt.md' });
     await deliver(octokit, { prompt: 'the prompt' });
 
     expect(octokit.writes).toContain('jsmith/questions.md');
@@ -93,7 +95,7 @@ describe('prompt delivery (log_prompt)', () => {
   it('logs nothing while retrying a conflicting write', async () => {
     vi.useFakeTimers();
     try {
-      const octokit = fakeOctokit({ failPath: 'jsmith/prompt.md', failStatus: 409 });
+      const octokit = fakeOctokit({ failPath: 'jsmith/data/prompt.md', failStatus: 409 });
       const run = deliver(octokit, { prompt: 'the prompt' });
       await vi.runAllTimersAsync();
       await run;

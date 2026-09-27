@@ -111,9 +111,3 @@ Yes. With the private answer key, each student gets a quiz file you can import i
 ### How can I see which students have questions?
 
 Search your organization for open `assessment` issues, or turn on repository labels, which the Workflow Wizard does by default. See [Tracking assessed repositories](guides/tracking-repositories.md).
-
-## Upgrading
-
-### I've used GitHub Models with GrillMyCode in the past and now they no longer function. Why?
-
-GitHub permanently discontinued GitHub Models, so there's nothing to reconnect to. Switch the workflow to OpenRouter; [Upgrade notes](reference/upgrade-notes.md#github-models-was-discontinued) has the steps.

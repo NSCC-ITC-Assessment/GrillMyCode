@@ -59,7 +59,7 @@ For the classroom `cs-principles` and assignment `hello`, the repository is `you
 - `questions.md`: questions and answers
 - `cs-principles-hello_{student}_quiz_20.imscc`: an LMS quiz
 - `cs-principles-hello_{student}_brightspace_quiz_20.csv`: a Brightspace-only alternative
-- `raw-ai-output.md`: the model's unprocessed reply
+- `data/`: `questions.json`, which the quiz is built from, and `raw-ai-output.md`, the model's unprocessed reply
 
 ## Good to know
 

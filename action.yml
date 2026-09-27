@@ -24,7 +24,6 @@ inputs:
     description: >
       AI provider to use for question generation.
       Supported values: openrouter
-      (GitHub Models is no longer supported — GitHub permanently discontinued it.)
     required: false
     default: "openrouter"
 
@@ -40,9 +39,12 @@ inputs:
     description: >
       Total number of attempts (initial attempt plus retries) when calling the
       AI provider. Retries are triggered by transient errors: 429 (rate limit),
-      500, 502, 503, 504, and network-level failures. A 429 response with a
-      Retry-After header is honoured, up to 30 seconds; all other retryable
-      errors use exponential backoff with full jitter. Values below 1 are
+      500, 502, 503, 504, and network-level failures, and by a reply that is
+      not the JSON GrillMyCode asked for, unless the model stopped at its
+      output limit. A 429 response with a
+      Retry-After header is honoured, up to 30 seconds; a 429 without one waits
+      at least 5 seconds; all other retryable errors use exponential backoff
+      with full jitter. Values below 1 are
       clamped to 1.
     required: false
     default: "5"
