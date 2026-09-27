@@ -83,6 +83,20 @@ inputs:
     required: false
     default: "20"
 
+  question_emphasis:
+    description: >
+      Limits the kinds of question asked. "balanced" (default) mixes question
+      types as usual. "research" asks only questions that turn on
+      documentation, edge cases and changes — why a line is needed, how a
+      built-in or library call behaves, what happens on an edge case or a
+      change. "tracing" asks only questions the student answers by mentally
+      running their own code — resulting values, variable state, execution
+      order, where a value comes from. Both are all-or-nothing: when the code
+      cannot supply enough good questions of that kind, the AI writes simpler
+      ones of the same kind rather than switching kinds.
+    required: false
+    default: "balanced"
+
   include_answers:
     description: >
       When true, each question is immediately followed by its answer, labelled

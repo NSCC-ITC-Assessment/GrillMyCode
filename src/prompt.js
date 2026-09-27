@@ -12,6 +12,8 @@ import {
   LONG_ANSWER_MAX_CHARS,
   PROMPT_HASH_LENGTH,
   SNIPPET_MAX_LINES,
+  DEFAULT_QUESTION_EMPHASIS,
+  RESEARCH_LOOKUP_QUESTION_SHARE,
 } from './constants.js';
 
 /**
@@ -40,7 +42,7 @@ export const PROMPT_TEMPLATE_HASH = createHash('sha256')
  * full. The banned list matters most where an entry starts with an allowed
  * word ("What do you think…"): the allowed list alone would let those through.
  */
-const ALLOWED_OPENINGS = [
+export const ALLOWED_OPENINGS = [
   'What',
   'Which',
   'Where',
@@ -125,6 +127,118 @@ const BANNED_OPENINGS = [
 ];
 
 /**
+ * The question types and openings of each non-balanced question_emphasis.
+ * Under either one, every question must be one of its `types`: the restriction is
+ * all-or-nothing, and holds even where it costs question quality.
+ *
+ * research — types whose answer depends on how the language or a library
+ *   behaves, or on an input, change or condition the code does not show:
+ *   consequence of a change (3), path conditions (4), edge cases (7), causal
+ *   why (8), order of execution (9), and language and API behaviour (10).
+ * tracing — types answered by executing the code in the head or following a
+ *   value through it: trace (1), state at a point (2), data flow (5), and
+ *   order of execution (9).
+ *
+ * Order of execution sits in both: it can rest on runtime rules (the event
+ * loop, middleware) or on a plain trace. `openings` replace the question words
+ * the question-word rule tells the model to draw on, since the default list
+ * names openings (Why, Under what condition) no tracing type can use. Every
+ * opening must also be in ALLOWED_OPENINGS — an emphasis never allows a new
+ * one. What is always drawn on as well, as in the default rule.
+ */
+export const EMPHASES = {
+  research: {
+    types: [3, 4, 7, 8, 9, 10],
+    description:
+      'types whose answer depends on how the language or a library behaves, or on an input, change, or condition the code does not show',
+    openings: [
+      'Why',
+      'How would … change if',
+      'How does … change when',
+      'How does … respond when',
+      'Under what condition',
+      'When',
+      'At what point',
+      'In what order',
+    ],
+  },
+  tracing: {
+    types: [1, 2, 5, 9],
+    description: 'types answered by mentally executing the code or following a value across it',
+    openings: ['Which', 'Where', 'How many', 'How often', 'How much', 'In what order'],
+  },
+};
+
+/** Every question type the prompt defines, 1 to 10. */
+const QUESTION_TYPE_NUMBERS = Array.from({ length: 10 }, (_, i) => i + 1);
+
+/** "a, b, and c" (or "a, b, or c") — the list style the rest of the prompt uses. */
+function listWith(items, conjunction = 'and') {
+  return items.length < 2
+    ? items.join('')
+    : `${items.slice(0, -1).join(', ')}, ${conjunction} ${items[items.length - 1]}`;
+}
+
+/**
+ * The MIXING RULES lines that question_emphasis controls: the rule that sets
+ * which types the set is drawn from, and the rule about how often to use type
+ * 10. Balanced returns the rules the prompt has always carried, so a run
+ * without the input sends an unchanged prompt.
+ *
+ * research and tracing restrict every question to the emphasis's types. That
+ * restriction is exempt from THE COUNT COMES FIRST, which otherwise relaxes the
+ * MIXING RULES quotas first when the model runs short: an emphasis relaxed
+ * whenever the code is thin would not be all-or-nothing. The other quotas and
+ * the same-function limit still give way, and broader questions are written as
+ * the emphasis's types.
+ */
+function buildEmphasisRules(questionEmphasis, numQuestions) {
+  const emphasis = EMPHASES[questionEmphasis];
+  if (!emphasis) {
+    return `- At least half of the questions must be type 1, 2, 3, 5, or 9 — types that require executing the code mentally or following data across two or more locations.
+- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.`;
+  }
+
+  const excluded = QUESTION_TYPE_NUMBERS.filter((t) => !emphasis.types.includes(t));
+  const rules = [
+    `- EVERY question must be type ${listWith(emphasis.types, 'or')} — ${emphasis.description}. Types ${listWith(excluded)} are not used in this run, whatever any other rule says about them.`,
+    `- Never relax the rule above, even where THE COUNT COMES FIRST says to relax the MIXING RULES quotas. If you run short, relax the other quotas and the limit on questions targeting the same function instead, and write any broader question as one of these types.`,
+  ];
+  if (questionEmphasis === 'research') {
+    rules.push(
+      `- At least ${Math.ceil(numQuestions * RESEARCH_LOOKUP_QUESTION_SHARE)} of the ${numQuestions} questions must be type 8 or type 10.`,
+      '- Aim at code that relies on behaviour a student would need to look up: default arguments, flags and positional arguments, type coercion, mutation versus copying, async ordering, and the conditions under which a built-in or library call returns an unexpected value or throws.',
+      '- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.',
+    );
+  } else {
+    rules.push(
+      '- Prefer questions whose answer follows from the code in the user message and the values stated in the question, not from documentation the student would have to look up.',
+    );
+  }
+  return rules.join('\n');
+}
+
+/** The question words the question-word rule tells the model to draw on. */
+function buildDrawOnWords(questionEmphasis) {
+  const emphasis = EMPHASES[questionEmphasis];
+  const words = emphasis
+    ? emphasis.openings
+    : [
+        'Which',
+        'Where',
+        'When',
+        'Why',
+        'How many',
+        'How often',
+        'How much',
+        'In what order',
+        'At what point',
+        'Under what condition',
+      ];
+  return `${listWith(words)} as well as What`;
+}
+
+/**
  * Builds the [system, user] message array for the chat completions API.
  *
  * The system prompt is assembled in three tiers, ordered from lowest to highest
@@ -180,6 +294,9 @@ const BANNED_OPENINGS = [
  * and so carry a marker column separating the student's lines from the code
  * they started with (see buildAssessedCodeContent).
  *
+ * `questionEmphasis` (question_emphasis) restricts every question to the
+ * research or the tracing question types — see EMPHASES and buildEmphasisRules.
+ *
  * `starterContext` and `earlierContext` are the codebase context: the rest of
  * the repository, sent so questions about the submission can draw on what it
  * works with, and never a question target on their own. Starter code is the
@@ -191,6 +308,7 @@ export function buildPrompt({
   codeContent,
   files,
   numQuestions,
+  questionEmphasis = DEFAULT_QUESTION_EMPHASIS,
   instructorContext,
   assignmentContext,
   includeDistractors = true,
@@ -533,13 +651,12 @@ ${typeSixRule}
 
 MIXING RULES:
 - Use at least ${Math.min(numQuestions, 4)} distinct question types across the set, and no single type more than ${Math.ceil(numQuestions / 3)} times.
-- At least half of the questions must be type 1, 2, 3, 5, or 9 — types that require executing the code mentally or following data across two or more locations.
-- Use type 10 wherever the code passes non-obvious arguments to built-in or library calls, or relies on language behaviour a student may not have looked up.
+${buildEmphasisRules(questionEmphasis, numQuestions)}
 - Fill the short-answer slots with type 1 or type 2 questions whose answer is a computed value, or with a type 4, 9, or 10 question whose answer is a single value, sequence, or short effect.
 - When a type 4 or type 9 question falls outside the short-answer slots, write its answer as a full sentence that states the value or sequence and the statement or condition that produces it.
 - Scale to the code: for a single script, draw on types 1–4, 7, and 8 against its logic; for code with multiple functions, classes, or files, also draw on ${crossComponentTypes} across component boundaries. Type 10 fits either.
 - Two questions may target the same function when they are different types and depend on different lines.
-- Vary the question word. No single question word may open more than ${Math.ceil(numQuestions / 2)} of the ${numQuestions} questions; a lead-in counts as the question word that follows it, so "If…, what…" counts as What. Every "How" form (How many, How often, How does … change when, and so on) counts as How. Draw on Which, Where, When, Why, How many, How often, How much, In what order, At what point, and Under what condition as well as What.
+- Vary the question word. No single question word may open more than ${Math.ceil(numQuestions / 2)} of the ${numQuestions} questions; a lead-in counts as the question word that follows it, so "If…, what…" counts as What. Every "How" form (How many, How often, How does … change when, and so on) counts as How. Draw on ${buildDrawOnWords(questionEmphasis)}.
 
 QUESTION CHECKLIST — EVERY QUESTION MUST PASS ALL OF THESE BEFORE YOU WRITE IT:
 ${answerabilityIntro}

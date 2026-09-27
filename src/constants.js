@@ -418,6 +418,38 @@ export const MIN_QUESTIONS = 1;
 export const DEFAULT_NUM_QUESTIONS = 20;
 
 /**
+ * Accepted values of question_emphasis, which restricts the question set to
+ * questions that send the student to documentation or to questions they answer
+ * by mentally executing their own code:
+ *   balanced — no restriction; the question types and openings are mixed as
+ *              usual.
+ *   research — every question turns on how the language or a library behaves,
+ *              or on an input, change or condition the code does not show
+ *              (causal why, language and API behaviour, edge cases).
+ *   tracing  — every question is answered by executing the code in the head or
+ *              following a value through it.
+ * research and tracing are all-or-nothing: the model never relaxes them to
+ * reach the question count, even at some cost to question quality. See
+ * EMPHASES and buildEmphasisRules in prompt.js.
+ */
+export const QUESTION_EMPHASIS_MODES = ['balanced', 'research', 'tracing'];
+
+/**
+ * Default question_emphasis. Balanced leaves the prompt exactly as it was
+ * before the input existed, so existing workflows are unaffected.
+ */
+export const DEFAULT_QUESTION_EMPHASIS = 'balanced';
+
+/**
+ * Under research, the minimum share of questions (rounded up) that must be
+ * causal-why or language-and-API questions (types 8 and 10) — the two types
+ * most likely to send a student to documentation. Kept below the per-type cap
+ * of one-third so two types can always meet it. Unlike the restriction to the
+ * research types, it is an ordinary MIXING RULES quota the model may relax.
+ */
+export const RESEARCH_LOOKUP_QUESTION_SHARE = 1 / 4;
+
+/**
  * Suffix appended to the assignment name to form the instructor repository
  * name (e.g. "assignment-1" + INSTRUCTOR_REPO_SUFFIX → "assignment-1-grillmycode-instructor").
  */

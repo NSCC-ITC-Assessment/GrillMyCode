@@ -20,6 +20,7 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 | `ai_reasoning_effort` | No | `default` | How much the model reasons before answering: `default`, `none`, `minimal`, `low`, `medium`, `high`, `xhigh` or `max`. `default` sends no setting, so the model's own default applies. `none` switches reasoning off, and fails the run with a `400` on a model that always reasons. Any other level the model doesn't support is mapped to its nearest one. Reasoning is billed as output. Case-insensitive; an unknown value fails the run. See [Reasoning](../ai-providers/openrouter.md#reasoning) |
 | `api_key` | Yes | | OpenRouter API key. Required — `github_token` cannot be used for question generation, and the action fails immediately if this is empty. Create one at [openrouter.ai/keys](https://openrouter.ai/keys) |
 | `num_questions` | No | `20` | Number of questions to generate (minimum 1, maximum 50). Values above 50 are automatically capped |
+| `question_emphasis` | No | `balanced` | Limits the kinds of question asked: `balanced` (any kind), `research` (only questions that turn on documentation, edge cases and changes) or `tracing` (only questions answered by mentally running the code). Case-insensitive; any other value fails the run. See [Question emphasis](#question-emphasis) |
 | `include_answers` | No | `false` | When `true`, each question is immediately followed by its answer labelled **Answer:** in the **student-facing** report — meaning the student sees the answers. This defeats the purpose of the assessment, which is for the student to work out the answers themselves. Leave this `false` in almost all cases. The instructor repository (when `instructor_repo_token` is configured) always includes answers regardless of this setting |
 | `exclude_pattern_overrides` | No | | Comma-separated entries to re-include files excluded by auto-detection or `additional_exclude_patterns`. Each entry can be an exact pattern (e.g. `**/*.md`) to re-include all files of that type, or a specific file path (e.g. `README.md`) to allow only that file through. Note: binary files are **always** skipped regardless of overrides |
 | `additional_exclude_patterns` | No | | Comma-separated globs for **extra** files to exclude on top of the [auto-detected stack patterns](exclude-patterns.md). Use for assignment-specific files (starter code, fixtures, data files) that the auto-detected templates wouldn't cover |
@@ -38,6 +39,28 @@ The [Workflow Wizard](../workflow-wizard.mdx) lets you configure these inputs vi
 | `tag_diff_base` | No | `cumulative` | **Tag-triggered workflows only.** `cumulative` uses the same diff base as any other run, so each tag assesses all of the student's work to date. `previous-tag` starts the diff at the nearest earlier commit carrying a `submission_tags` tag, so each tag assesses only the work since the one before it; with no earlier tag it falls back to `cumulative`. `tag:<name>` (for example `tag:phase1`) starts the diff at that one tag, which need not be in `submission_tags`; it never falls back, so see [What each tag assesses](triggers.md#what-each-tag-assesses) for when it fails the run. `base_sha` takes precedence over all three |
 | `base_sha` | No | | Override the base commit SHA |
 | `head_sha` | No | | Override the head commit SHA |
+
+## Question emphasis
+
+GrillMyCode builds each question set from a range of question kinds. `question_emphasis` limits which kinds it may use.
+
+| Value | Every question asks… | Question words suggested |
+|---|---|---|
+| `balanced` | Any kind. At least half trace the code or follow data through it. | Which, Where, When, Why, How many, How often, How much, In what order, At what point, Under what condition, What |
+| `research` | Why a line or ordering is needed, what a built-in or library call does here, what happens on an edge case or after a change, under what condition a branch runs, or in what order things happen. | Why, How would … change if, How does … change when, How does … respond when, Under what condition, When, At what point, In what order, What |
+| `tracing` | The value a function returns for a given input, the state of a variable at a point, where a value comes from, or in what order statements run. | Which, Where, How many, How often, How much, In what order, What |
+
+How each value changes the prompt:
+
+- **`balanced`** sends the same prompt as a workflow that doesn't set the input.
+- **`research`** allows only the research kinds. At least a quarter of the questions (rounded up) must be causal "why" questions or questions about how the language or a library behaves. It also points the AI at code that relies on default arguments, flags, type coercion, mutation versus copying, async ordering, and the conditions under which a call throws or returns something unexpected.
+- **`tracing`** allows only the tracing kinds, so there are no "why" questions and no questions about how the language or a library behaves.
+
+`research` and `tracing` are all-or-nothing. When the submitted code can't supply enough good questions of those kinds, the AI doesn't switch to other kinds. It first uses fewer distinct kinds and asks more than one question about the same function. Then it writes simpler "broader" questions of the same kinds. On a small or simple submission, expect some questions to be easier or more repetitive than under `balanced`.
+
+Some things don't change with the setting. Every question still uses an allowed opening and has one provable answer. One in every three is still short-answer.
+
+The value a run used is shown in the run summary's **Configuration used by this run** block. When it isn't `balanced`, it's also recorded in the settings line of the instructor repository's raw AI output.
 
 ## Outputs
 

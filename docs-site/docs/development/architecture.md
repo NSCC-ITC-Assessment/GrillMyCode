@@ -121,6 +121,9 @@ buildPrompt()
     │  Asks for multiple-choice distractors only when instructor_repo_token is
     │  set — nothing else consumes them, so without it the model is asked for
     │  the correct answer alone
+    │  question_emphasis research or tracing restricts every question to
+    │  that tier's types, exempt from the count rule's relaxation; balanced
+    │  leaves the prompt unchanged
     │  Asks for a JSON object, not Markdown, with each snippet as a file and a
     │  line range rather than code; buildResponseFormat() builds the matching
     │  JSON schema, sent as response_format
@@ -222,6 +225,7 @@ Reads and normalizes every `INPUT_*` environment variable. Responsible for:
 - Parsing `additional_exclude_patterns` into an array (stack-based patterns are resolved separately in `stack-detection.js` at runtime)
 - Clamping `num_questions` to a minimum of 1 and a maximum of 50; a workflow warning is emitted if the supplied value exceeds 50
 - Splitting `assignment_context` into a `assignmentContextGlobs` array for later file resolution
+- Validating `question_emphasis` against `QUESTION_EMPHASIS_MODES`; an unknown value fails the run
 
 ### `resolveSHAs(ctx, octokit, inputs)`
 

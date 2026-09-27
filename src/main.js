@@ -402,6 +402,7 @@ function renderConfiguration(state) {
           : ''
       }`,
     ],
+    ['Question emphasis', `\`${i.questionEmphasis}\``],
     [
       'Comments kept in assessed code',
       `${i.keepComments ? '**yes**' : 'no'}${flag(i.keepComments)}`,
@@ -1135,6 +1136,7 @@ async function run() {
       codeContent,
       files,
       numQuestions: inputs.numQuestions,
+      questionEmphasis: inputs.questionEmphasis,
       instructorContext: inputs.instructorContext,
       assignmentContext,
       includeDistractors,
@@ -1510,6 +1512,7 @@ async function run() {
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
         request: {
           numQuestions: inputs.numQuestions,
+          questionEmphasis: inputs.questionEmphasis,
           temperature: inputs.aiTemperature,
           topP: AI_TOP_P,
           reasoningEffort: inputs.aiReasoningEffort,

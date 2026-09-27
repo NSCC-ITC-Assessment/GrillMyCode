@@ -5,7 +5,12 @@
  * returns the final report string. No side effects, no I/O.
  */
 
-import { GIT_SHA_SHORT_LENGTH, LOGO_HEADING_HEIGHT_PX, LOGO_URL } from './constants.js';
+import {
+  DEFAULT_QUESTION_EMPHASIS,
+  GIT_SHA_SHORT_LENGTH,
+  LOGO_HEADING_HEIGHT_PX,
+  LOGO_URL,
+} from './constants.js';
 
 /**
  * Logo beside the report heading. The report is also the PDF source, where
@@ -154,7 +159,8 @@ function provenanceComment(record) {
  * is bumped whenever a field changes meaning or is removed.
  *
  * @param {object} [opts.request]  - What was asked for: `numQuestions`,
- *   `temperature`, `topP`, `reasoningEffort`, `promptHash`, `actionRef`
+ *   `questionEmphasis`, `temperature`, `topP`, `reasoningEffort`, `promptHash`,
+ *   `actionRef`
  * @param {object} [opts.response] - The metadata callAI returns
  */
 export function formatRawOutput({
@@ -179,6 +185,10 @@ export function formatRawOutput({
   const requestLines = [];
   if (request) {
     const settings = [`${request.numQuestions} questions requested`];
+    // Only a tilt is worth a mention; balanced is the prompt as it always was.
+    if (request.questionEmphasis && request.questionEmphasis !== DEFAULT_QUESTION_EMPHASIS) {
+      settings.push(`${request.questionEmphasis} emphasis`);
+    }
     settings.push(`temperature ${request.temperature}`);
     // `default` sends no reasoning setting, so the model decided — say so
     // rather than print a level nobody asked for.
