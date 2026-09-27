@@ -1,6 +1,27 @@
 import React from 'react';
 import styles from '../styles.module.css';
 
+const EMPHASES = [
+  {
+    value: 'balanced',
+    label: 'Balanced',
+    description:
+      'A mix of question types: tracing the code, predicting changes and edge cases, and how the language or libraries behave.',
+  },
+  {
+    value: 'research',
+    label: 'Research',
+    description:
+      'Only questions that send the student to documentation or ask about edge cases: why a line is needed, what a built-in or library call does here, or what happens on an edge case or after a change.',
+  },
+  {
+    value: 'tracing',
+    label: 'Tracing',
+    description:
+      'Only questions the student answers by running their code in their head: the value a function returns, how many times a loop runs, the order things happen in, or where a value comes from.',
+  },
+];
+
 export default function StepQuestions({ cfg, onChange }) {
   return (
     <div>
@@ -20,6 +41,32 @@ export default function StepQuestions({ cfg, onChange }) {
             onChange({ numQuestions: Math.min(50, Math.max(1, Number(e.target.value))) })
           }
         />
+      </div>
+
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Question emphasis</label>
+        <span className={styles.hint}>
+          Limits the questions to one kind. Research and Tracing are all-or-nothing: when the code
+          can't supply enough good questions of that kind, the AI writes easier or repetitive ones of
+          the same kind rather than switching.
+        </span>
+        <div className={styles.radioGroup}>
+          {EMPHASES.map((e) => (
+            <label key={e.value} className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="questionEmphasis"
+                value={e.value}
+                checked={cfg.questionEmphasis === e.value}
+                onChange={() => onChange({ questionEmphasis: e.value })}
+              />
+              <span>
+                <strong>{e.label}</strong>
+                <div className={styles.radioDescription}>{e.description}</div>
+              </span>
+            </label>
+          ))}
+        </div>
       </div>
 
       <div className={styles.fieldGroup}>

@@ -55,6 +55,9 @@
  * offered only for tag-triggered workflows (tagTriggerOnly), where it has an
  * effect at all, and is unticked by default.
  *
+ * question_emphasis only changes which kinds of question are asked about the
+ * same code, so it cannot narrow or empty the assessment either.
+ *
  * include_codebase_context only adds background — files the AI is told never to
  * ask about on their own — so it cannot narrow or empty the assessment either.
  * It is listed because it is the setting an instructor reaches for when a
@@ -101,6 +104,17 @@ export const DISPATCH_OVERRIDES = [
     defaultSelected: true,
     description: 'Number of comprehension questions to generate (1-50)',
     hint: 'Re-run with a shorter or longer question set without editing the workflow.',
+  },
+  {
+    key: 'question_emphasis',
+    cfgKey: 'questionEmphasis',
+    label: 'Question emphasis',
+    type: 'choice',
+    options: ['balanced', 'research', 'tracing'],
+    defaultSelected: true,
+    description:
+      'balanced mixes question types; research asks only questions that need documentation or edge cases; tracing only questions answered by running the code in your head',
+    hint: 'Re-run with the other kind of question — for example, research questions for a student who can trace the code but not explain it.',
   },
   {
     key: 'assignment_context',

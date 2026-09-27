@@ -5,6 +5,32 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.20.0 — 2026-09-27
+
+### What's Changed
+
+### Features
+
+- **prompt:** have research runs list lookup targets before questions
+- add research examples and validation for allowed openings in question emphasis tests
+- update question opening rules to enforce bans on specific "What" forms and refine short-answer guidance based on research findings
+- enhance research emphasis rules to clarify conditions for question types and improve test coverage
+- add prompt text helpers and refactor imports
+- enhance research emphasis rules to include lookup targets and prevent question repeats (1-3)
+- add question emphasis feature to control question types generated questions
+
+### Refactoring
+
+- remove OpenRouter model snapshot and related code, switch to live fetching
+- remove fetch-openrouter-models script as it is no longer needed
+- implement code changes to enhance functionality and improve performance
+- improve clarity and consistency in distractor reasoning requirements for quiz options
+- refine research emphasis rules to specify conditions for "What" questions and enhance test coverage
+
+### Chores & Maintenance
+
+- remove obsolete merge=ours driver for action.yml
+
 ## v0.19.0 — 2026-09-27
 
 ### What's Changed

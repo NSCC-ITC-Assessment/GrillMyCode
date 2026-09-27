@@ -67,6 +67,7 @@ const INITIAL_CONFIG = {
   labelRepos: true,
 
   numQuestions: 20,
+  questionEmphasis: 'balanced',
   includeAnswers: false,
   instructorContext: '',
   assignmentContext: '',

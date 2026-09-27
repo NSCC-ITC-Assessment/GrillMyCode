@@ -94,6 +94,12 @@ jobs:
           # Number of comprehension questions to generate. Minimum 1, maximum 50.
           num_questions: "20"
 
+          # Limits the kinds of question. "balanced" mixes all kinds; "research"
+          # asks only questions that turn on documentation, edge cases and
+          # changes; "tracing" asks only questions answered by mentally running
+          # the code (values, variable state, order, where a value comes from).
+          # question_emphasis: "balanced"
+
           # When true, answers are shown to the student immediately after each
           # question — this defeats the purpose of the assessment. Leave false
           # in almost all cases. The instructor repository always includes
