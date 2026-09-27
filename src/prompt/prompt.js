@@ -5,7 +5,8 @@
  * Contains the full assessment rubric and formatting instructions.
  */
 import { createHash, randomBytes } from 'node:crypto';
-import { readFileSync } from 'node:fs';
+import { readdirSync, readFileSync } from 'node:fs';
+import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import {
   SHORT_ANSWER_MAX_CHARS,
@@ -14,120 +15,32 @@ import {
   SNIPPET_MAX_LINES,
   DEFAULT_QUESTION_EMPHASIS,
   RESEARCH_LOOKUP_QUESTION_SHARE,
-} from './constants.js';
+} from '../constants.js';
+import { buildOpeningCheck, buildQuestionWordRule, openingsFor } from './openings.js';
+import { listWith } from './text.js';
 
 /**
  * Identifies the prompt template a reply was generated from, recorded in
  * raw-ai-output.md so replies can be grouped and compared by prompt version.
  *
  * The rendered messages cannot be hashed for this — they embed the student's
- * code, a per-run nonce and the run's settings, so no two would match. This
- * module's own source is the template, so its hash is stable across students
- * and changes whenever the prompt does. An edit to a comment here changes it
- * too; that costs a spurious new version, never a missed one.
+ * code, a per-run nonce and the run's settings, so no two would match. The
+ * modules of this folder are the template, so the hash of their source, read
+ * in name order, is stable across students and changes whenever the prompt
+ * does, including an edit to the openings in openings.js alone. A module added
+ * here is covered without a change to this hash. An edit to a comment changes
+ * it too; that costs a spurious new version, never a missed one.
  */
-export const PROMPT_TEMPLATE_HASH = createHash('sha256')
-  .update(readFileSync(fileURLToPath(import.meta.url)))
+const PROMPT_DIR = dirname(fileURLToPath(import.meta.url));
+export const PROMPT_TEMPLATE_HASH = readdirSync(PROMPT_DIR)
+  .filter((name) => name.endsWith('.js'))
+  .sort()
+  .reduce((hash, name) => hash.update(readFileSync(join(PROMPT_DIR, name))), createHash('sha256'))
   .digest('hex')
   .substring(0, PROMPT_HASH_LENGTH);
 
 /**
- * The openings a question stem may and may not begin with, rendered into the
- * OPENING item of the question checklist. The allowed openings keep every
- * question closed, with one answer. They are only the distinct openings: a
- * phrase that starts with one ("What happens when", "Which branch") is already
- * allowed, and listing such phrases made the list mostly "What", which steered
- * the model towards it. Bare "How" is the exception: "How does this work?"
- * has no single answer, so only its closed forms are allowed, each listed in
- * full. The banned list matters most where an entry starts with an allowed
- * word ("What do you think…"): the allowed list alone would let those through.
- */
-export const ALLOWED_OPENINGS = [
-  'What',
-  'Which',
-  'Where',
-  'When',
-  'Why',
-  'How many',
-  'How often',
-  'How much',
-  'How long',
-  'How would … change if',
-  'How does … change when',
-  'How does … respond when',
-  'How does … order',
-  'In what order',
-  'In which order',
-  'At what point',
-  'At which point',
-  'Under what condition',
-  'Under which condition',
-];
-/** Lead-in clauses that set up a scenario before an allowed opening. */
-const ALLOWED_LEAD_INS = [
-  'Given…, what…',
-  'Given…, which…',
-  'Given…, why…',
-  'Given…, when…',
-  'If…, what…',
-  'If…, which…',
-  'If…, why…',
-  'If…, when…',
-  'If…, how many…',
-  'Given…, how many…',
-  'If…, how often…',
-  'Given…, how would … change…',
-];
-const BANNED_OPENINGS = [
-  'Explain',
-  'Describe',
-  'Discuss',
-  'Elaborate on',
-  'Summarize',
-  'Talk about',
-  'Tell me about',
-  'Tell us about',
-  'What do you think',
-  'What are your thoughts',
-  'What are your views',
-  'What is your understanding of',
-  'What is your interpretation of',
-  'What is your assessment of',
-  'What is your reasoning for',
-  'What do you know about',
-  'What can you say about',
-  'What can you tell me about',
-  'What can you explain about',
-  'Why do you think',
-  'Why might you think',
-  'In your opinion',
-  'In your view',
-  'What are some ways to',
-  'What are the ways to',
-  'What are the advantages of',
-  'What are the disadvantages of',
-  'What are the benefits of',
-  'What are the drawbacks of',
-  'What are the pros of',
-  'What are the cons of',
-  'What are the strengths of',
-  'What are the weaknesses of',
-  'What are some reasons for',
-  'What are the possible reasons for',
-  'How would you',
-  'How could you',
-  'How might you',
-  'How should you',
-  'How does … work',
-  'How is',
-  'How are',
-  'Can you',
-  'Could you',
-  'Would you',
-];
-
-/**
- * The question types and openings of each non-balanced question_emphasis.
+ * The question types of each non-balanced question_emphasis.
  * Under either one, every question must be one of its `types`: the restriction is
  * all-or-nothing, and holds even where it costs question quality.
  *
@@ -140,44 +53,23 @@ const BANNED_OPENINGS = [
  *   order of execution (9).
  *
  * Order of execution sits in both: it can rest on runtime rules (the event
- * loop, middleware) or on a plain trace. `openings` replace the question words
- * the question-word rule tells the model to draw on, since the default list
- * names openings (Why, Under what condition) no tracing type can use. Every
- * opening must also be in ALLOWED_OPENINGS — an emphasis never allows a new
- * one. What is always drawn on as well, as in the default rule.
+ * loop, middleware) or on a plain trace. Each mode's sentence starters are in
+ * QUESTION_OPENINGS.
  */
 export const EMPHASES = {
   research: {
     types: [3, 4, 7, 8, 9, 10],
     description:
       'types whose answer depends on how the language or a library behaves, or on an input, change, or condition the code does not show',
-    openings: [
-      'Why',
-      'How would … change if',
-      'How does … change when',
-      'How does … respond when',
-      'Under what condition',
-      'When',
-      'At what point',
-      'In what order',
-    ],
   },
   tracing: {
     types: [1, 2, 5, 9],
     description: 'types answered by mentally executing the code or following a value across it',
-    openings: ['Which', 'Where', 'How many', 'How often', 'How much', 'In what order'],
   },
 };
 
 /** Every question type the prompt defines, 1 to 10. */
 const QUESTION_TYPE_NUMBERS = Array.from({ length: 10 }, (_, i) => i + 1);
-
-/** "a, b, and c" (or "a, b, or c") — the list style the rest of the prompt uses. */
-function listWith(items, conjunction = 'and') {
-  return items.length < 2
-    ? items.join('')
-    : `${items.slice(0, -1).join(', ')}, ${conjunction} ${items[items.length - 1]}`;
-}
 
 /**
  * The MIXING RULES lines that question_emphasis controls: the rule that sets
@@ -225,29 +117,6 @@ function buildEmphasisRules(questionEmphasis, numQuestions) {
   return rules.join('\n');
 }
 
-/** The question words the question-word rule tells the model to draw on. */
-function buildDrawOnWords(questionEmphasis) {
-  if (questionEmphasis === 'research') {
-    return `${listWith(EMPHASES.research.openings)} as well as What in the forms the OPENING check allows in this run`;
-  }
-  const emphasis = EMPHASES[questionEmphasis];
-  const words = emphasis
-    ? emphasis.openings
-    : [
-        'Which',
-        'Where',
-        'When',
-        'Why',
-        'How many',
-        'How often',
-        'How much',
-        'In what order',
-        'At what point',
-        'Under what condition',
-      ];
-  return `${listWith(words)} as well as What`;
-}
-
 /**
  * The sentence REASONING STEP adds under research. The research types include
  * path conditions and edge cases, which a model can satisfy by asking what a
@@ -258,18 +127,6 @@ function buildDrawOnWords(questionEmphasis) {
 function buildResearchReasoningStep(questionEmphasis) {
   if (questionEmphasis !== 'research') return '';
   return ' In this run the step must be looking up documented behaviour of the language or a library, or working out the effect of an input, change, or condition the code does not show. Reading a condition, literal, or branch that the snippets spell out is not a step: if a student could answer by reading the snippet aloud (the string a ternary returns, the bound an `if` checks, what a loop body does), rewrite the question.';
-}
-
-/**
- * The sentence the OPENING check adds under research. Bare What let the model
- * ask what a call or parameter does in general ("What does the second argument
- * of `number_format()` do"), which is recall, or what a variable holds, which
- * is read off the snippet. Under research a What question must carry an input,
- * change, or condition the code does not show. Empty for every other emphasis.
- */
-function buildResearchOpeningRule(questionEmphasis) {
-  if (questionEmphasis !== 'research') return '';
-  return ' In this run a What question, whether it opens with What or with a lead-in, must name an input, change, or condition the code does not show, as in "What happens when…", "What would … if…", or "What does … return when…". Never ask what a call, parameter, or variable does, holds, or is for in general: ask Why the code relies on it, or What happens when its input or argument changes.';
 }
 
 /**
@@ -358,6 +215,7 @@ export function buildPrompt({
   // everything inside is untrusted DATA to analyse, never instructions to obey.
   // Because the nonce is unguessable, injected content cannot forge the closing
   // marker to "break out" of the block.
+  const openings = openingsFor(questionEmphasis);
   const nonce = randomBytes(12).toString('hex');
   const untrustedOpen = `<<<UNTRUSTED_STUDENT_SUBMISSION ${nonce}>>>`;
   const untrustedClose = `<<<END_UNTRUSTED_STUDENT_SUBMISSION ${nonce}>>>`;
@@ -690,7 +548,7 @@ ${buildEmphasisRules(questionEmphasis, numQuestions)}
 - When a type 4 or type 9 question falls outside the short-answer slots, write its answer as a full sentence that states the value or sequence and the statement or condition that produces it.
 - Scale to the code: for a single script, draw on types 1–4, 7, and 8 against its logic; for code with multiple functions, classes, or files, also draw on ${crossComponentTypes} across component boundaries. Type 10 fits either.
 - Two questions may target the same function when they are different types and depend on different lines.
-- Vary the question word. No single question word may open more than ${Math.ceil(numQuestions / 2)} of the ${numQuestions} questions; a lead-in counts as the question word that follows it, so "If…, what…" counts as What. Every "How" form (How many, How often, How does … change when, and so on) counts as How. Draw on ${buildDrawOnWords(questionEmphasis)}.
+- ${buildQuestionWordRule(openings, numQuestions)}
 
 QUESTION CHECKLIST — EVERY QUESTION MUST PASS ALL OF THESE BEFORE YOU WRITE IT:
 ${answerabilityIntro}
@@ -700,7 +558,7 @@ ${answerabilityIntro}
 4. SELF-CONTAINED — Students answer with their whole repository open, so a question need not show all the code its answer depends on, but the student must be able to find that code or be given the value. When the answer depends on code outside the lines the question points at (where a variable or constant is set, a helper it calls, the data a loop walks), that code must be in the user message, and the question must name the function, variable, or file clearly enough for the student to find it, unless finding it is the step the question asks for. You may also show that code in a snippet of its own when that helps. When it depends on a value no code in the user message shows (an argument you choose, database contents, user input, a network response, file-system state, timing, or environment configuration), state that value in the question. Never add a snippet that shows the answer itself: a question asking where \`$cityId\` originates must not show the line that sets it.
 5. BEHAVIOUR, NOT OPINION — Ask what the code does. Never ask what is better, cleaner, more efficient, or recommended; never ask about the author's intent or alternatives they considered; never ask for a critique, improvement, or refactor.${opinionTypeSixNote}
 6. ONE THING — Ask exactly ONE thing. Do not join sub-questions with "and", "or", commas, or semicolons (e.g. "What does X do, and what does it return?"). If a concept has several facets, pick the single most testable one.
-7. OPENING — Begin with one of these, and no other opening: ${ALLOWED_OPENINGS.join(', ')}. Or begin with a lead-in clause that sets up the scenario, followed by one of those: ${ALLOWED_LEAD_INS.map((c) => `"${c}"`).join(', ')}. Never begin with any of these, even when it starts with an allowed word: ${BANNED_OPENINGS.join(', ')}. A "How" question must be tied to a concrete input, change, or condition and answered by a value, count, order, or single effect — never by an explanation of how something works.${buildResearchOpeningRule(questionEmphasis)}
+7. OPENING — ${buildOpeningCheck(openings)}
 8. NO GIVEAWAYS — The question must not reveal its answer: no leading phrasing ("Doesn't this…"), no emphasis on the answer's key term, and no framing that only one answer grammatically fits.
 9. FINAL TEST — ${answerabilityFinalTest}
 

@@ -147,7 +147,7 @@ function provenanceComment(record) {
  * Assembles the verbatim copy of the model's reply, with a short provenance
  * header above it.
  *
- * The reply is JSON (see prompt.js), so it is fenced as JSON, unaltered. The
+ * The reply is JSON (see prompt/prompt.js), so it is fenced as JSON, unaltered. The
  * fence is one backtick longer than the longest run in the reply, as in
  * formatPrompt, so nothing the model wrote — a reply it wrapped in a fence of
  * its own, say — can close it early and corrupt the very copy this file exists

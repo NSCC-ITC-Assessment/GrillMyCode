@@ -197,8 +197,8 @@ export const MAX_QUESTIONS = 50;
 export const GIT_SHA_SHORT_LENGTH = 7;
 
 /**
- * Number of hex characters kept from the SHA-256 of src/prompt.js recorded in
- * raw-ai-output.md as the prompt version. Twelve is ample to tell prompt
+ * Number of hex characters kept from the SHA-256 of the src/prompt/ modules,
+ * recorded in raw-ai-output.md as the prompt version. Twelve is ample to tell prompt
  * revisions apart while staying readable.
  */
 export const PROMPT_HASH_LENGTH = 12;
@@ -430,7 +430,8 @@ export const DEFAULT_NUM_QUESTIONS = 20;
  *              following a value through it.
  * research and tracing are all-or-nothing: the model never relaxes them to
  * reach the question count, even at some cost to question quality. See
- * EMPHASES and buildEmphasisRules in prompt.js.
+ * EMPHASES and buildEmphasisRules in prompt/prompt.js and QUESTION_OPENINGS
+ * in prompt/openings.js.
  */
 export const QUESTION_EMPHASIS_MODES = ['balanced', 'research', 'tracing'];
 

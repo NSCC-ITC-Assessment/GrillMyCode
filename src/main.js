@@ -50,7 +50,7 @@ import {
   selectCodebaseContext,
 } from './files.js';
 import { detectExcludePatterns } from './stack-detection.js';
-import { buildPrompt, buildResponseFormat, PROMPT_TEMPLATE_HASH } from './prompt.js';
+import { buildPrompt, buildResponseFormat, PROMPT_TEMPLATE_HASH } from './prompt/prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput, formatPrompt } from './report.js';
 import { postIssue } from './delivery/issue.js';

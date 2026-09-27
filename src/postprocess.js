@@ -1,7 +1,7 @@
 /**
  * AI Output Post-Processing
  *
- * The model replies with a JSON object (see prompt.js). This module turns that
+ * The model replies with a JSON object (see prompt/prompt.js). This module turns that
  * reply into question objects, filters them, and renders the three Markdown
  * views of them: the instructor copy, the include_answers copy, and the
  * student copy.

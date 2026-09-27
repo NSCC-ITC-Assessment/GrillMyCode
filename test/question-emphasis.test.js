@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { readInputs } from '../src/inputs.js';
-import { ALLOWED_OPENINGS, EMPHASES, buildPrompt } from '../src/prompt.js';
+import { buildPrompt } from '../src/prompt/prompt.js';
+import { QUESTION_OPENINGS } from '../src/prompt/openings.js';
 import { formatRawOutput } from '../src/report.js';
 
 const ENV_KEYS = ['INPUT_GITHUB_TOKEN', 'INPUT_API_KEY', 'INPUT_QUESTION_EMPHASIS'];
@@ -77,14 +78,28 @@ describe('buildPrompt question emphasis', () => {
     expect(system({})).not.toContain(rule);
   });
 
+  const openingCheck = (opts) => system(opts).match(/7\. OPENING — .*/)[0];
+
   // Bare What let the model ask what a call does in general or read a variable off the snippet.
-  it('narrows What to an unseen input or change under research only', () => {
-    const rule = 'must name an input, change, or condition the code does not show';
-    expect(system({ questionEmphasis: 'research' })).toMatch(
-      new RegExp(`7\\. OPENING — .*${rule}`),
-    );
-    expect(system({ questionEmphasis: 'tracing' })).not.toContain(rule);
-    expect(system({})).not.toContain(rule);
+  it('swaps bare What for the research What forms under research only', () => {
+    const research = openingCheck({ questionEmphasis: 'research' });
+    expect(research).toContain('no other opening: What happens when, What happens if,');
+    for (const form of QUESTION_OPENINGS.research.what) expect(research).toContain(form);
+    expect(research).toContain('Square brackets describe what goes in their place');
+    for (const mode of ['balanced', 'tracing']) {
+      expect(openingCheck({ questionEmphasis: mode })).toContain('no other opening: What, Which,');
+      expect(openingCheck({ questionEmphasis: mode })).not.toContain('Square brackets');
+    }
+  });
+
+  it('adds the research banned openings under research only', () => {
+    const banned = openingCheck({ questionEmphasis: 'research' }).split('Never begin with')[1];
+    for (const opening of QUESTION_OPENINGS.research.banned) expect(banned).toContain(opening);
+    expect(openingCheck({})).not.toContain('What is the direct impact of');
+  });
+
+  it('keeps every research What form a What opening', () => {
+    for (const form of QUESTION_OPENINGS.research.what) expect(form).toMatch(/^What /);
   });
 
   it('restricts tracing to execution types', () => {
@@ -124,8 +139,9 @@ describe('buildPrompt question emphasis', () => {
   });
 
   it('only uses openings that are already allowed', () => {
-    for (const { openings } of Object.values(EMPHASES)) {
-      for (const opening of openings) expect(ALLOWED_OPENINGS).toContain(opening);
+    const { base, ...modes } = QUESTION_OPENINGS;
+    for (const { suggest } of Object.values(modes)) {
+      for (const opening of suggest) expect(base.allowed).toContain(opening);
     }
   });
 });
