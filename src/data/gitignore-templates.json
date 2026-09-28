@@ -1,19 +1,4 @@
 {
-  "AL": [
-    "**/.vscode/**",
-    "**/.alcache/**",
-    "**/.alpackages/**",
-    "**/.snapshots/**",
-    "**/.output/**",
-    "**/*.app",
-    "**/rad.json",
-    "**/rad.json/**",
-    "**/*.g.xlf",
-    "**/*.bclicense",
-    "**/*.flf",
-    "**/TestResults.xml",
-    "**/TestResults.xml/**"
-  ],
   "Actionscript": [
     "**/bin-debug/**",
     "**/bin-release/**",
@@ -3861,7 +3846,10 @@
     ".yarn/*",
     "**/vite.config.js.timestamp-*",
     "**/vite.config.ts.timestamp-*",
-    "**/.vite/**"
+    "**/.vite/**",
+    "**/.astro/**",
+    "**/.turbo",
+    "**/.turbo/**"
   ],
   "OCaml": [
     "**/*.annot",
@@ -5508,7 +5496,7 @@
     "ext/libtool",
     "ext/libtool/**"
   ],
-  "Zig": ["**/.zig-cache/**", "**/zig-out/**", "**/*.o"],
+  "Zig": ["**/.zig-cache/**", "**/zig-out/**", "**/zig-pkg/**", "**/*.o"],
   "bun": [
     "**/logs",
     "**/logs/**",
