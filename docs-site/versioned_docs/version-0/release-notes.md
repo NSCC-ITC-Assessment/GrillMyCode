@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.20.1 — 2026-09-28
+
+### What's Changed
+
+### Chores & Maintenance
+
+- refresh gitignore templates
+
 ## v0.20.0 — 2026-09-27
 
 ### What's Changed
