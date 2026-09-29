@@ -32,7 +32,7 @@ export const REASONING_LEVELS = [
 /** Levels at which the Wizard suggests trying a lower one first. */
 export const COSTLY_REASONING_LEVELS = ['high', 'xhigh', 'max'];
 
-function levelLabel(value) {
+export function levelLabel(value) {
   return REASONING_LEVELS.find((l) => l.value === value)?.label ?? value;
 }
 

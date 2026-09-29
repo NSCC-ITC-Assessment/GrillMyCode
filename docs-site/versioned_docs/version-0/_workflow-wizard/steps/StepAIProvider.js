@@ -5,6 +5,7 @@ import { effectiveAiModel, MODEL_ROUTING_VARIANTS } from '../generateYaml';
 import {
   COSTLY_REASONING_LEVELS,
   formatDollars,
+  levelLabel,
   lookupModel,
   modelConcerns,
   modelPricing,
@@ -211,9 +212,9 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.label}>Model</label>
+        <label className={styles.label}>Select your model</label>
         <span className={styles.hint}>
-          Select a pre-defined model, or choose "Own Choice" to search OpenRouter's catalogue or
+          Select a pre-tested model, or choose "Own Choice" to search OpenRouter's catalogue or
           enter any OpenRouter model ID.
         </span>
         <select
@@ -293,9 +294,22 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
           </>
         )}
         {modelUsable && (
-          <div style={{ marginTop: '0.6rem' }}>
-            <strong>Selected model:</strong>{' '}
-            {modelInfo && modelInfo.name !== modelInfo.id && `${modelInfo.name} `}
+          <div
+            style={{
+              marginTop: '1.5rem',
+              paddingTop: '1.25rem',
+              borderTop: '1px solid var(--ifm-color-emphasis-300)',
+              fontSize: '1.05rem',
+            }}
+          >
+            <strong style={{ display: 'block', fontSize: '1.15rem', marginBottom: '0.3rem' }}>
+              Currently Selected Model:
+            </strong>
+            {modelInfo && modelInfo.name !== modelInfo.id && (
+              <>
+                <strong>{modelInfo.name}</strong>{' '}
+              </>
+            )}
             <code>{modelInfo?.id ?? modelTrimmed}</code>
             {/* Linked only when the catalogue knows the model, so the link is
                 OpenRouter's own ID (routing variant removed) and never a guess. */}
@@ -348,8 +362,12 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         )}
         {reasoning.known && COSTLY_REASONING_LEVELS.includes(effectiveEffort) && (
           <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-            ⚠️ Reasoning at this level can make a run cost many times more than the questions alone
-            would. Consider trying <strong>Low</strong> first and comparing the questions.
+            ⚠️{' '}
+            {effort === 'default'
+              ? `This model reasons at ${levelLabel(effectiveEffort).toLowerCase()} effort by default, which`
+              : 'Reasoning at this level'}{' '}
+            will likely require more tokens and therefore result in a higher overall cost. Consider
+            trying <strong>Low</strong> first and comparing the questions.
           </span>
         )}
         {pricing && (
