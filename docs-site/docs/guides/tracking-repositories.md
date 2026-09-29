@@ -37,7 +37,7 @@ GitHub shows topics in some repository list views and not others. The descriptio
 
 ## Spotting resubmissions
 
-When students [submit with a tag](choosing-a-trigger.md#submission-tag), they can resubmit by moving the tag to a newer commit and pushing it again. GrillMyCode never blocks this, but with the [private answer key](instructor-setup.md) set up, it records every resubmission where students can't see or change it:
+When students [submit with a tag](choosing-a-trigger.md#submission-tag), they can resubmit by moving the tag to a newer commit and pushing it again. GrillMyCode never blocks this, but with the [private answer key](instructor-setup.md) set up (Classroom 50 assignments only), it records every resubmission where students can't see or change it:
 
 - **A warning in the assessment.** The student's `questions.md` in the private repository says it's a resubmission, for example *"this is the 3rd submission of phase1"*.
 - **A log.** A `submissions.md` file in the tag's folder lists every run: when, what started it, who, and which commit.

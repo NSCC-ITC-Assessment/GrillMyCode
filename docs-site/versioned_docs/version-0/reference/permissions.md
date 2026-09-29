@@ -40,7 +40,7 @@ Your OpenRouter API key. The action fails immediately with a setup message if it
 
 ## `instructor_repo_token`
 
-Optional. A personal access token (PAT) used only for the [instructor repository](instructor-repository.md) and the [repository labels](repository-labels.md). It is never passed to the student-facing steps, and the workflow's `GITHUB_TOKEN` is never given access to the instructor repository. That separation is what keeps the answer key out of reach of anyone who can read the student's repository or its logs.
+Optional. A personal access token (PAT) used only for the [instructor repository](instructor-repository.md) and the [repository labels](repository-labels.md). The instructor repository works only in Classroom 50 assignment repositories. It is never passed to the student-facing steps, and the workflow's `GITHUB_TOKEN` is never given access to the instructor repository. That separation is what keeps the answer key out of reach of anyone who can read the student's repository or its logs.
 
 The token must belong to an account that can create repositories in the organization: an organization owner, or a member if the organization allows members to create repositories. Store it as the organization secret `INSTRUCTOR_REPO_TOKEN`.
 

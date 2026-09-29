@@ -70,7 +70,7 @@ git push --force origin complete
 
 - The tagged commit must be on the default branch, or the run fails.
 - `gh student submit` alone doesn't run this. Classroom 50's own `submit/…` tags are ignored, so students must push your tag.
-- Resubmissions are allowed, and recorded in the [private answer key](../guides/tracking-repositories.md#spotting-resubmissions).
+- Resubmissions are allowed, and recorded in the [private answer key](../guides/tracking-repositories.md#spotting-resubmissions) (Classroom 50 only).
 - For several stages, see [Milestone tags](3-milestone-tags.md).
 
 ## Related

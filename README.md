@@ -10,12 +10,12 @@ It's built for [Classroom 50](https://github.com/foundation50/classroom50) assig
 
 ## How GrillMyCode works
 
-![A cartoon road with five numbered stops. 1: a student at a laptop says "Done!" and sends their work off. 2: the GrillMyCode flame uses a magnifying glass to pick out the student's own code and sets other files aside. 3: a friendly robot, handed a sticky note of instructions, writes questions. The road then forks at a signpost. 4, for students: the student smiles at a pinned issue of questions with a PDF copy. 5, for you and optional: an instructor with a coffee mug beside a locked folder and a quiz card.](docs-site/static/img/how-gmc-works-journey.svg)
+![A cartoon road with five numbered stops. 1: a student at a laptop says "Done!" and sends their work off. 2: the GrillMyCode flame uses a magnifying glass to pick out the student's own code and sets other files aside. 3: a friendly robot, handed a sticky note of instructions, writes questions. The road then forks at a signpost. 4, for students: the student smiles at a pinned issue of questions with a PDF copy. 5, for you and optional (Classroom 50 only): an instructor with a coffee mug beside a locked folder and a quiz card.](docs-site/static/img/how-gmc-works-journey.svg)
 
 1. **The student submits code** by pushing it or by pushing a submission tag. You can also start a run yourself.
 2. **GrillMyCode isolates submitted code.** Your starter code, setup files, generated files and comments are left out.
 3. **An AI writes questions about submitted code**, guided by your instructions and, optionally, the assignment brief. It goes through [OpenRouter](https://openrouter.ai/), using one key for the whole class.
-4. **Questions are delivered to the student** as a GitHub issue and matching PDF. Optionally, you get every student's questions _with answers_ in a private repository, plus a quiz file for your LMS.
+4. **Questions are delivered to the student** as a GitHub issue and matching PDF. Optionally, for Classroom 50 assignments, you get every student's questions _with answers_ in a private repository, plus a quiz file for your LMS.
 
 More: [How GrillMyCode works](https://grillmycode.org/docs/how-gmc-works) · [Architecture](https://grillmycode.org/docs/development/architecture)
 

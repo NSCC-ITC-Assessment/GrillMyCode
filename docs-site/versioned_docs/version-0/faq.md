@@ -40,7 +40,7 @@ GrillMyCode itself is free. The AI is paid through OpenRouter from a prepaid bal
 
 ### What secrets do I need?
 
-One, `OPENROUTER_API_KEY`, saved once as an organization secret. The private answer key needs a second one, `INSTRUCTOR_REPO_TOKEN`. See [Tokens, secrets and permissions](reference/permissions.md).
+One, `OPENROUTER_API_KEY`, saved once as an organization secret. The private answer key, which works only with Classroom 50, needs a second one, `INSTRUCTOR_REPO_TOKEN`. See [Tokens, secrets and permissions](reference/permissions.md).
 
 ### Can I change the settings after setting it up?
 
@@ -58,7 +58,7 @@ Write a few sentences of instructions, and optionally point GrillMyCode at the a
 
 ### Can students see the answers?
 
-No, unless you turn on **Include answers**, which defeats the purpose. To see the answers yourself, set up the [private answer key](guides/instructor-setup.md).
+No, unless you turn on **Include answers**, which defeats the purpose. To see the answers yourself, set up the [private answer key](guides/instructor-setup.md) (Classroom 50 only).
 
 ### Why are some questions missing from a student's report?
 
@@ -96,7 +96,7 @@ The older run is cancelled and a new one starts on the latest commit, so only th
 
 ### Can I tell when a student resubmits under the same tag?
 
-Yes, with the private answer key set up. Every resubmission is counted, and the replaced questions are kept. See [Tracking assessed repositories](guides/tracking-repositories.md#spotting-resubmissions).
+Yes, with the private answer key set up (Classroom 50 only). Every resubmission is counted, and the replaced questions are kept. See [Tracking assessed repositories](guides/tracking-repositories.md#spotting-resubmissions).
 
 ## Results
 
@@ -106,7 +106,7 @@ In a GitHub issue in the student's repository, called **GrillMyCode Questions**,
 
 ### Can I get the questions into my LMS?
 
-Yes. With the private answer key, each student gets a quiz file you can import into Brightspace, Canvas, Moodle and most others. See [Importing quizzes into your LMS](guides/lms-quizzes.md).
+Yes, for Classroom 50 assignments. With the private answer key, each student gets a quiz file you can import into Brightspace, Canvas, Moodle and most others. See [Importing quizzes into your LMS](guides/lms-quizzes.md).
 
 ### How can I see which students have questions?
 

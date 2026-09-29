@@ -6,7 +6,7 @@ sidebar_position: 3
 
 This page follows one student submission from start to finish. You don't need any technical background to read it. Each section ends with a link to the technical details, if you want them.
 
-![A cartoon road with five numbered stops. 1: a student at a laptop says "Done!" and sends their work off. 2: the GrillMyCode flame uses a magnifying glass to pick out the student's own code and sets other files aside. 3: a friendly robot, handed a sticky note of instructions, writes questions. The road then forks at a signpost. 4, for students: the student smiles at a pinned issue of questions with a PDF copy. 5, for you and optional: an instructor with a coffee mug beside a locked folder and a quiz card.](/img/how-gmc-works-journey.svg)
+![A cartoon road with five numbered stops. 1: a student at a laptop says "Done!" and sends their work off. 2: the GrillMyCode flame uses a magnifying glass to pick out the student's own code and sets other files aside. 3: a friendly robot, handed a sticky note of instructions, writes questions. The road then forks at a signpost. 4, for students: the student smiles at a pinned issue of questions with a PDF copy. 5, for you and optional (Classroom 50 only): an instructor with a coffee mug beside a locked folder and a quiz card.](/img/how-gmc-works-journey.svg)
 
 ## 1. The student submits code, triggering a run automatically or by the instructor
 
@@ -60,7 +60,7 @@ Students never see the answers. When the questions are generated again, for exam
 
 ## 5. You get the questions, answers and LMS materials (optional for Classroom 50 instructors)
 
-After one extra setup step, GrillMyCode also keeps a private copy of every student's questions *with the answers*. The copies go in a repository that only instructors can see: one repository per assignment, with a folder for each student.
+For Classroom 50 assignments, and after one extra setup step, GrillMyCode also keeps a private copy of every student's questions *with the answers*. The copies go in a repository that only instructors can see: one repository per assignment, with a folder for each student.
 
 For each student it also builds a multiple-choice quiz file that you can import into Brightspace, Canvas, Moodle or most other learning management systems.
 

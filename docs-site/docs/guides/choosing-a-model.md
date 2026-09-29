@@ -17,7 +17,7 @@ An assessment can cost **less than one cent**, and with a low-cost model a small
 What adds to the cost:
 
 - **How often it runs.** With the *every push* trigger, a student who pushes 20 times gets 20 assessments. A [submission tag](choosing-a-trigger.md#submission-tag) runs once per submission instead.
-- **The private answer key.** When it's set up, the AI also writes three wrong answers per question for the LMS quiz, which makes each assessment somewhat longer.
+- **The private answer key** (Classroom 50 only). When it's set up, the AI also writes three wrong answers per question for the LMS quiz, which makes each assessment somewhat longer.
 - **The model.** The more capable models can cost many times as much per assessment.
 - **Reasoning.** Many models think before they answer, and that thinking is billed too, which can multiply the cost. The Wizard's **Reasoning** setting shows what your model does and lets you turn it down.
 

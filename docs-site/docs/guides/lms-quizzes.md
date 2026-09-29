@@ -4,7 +4,7 @@ sidebar_position: 9
 
 # Importing quizzes into your LMS
 
-With the [private answer key](instructor-setup.md) set up, GrillMyCode builds a multiple-choice quiz for each student from their own questions. You can import it into your learning management system and have students answer it there.
+With the [private answer key](instructor-setup.md) set up, which works only with Classroom 50 assignments, GrillMyCode builds a multiple-choice quiz for each student from their own questions. You can import it into your learning management system and have students answer it there.
 
 ## Where the quiz files are
 

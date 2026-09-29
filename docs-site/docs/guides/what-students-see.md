@@ -22,7 +22,7 @@ Each question comes after it, with a short snippet of the student's own code, he
 
 ### Questions held back
 
-Before posting, GrillMyCode checks that no question gives away its own answer. When it can't be sure, it leaves that question out of the student's copy and the issue says how many were held back. Your [private answer key](instructor-setup.md) always has the full set.
+Before posting, GrillMyCode checks that no question gives away its own answer. When it can't be sure, it leaves that question out of the student's copy and the issue says how many were held back. Your [private answer key](instructor-setup.md) (Classroom 50 only) always has the full set.
 
 ## When the questions change
 

@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 680" role="img" aria-labelledby="gmc-hiw-title">
-  <title id="gmc-hiw-title">How GrillMyCode works: the student submits code, GrillMyCode isolates the submitted code, an AI writes questions about it, then the student gets the questions as a GitHub issue and PDF, and the instructor can get the student's questions, answers and LMS materials.</title>
+  <title id="gmc-hiw-title">How GrillMyCode works: the student submits code, GrillMyCode isolates the submitted code, an AI writes questions about it, then the student gets the questions as a GitHub issue and PDF, and, for Classroom 50 assignments, the instructor can get the student's questions, answers and LMS materials.</title>
   <style>
     .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
     .ttl{font-size:19px;font-weight:800;fill:#1E293B}
@@ -264,6 +264,6 @@
 
     <text class="ttl" x="770" y="614">You get the student's questions,</text>
     <text class="ttl" x="770" y="636">answers and LMS materials</text>
-    <text class="sub" x="770" y="659">optional, private to instructors</text>
+    <text class="sub" x="770" y="659">optional, private to Classroom 50 instructors</text>
   </g>
 </svg>

@@ -4,7 +4,7 @@ sidebar_position: 6
 
 # Instructor repository internals
 
-When `instructor_repo_token` is set, GrillMyCode writes a full copy of each assessment, with questions **and** answers, to a private repository for the assignment. This page covers how that works. To set it up, see [Keeping a private answer key](../guides/instructor-setup.md).
+When `instructor_repo_token` is set in a Classroom 50 assignment repository, GrillMyCode writes a full copy of each assessment, with questions **and** answers, to a private repository for the assignment. It works only in conjunction with Classroom 50, because the assignment and student are read from Classroom 50's repository naming. This page covers how that works. To set it up, see [Keeping a private answer key](../guides/instructor-setup.md).
 
 ## How the assignment and student are identified
 

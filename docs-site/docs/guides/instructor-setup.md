@@ -7,6 +7,8 @@ sidebar_label: Keeping a private answer key
 
 Students only ever see questions. With a little extra setup, GrillMyCode also keeps a copy of every student's questions **with the answers**, in a private repository that only instructors can see. It also builds a multiple-choice quiz for each student that you can import into your LMS.
 
+The answer key works only with Classroom 50 assignments. In any other repository, students still get their questions, but no answer key is kept.
+
 This page shows how to set it up. It takes about 10 minutes once, and one extra line in each assignment's workflow.
 
 ![A cartoon split by a brick wall with an "Instructors only" sign and a padlock. The GrillMyCode flame sits on the wall and sends a paper plane to each side. On the student's side, the student looks at a pinned issue of questions with a PDF copy, and every answer is hidden. On your side as a Classroom 50 instructor, a locked folder with a tab for each student, such as jsmith, holds questions with answers, and a quiz card flies off to your LMS. Chips underneath compare the sides: the student gets questions but not answers; you get questions, answers and an LMS quiz.](/img/who-sees-what.svg)

@@ -79,7 +79,7 @@ When the comments *are* the work, for example in an assignment about documenting
 
 ## Leave "Include answers" off
 
-The **Include answers** option shows the answers to the student, right under each question. That defeats the purpose of the assessment, so leave it off. To see the answers yourself, use the [private answer key](instructor-setup.md) instead.
+The **Include answers** option shows the answers to the student, right under each question. That defeats the purpose of the assessment, so leave it off. To see the answers yourself, use the [private answer key](instructor-setup.md) instead (Classroom 50 assignments only).
 
 ---
 

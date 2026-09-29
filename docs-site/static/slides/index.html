@@ -163,6 +163,51 @@
       .delivery-card .dicon { font-size: 1.5em; }
       .delivery-card strong { display: block; color: var(--accent-light); margin: 0.2em 0 0.15em; font-size: 1em; }
       .delivery-card span { color: var(--dim); font-size: 0.88em; }
+
+      /* Illustrations and screenshots. The img.class selectors outrank reveal's
+         theme rule for .reveal section img, which adds a border, shadow and margin. */
+      .reveal section img.figure,
+      .reveal section img.side-art,
+      .reveal section img.shot {
+        display: block;
+        max-width: 100%;
+        margin: 0 auto;
+        border: 0;
+        box-shadow: none;
+        background: none;
+      }
+      .reveal section img.figure { max-height: 510px; margin-top: 0.2em; }
+      .reveal section img.side-art { width: 100%; max-width: 400px; }
+      /* Screenshots are white pages on a dark slide, so a shadow separates them. */
+      .reveal section img.shot {
+        max-height: 500px;
+        border-radius: 8px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+        background: #fff;
+      }
+      /* Clips a tall screenshot to its top and fades the cut edge. */
+      .shot-crop {
+        position: relative;
+        width: fit-content;
+        max-width: 100%;
+        max-height: 500px;
+        margin: 0 auto;
+        overflow: hidden;
+        border-radius: 8px;
+        box-shadow: 0 12px 32px rgba(0, 0, 0, 0.55);
+      }
+      .reveal section .shot-crop img.shot { max-height: none; width: 760px; box-shadow: none; border-radius: 0; }
+      .shot-crop::after {
+        content: "";
+        position: absolute;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        height: 90px;
+        background: linear-gradient(rgba(15, 23, 42, 0), #0f172a);
+      }
+      .figcap { font-size: 0.6em; color: var(--dim); text-align: center; margin-top: 0.6em; }
+      .cols.with-art { align-items: center; }
     </style>
   </head>
 
@@ -238,6 +283,8 @@
         <section data-auto-animate>
           <h2>How It Works</h2>
           <hr class="divider" />
+          <img class="figure" src="../img/how-gmc-works-journey.svg" alt="A cartoon road with five numbered stops. 1: the student submits code. 2: GrillMyCode isolates the submitted code. 3: an AI writes questions about it, guided by your instructions. 4: the student gets the questions as a GitHub issue and matching PDF. 5, optional and private to Classroom 50 instructors: you get the student's questions, answers and LMS materials." />
+          <aside class="notes">
           <ul class="step-list">
             <li>
               <span class="step-num">1</span>
@@ -256,6 +303,7 @@
               <div><strong>The student gets the questions</strong><br /><span class="dim">Delivered as a GitHub issue and matching PDF; you can also get the answers and an LMS quiz</span></div>
             </li>
           </ul>
+          </aside>
         </section>
 
         <!-- ── 5. When it runs ──────────────────────────────────────── -->
@@ -283,6 +331,21 @@
             </div>
           </div>
           <p class="footnote">Students can resubmit under the same tag. Every resubmission is recorded, and the earlier questions are kept for you.</p>
+        </section>
+
+        <!-- ── One student, three choices ────────────────────────── -->
+        <section data-auto-animate>
+          <h2>One Student, Three Choices</h2>
+          <hr class="divider" />
+          <img class="figure" src="../img/choosing-a-trigger-timeline.svg" alt="One student's timeline of six pushes. Every push: six runs. Submission tag: one run, at the push tagged complete. Only when you say: one run, when you start it after the deadline." />
+        </section>
+
+        <!-- ── Only the student's own code ───────────────────────── -->
+        <section data-auto-animate>
+          <h2>Only the Student's Own Code</h2>
+          <hr class="divider" />
+          <img class="figure" src="../img/choosing-files-sorting.svg" alt="Files from the repository ride a conveyor belt. Everything the student didn't write drops into a Set aside bin, comments are snipped off, and only the student's own code reaches the end." />
+          <p class="figcap">Your starter code, setup files and generated files are set aside before the AI sees anything.</p>
         </section>
 
         <!-- ── 6. Comments are removed ───────────────────────────── -->
@@ -333,7 +396,7 @@ def add(a, b):
             <div class="delivery-card">
               <div class="dicon">🔒</div>
               <strong>Private answer key</strong>
-              <span>Every student's questions <em>with answers</em>, in a repository only instructors can see.</span>
+              <span>Every student's questions <em>with answers</em>, in a repository only instructors can see. Classroom 50 only.</span>
             </div>
             <div class="delivery-card">
               <div class="dicon">🧮</div>
@@ -341,6 +404,13 @@ def add(a, b):
               <span>A multiple-choice quiz per student, for Brightspace, Canvas, Moodle and most others.</span>
             </div>
           </div>
+        </section>
+
+        <!-- ── Who sees what ─────────────────────────────────────── -->
+        <section data-auto-animate>
+          <h2>Who Sees What</h2>
+          <hr class="divider" />
+          <img class="figure" src="../img/who-sees-what.svg" alt="A brick wall marked Instructors only separates two sides. On the student's side: an issue of questions and a PDF, with the answers hidden. On your side as a Classroom 50 instructor, which is optional: a private repository with a folder for each student, their questions with answers, and a quiz for your LMS." />
         </section>
 
         <!-- ── 8. Cost and models ────────────────────────────────── -->
@@ -359,12 +429,22 @@ def add(a, b):
         <section data-auto-animate>
           <h2>Built for Classroom 50</h2>
           <hr class="divider" />
-          <ul style="font-size:0.85em; line-height:1.9;">
-            <li><strong>Add it to the template once</strong>, and every student who accepts the assignment gets it</li>
-            <li><strong>Starter code is skipped</strong>: only what the student wrote after accepting is assessed</li>
-            <li><strong>Questions go to the right student</strong>, whoever pushed or started the run</li>
-            <li><strong>Milestone tags work together</strong>: one tag push can both grade a milestone and generate its questions</li>
-          </ul>
+          <div class="cols with-art">
+            <ul style="font-size:0.8em; line-height:1.75; flex:1.5;">
+              <li><strong>Add it to the template once</strong>, and every student who accepts the assignment gets it</li>
+              <li><strong>Starter code is skipped</strong>: only what the student wrote after accepting is assessed</li>
+              <li><strong>Questions go to the right student</strong>, whoever pushed or started the run</li>
+              <li><strong>Milestone tags work together</strong>: one tag push can both grade a milestone and generate its questions</li>
+            </ul>
+            <div><img class="side-art" src="../img/grillmycode-classroom.svg" alt="The GrillMyCode flame reviews a grid of student repositories through a magnifying glass, with template commits greyed out." /></div>
+          </div>
+        </section>
+
+        <!-- ── Milestone tags ────────────────────────────────────── -->
+        <section data-auto-animate>
+          <h2>Milestone Tags</h2>
+          <hr class="divider" />
+          <img class="figure" src="../img/milestone-tags-coverage.svg" alt="A student's timeline with three tags: phase1, phase2 and final. You choose whether each tag's questions cover all work to date, or only the work since the previous tag." />
         </section>
 
         <!-- ── 10. What you can adjust ──────────────────────────── -->
@@ -395,11 +475,19 @@ def add(a, b):
           </div>
         </section>
 
+        <!-- ── How much setup ────────────────────────────────────── -->
+        <section data-auto-animate>
+          <h2>How Much Setup?</h2>
+          <hr class="divider" />
+          <img class="figure" src="../img/setup-effort.svg" alt="Once per classroom: create and store your AI provider key in your GitHub organization. Once per assignment: add GrillMyCode to the starter template as one file, written by the Workflow Wizard. Automatic from then on: every student who accepts the assignment gets a copy." />
+        </section>
+
         <!-- ── 11. Getting started ───────────────────────────────── -->
         <section data-auto-animate>
           <h2>Getting Started in Four Steps</h2>
           <hr class="divider" />
-          <ul class="step-list">
+          <div class="cols with-art">
+          <ul class="step-list" style="flex:2;">
             <li>
               <span class="step-num">1</span>
               <div><strong>Set up an OpenRouter key</strong><br /><span class="dim">Once for your whole classroom</span></div>
@@ -417,6 +505,8 @@ def add(a, b):
               <div><strong>Check the first run</strong><br /><span class="dim">About 15 minutes end to end</span></div>
             </li>
           </ul>
+          <div><img class="side-art" src="../img/grillmycode-wizard.svg" alt="The GrillMyCode flame wearing a wizard hat, with a magic wand." style="max-width:230px;" /></div>
+          </div>
           <p class="footnote">You'll need basic Git and GitHub skills: committing, pushing, branches, finding your way around a repository and, if you use submission tags, tagging.</p>
         </section>
 
@@ -450,11 +540,20 @@ def add(a, b):
           </div>
         </section>
 
+        <!-- ── The real thing ────────────────────────────────────── -->
+        <section data-auto-animate>
+          <h2>The Real Thing</h2>
+          <hr class="divider" />
+          <div class="shot-crop">
+            <img class="shot" src="../img/screenshots/assessment-issue.png" alt="A GitHub issue titled GrillMyCode Questions (main), assigned to the student, with a Download as PDF button, details of the code assessed, and numbered questions under excerpts of the student's code." />
+          </div>
+        </section>
+
         <!-- ── 13. What you see ──────────────────────────────────── -->
         <section data-auto-animate>
           <h2>What You See</h2>
           <hr class="divider" />
-          <p style="font-size:0.82em; color:var(--dim);">With the private answer key set up, each assignment gets a private repository with a folder per student:</p>
+          <p style="font-size:0.82em; color:var(--dim);">With the private answer key set up (Classroom 50 only), each assignment gets a private repository with a folder per student:</p>
           <div class="delivery-row">
             <div class="delivery-card">
               <div class="dicon">🔑</div>
@@ -472,6 +571,22 @@ def add(a, b):
               <span>See who resubmitted, and compare the old questions with the new.</span>
             </div>
           </div>
+        </section>
+
+        <!-- ── Inside the answer key ─────────────────────────────── -->
+        <section data-auto-animate>
+          <h2>Inside the Answer Key</h2>
+          <hr class="divider" />
+          <img class="shot" src="../img/screenshots/instructor-repository.png" alt="Top: the private answer key repository for an assignment, with one folder per student. Bottom: one student's folder, holding two LMS quiz files, the questions with answers, and the AI's raw output." />
+          <p class="figcap">One private repository per assignment, one folder per student. Classroom 50 only.</p>
+        </section>
+
+        <!-- ── See who has questions ─────────────────────────────── -->
+        <section data-auto-animate>
+          <h2>See Who Has Questions</h2>
+          <hr class="divider" />
+          <img class="shot" src="../img/screenshots/org-repository-markers.png" alt="An organization's repository list. Most student repositories show a grillmycode label and a GrillMyCode: 20 questions note; one without questions yet has neither." style="max-height:460px;" />
+          <p class="figcap">Assessed repositories are labelled in your organization's repository list, with a question count.</p>
         </section>
 
         <!-- ── 14. Summary ───────────────────────────────────────── -->

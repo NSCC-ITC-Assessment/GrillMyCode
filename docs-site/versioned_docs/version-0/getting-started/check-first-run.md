@@ -38,4 +38,4 @@ For anything else, see [Troubleshooting](../troubleshooting.md).
 - [Tailor the questions](../guides/tailoring-questions.md) to your assignment.
 - [Choose when questions are generated](../guides/choosing-a-trigger.md): every push, on submission, or only when you say.
 - See [what your students see](../guides/what-students-see.md), and what to tell them.
-- [Keep a private answer key](../guides/instructor-setup.md) with a ready-made LMS quiz for each student.
+- [Keep a private answer key](../guides/instructor-setup.md) with a ready-made LMS quiz for each student (Classroom 50 assignments only).
