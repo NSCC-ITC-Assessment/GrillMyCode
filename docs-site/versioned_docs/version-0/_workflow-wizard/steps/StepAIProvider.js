@@ -164,40 +164,46 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         className={styles.notice}
         style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)' }}
       >
-        <strong>💸 Cost reminder:</strong> OpenRouter charges per token based on the model you
-        select. Pricing varies significantly between models — some are free, others can be expensive
-        at scale. Check{' '}
-        <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
-          openrouter.ai/models
-        </a>{' '}
-        for the current pricing of your chosen model before deploying to a class of students.
-        <br />
-        <br />
-        The pre-defined models in the list below were chosen partly for their low cost when tested,
-        and have been tested to work well with GrillMyCode. An assessment can cost{' '}
-        <strong>less than one cent</strong>, but the cost can rise sharply with the model, its
-        reasoning setting and how much code is assessed.
-        <br />
-        <br />
-        <strong>Estimating what it will cost your class is your responsibility.</strong> Before
-        rolling it out, do a few trial runs with the settings you'll use and check their cost in
-        your OpenRouter account.{' '}
-        <a
-          href={`${docsBase}/guides/choosing-a-model#estimate-your-cost-with-trial-runs`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          How to estimate your cost →
-        </a>
-        <br />
-        <br />
-        <a
-          href={`${docsBase}/ai-providers/openrouter`}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Read more about OpenRouter setup here →
-        </a>
+        <details>
+          <summary style={{ cursor: 'pointer' }}>
+            <strong>💸 Cost reminder</strong>
+          </summary>
+          <div style={{ marginTop: '0.5rem' }}>
+            OpenRouter charges per token based on the model you select. Pricing varies significantly
+            between models — some are free, others can be expensive at scale. Check{' '}
+            <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
+              openrouter.ai/models
+            </a>{' '}
+            for the current pricing of your chosen model before deploying to a class of students.
+            <br />
+            <br />
+            The pre-defined models in the list below were chosen partly for their low cost when
+            tested, and have been tested to work well with GrillMyCode. An assessment can cost{' '}
+            <strong>less than one cent</strong>, but the cost can rise sharply with the model, its
+            reasoning setting and how much code is assessed.
+            <br />
+            <br />
+            <strong>Estimating what it will cost your class is your responsibility.</strong> Before
+            rolling it out, do a few trial runs with the settings you'll use and check their cost in
+            your OpenRouter account.{' '}
+            <a
+              href={`${docsBase}/guides/choosing-a-model#estimate-your-cost-with-trial-runs`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              How to estimate your cost →
+            </a>
+            <br />
+            <br />
+            <a
+              href={`${docsBase}/ai-providers/openrouter`}
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              Read more about OpenRouter setup here →
+            </a>
+          </div>
+        </details>
       </div>
 
       <div className={styles.notice}>
