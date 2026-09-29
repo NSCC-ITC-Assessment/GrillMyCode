@@ -292,6 +292,28 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
             />
           </>
         )}
+        {modelUsable && (
+          <div style={{ marginTop: '0.6rem' }}>
+            <strong>Selected model:</strong>{' '}
+            {modelInfo && modelInfo.name !== modelInfo.id && `${modelInfo.name} `}
+            <code>{modelInfo?.id ?? modelTrimmed}</code>
+            {/* Linked only when the catalogue knows the model, so the link is
+                OpenRouter's own ID (routing variant removed) and never a guess. */}
+            {modelInfo && (
+              <>
+                {' '}
+                <a
+                  href={`https://openrouter.ai/${modelInfo.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  style={{ fontSize: '0.8rem', whiteSpace: 'nowrap' }}
+                >
+                  Model details on OpenRouter ↗
+                </a>
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       <div className={styles.fieldGroup}>
