@@ -52,6 +52,24 @@ GrillMyCode asks for its questions as a JSON object and sends the format as a JS
 
 A model without structured outputs still works: the schema is ignored and the model follows the prompt's description of the format. Such models are more likely to return a reply GrillMyCode can't use, which it retries; see [After the AI replies](../reference/code-selection.md#4-after-the-ai-replies). To check a model, filter the [model list](https://openrouter.ai/models?supported_parameters=structured_outputs) by structured outputs. The Workflow Wizard's **Own Choice** list shows only such models unless you untick its filter.
 
+## Compressed models
+
+Many providers on OpenRouter serve a model **compressed** to a lower precision (quantized), which is cheaper to run but can make the model less accurate. The loss is largest where GrillMyCode relies on the model most: tracing code step by step, writing correct answers, reading a long prompt and following a strict JSON format.
+
+GrillMyCode therefore sends OpenRouter a list of the precisions it accepts with every request, and OpenRouter routes only to providers on that list:
+
+| Used | Never used |
+|---|---|
+| `fp32`, `bf16`, `fp16`, `fp8`, `mxfp8`, `int8`, `unknown` | `fp6`, `fp4`, `mxfp4`, `nvfp4`, `int4` |
+
+This isn't an input: every run sends the same list, and it applies with or without a [routing variant](#model-routing-variants).
+
+- **`fp8` is allowed.** Many models are released at `fp8`, and their makers serve them that way.
+- **`unknown` is allowed.** Providers that don't publish a precision report `unknown`, and that includes Google and OpenAI serving their own models. Leaving it out would rule those models out entirely. It also means a provider that doesn't say could still be running a compressed copy.
+- **A model served only compressed can't be used.** If every provider of a model runs a compressed copy, OpenRouter has nowhere to send the request, and the run fails with `AI API error 404`. The Workflow Wizard warns about such a model under the **Model** field. See [Troubleshooting](../troubleshooting.md#the-run-failed-with-ai-api-error-404).
+
+Each provider's precision is on the model's page at [openrouter.ai/models](https://openrouter.ai/models).
+
 ## Model routing variants
 
 Most models on OpenRouter are served by **several providers**, which differ in speed and price for the same model. By default OpenRouter chooses among them for you, weighing price and recent reliability.
@@ -74,7 +92,7 @@ Appending a **routing variant** to the model ID tells it what to prioritize inst
 
 Things worth knowing before you use one:
 
-- **The model is the same, but the copy may not be.** A variant only changes which provider runs the model. Some providers run a **compressed** copy, listed at a lower precision such as `fp4`, which is cheaper to serve and can write weaker questions. Compressed copies are often among the cheapest, so `:floor` is likeliest to pick one, but the default routing can too. Each provider's precision is on the model's page at [openrouter.ai/models](https://openrouter.ai/models). Many models are released at `fp8`, so `fp8` alone isn't a sign of compression.
+- **The model is the same, and so is the precision.** A variant only changes which provider runs the model. Providers running a [compressed copy](#compressed-models) are never used, so `:floor` can't reach a cheaper copy by giving up precision.
 - **Fallbacks still apply.** If the first provider is unavailable, OpenRouter moves to the next one in the sorted order.
 - **Check pricing before using `:nitro`.** Billing follows the provider that actually served the request, so a priority-tier endpoint is billed at its own, higher rate — and the fastest provider is rarely the cheapest. Per-provider prices are on each model's page at [openrouter.ai/models](https://openrouter.ai/models). The same applies in reverse to `:floor`: a request served on a flex tier is billed at the flex rate.
 - **Try a different model before reaching for `:nitro`.** If assessments are slow *and* the questions are mediocre, another model is the better fix — see [Recommended models](#recommended-models). `:nitro` is for when the model is right and only the wait is wrong.
@@ -83,7 +101,7 @@ Things worth knowing before you use one:
 
 Variants are an OpenRouter feature. They live in the model ID rather than in a separate action input, so nothing changes for any other provider GrillMyCode might support later.
 
-In the [Workflow Wizard](../workflow-wizard.mdx) this is the **Model routing** setting under **Advanced settings** on the AI step, which appends the suffix to the model you picked. Once a model is chosen, the Wizard fetches its providers live from OpenRouter and shows the output price range for each option, whether the choice makes any difference to cost, and whether any provider runs a compressed copy below `fp8`.
+In the [Workflow Wizard](../workflow-wizard.mdx) this is the **Model routing** setting under **Advanced settings** on the AI step, which appends the suffix to the model you picked. Once a model is chosen, the Wizard fetches its providers live from OpenRouter and shows the output price range for each option and whether the choice makes any difference to cost. Providers running a compressed copy are left out of those prices, and the Wizard says how many there are.
 
 :::note Other suffixes
 OpenRouter also has suffixes that select a *different* model entry rather than a different provider, such as `:free`. Those are outside what the Wizard offers, but `ai_model` accepts any model string OpenRouter does. See OpenRouter's [model variants](https://openrouter.ai/docs/guides/routing/model-variants/overview) documentation.

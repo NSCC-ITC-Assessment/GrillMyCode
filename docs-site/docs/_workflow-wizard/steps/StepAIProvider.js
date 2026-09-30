@@ -36,10 +36,11 @@ const OPENROUTER_MODELS = [
 ];
 
 // OpenRouter routing variants, appended to the model ID as a `:suffix`. They
-// change which provider serves the model, not which model it is — but providers
-// can run compressed copies (fp4, for example) that answer less well, and the cheapest
-// often do, so routingSummary flags them. Empty is the default: OpenRouter
-// balances price, uptime and speed on its own.
+// change which provider serves the model, not which model it is. Providers
+// running a compressed copy (fp4, for example) are never used — the action
+// sends an allow-list of precisions — so routingSummary leaves them out of the
+// prices. Empty is the default: OpenRouter balances price, uptime and speed on
+// its own.
 const MODEL_VARIANTS = [
   {
     value: '',
@@ -58,15 +59,19 @@ const MODEL_VARIANTS = [
   },
 ];
 
-/** What each routing option means for the chosen model's providers. */
+/**
+ * What each routing option means for the chosen model's providers. A model with
+ * no usable provider is warned about under the model field instead, where it
+ * can't be hidden by a collapsed section.
+ */
 function RoutingNotes({ routing }) {
-  const { balanced, floor, nitro, compressed } = routing;
+  if (routing.unusable) return null;
+  const { balanced, floor, nitro, skipped } = routing;
   const balancedPrice =
     balanced.min === balanced.max
       ? formatDollars(balanced.min)
       : `${formatDollars(balanced.min)}–${formatDollars(balanced.max)}`;
   const hint = { marginTop: '0.4rem' };
-  const warning = { ...hint, color: 'var(--ifm-color-warning-contrast-foreground)' };
 
   return (
     <>
@@ -89,25 +94,14 @@ function RoutingNotes({ routing }) {
           </span>
         )
       )}
-      {routing.endpoints === 1 && floor.compressed ? (
-        <span className={styles.hint} style={warning}>
-          ⚠️ Its only provider runs a compressed ({floor.quantization}) copy of the model, which
-          can write weaker questions.
+      {skipped.count > 0 && (
+        <span className={styles.hint} style={hint}>
+          {skipped.count === 1
+            ? '1 endpoint runs a compressed copy'
+            : `${skipped.count} endpoints run a compressed copy`}{' '}
+          of the model ({skipped.precisions.join(', ')}), which can write weaker questions.
+          GrillMyCode never uses them, so they aren't counted in these prices.
         </span>
-      ) : floor.compressed ? (
-        <span className={styles.hint} style={warning}>
-          ⚠️ The cheapest provider runs a compressed ({floor.quantization}) copy of the model,
-          which can write weaker questions. {compressed.count} of {routing.endpoints} endpoints run
-          compressed copies ({compressed.precisions.join(', ')})
-          {compressed.balanced && ', and Balanced can choose them too'}.
-        </span>
-      ) : (
-        compressed.count > 0 && (
-          <span className={styles.hint} style={warning}>
-            ⚠️ {compressed.count} of {routing.endpoints} endpoints run a compressed copy of the
-            model ({compressed.precisions.join(', ')}), which can write weaker questions.
-          </span>
-        )
       )}
     </>
   );
@@ -134,6 +128,12 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
   const concerns = modelConcerns(modelInfo);
   const endpoints = useModelEndpoints(modelInfo?.id ?? null);
   const routing = endpoints.status === 'ready' ? routingSummary(endpoints.endpoints) : null;
+  if (routing?.unusable) {
+    concerns.push(
+      `Every provider of this model runs a compressed copy (${routing.skipped.precisions.join(', ')}), ` +
+        'which GrillMyCode never uses, so every run with it would fail. Choose another model.',
+    );
+  }
   const concernNote = concerns.length > 0 && (
     <span
       className={styles.hint}
@@ -473,8 +473,8 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
                 routing variant
               </a>{' '}
               to the model ID to say which of them should be tried first. This changes the
-              provider, not the model — but some providers run a compressed copy of the model,
-              which can write weaker questions, and the cheapest providers often do.
+              provider, not the model. Providers that run a compressed copy of the model are
+              never used, whichever you choose.
             </span>
             <select
               className={styles.select}

@@ -61,6 +61,12 @@ Fix it in your [OpenRouter privacy settings](https://openrouter.ai/settings/priv
 
 Then re-run the workflow. If it still fails, the model ID may be wrong or retired. Check it against [OpenRouter's model list](https://openrouter.ai/models); free models often need a `:free` suffix.
 
+### The run failed with `AI API error 404`
+
+If the error says GrillMyCode only uses providers at `fp8` precision or higher, every provider OpenRouter has for this model may run a compressed copy, which GrillMyCode never uses. Choose another model. The Workflow Wizard warns about such a model under the **Model** field on the AI step. See [Compressed models](ai-providers/openrouter.md#compressed-models).
+
+Otherwise, check the model ID against [OpenRouter's model list](https://openrouter.ai/models). A mistyped or retired model also returns a 404.
+
 ### Runs fail with rate-limit errors (429)
 
 GrillMyCode already waits and retries, so a run that still fails hit a limit that lasted longer than its retries. Check the error message for the cause:

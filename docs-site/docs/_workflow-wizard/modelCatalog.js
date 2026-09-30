@@ -369,11 +369,18 @@ export function formatContext(tokens) {
 // ── Providers per model (routing) ────────────────────────────────────────────
 
 /**
- * Precisions that count as a compressed copy of a model. fp8 is not one: many
- * models are released at fp8, and their makers serve them that way, so only
- * precisions below it are flagged.
+ * Precisions the action lets OpenRouter serve a model at. Mirrors
+ * AI_ALLOWED_QUANTIZATIONS in the action's src/constants.js, which sends this
+ * list with every request — keep the two in step. Anything else (fp6 and the
+ * 4-bit formats) is a compressed copy the action never uses, so the Wizard
+ * leaves those endpoints out of its prices. An endpoint that reports no
+ * precision counts as `unknown`, as OpenRouter treats it.
  */
-const COMPRESSED_PRECISIONS = ['fp6', 'fp4', 'int4'];
+const ALLOWED_PRECISIONS = ['fp32', 'bf16', 'fp16', 'fp8', 'mxfp8', 'int8', 'unknown'];
+
+function precisionAllowed(quantization) {
+  return ALLOWED_PRECISIONS.includes(quantization || 'unknown');
+}
 
 // One request per model per page load, shared across mounts.
 const endpointRequests = new Map();
@@ -446,48 +453,57 @@ function outputPrice(endpoint) {
  * What each routing option means for this model's providers, from its
  * endpoint list. Prices are output prices in dollars per million tokens:
  *
- * - `providers`: how many distinct providers serve the model
+ * - `providers`: how many distinct providers serve the model at a precision
+ *   the action allows
+ * - `endpoints`: how many endpoints the action can use
  * - `balanced`: `{ min, max }` across standard endpoints
- * - `floor`: the cheapest standard or flex endpoint, its precision, and
- *   whether that precision is compressed
+ * - `floor`: the cheapest standard or flex endpoint
  * - `nitro`: the dearest standard or priority endpoint — OpenRouter reports no
  *   speeds to say which is fastest, so this is the most `:nitro` can cost
- * - `compressed`: how many endpoints run a compressed copy, whether any is a
- *   standard one Balanced can pick, and which precisions
+ * - `skipped`: how many endpoints run a compressed copy the action never uses,
+ *   and which precisions
+ * - `unusable`: true when every endpoint is compressed, so every run with the
+ *   model would fail; the price fields are then absent
  *
- * Returns null when no endpoint has a usable price.
+ * Only endpoints the action can use are priced. Returns null when no endpoint
+ * has a usable price.
  */
 export function routingSummary(endpoints) {
   const priced = endpoints
-    .map((e) => ({ price: outputPrice(e), tier: endpointTier(e), quantization: e.quantization }))
+    .map((e) => ({
+      price: outputPrice(e),
+      tier: endpointTier(e),
+      quantization: e.quantization,
+      provider: e.provider_name,
+    }))
     .filter((e) => e.price !== null);
   if (priced.length === 0) return null;
 
-  const standard = priced.filter((e) => e.tier === 'standard');
-  const balancedPool = standard.length > 0 ? standard : priced;
-  const floorPool = priced.filter((e) => e.tier !== 'priority');
-  const nitroPool = priced.filter((e) => e.tier !== 'flex');
-  const cheapest = [...(floorPool.length ? floorPool : priced)].sort((a, b) => a.price - b.price)[0];
-  const compressed = priced.filter((e) => COMPRESSED_PRECISIONS.includes(e.quantization));
+  const skippedEndpoints = priced.filter((e) => !precisionAllowed(e.quantization));
+  const skipped = {
+    count: skippedEndpoints.length,
+    precisions: [...new Set(skippedEndpoints.map((e) => e.quantization))].sort(),
+  };
+  const usable = priced.filter((e) => precisionAllowed(e.quantization));
+  if (usable.length === 0) return { unusable: true, skipped };
+
+  const standard = usable.filter((e) => e.tier === 'standard');
+  const balancedPool = standard.length > 0 ? standard : usable;
+  const floorPool = usable.filter((e) => e.tier !== 'priority');
+  const nitroPool = usable.filter((e) => e.tier !== 'flex');
+  const cheapest = [...(floorPool.length ? floorPool : usable)].sort((a, b) => a.price - b.price)[0];
 
   return {
-    providers: new Set(endpoints.map((e) => e.provider_name)).size,
-    endpoints: priced.length,
+    unusable: false,
+    providers: new Set(usable.map((e) => e.provider)).size,
+    endpoints: usable.length,
     balanced: {
       min: Math.min(...balancedPool.map((e) => e.price)),
       max: Math.max(...balancedPool.map((e) => e.price)),
     },
-    floor: {
-      price: cheapest.price,
-      quantization: cheapest.quantization,
-      compressed: COMPRESSED_PRECISIONS.includes(cheapest.quantization),
-    },
-    nitro: { price: Math.max(...(nitroPool.length ? nitroPool : priced).map((e) => e.price)) },
-    compressed: {
-      count: compressed.length,
-      balanced: compressed.filter((e) => e.tier === 'standard').length > 0,
-      precisions: [...new Set(compressed.map((e) => e.quantization))].sort(),
-    },
+    floor: { price: cheapest.price },
+    nitro: { price: Math.max(...(nitroPool.length ? nitroPool : usable).map((e) => e.price)) },
+    skipped,
   };
 }
 

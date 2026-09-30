@@ -50,7 +50,7 @@ Most models are offered by several companies at different speeds and prices. The
 - **Speed:** try the fastest providers first, for when you like the questions but they take too long to arrive. It can cost more.
 - **Lowest cost:** try the cheapest providers first. They can be slower, or queue at busy times.
 
-The model is the same either way, but some providers run a compressed copy that can write weaker questions. The Wizard shows each option's price for your model and warns about compressed copies.
+The model is the same either way. Some providers run a compressed copy of a model, which is cheaper but can write weaker questions, and GrillMyCode never uses those. The Wizard shows each option's price for your model.
 
 ## When a whole class submits at once
 
