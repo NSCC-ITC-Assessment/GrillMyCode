@@ -146,7 +146,7 @@ In every mode, a starter file the student edited is assessed like any [file that
 With `starter_code: ask` the AI may ask about the starter code itself, not only use it as background. What counts as starter code:
 
 - **Unchanged starter files**, sent in the starter-code block of the codebase context.
-- **Starter lines of edited files**: lines unchanged since the first commit in a file the student edited, marked `s` (see [Files that existed at the base](#files-that-existed-at-the-base)). This is where most starter code sits in a "fill in the TODOs" assignment.
+- **Starter lines of edited files**: lines unchanged since the first commit in a file the student edited, marked `s` (see [Files that existed at the base](#files-that-existed-at-the-base)). This is where most starter code sits in a "fill in the TODOs" assignment. A file edited only in an earlier submission counts too, when it is sent as [earlier work](#what-is-sent).
 
 The rules the AI is given:
 
@@ -155,7 +155,7 @@ The rules the AI is given:
 - It should prefer starter code that the student's code calls, extends or depends on.
 - Every other question must still show, and be about, the student's own lines.
 
-Starter code is the same in every student's repository, so answers to these questions can be shared between students. The limit keeps most of each set on the student's own work.
+Starter code is the same in every student's repository, so answers to these questions can be shared between students. The limit keeps most of each set on the student's own work. It applies to each run: on tag runs that assess one phase at a time, each phase's questions may be about the same starter code again.
 
 A starter-code question is kept after the reply (see [step 3](#4-after-the-ai-replies)). In the instructor repository its `questions.md` entry is labelled _About the starter code, not the student's own work_, and `questions.json` sets `about_starter_code: true`. The run summary's **Starter code** row counts them. If the model goes over the limit, the extra questions are kept and the run logs a warning.
 
@@ -185,7 +185,7 @@ In practice these files come in two kinds, and which ones exist depends on the c
 | Kind | What it is | When there is any | Sent when |
 |---|---|---|---|
 | **Starter code** | Files from the first commit that the student has never changed | Whenever `starter_code` isn't `none` | `starter_code: context` or `ask` |
-| **Earlier work** | The student's own files from before the range that this submission didn't touch | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, or a manual `base_sha` | `previous_work: context` (default) |
+| **Earlier work** | The student's own files from before the range that this submission didn't touch, including starter files they changed in an earlier submission | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, or a manual `base_sha` | `previous_work: context` (default) |
 
 Some examples:
 
@@ -198,6 +198,8 @@ Some examples:
 | `starter_code: none` with `previous-tag` | Earlier work only. The first commit is the student's, so nothing counts as starter code |
 
 A phase 1 file that phase 2 **did** edit isn't sent as context. It is assessed, with the phase 2 lines marked and the phase 1 lines visible around them; see [Files that existed at the base](#files-that-existed-at-the-base).
+
+A starter file the student changed in phase 1 but not in phase 2 mixes your code with theirs. It is sent as earlier work, headed _(began as starter code)_ so the AI knows part of it is yours. With `starter_code: ask`, its lines still as you gave them are marked `s` and may be asked about, as in an assessed file. With `previous_work: ignore` it isn't sent at all, even under `starter_code: context` or `ask`. The only version without the student's changes is the first commit's, and that would show the AI code the student has since replaced, such as a stub they have implemented.
 
 Comments are stripped unless `keep_comments` is `'true'`. Binary files are skipped.
 

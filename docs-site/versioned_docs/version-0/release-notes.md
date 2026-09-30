@@ -5,6 +5,26 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.21.1 — 2026-09-30
+
+### What's Changed
+
+### Bug Fixes
+
+- **starter-code:** handle starter files edited before the assessed range
+
+### Documentation
+
+- note starter-code questions in the file sorting diagram
+
+### Refactoring
+
+- **context:** drop unused event-based diff base
+
+### Chores & Maintenance
+
+- **deps:** update renovatebot/github-action action to v46.3.4
+
 ## v0.21.0 — 2026-09-30
 
 ### What's Changed

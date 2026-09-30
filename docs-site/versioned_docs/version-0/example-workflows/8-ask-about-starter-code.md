@@ -50,7 +50,7 @@ jobs:
 
 ## Good to know
 
-- Starter lines inside files the student edited count too, so the TODO template's surrounding code can be asked about.
+- Starter lines inside files the student edited count too, even if they edited them in an earlier phase, so the TODO template's surrounding code can be asked about.
 - Your starter code is the same for every student, so answers to these questions can be shared.
 - Questions about starter code are worded as about "the provided code", and the report header says how many there are.
 - Sending the starter code makes each run cost more.
