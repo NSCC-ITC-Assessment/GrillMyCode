@@ -61,6 +61,12 @@ Fix it in your [OpenRouter privacy settings](https://openrouter.ai/settings/priv
 
 Then re-run the workflow. If it still fails, the model ID may be wrong or retired. Check it against [OpenRouter's model list](https://openrouter.ai/models); free models often need a `:free` suffix.
 
+### The run failed with `AI API error 404`
+
+If the error says GrillMyCode only uses providers at `fp8` precision or higher, every provider OpenRouter has for this model may run a compressed copy, which GrillMyCode never uses. Choose another model. The Workflow Wizard warns about such a model under the **Model** field on the AI step. See [Compressed models](ai-providers/openrouter.md#compressed-models).
+
+Otherwise, check the model ID against [OpenRouter's model list](https://openrouter.ai/models). A mistyped or retired model also returns a 404.
+
 ### Runs fail with rate-limit errors (429)
 
 GrillMyCode already waits and retries, so a run that still fails hit a limit that lasted longer than its retries. Check the error message for the cause:
@@ -74,7 +80,13 @@ For how the two limits differ, see [Retries and rate limits](ai-providers/openro
 
 If the error mentions `ai_reasoning_effort`, the workflow asked the model to switch reasoning off (`ai_reasoning_effort: "none"`), and the model always reasons. OpenRouter rejects that request rather than guessing a level.
 
-Change `ai_reasoning_effort` to `default` or a low level such as `minimal` or `low`, or remove it. The Workflow Wizard's **Reasoning** setting offers **Off** only for models that allow it. See [Reasoning](ai-providers/openrouter.md#reasoning).
+Change `ai_reasoning_effort` to `default` or a low level such as `minimal` or `low`, or remove it. The Workflow Wizard's **Reasoning** setting, under **Advanced settings** on the AI step, offers **Off** only for models that allow it. See [Reasoning](ai-providers/openrouter.md#reasoning).
+
+### The run failed with `AI API error 400` after setting a temperature
+
+If the error mentions `ai_temperature`, the model, or the provider serving it, doesn't accept the temperature the workflow set. Models differ in the range they accept.
+
+Remove `ai_temperature` so the model runs at its own temperature, or check the model maker's documentation for its range. In the Workflow Wizard, untick **Set a temperature** under **Advanced settings** on the AI step. See [Temperature](ai-providers/openrouter.md#temperature).
 
 ### The run failed with `AI reply could not be used`
 

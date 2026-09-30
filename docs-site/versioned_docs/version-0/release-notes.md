@@ -5,6 +5,30 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.22.0 — 2026-09-30
+
+### What's Changed
+
+### Features
+
+- **ai:** skip compressed model copies and watch OpenRouter's quantization list
+- make ai_temperature opt-in and let models run at their own settings
+
+### Bug Fixes
+
+- **prompt:** exempt broader and capped starter questions from the own-lines rule
+
+### Documentation
+
+- Add SVG diagrams for question funnel, release pipeline, and resubmission process; update slides to include new quiz pipeline section
+- implement price range slider for model selection in workflow wizard
+
+### Refactoring
+
+- enhance question generation rules to ensure student code snippets are included
+- clarify distractor requirements and response validation in prompt instructions
+- improve reasoning effort handling and cost warnings in AI Provider step
+
 ## v0.21.1 — 2026-09-30
 
 ### What's Changed

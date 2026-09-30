@@ -19,6 +19,7 @@ import {
   isTagTrigger,
   namedDiffBaseTagError,
   submissionTagList,
+  temperatureError,
 } from './generateYaml';
 
 // Order follows .github/prompts/plan-workflowWizard.prompt.md: the model and
@@ -35,7 +36,7 @@ const STEPS = [
   { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff that\'s sent to the AI.',                    Component: StepFiles },
   { label: 'File opts',  title: 'File handling options',                 subtitle: 'Configure how the diff is built — what to skip, how comments are handled, and which commits count.', Component: StepFileOptions },
   { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
-  { label: 'Advanced',   title: 'Advanced settings',                    subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
+  { label: 'Advanced',   title: 'Other advanced settings',              subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
   { label: 'Review',     title: 'Your workflow is ready',               subtitle: 'Copy the generated YAML into your assignment repository.',                                Component: StepReview },
 ];
 
@@ -59,6 +60,10 @@ const INITIAL_CONFIG = {
   // ai_reasoning_effort: 'default' leaves reasoning to the model. The AI step
   // lists only the levels OpenRouter's catalogue says the model supports.
   aiReasoningEffort: 'default',
+  // ai_temperature is opt-in: unticking clears the value, and nothing is
+  // emitted unless the box is ticked and holds 0 to 2 with at most two decimal places.
+  aiTemperatureEnabled: false,
+  aiTemperature: '',
   apiKeySecret: 'OPENROUTER_API_KEY',
 
   // Repository label: whether the action writes a topic and a description
@@ -95,7 +100,6 @@ const INITIAL_CONFIG = {
   codebaseContextMaxChars: 50000,
   skipCommitters: 'github-actions[bot]',
 
-  aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   baseSha: '',
   headSha: '',
@@ -117,6 +121,8 @@ function getStepError(stepIndex, cfg) {
     if (!cfg.apiKeySecret || !cfg.apiKeySecret.trim()) {
       return 'Please enter the name of the secret holding your OpenRouter API key.';
     }
+    const tempError = temperatureError(cfg);
+    if (tempError) return tempError;
   }
   if (label === 'Trigger' && isTagTrigger(cfg)) {
     if (submissionTagList(cfg).length === 0) {
