@@ -44,7 +44,7 @@ resolveTagName() → resolveSubmissionTag()
 resolveSHAs()
     │  Determines baseSha and headSha from the event context
     │  Handles: push, workflow_dispatch, and tag runs (head peeled to its commit)
-    │  Applies include_initial_commit override when enabled
+    │  Pins the base to the first commit, or the empty tree when starter_code is none
     │  Applies tag_diff_base (previous-tag / tag:<name>) on a tag run
     │
 resolveBranch()  — or, on a tag run, assertOnDefaultBranch()
@@ -90,6 +90,9 @@ collectFilesAt(baseSha) → buildAssessedCodeContent()
     │  Every line is numbered ("12 | code"; removed lines have no number), and
     │  each file's lines are returned as a source, with the student's line
     │  numbers (all of a new file, the added lines of a marked one)
+    │  Under starter_code: ask, each file is also read at the first commit, and
+    │  an unchanged line unchanged since then is marked `s` and returned as a
+    │  starter line that may be asked about
     │  Nothing marked at all (comment-only edits) → buildNumberedCodeContent()
     │  for every file, all lines the student's
     │
@@ -98,14 +101,16 @@ readAssignmentContextFiles()
     │  Concatenates contents as headed sections; capped at assignment_context_max_chars input (default 20000)
     │  Returns an empty string when no globs are supplied or no files match
     │
-loadCodebaseContext()   ← only when include_codebase_context is true
+loadCodebaseContext()   ← only when starter_code is context or ask, or previous_work is context
     │  findCodebaseContextFiles(): files at headSha that pass the exclude
     │  patterns and did not change in the range (listTreeFiles, listChangedPaths),
     │  less any file touched by the bot commits skip_committers stepped over
     │  (skippedRange from resolveSHAs)
     │  'starter' if also unchanged since the first commit (never when
-    │  include_initial_commit is true), otherwise 'earlier' — student work
-    │  from before a later base (tag_diff_base, base_sha)
+    │  starter_code is none), otherwise 'earlier' — student work from before
+    │  a later base (tag_diff_base, base_sha); each kind is kept only when
+    │  its input asks for it
+    │  Under starter_code: ask, starter files' lines may be asked about
     │  selectCodebaseContext() orders both kinds by folder distance from the
     │  assessed files and adds whole files up to codebase_context_max_chars,
     │  numbered like the submission; none of their lines are the student's
@@ -236,7 +241,7 @@ Determines the base and head SHAs for the diff. Handles two event types:
 | `push` | previous SHA (or first commit on new branch) | `after` SHA |
 | everything else (`workflow_dispatch`, etc.) | first commit | `ctx.sha` |
 
-After event-specific resolution, `include_initial_commit` can override the base SHA to pin it to the repository's very first commit — the behaviour needed for Classroom 50 to exclude starter template files.
+After event-specific resolution, `starter_code` overrides the base SHA: every value but `none` pins it to the repository's very first commit — the behaviour needed for Classroom 50 to exclude starter template files — and `none` sets it to the empty tree.
 
 On a run started by a submission tag (`{ tagName }` passed as the fourth argument), the head is the tagged commit, peeled with `git rev-parse <sha>^{commit}` because an annotated tag's push names the tag object. With `tag_diff_base: previous-tag`, the base then moves to the nearest strict ancestor carrying a tag that matches any `submission_tags` pattern (`pickPreviousSubmissionTag` in `src/tags.js`); with none, the base above stands. With `tag_diff_base: tag:<name>`, the base moves to that tag instead (`resolveTagCommit` in `src/git.js`, looked up under `refs/tags/`), and the run throws if the tag is missing, is not an ancestor of the head, or is on the head itself; it is skipped when `base_sha` is set. The chosen tag is returned as `previousTag`.
 
@@ -250,7 +255,7 @@ Two distinct conditions reach this point and need different fixes, so each gets 
 
 | `reason` | Condition | Points at |
 |---|---|---|
-| `empty-range` | `git diff --name-only` returned nothing — base and head resolved to the same commit | `include_initial_commit`, or a `base_sha`/`head_sha` override |
+| `empty-range` | `git diff --name-only` returned nothing — base and head resolved to the same commit | `starter_code`, or a `base_sha`/`head_sha` override |
 | `fully-excluded` | Files did change, but every one was removed by the exclude patterns | `exclude_pattern_overrides`, and the applied pattern list |
 
 Both write a `core.summary` block, because a warning annotation shows on the run page but not in a list of runs — an instructor scanning a cohort would otherwise see an unbroken row of green ticks. Summary writing is wrapped in `try`/`catch`: a summary is a convenience, never a reason to lose the diagnosis.

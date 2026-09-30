@@ -13,7 +13,7 @@ import {
   keepsLinePositions,
   selectCodebaseContext,
 } from '../src/files.js';
-import { buildPrompt } from '../src/prompt/prompt.js';
+import { buildPrompt, maxStarterQuestions } from '../src/prompt/prompt.js';
 import { GIT_EMPTY_TREE_SHA } from '../src/constants.js';
 
 describe('diffLines', () => {
@@ -81,7 +81,12 @@ describe('buildAssessedCodeContent', () => {
     );
     expect(content).toBe('### `src/new.py`\n```py\n1 | x = 1\n2 | y = 2\n```');
     expect(sources).toEqual([
-      { filepath: 'src/new.py', lines: ['x = 1', 'y = 2'], studentLines: 'all' },
+      {
+        filepath: 'src/new.py',
+        lines: ['x = 1', 'y = 2'],
+        studentLines: 'all',
+        starterLines: new Set(),
+      },
     ]);
     expect(markedFiles).toEqual([]);
     expect(addedLines).toBe(2);
@@ -99,7 +104,12 @@ describe('buildAssessedCodeContent', () => {
         '```js\n  1 | const a = 1;\n-   | const b = 2;\n+ 2 | const b = 3;\n```',
     );
     expect(sources).toEqual([
-      { filepath: 'app.js', lines: ['const a = 1;', 'const b = 3;'], studentLines: new Set([2]) },
+      {
+        filepath: 'app.js',
+        lines: ['const a = 1;', 'const b = 3;'],
+        studentLines: new Set([2]),
+        starterLines: new Set(),
+      },
     ]);
   });
 
@@ -136,6 +146,32 @@ describe('buildAssessedCodeContent', () => {
       new Map(),
     );
     expect(addedLines).toBe(2);
+  });
+
+  // starter_code: ask. The first commit's copy tells the instructor's lines
+  // from the student's earlier work, which a later base leaves unmarked too.
+  it('marks lines unchanged since the first commit as starter code', () => {
+    const { content, sources, starterLines } = buildAssessedCodeContent(
+      [{ filepath: 'app.js', content: 'given();\nearlier();\nnow();\n' }],
+      new Map([['app.js', 'given();\nearlier();\n']]),
+      new Map([['app.js', 'given();\n']]),
+    );
+    expect(content).toBe(
+      "### `app.js` (existed before this submission — student's lines marked)\n" +
+        '```js\ns 1 | given();\n  2 | earlier();\n+ 3 | now();\n```',
+    );
+    expect(sources[0].studentLines).toEqual(new Set([3]));
+    expect(sources[0].starterLines).toEqual(new Set([1]));
+    expect(starterLines).toBe(1);
+  });
+
+  it('marks no starter lines without the first commit’s copies', () => {
+    const { content, starterLines } = buildAssessedCodeContent(
+      [{ filepath: 'app.js', content: 'given();\nnow();\n' }],
+      new Map([['app.js', 'given();\n']]),
+    );
+    expect(content).not.toMatch(/^s /m);
+    expect(starterLines).toBe(0);
   });
 
   it('counts no student lines when a starter file is unchanged after processing', () => {
@@ -240,8 +276,71 @@ describe('selectCodebaseContext', () => {
     );
     expect(starterContent).toBe('### `src/board.py`\n```py\n1 | rows = 3\n```');
     expect(sources).toEqual([
-      { filepath: 'src/board.py', lines: ['rows = 3'], studentLines: new Set() },
+      {
+        filepath: 'src/board.py',
+        lines: ['rows = 3'],
+        studentLines: new Set(),
+        starterLines: new Set(),
+      },
     ]);
+  });
+});
+
+describe('selectCodebaseContext under starter_code: ask', () => {
+  it('lets the starter files be asked about, but never the earlier work', () => {
+    const { sources } = selectCodebaseContext(
+      [
+        { filepath: 'src/board.py', content: 'rows = 3\n', kind: 'starter' },
+        { filepath: 'src/old.py', content: 'x = 1\n', kind: 'earlier' },
+      ],
+      ['src/game.py'],
+      1000,
+      { askStarter: true },
+    );
+    expect(sources.map((s) => [s.filepath, s.starterLines])).toEqual([
+      ['src/board.py', 'all'],
+      ['src/old.py', new Set()],
+    ]);
+  });
+});
+
+describe('buildPrompt starter-code questions', () => {
+  const base = { codeContent: 'code', files: ['a.js'], numQuestions: 10 };
+
+  it('allows none unless a limit is given and there is starter code to ask about', () => {
+    for (const extra of [{ starterContext: 'S' }, { starterQuestions: 2 }]) {
+      expect(buildPrompt({ ...base, ...extra })[0].content).not.toContain('STARTER CODE QUESTIONS');
+    }
+  });
+
+  it('states the limit and marks the starter block as askable', () => {
+    const [system, user] = buildPrompt({ ...base, starterContext: 'S', starterQuestions: 2 });
+    expect(system.content).toContain('At most 2 of the 10 questions may be starter-code questions');
+    expect(system.content).toContain('CODEBASE CONTEXT — BACKGROUND:');
+    expect(user.content).toContain('up to 2 questions may be about it');
+  });
+
+  it('explains the s marker only when starter lines are marked', () => {
+    const marked = { ...base, markedFiles: ['a.js'], starterQuestions: 2 };
+    expect(buildPrompt({ ...marked, starterLinesMarked: true })[0].content).toContain(
+      '- `s` — a line of starter code',
+    );
+    expect(buildPrompt({ ...marked, starterContext: 'S' })[0].content).not.toContain(
+      '- `s` — a line of starter code',
+    );
+  });
+});
+
+describe('maxStarterQuestions', () => {
+  it.each([
+    [1, 0],
+    [2, 1],
+    [5, 1],
+    [9, 1],
+    [10, 2],
+    [20, 4],
+  ])('%i questions allow %i about starter code', (n, max) => {
+    expect(maxStarterQuestions(n)).toBe(max);
   });
 });
 

@@ -36,7 +36,7 @@ const tagPushCtx = () => ({
 });
 
 const inputs = (over = {}) => ({
-  includeInitialCommit: false,
+  starterCode: 'ignore',
   skipCommitters: [],
   submissionTags: ['phase*'],
   tagDiffBase: 'cumulative',
@@ -144,7 +144,7 @@ describe('resolveSHAs on a tag run', () => {
     const { baseSha, previousTag } = await resolveSHAs(
       tagPushCtx(),
       octokit,
-      inputs({ tagDiffBase: 'previous-tag', includeInitialCommit: true }),
+      inputs({ tagDiffBase: 'previous-tag', starterCode: 'none' }),
       { tagName: 'phase2' },
     );
     expect(baseSha).toBe(GIT_EMPTY_TREE_SHA);

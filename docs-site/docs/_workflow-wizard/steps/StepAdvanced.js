@@ -1,5 +1,6 @@
 import React from 'react';
 import styles from '../styles.module.css';
+import { sendsCodebaseContext } from '../generateYaml';
 
 const DEFAULTS = {
   aiTemperature: 0.5,
@@ -80,7 +81,7 @@ export default function StepAdvanced({ cfg, onChange }) {
         />
       </div>
 
-      {cfg.includeCodebaseContext && (
+      {sendsCodebaseContext(cfg) && (
         <div className={styles.fieldGroup}>
           <label className={styles.label}>Codebase context max characters <span className={styles.optionalBadge}>optional</span></label>
           <span className={styles.hint}>

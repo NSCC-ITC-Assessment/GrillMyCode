@@ -71,7 +71,7 @@ export function readFileAt(sha, filepath) {
 /**
  * Line-by-line comparison of two texts, returned as the whole of the new text
  * interleaved with the removed lines of the old: `[{ marker, text }]`, where
- * marker is one of LINE_MARKERS.
+ * marker is LINE_MARKERS.added, removed or unchanged.
  *
  * The texts are compared rather than two commits because the caller compares
  * them after comment stripping — marking lines of the unstripped file would
@@ -121,7 +121,8 @@ export function diffLines(oldRaw, newRaw) {
     if (start === -1) {
       return splitLines(newText).map((text) => ({ marker: LINE_MARKERS.unchanged, text }));
     }
-    const markers = new Set(Object.values(LINE_MARKERS));
+    // The diff's own markers only: LINE_MARKERS.starter is GrillMyCode's, not git's.
+    const markers = new Set([LINE_MARKERS.added, LINE_MARKERS.removed, LINE_MARKERS.unchanged]);
     return lines
       .slice(start + 1)
       .filter((line) => line.length > 0 && markers.has(line[0]))

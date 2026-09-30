@@ -92,7 +92,7 @@ Use `tag:<name>` in a workflow that runs for **one** milestone, such as a `phase
 
 A manual `base_sha` takes precedence over all three.
 
-With `previous-tag` or `tag:<name>`, earlier work isn't assessed again, but the AI can still see it. In files the new work edits, the earlier lines are shown around the marked new ones; see [Files that existed at the base](code-selection.md#files-that-existed-at-the-base). Earlier files the new work didn't touch are sent as background only with `include_codebase_context`; see [Codebase context](code-selection.md#codebase-context).
+With `previous-tag` or `tag:<name>`, earlier work isn't assessed again, but the AI can still see it. In files the new work edits, the earlier lines are shown around the marked new ones; see [Files that existed at the base](code-selection.md#files-that-existed-at-the-base). Earlier files the new work didn't touch are sent as background unless `previous_work` is `ignore`; see [Codebase context](code-selection.md#codebase-context).
 
 ### Resubmitting
 
@@ -149,8 +149,7 @@ The two must agree, so **edit both when you change a default**. If they drift, a
 | `additional_exclude_patterns` | Exclude a data dump you only noticed after the first run |
 | `exclude_pattern_overrides` | Bring back a file the default exclusions removed |
 | `keep_comments` | Assess a submission where the comments are themselves the work |
-| `include_initial_commit` | Recover a run where the student committed everything at once |
-| `include_codebase_context` | Let the AI see the surrounding code when questions came out shallow; likely increases the run's cost |
+| `starter_code` | Recover a run where the student committed everything at once to an empty repository (`none`), or let the AI see your starter code when questions came out shallow (`context`); `context` and `ask` likely increase the run's cost |
 | `ai_temperature` | Rarely useful; most instructors should leave this fixed |
 
 The Wizard lists them in this order and ticks `ai_model` through `keep_comments` by default, apart from `tag_diff_base`.

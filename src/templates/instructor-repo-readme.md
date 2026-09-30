@@ -76,7 +76,7 @@ This file is created or updated automatically each time GrillMyCode runs against
 
 ### `{studentLogin}/data/questions.json`
 
-The same questions as `questions.md`, as data — each question's code snippets with the file and line numbers they come from (the student's own line numbers at the submitted commit), question, answer and distractors — written alongside it on every run. The quiz is built from this file alone. You do not need to open it unless you want to correct a question in the quiz: edit it here, and committing the change rebuilds that student's quiz. Edits to `questions.md` do not reach the quiz.
+The same questions as `questions.md`, as data — each question's code snippets with the file and line numbers they come from (the student's own line numbers at the submitted commit), question, answer and distractors, and `about_starter_code`, which is `true` for a question about the assignment's starter code rather than the student's own lines — written alongside it on every run. The quiz is built from this file alone. You do not need to open it unless you want to correct a question in the quiz: edit it here, and committing the change rebuilds that student's quiz. Edits to `questions.md` do not reach the quiz.
 
 Questions dropped because they did not point at the student's code come last, with `"dropped": true` and no number. The student's report and the quiz leave them out; they are here so you can see what the model asked and the code it showed. A question dropped because its file or lines could not be found records only the file and line numbers, with no code. To put a dropped question in the quiz anyway, change its `dropped` to `false`.
 

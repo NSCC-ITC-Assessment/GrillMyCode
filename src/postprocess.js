@@ -289,6 +289,11 @@ function findSource(name, sources) {
  * question showing only context, or only the unchanged lines of a starter
  * file, goes. A question with no snippet — a broader question — is kept.
  *
+ * The exception is starter_code: ask, where a source's `starterLines` name the
+ * starter code that may be asked about. A question showing none of the
+ * student's lines but at least one of those is kept, with `aboutStarter` set.
+ * Every other kept question has `aboutStarter` false.
+ *
  * Each kept snippet is `{ file, language, code, start, end }`, with the file's
  * path as sent and its extension as the language.
  *
@@ -307,6 +312,7 @@ export function resolveSnippets(questions, sources) {
   for (const q of questions) {
     const snippets = [];
     let studentWork = false;
+    let starterCode = false;
     let failed;
     for (const ref of q.snippets) {
       failed = ref;
@@ -328,9 +334,10 @@ export function resolveSnippets(questions, sources) {
         start,
         end,
       });
-      const { studentLines } = source;
+      const { studentLines, starterLines = new Set() } = source;
       for (let n = start; n <= end && !studentWork; n++) {
-        studentWork = studentLines === 'all' || studentLines.has(n);
+        studentWork = hasLine(studentLines, n);
+        starterCode ||= hasLine(starterLines, n);
       }
     }
     if (snippets.length < q.snippets.length) {
@@ -342,12 +349,17 @@ export function resolveSnippets(questions, sources) {
         end,
       }));
       unresolved.push({ ...q, snippets: named, named: [failed] });
-    } else if (snippets.length > 0 && !studentWork) {
+    } else if (snippets.length > 0 && !studentWork && !starterCode) {
       notStudentWork.push({ ...q, snippets, named: q.snippets });
-    } else kept.push({ ...q, snippets });
+    } else kept.push({ ...q, snippets, aboutStarter: snippets.length > 0 && !studentWork });
   }
 
   return { questions: kept, unresolved, notStudentWork };
+}
+
+/** Whether a source's line set ('all' or a Set of line numbers) holds line `n`. */
+function hasLine(lines, n) {
+  return lines === 'all' || lines.has(n);
 }
 
 /**
@@ -481,7 +493,8 @@ function fenceFor(code) {
  * label, then the snippets, then the question text.
  *
  * `view` selects what each block carries below its question:
- *   - 'instructor' — the answer and distractors.
+ *   - 'instructor' — the answer and distractors, and a note on a question
+ *                    about starter code alone (starter_code: ask).
  *   - 'answers'    — the correct answer alone (include_answers).
  *   - 'student'    — nothing.
  *
@@ -504,6 +517,9 @@ export function renderQuestions(questions, { view }) {
     }
     lines.push(boldStem(q.question));
     if (view === 'instructor') {
+      if (q.aboutStarter) {
+        lines.push('', "_About the starter code, not the student's own work._");
+      }
       lines.push('', '**Answer:**', `- ${q.answer}`);
       if (q.distractors.length > 0) {
         lines.push(

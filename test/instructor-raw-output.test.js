@@ -144,6 +144,7 @@ describe('questions.json delivery', () => {
     expect(record).toEqual({
       ...questions[0],
       dropped: false,
+      about_starter_code: false,
       snippets: [
         { file: 'a.js', start_line: 3, end_line: 4, language: 'js', code: 'let a = 1;\na++;' },
       ],

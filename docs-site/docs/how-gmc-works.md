@@ -39,7 +39,7 @@ GrillMyCode sends the student's code to an AI model through [OpenRouter](https:/
 
 - **Your instructions**, such as "focus on loops, and ask at least one question about off-by-one errors".
 - **The assignment brief or rubric**, so the questions follow what the assignment asked for.
-- **The rest of the project**, if you turn it on: every eligible file left once the files above are left out and the assessed files are set aside. In practice that's your starter code, and the student's earlier work when only their latest submission is assessed. The AI uses it to ask how the new code fits with the code around it; the questions stay on the code being assessed.
+- **The rest of the project**: your starter code, if you choose to send it, and the student's earlier work when only their latest submission is assessed. The AI uses it to ask how the new code fits with the code around it. The questions stay on the code being assessed, unless you let the AI ask a few about your starter code.
 
 The model writes 20 questions by default, each about a specific file and each with an answer. GrillMyCode checks the result before anyone sees it. The code shown with each question is copied from the student's own files, never retyped by the AI, and any question that isn't about code the student wrote is dropped.
 

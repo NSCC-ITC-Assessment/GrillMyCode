@@ -61,15 +61,15 @@ Very long documents are cut off after about 20,000 characters (roughly 3,000 wor
 
 ## Let the AI see the rest of the project
 
-Turn on **Give the AI the rest of the project as context** in the Wizard's **File handling options** step. The AI then also sees every eligible file that isn't being assessed. That's:
+If your template includes starter code, the Wizard's **File handling options** step asks **What should the AI do with the starter code?**:
 
-- **Your starter code** that the student hasn't changed.
-- **The student's earlier work**, when each submission tag assesses only the new work, such as phase 1 while phase 2 is assessed.
+- **Ignore it** — the AI sees only the student's work. This is the default.
+- **Use it as background** — the AI also sees your starter files, so it can ask how the student's code uses yours. Questions stay on the student's code, but answers may depend on yours.
+- **Ask about it too** — as above, and up to one in five questions may be about your starter code itself. Your code is the same for every student, so answers to those questions can be shared.
 
-It can then ask how the new code fits with the code around it.
+When each submission tag assesses only the new work, such as phase 2 after phase 1, the AI also sees the student's earlier work as background. Untick **Give the AI the student's earlier work as context** in the **Trigger** step to leave it out.
 
-- **It's background only.** Questions are about the assessed code, but answers may depend on it.
-- **It costs more per run.** Large projects are trimmed to a limit you can set in the **Advanced** step.
+Sending more code costs more per run. Large projects are trimmed to a limit you can set in the **Advanced** step.
 
 ## Keep or remove comments
 
@@ -83,4 +83,4 @@ The **Include answers** option shows the answers to the student, right under eac
 
 ---
 
-**Go deeper:** [Inputs and outputs](../reference/inputs-outputs.md) (`num_questions`, `question_emphasis`, `instructor_context`, `assignment_context`, `keep_comments`) · [Codebase context](../reference/code-selection.md#codebase-context) · Recipes: [Assignment brief as context](../example-workflows/assignment-context.md) · [Research or tracing questions](../example-workflows/6-question-emphasis.md)
+**Go deeper:** [Inputs and outputs](../reference/inputs-outputs.md) (`num_questions`, `question_emphasis`, `instructor_context`, `assignment_context`, `keep_comments`) · [Starter code](../reference/code-selection.md#starter-code) · [Codebase context](../reference/code-selection.md#codebase-context) · Recipes: [Assignment brief as context](../example-workflows/assignment-context.md) · [Research or tracing questions](../example-workflows/6-question-emphasis.md)

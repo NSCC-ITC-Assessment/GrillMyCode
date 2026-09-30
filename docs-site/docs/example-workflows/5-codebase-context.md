@@ -5,7 +5,7 @@ sidebar_label: Codebase context
 
 # Codebase context
 
-**Use this when** the code being assessed builds on other code in the repository, and you want questions about how the pieces fit together. The AI is given the rest of the project as background: every eligible file left once the usual exclusions are applied and the assessed files are set aside. In practice that's your unchanged starter code and, when each milestone is assessed on its own, the student's earlier milestones. Every question is still about the code being assessed.
+**Use this when** the code being assessed builds on other code in the repository, and you want questions about how the pieces fit together. The AI is given your unchanged starter code and, when each milestone is assessed on its own, the student's earlier milestones as background. Every question is still about the code being assessed.
 
 ```yaml title=".github/workflows/grill-my-code.yml"
 name: GrillMyCode
@@ -42,11 +42,10 @@ jobs:
           submission_tags: "phase1, phase2, final"
           # Each milestone asks only about the work since the previous one.
           tag_diff_base: "previous-tag"
-          # Give the AI the rest of the project as background: every eligible
-          # file left after the exclusions and the assessed files. Here that's
-          # unchanged starter code, plus earlier milestones' files this one
-          # didn't touch.
-          include_codebase_context: "true"
+          # Send your unchanged starter files as background. Earlier
+          # milestones' files this one didn't touch are sent too, since
+          # previous_work defaults to "context".
+          starter_code: "context"
           # Maximum characters of background per run (default 50000).
           # Files nearest the assessed code are sent first.
           codebase_context_max_chars: "50000"
@@ -56,10 +55,12 @@ jobs:
 
 - **The tag names**, in **both** `tags:` and `submission_tags`.
 - **`codebase_context_max_chars`:** raise it for a large project, or lower it to reduce what each run costs. Leave it out to use the default.
+- **`starter_code: "ask"`** to also allow a few questions about the starter code itself; see [Ask about starter code](8-ask-about-starter-code.md).
 
 ## Good to know
 
 - On a push trigger, or with `tag_diff_base: "cumulative"`, all of the student's work is already being assessed, so the background is your unchanged starter code only.
+- Add `previous_work: "ignore"` to send only the starter code, not earlier milestones.
 - Earlier work that the new milestone edited isn't background. It is assessed, with the new lines marked for questions and the earlier lines shown around them.
 - A question that shows only background code is dropped. A question may show a background snippet beside the assessed code.
 - The issue header shows how many background files were used; the run summary shows how many were left out for size.

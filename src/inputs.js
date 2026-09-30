@@ -26,6 +26,10 @@ import {
   DEFAULT_LOG_PROMPT,
   DEFAULT_QUESTION_EMPHASIS,
   QUESTION_EMPHASIS_MODES,
+  STARTER_CODE_MODES,
+  DEFAULT_STARTER_CODE,
+  PREVIOUS_WORK_MODES,
+  DEFAULT_PREVIOUS_WORK,
 } from './constants.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
@@ -133,6 +137,80 @@ function readQuestionEmphasis() {
   return value;
 }
 
+/**
+ * Reads a deprecated true/false input: true, false, or null when it was not
+ * set. Anything but "true" counts as false, as it always did.
+ */
+function readDeprecatedFlag(name, replacement) {
+  const raw = core.getInput(name).trim().toLowerCase();
+  if (raw === '') return null;
+  core.warning(
+    `${name} is deprecated and will be removed in the next major version. Use ${replacement} instead.`,
+  );
+  return raw === 'true';
+}
+
+/**
+ * Reads one of a fixed set of values, case-insensitively, or null when the
+ * input was not set. An unrecognised value fails the run: each value changes
+ * which code is assessed or sent, and guessing would do it silently.
+ */
+function readMode(name, modes) {
+  const value = core.getInput(name).trim().toLowerCase();
+  if (value === '') return null;
+  if (!modes.includes(value)) {
+    throw new Error(
+      `${name} must be one of ${modes.map((m) => `"${m}"`).join(', ')}; got "${value}".`,
+    );
+  }
+  return value;
+}
+
+/**
+ * Reads starter_code and previous_work, falling back to the two inputs they
+ * replace when they are not set:
+ *
+ *   include_initial_commit: true   → starter_code: none
+ *   include_codebase_context: true → starter_code: context, previous_work: context
+ *   include_codebase_context: false (set explicitly) → previous_work: ignore
+ *
+ * include_initial_commit wins over include_codebase_context for starter_code,
+ * because with the first commit assessed there was never starter code to send.
+ * A new input that is set wins over the old ones, which are then ignored with a
+ * warning. Old workflows keep working, since GitHub only warns about an input
+ * an action no longer declares: dropping include_initial_commit outright would
+ * silently leave every empty-repository student's first push unassessed.
+ */
+function readStarterCodeInputs() {
+  const initialCommit = readDeprecatedFlag('include_initial_commit', 'starter_code: none');
+  const codebaseContext = readDeprecatedFlag(
+    'include_codebase_context',
+    'starter_code: context and previous_work',
+  );
+  let starterCode = readMode('starter_code', STARTER_CODE_MODES);
+  let previousWork = readMode('previous_work', PREVIOUS_WORK_MODES);
+
+  if (starterCode === null) {
+    if (initialCommit) starterCode = 'none';
+    else if (codebaseContext) starterCode = 'context';
+    else starterCode = DEFAULT_STARTER_CODE;
+  } else if (initialCommit !== null || codebaseContext !== null) {
+    core.warning(
+      `starter_code is set, so include_initial_commit and include_codebase_context are ignored ` +
+        `for starter code.`,
+    );
+  }
+
+  if (previousWork === null) {
+    if (codebaseContext !== null) previousWork = codebaseContext ? 'context' : 'ignore';
+    else previousWork = DEFAULT_PREVIOUS_WORK;
+  } else if (codebaseContext !== null) {
+    core.warning('previous_work is set, so include_codebase_context is ignored for earlier work.');
+  }
+
+  return { starterCode, previousWork };
+}
+
 export function readInputs() {
   const excludeStr = core.getInput('additional_exclude_patterns');
   const overrideStr = core.getInput('exclude_pattern_overrides');
@@ -209,8 +287,7 @@ export function readInputs() {
     ),
     keepComments: core.getInput('keep_comments') === 'true',
     includeAnswers: core.getInput('include_answers') === 'true',
-    includeInitialCommit: core.getInput('include_initial_commit') === 'true',
-    includeCodebaseContext: core.getInput('include_codebase_context') === 'true',
+    ...readStarterCodeInputs(),
     codebaseContextMaxChars: Math.max(
       1,
       parseInt(

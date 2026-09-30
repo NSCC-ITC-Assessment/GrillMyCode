@@ -33,7 +33,7 @@ const dispatchCtx = () => ({
 });
 
 /** include_initial_commit is pinned on so baseSha is the empty tree unless overridden. */
-const inputs = (over = {}) => ({ includeInitialCommit: true, ...over });
+const inputs = (over = {}) => ({ starterCode: 'none', ...over });
 
 beforeEach(() => {
   vi.clearAllMocks();

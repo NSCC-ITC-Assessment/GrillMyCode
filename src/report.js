@@ -42,6 +42,7 @@ export function formatReport({
   previousTagName,
   assignmentContextFiles,
   codebaseContextFiles,
+  starterQuestions = 0,
   contextSummary,
   studentLogin,
   sourceRepo,
@@ -79,6 +80,13 @@ export function formatReport({
       ? `> **Codebase context:** ${codebaseContextFiles.length} other file${codebaseContextFiles.length === 1 ? '' : 's'}, not assessed; answers may depend on ${codebaseContextFiles.length === 1 ? 'it' : 'them'}\n`
       : '';
 
+  // starter_code: ask. Said outright, so a student is not left wondering why
+  // a question asks about code they never wrote.
+  const starterNote =
+    starterQuestions > 0
+      ? `> **Starter code:** ${starterQuestions} question${starterQuestions === 1 ? ' is' : 's are'} about the provided starter code\n`
+      : '';
+
   const instructorContextNote = contextSummary ? `> **Instructor Note:** ${contextSummary}\n` : '';
 
   const studentNote = studentLogin ? `\n> **Student:** \`${studentLogin}\`\n` : '';
@@ -107,6 +115,7 @@ export function formatReport({
     `> **Code Files Assessed:** ${fileList}`,
     contextNote,
     codebaseContextNote,
+    starterNote,
     instructorContextNote,
     '---',
     '',
