@@ -1,0 +1,94 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" role="img" aria-labelledby="gmc-overlap-title">
+  <title id="gmc-overlap-title">How the concurrency block handles overlapping runs. Same ref: two pushes to main arrive while the first run is still going, so run 1 is cancelled and run 2 assesses the latest commit. Different refs: the phase1 and phase2 tags are pushed together, so their runs are in different groups and both finish. The group is the workflow plus the ref, with cancel-in-progress true. A cancelled run can still use Actions minutes, and an AI reply already being generated may still be billed.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+    .ttl{font-size:17px;font-weight:800;fill:#1E293B}
+    .sub{font-size:14px;font-weight:600;fill:#475569}
+    .bar{font-size:13px;font-weight:800;fill:#FFFFFF}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+    .guide{stroke:#FCD9B6;stroke-width:2.5;stroke-dasharray:3 7;stroke-linecap:round}
+  </style>
+  <defs>
+    <path id="gmc-overlap-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <pattern id="gmc-overlap-hatch" width="10" height="10" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="10" height="10" fill="#CBD5E1"/>
+      <path d="M0,0 V10" stroke="#E2E8F0" stroke-width="5"/>
+    </pattern>
+    <g id="gmc-overlap-push">
+      <circle r="13" fill="#FFFFFF" stroke="#1E293B" stroke-width="2.5"/>
+      <path d="M0,6 V-6 M-5,-1 L0,-6 L5,-1" fill="none" stroke="#F97316" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="gmc-overlap-yes">
+      <circle r="12" fill="#16A34A" stroke="#1E293B" stroke-width="2.5"/>
+      <path d="M-5,0.5 L-1.4,4.2 L5.4,-3.6" fill="none" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="gmc-overlap-no">
+      <circle r="12" fill="#DC2626" stroke="#1E293B" stroke-width="2.5"/>
+      <path d="M-4.5,-4.5 L4.5,4.5 M4.5,-4.5 L-4.5,4.5" stroke="#FFFFFF" stroke-width="3" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="460" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-overlap-sparkle" transform="translate(966,32) scale(.6)"/>
+  </g>
+
+  <!-- ===== lane 1: same ref ===== -->
+  <rect x="20" y="20" width="960" height="176" rx="22" fill="#FFFFFF" fill-opacity=".75"/>
+  <g class="txt">
+    <rect x="44" y="38" width="94" height="24" rx="12" fill="#C2410C"/>
+    <text x="91" y="55" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">Same ref</text>
+    <text class="ttl" x="44" y="90">Two pushes to <tspan class="mono">main</tspan></text>
+    <text class="sub" x="44" y="112">the earlier run is cancelled</text>
+    <text class="sub" x="44" y="132">and the newer one assesses</text>
+    <text class="sub" x="44" y="152">the latest commit</text>
+  </g>
+  <line class="guide" x1="600" y1="66" x2="600" y2="182"/>
+  <path d="M310,50 H960" fill="none" stroke="#FCD9B6" stroke-width="18" stroke-linecap="round"/>
+  <path class="ink" fill="none" d="M946,42 L958,50 L946,58" stroke="#C2410C" stroke-width="2.5"/>
+  <use href="#gmc-overlap-push" x="360" y="50"/>
+  <use href="#gmc-overlap-push" x="600" y="50"/>
+  <g class="txt">
+    <rect class="ink" x="360" y="90" width="240" height="30" rx="15" fill="url(#gmc-overlap-hatch)" stroke-width="2.5"/>
+    <text x="378" y="110" font-size="13" font-weight="800" fill="#334155">run 1 · cancelled</text>
+    <use href="#gmc-overlap-no" x="600" y="105"/>
+    <rect class="ink" x="600" y="138" width="290" height="30" rx="15" fill="#EA580C" stroke-width="2.5"/>
+    <text class="bar" x="618" y="158">run 2 · runs to the end</text>
+    <use href="#gmc-overlap-yes" x="890" y="153"/>
+  </g>
+
+  <!-- ===== lane 2: different refs ===== -->
+  <rect x="20" y="212" width="960" height="176" rx="22" fill="#FFFFFF" fill-opacity=".75"/>
+  <g class="txt">
+    <rect x="44" y="230" width="124" height="24" rx="12" fill="#0D9488"/>
+    <text x="106" y="247" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">Different refs</text>
+    <text class="ttl" x="44" y="282"><tspan class="mono">phase1</tspan> and <tspan class="mono">phase2</tspan></text>
+    <text class="ttl" x="44" y="304">pushed together</text>
+    <text class="sub" x="44" y="326">each tag is its own group,</text>
+    <text class="sub" x="44" y="346">so both runs finish</text>
+  </g>
+  <path d="M310,242 H960" fill="none" stroke="#FCD9B6" stroke-width="18" stroke-linecap="round"/>
+  <path class="ink" fill="none" d="M946,234 L958,242 L946,250" stroke="#C2410C" stroke-width="2.5"/>
+  <use href="#gmc-overlap-push" x="400" y="242"/>
+  <g class="txt">
+    <path class="ink" fill="#0D9488" stroke-width="2.2" d="M426,230 H486 A5,5 0 0 1 491,235 V249 A5,5 0 0 1 486,254 H426 L418,242 Z"/>
+    <text x="456" y="247" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">phase1</text>
+    <path class="ink" fill="#7C3AED" stroke-width="2.2" d="M504,230 H564 A5,5 0 0 1 569,235 V249 A5,5 0 0 1 564,254 H504 L496,242 Z"/>
+    <text x="534" y="247" text-anchor="middle" font-size="12" font-weight="800" fill="#FFFFFF">phase2</text>
+
+    <rect class="ink" x="400" y="282" width="360" height="30" rx="15" fill="#0D9488" stroke-width="2.5"/>
+    <text class="bar" x="418" y="302">phase1 run</text>
+    <use href="#gmc-overlap-yes" x="760" y="297"/>
+    <rect class="ink" x="400" y="330" width="410" height="30" rx="15" fill="#7C3AED" stroke-width="2.5"/>
+    <text class="bar" x="418" y="350">phase2 run</text>
+    <use href="#gmc-overlap-yes" x="810" y="345"/>
+  </g>
+
+  <!-- ===== footnote ===== -->
+  <g class="txt" text-anchor="middle">
+    <text class="sub" x="500" y="418"><tspan class="mono" style="font-weight:700;fill:#1E293B">group</tspan> = the workflow + the ref · <tspan class="mono" style="font-weight:700;fill:#1E293B">cancel-in-progress: true</tspan></text>
+    <text class="sub" x="500" y="440" style="font-size:13px">A cancelled run can still use Actions minutes, and a reply already being generated may still be billed.</text>
+  </g>
+</svg>

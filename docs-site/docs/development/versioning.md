@@ -22,6 +22,8 @@ Previous major versions enter **maintenance mode** when a new major is released 
 
 Every push to the repository triggers one of three build pipelines, depending on where the code lives. Together these form a DEV → STAGING → PROD lifecycle.
 
+![Three boxes joined by arrows. DEV: a push to a branch runs branch-build.yml, which pushes the image tagged branch-name, for validation only. STAGING: a merge to main runs staging-build.yml, which pushes the image tagged next, for integration testing only. PROD: pushing a v* tag runs release.yml, which pushes the image tagged vX.Y.Z, vX.Y, vX and latest. Below, what release.yml does after git push origin vX.Y.Z: 1, it builds and pushes the image with four tags on ghcr.io; 2, it creates the GitHub Release with generated release notes; 3, it moves the floating git tags vX and vX.Y; 4, it snapshots the docs and commits the snapshot to main. A footnote says action.yml references the major tag, such as v0, and a release never changes it.](/img/release-pipeline.svg)
+
 | Environment | Trigger | Image tag produced | Purpose |
 |---|---|---|---|
 | **DEV** | Push to any feature / fix branch | `:branch-<name>` (sanitized) | Validate the build compiles and passes checks before review |

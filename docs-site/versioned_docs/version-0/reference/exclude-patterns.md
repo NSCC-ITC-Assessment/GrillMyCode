@@ -11,12 +11,7 @@ GrillMyCode detects each repository's languages and frameworks and excludes the 
 
 For each file in the changed diff, the action applies this logic in order:
 
-```
-1. Is it a binary file (contains a null byte)?        → always skip, regardless of everything else
-2. Does it match any exclude pattern?                 → skip, UNLESS step 3 applies
-3. Does it match an exclude_pattern_overrides entry?  → eligible for assessment (overrides win)
-4. None of the above                                  → eligible for assessment
-```
+![On the left, three lists (always excluded, detected for the repo's stack, and additional_exclude_patterns) combine into the exclude patterns. On the right, each changed file goes through three questions. Binary, with a null byte? If yes, skipped, and nothing brings it back. If no: matches an exclude pattern? If no, assessed. If yes: matches an entry in exclude_pattern_overrides? If yes, assessed, because overrides always win. If no, skipped.](/img/exclude-decision.svg)
 
 The exclude patterns themselves come from three sources, merged in this order:
 

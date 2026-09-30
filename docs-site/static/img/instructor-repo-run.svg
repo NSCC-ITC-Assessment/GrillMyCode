@@ -1,0 +1,75 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 330" role="img" aria-labelledby="gmc-irun-title">
+  <title id="gmc-irun-title">What each run does, in order. Using the workflow's GITHUB_TOKEN: 1, it posts the issue and the PDF for the student, always first. Then using INSTRUCTOR_REPO_TOKEN: 2, it creates the private instructor repository if it doesn't exist yet; 3, it syncs the action-owned files, the README and the quiz workflow; 4, it writes the student's files, replacing the last run's; 5, it writes questions.json last, because its commit starts the Generate LMS Quiz workflow. A failure in steps 2 to 5 is an error on the run but never fails the job, since the student already has their questions. Conflicting writes and rate limits are retried.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+    .ttl{font-size:15px;font-weight:800;fill:#1E293B}
+    .sub{font-size:13px;font-weight:600;fill:#475569}
+    .band{font-size:13px;font-weight:800;fill:#FFFFFF}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <path id="gmc-irun-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <path id="gmc-irun-arrow" class="ink" fill="#FDBA74" stroke-width="2.2" d="M0,-6 H12 V-13 L26,0 L12,13 V6 H0 Z"/>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="330" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-irun-sparkle" transform="translate(966,300) scale(.6)"/>
+  </g>
+
+  <!-- ===== which token each step uses ===== -->
+  <g class="txt">
+    <rect x="24" y="30" width="164" height="28" rx="14" fill="#475569"/>
+    <text class="band mono" x="106" y="49" text-anchor="middle">GITHUB_TOKEN</text>
+    <rect x="220" y="30" width="752" height="28" rx="14" fill="#C2410C"/>
+    <text class="band mono" x="596" y="49" text-anchor="middle">INSTRUCTOR_REPO_TOKEN</text>
+    <path d="M24,64 V72 M188,64 V72 M220,64 V72 M972,64 V72" stroke="#94A3B8" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- ===== the steps ===== -->
+  <g class="txt">
+    <rect class="ink" x="24" y="80" width="164" height="120" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="46" cy="104" r="13" fill="#475569"/><text x="46" y="109" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">1</text>
+    <text class="ttl" x="66" y="110">Posts the</text>
+    <text class="ttl" x="38" y="134">issue and PDF</text>
+    <text class="sub" x="38" y="162">always first,</text>
+    <text class="sub" x="38" y="180">even with no token</text>
+    <use href="#gmc-irun-arrow" x="191" y="140"/>
+    <rect class="ink" x="220" y="80" width="164" height="120" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="242" cy="104" r="13" fill="#C2410C"/><text x="242" y="109" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">2</text>
+    <text class="ttl" x="262" y="110">Creates the</text>
+    <text class="ttl" x="234" y="134">private repo</text>
+    <text class="sub" x="234" y="162">only if it doesn't</text>
+    <text class="sub" x="234" y="180">exist yet</text>
+    <use href="#gmc-irun-arrow" x="387" y="140"/>
+    <rect class="ink" x="416" y="80" width="164" height="120" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="438" cy="104" r="13" fill="#C2410C"/><text x="438" y="109" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">3</text>
+    <text class="ttl" x="458" y="110">Syncs action-</text>
+    <text class="ttl" x="430" y="134">owned files</text>
+    <text class="sub" x="430" y="162">the README and</text>
+    <text class="sub" x="430" y="180">quiz workflow</text>
+    <use href="#gmc-irun-arrow" x="583" y="140"/>
+    <rect class="ink" x="612" y="80" width="164" height="120" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="634" cy="104" r="13" fill="#C2410C"/><text x="634" y="109" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">4</text>
+    <text class="ttl" x="654" y="110">Writes the</text>
+    <text class="ttl" x="626" y="134">student's files</text>
+    <text class="sub" x="626" y="162">replacing the</text>
+    <text class="sub" x="626" y="180">last run's</text>
+    <use href="#gmc-irun-arrow" x="779" y="140"/>
+    <rect class="ink" x="808" y="80" width="164" height="120" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="830" cy="104" r="13" fill="#C2410C"/><text x="830" y="109" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">5</text>
+    <text class="ttl" x="850" y="110">Writes</text>
+    <text class="ttl" x="822" y="134"><tspan class="mono">questions.json</tspan></text>
+    <text class="sub" x="822" y="162">last: its commit</text>
+    <text class="sub" x="822" y="180">builds the quiz</text>
+  </g>
+
+  <!-- ===== what a failure means ===== -->
+  <g class="txt">
+    <rect x="220" y="222" width="752" height="46" rx="14" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+    <text class="sub" x="596" y="250" text-anchor="middle" style="fill:#92400E">A failure in 2–5 shows as an error on the run, but never fails the job.</text>
+  </g>
+  <text class="txt sub" x="500" y="302" text-anchor="middle" style="font-size:14px">The student already has their questions. Conflicting writes and rate limits are retried.</text>
+</svg>

@@ -1,0 +1,145 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 470" role="img" aria-labelledby="gmc-first-title">
+  <title id="gmc-first-title">What a finished run can look like. Green tick, questions: an issue is pinned in the Issues tab, with a PDF link, so you're done. Green tick but no questions: normal straight after a student accepts, because there is nothing of theirs to ask about yet; the run summary says why. Red X: the run stopped with an error; select the failed step and read the message at the end. On a first run, the most likely cause is the OpenRouter key.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .ttl{font-size:19px;font-weight:800;fill:#1E293B}
+    .sub{font-size:14px;font-weight:600;fill:#475569}
+    .chip{font-size:14px;font-weight:800}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <linearGradient id="gmc-first-flame" x1="205" y1="60" x2="120" y2="295" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FA7A18"/><stop offset="0.45" stop-color="#F13B1F"/><stop offset="1" stop-color="#C8142E"/>
+    </linearGradient>
+    <linearGradient id="gmc-first-core" x1="0" y1="140" x2="0" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC53A"/><stop offset="1" stop-color="#FB8420"/>
+    </linearGradient>
+    <path id="gmc-first-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <!-- the flame's body, centred on 0,0; faces are added per use -->
+    <g id="gmc-first-body">
+      <g transform="scale(.2) translate(-180,-190)">
+        <path class="ink" stroke-width="13" fill="url(#gmc-first-flame)" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+        <path fill="url(#gmc-first-core)" d="M188 138C186 170 184 196 192 214C214 228 223 248 221 266C219 284 210 294 204 298H156C142 290 129 272 129 250C129 212 170 176 188 138Z"/>
+      </g>
+    </g>
+    <g id="gmc-first-yes">
+      <circle r="17" fill="#16A34A" stroke="#1E293B" stroke-width="2.5"/>
+      <path d="M-7.5,0.5 L-2.2,5.8 L8,-5.4" fill="none" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <g id="gmc-first-no">
+      <circle r="17" fill="#DC2626" stroke="#1E293B" stroke-width="2.5"/>
+      <path d="M-6,-6 L6,6 M6,-6 L-6,6" stroke="#FFFFFF" stroke-width="4" stroke-linecap="round"/>
+    </g>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="470" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-first-sparkle" transform="translate(300,54) scale(.7)"/>
+    <use href="#gmc-first-sparkle" transform="translate(966,440) scale(.6)"/>
+  </g>
+
+  <!-- ===== the run ===== -->
+  <g class="txt">
+    <rect class="ink" x="360" y="26" width="280" height="60" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="390" cy="56" r="9" fill="#FBBF24" stroke="#B45309" stroke-width="2"/>
+    <text x="412" y="52" font-size="15" font-weight="800" fill="#1E293B">GrillMyCode run</text>
+    <text x="412" y="72" font-size="13" font-weight="600" fill="#475569">Actions tab · a few minutes</text>
+  </g>
+  <g fill="none" stroke="#FB923C" stroke-width="3" stroke-linecap="round" stroke-dasharray="3 8">
+    <path d="M420,90 C380,120 200,110 180,140"/>
+    <path d="M500,90 V140"/>
+    <path d="M580,90 C620,120 800,110 820,140"/>
+  </g>
+  <g fill="none" stroke="#FB923C" stroke-width="3" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M172,132 L180,142 L190,134"/>
+    <path d="M492,132 L500,142 L508,132"/>
+    <path d="M810,134 L820,142 L828,132"/>
+  </g>
+
+  <!-- ===== 1. green tick and questions ===== -->
+  <rect x="30" y="150" width="300" height="296" rx="22" fill="#FFFFFF" fill-opacity=".8"/>
+  <use href="#gmc-first-yes" x="64" y="186"/>
+  <!-- a pinned issue with a PDF link -->
+  <g class="txt">
+    <rect class="ink" x="150" y="170" width="150" height="104" rx="10" fill="#FFFFFF" stroke-width="2.5"/>
+    <path d="M150,194 H300" stroke="#1E293B" stroke-width="2.5"/>
+    <circle cx="164" cy="182" r="5" fill="#16A34A"/>
+    <path d="M176,182 H270" stroke="#1E293B" stroke-width="3" stroke-linecap="round"/>
+    <rect x="164" y="204" width="44" height="18" rx="4" fill="#DC2626"/>
+    <text x="186" y="217" text-anchor="middle" font-size="11" font-weight="800" fill="#FFFFFF">PDF</text>
+    <path d="M164,236 H176 M184,236 H284 M164,254 H176 M184,254 H262" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+    <path d="M164,236 H176 M164,254 H176" stroke="#FB923C" stroke-width="4" stroke-linecap="round"/>
+    <!-- pin -->
+    <g transform="translate(296,172) rotate(35)">
+      <path class="ink" fill="#F97316" stroke-width="2.2" d="M-7,-14 H7 L5,-2 L10,4 H-10 L-5,-2 Z"/>
+      <path d="M0,4 V16" stroke="#1E293B" stroke-width="2.5" stroke-linecap="round"/>
+    </g>
+  </g>
+  <!-- happy flame -->
+  <g transform="translate(96,248)">
+    <use href="#gmc-first-body"/>
+    <circle cx="-4.4" cy="7" r="2.8" fill="#1E293B"/><circle cx="4.4" cy="7" r="2.8" fill="#1E293B"/>
+    <path d="M-4,13 Q0,18 4,13" fill="none" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g class="txt">
+    <text class="ttl" x="54" y="318">Green tick, questions</text>
+    <text class="sub" x="54" y="342">An issue is pinned in the</text>
+    <text class="sub" x="54" y="362">Issues tab, with a PDF link.</text>
+    <rect x="54" y="394" width="120" height="32" rx="16" fill="#16A34A"/>
+    <text class="chip" x="114" y="415" text-anchor="middle" style="fill:#FFFFFF">You're done</text>
+  </g>
+
+  <!-- ===== 2. green tick, no questions ===== -->
+  <rect x="350" y="150" width="300" height="296" rx="22" fill="#FFFFFF" fill-opacity=".8"/>
+  <use href="#gmc-first-yes" x="384" y="186"/>
+  <!-- an empty issues list -->
+  <g class="txt">
+    <rect x="470" y="170" width="150" height="104" rx="10" fill="#F8FAFC" stroke="#94A3B8" stroke-width="2.5" stroke-dasharray="7 6"/>
+    <text x="545" y="220" text-anchor="middle" font-size="13" font-weight="700" fill="#64748B">no issue yet</text>
+    <path d="M520,238 H570" stroke="#CBD5E1" stroke-width="4" stroke-linecap="round"/>
+  </g>
+  <!-- calm, waiting flame -->
+  <g transform="translate(416,248)">
+    <use href="#gmc-first-body"/>
+    <path d="M-7.4,7 Q-4.4,9.6 -1.4,7 M1.4,7 Q4.4,9.6 7.4,7" fill="none" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+    <path d="M-3,15 H3" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g class="txt" fill="#94A3B8" font-weight="800">
+    <text x="436" y="218" font-size="14">z</text>
+    <text x="446" y="206" font-size="11">z</text>
+  </g>
+  <g class="txt">
+    <text class="ttl" x="374" y="318">Green tick, no questions</text>
+    <text class="sub" x="374" y="342">Normal straight after a student</text>
+    <text class="sub" x="374" y="362">accepts: nothing of theirs to</text>
+    <text class="sub" x="374" y="382">ask about yet.</text>
+    <rect x="374" y="394" width="198" height="32" rx="16" fill="#FEF3C7" stroke="#D97706" stroke-width="2"/>
+    <text class="chip" x="473" y="415" text-anchor="middle" style="fill:#92400E">Read the run summary</text>
+  </g>
+
+  <!-- ===== 3. red X ===== -->
+  <rect x="670" y="150" width="300" height="296" rx="22" fill="#FFFFFF" fill-opacity=".8"/>
+  <use href="#gmc-first-no" x="704" y="186"/>
+  <!-- the failed step's log -->
+  <g class="txt">
+    <rect class="ink" x="790" y="170" width="150" height="104" rx="10" fill="#1E293B" stroke-width="2.5"/>
+    <path d="M806,192 H880 M806,210 H900 M806,228 H862" stroke="#64748B" stroke-width="4" stroke-linecap="round"/>
+    <path d="M806,252 H924" stroke="#F87171" stroke-width="4" stroke-linecap="round"/>
+    <circle cx="930" cy="252" r="0" fill="none"/>
+  </g>
+  <!-- worried flame -->
+  <g transform="translate(736,248)">
+    <use href="#gmc-first-body"/>
+    <circle cx="-4.4" cy="7" r="2.8" fill="#1E293B"/><circle cx="4.4" cy="7" r="2.8" fill="#1E293B"/>
+    <path d="M-8,1.5 L-2.5,3.5 M8,1.5 L2.5,3.5" stroke="#1E293B" stroke-width="1.8" stroke-linecap="round"/>
+    <path d="M-4,16.5 Q0,12.5 4,16.5" fill="none" stroke="#1E293B" stroke-width="2" stroke-linecap="round"/>
+  </g>
+  <g class="txt">
+    <text class="ttl" x="694" y="318">Red X</text>
+    <text class="sub" x="694" y="342">Select the failed step and</text>
+    <text class="sub" x="694" y="362">read the message at the end.</text>
+    <rect x="694" y="394" width="232" height="32" rx="16" fill="#FEE2E2" stroke="#DC2626" stroke-width="2"/>
+    <text class="chip" x="810" y="415" text-anchor="middle" style="fill:#991B1B">First run? Check the key</text>
+  </g>
+</svg>

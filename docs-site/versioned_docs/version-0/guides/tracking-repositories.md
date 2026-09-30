@@ -43,6 +43,8 @@ When students [submit with a tag](choosing-a-trigger.md#submission-tag), they ca
 - **A log.** A `submissions.md` file in the tag's folder lists every run: when, what started it, who, and which commit.
 - **The old questions.** Each set of questions a resubmission replaced is kept in a `history/` folder.
 
+![A student pushes the phase1 tag, then moves it to a newer commit and pushes it again. On the student's side, the same issue is updated with new questions, and its link stays the same. On your side, in a private repository students can't see, the student's jsmith/phase1 folder holds questions.md, marked as resubmitted and the 2nd submission; submissions.md, listing both tag pushes as counted; and history/1-questions.md, the first set of questions, kept. A note says a run you start yourself is listed, but not counted.](/img/resubmission.svg)
+
 This matters because students see their questions (though never the answers), so re-pushing a tag is also a way to get a fresh set. By comparing the old sets with the new one, you can tell whether a student submitted new work or went looking for easier questions.
 
 Only the student's own submissions count. A run you start yourself from the Actions tab is listed in the log, but it isn't counted as a resubmission.

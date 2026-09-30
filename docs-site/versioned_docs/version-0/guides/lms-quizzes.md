@@ -6,6 +6,8 @@ sidebar_position: 9
 
 With the [private answer key](instructor-setup.md) set up, which works only with Classroom 50 assignments, GrillMyCode builds a multiple-choice quiz for each student from their own questions. You can import it into your learning management system and have students answer it there.
 
+![Four numbered steps joined by arrows. 1: a student's questions arrive in a locked folder, jsmith, in your private repository. 2: a gear labelled Generate LMS Quiz builds the quiz automatically, and a question card missing a wrong answer is set aside with a red cross, captioned "a question without three wrong answers is left out". 3: two quiz files appear within a few minutes, an .imscc file for any LMS and a .csv file for Brightspace only. 4: you import it into your LMS as a ready-made multiple-choice quiz.](/img/lms-quiz-pipeline.svg)
+
 ## Where the quiz files are
 
 In the assignment's private repository, each student's folder has two quiz files:
