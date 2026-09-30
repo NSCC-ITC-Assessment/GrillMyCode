@@ -1,0 +1,130 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 450" role="img" aria-labelledby="gmc-aks-title">
+  <title id="gmc-aks-title">Where the answer key's token lives. In your own account: create a token in your account's settings, with the repo and workflow scopes ticked. In your organization: save it as an organization secret called INSTRUCTOR_REPO_TOKEN. Every run: each student repository's run uses the secret to write the answer key to your private repository.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+    .ttl{font-size:19px;font-weight:800;fill:#1E293B}
+    .sub{font-size:14px;font-weight:600;fill:#475569}
+    .tier{font-size:14px;font-weight:800;fill:#FFFFFF}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <linearGradient id="gmc-aks-flame" x1="205" y1="60" x2="120" y2="295" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FA7A18"/><stop offset="0.45" stop-color="#F13B1F"/><stop offset="1" stop-color="#C8142E"/>
+    </linearGradient>
+    <linearGradient id="gmc-aks-core" x1="0" y1="140" x2="0" y2="298" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FFC53A"/><stop offset="1" stop-color="#FB8420"/>
+    </linearGradient>
+    <path id="gmc-aks-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <g id="gmc-aks-mini">
+      <g transform="scale(.11) translate(-180,-190)">
+        <path fill="url(#gmc-aks-flame)" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+        <path fill="url(#gmc-aks-core)" d="M188 138C186 170 184 196 192 214C214 228 223 248 221 266C219 284 210 294 204 298H156C142 290 129 272 129 250C129 212 170 176 188 138Z"/>
+      </g>
+    </g>
+    <!-- a key, ring centred on 0,0 -->
+    <g id="gmc-aks-key">
+      <circle class="ink" cx="0" cy="0" r="13" fill="#FFC53A"/>
+      <circle cx="0" cy="0" r="4.5" fill="#FFF7ED" class="ink" stroke-width="2"/>
+      <path class="ink" fill="#FFC53A" d="M12,-4 H52 V4 H46 V12 H40 V4 H34 V10 H28 V4 H12 Z" stroke-width="2.5"/>
+    </g>
+    <g id="gmc-aks-tick">
+      <rect x="-9" y="-9" width="18" height="18" rx="4" fill="#16A34A" stroke="#1E293B" stroke-width="2"/>
+      <path d="M-4.5,0.5 L-1.2,3.8 L4.8,-3.4" fill="none" stroke="#FFFFFF" stroke-width="2.6" stroke-linecap="round" stroke-linejoin="round"/>
+    </g>
+    <path id="gmc-aks-arrow" class="ink" fill="#FDBA74" stroke-width="2.5" d="M0,-8 H26 V-20 L48,0 L26,20 V8 H0 Z"/>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="450" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-aks-sparkle" transform="translate(330,110) scale(.6)"/>
+    <use href="#gmc-aks-sparkle" transform="translate(966,420) scale(.6)"/>
+  </g>
+
+  <!-- ===== tier labels ===== -->
+  <g class="txt" text-anchor="middle">
+    <rect class="ink" x="70" y="26" width="200" height="34" rx="17" fill="#334155" stroke-width="2.5"/>
+    <text class="tier" x="170" y="48">In your own account</text>
+    <rect class="ink" x="398" y="26" width="208" height="34" rx="17" fill="#C2410C" stroke-width="2.5"/>
+    <text class="tier" x="502" y="48">In your organization</text>
+    <rect class="ink" x="767" y="26" width="130" height="34" rx="17" fill="#16A34A" stroke-width="2.5"/>
+    <text class="tier" x="832" y="48">Every run</text>
+  </g>
+
+  <!-- ===== 1. your account's settings: make the token ===== -->
+  <ellipse cx="170" cy="306" rx="130" ry="8" fill="#FDBA74" opacity=".45"/>
+  <g class="txt">
+    <rect class="ink" x="64" y="96" width="212" height="200" rx="14" fill="#FFFFFF"/>
+    <path d="M64,122 H276" stroke="#1E293B" stroke-width="2.5"/>
+    <circle cx="80" cy="109" r="4" fill="#F87171"/><circle cx="93" cy="109" r="4" fill="#FBBF24"/><circle cx="106" cy="109" r="4" fill="#34D399"/>
+    <text x="80" y="146" font-size="11.5" font-weight="700" fill="#64748B">Settings › Developer settings</text>
+    <path d="M80,158 H260" stroke="#E2E8F0" stroke-width="2"/>
+    <use href="#gmc-aks-tick" x="92" y="182"/>
+    <text class="mono" x="110" y="187" style="font-size:14px;font-weight:700;fill:#1E293B">repo</text>
+    <use href="#gmc-aks-tick" x="92" y="212"/>
+    <text class="mono" x="110" y="217" style="font-size:14px;font-weight:700;fill:#1E293B">workflow</text>
+    <rect x="80" y="240" width="150" height="30" rx="8" fill="#16A34A"/>
+    <text x="155" y="260" text-anchor="middle" font-size="13" font-weight="800" fill="#FFFFFF">Generate token</text>
+  </g>
+  <g transform="translate(216,218) rotate(-30)"><use href="#gmc-aks-key"/></g>
+
+  <use href="#gmc-aks-arrow" x="306" y="200"/>
+
+  <!-- ===== 2. the organization: save it as a secret ===== -->
+  <ellipse cx="502" cy="306" rx="120" ry="9" fill="#FDBA74" opacity=".45"/>
+  <g class="txt">
+    <rect class="ink" x="436" y="110" width="132" height="190" rx="16" fill="#64748B"/>
+    <rect class="ink" x="450" y="124" width="104" height="162" rx="10" fill="#94A3B8" stroke-width="2.5"/>
+    <circle class="ink" cx="502" cy="178" r="24" fill="#E2E8F0" stroke-width="2.5"/>
+    <circle cx="502" cy="178" r="6" fill="#334155"/>
+    <path d="M502,158 V163 M502,193 V198 M482,178 H487 M517,178 H522" stroke="#334155" stroke-width="2.5" stroke-linecap="round"/>
+    <rect class="ink" x="538" y="162" width="8" height="34" rx="4" fill="#FFC53A" stroke-width="2"/>
+    <rect class="ink" x="468" y="228" width="68" height="26" rx="6" fill="#FFFFFF" stroke-width="2"/>
+    <text x="502" y="246" text-anchor="middle" font-size="11" font-weight="800" fill="#334155">your org</text>
+    <rect x="448" y="298" width="18" height="8" rx="3" fill="#334155"/><rect x="538" y="298" width="18" height="8" rx="3" fill="#334155"/>
+  </g>
+  <!-- the key, going in -->
+  <g transform="translate(402,150) rotate(20) scale(.8)"><use href="#gmc-aks-key"/></g>
+
+  <use href="#gmc-aks-arrow" x="614" y="200"/>
+
+  <!-- ===== 3. every run: write the answer key ===== -->
+  <ellipse cx="832" cy="306" rx="140" ry="9" fill="#93C5FD" opacity=".45"/>
+  <!-- a student repository -->
+  <g class="txt">
+    <rect class="ink" x="690" y="120" width="96" height="96" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <path d="M690,144 H786" stroke="#1E293B" stroke-width="2.5"/>
+    <circle cx="704" cy="132" r="3.5" fill="#F87171"/><circle cx="716" cy="132" r="3.5" fill="#FBBF24"/><circle cx="728" cy="132" r="3.5" fill="#34D399"/>
+    <g transform="translate(738,180) scale(1.6)"><use href="#gmc-aks-mini"/></g>
+    <text x="738" y="236" text-anchor="middle" font-size="12" font-weight="700" fill="#475569">a student's repo</text>
+  </g>
+  <path d="M790,168 C812,168 816,200 834,210" fill="none" stroke="#94A3B8" stroke-width="3" stroke-dasharray="2 8" stroke-linecap="round"/>
+  <!-- the private repository -->
+  <g class="txt">
+    <path class="ink" fill="#60A5FA" d="M822,196 H864 L874,208 H962 V298 H822 Z"/>
+    <path class="ink" fill="#93C5FD" d="M822,222 H962 V298 H822 Z"/>
+    <text x="892" y="264" text-anchor="middle" font-size="13" font-weight="800" fill="#1E3A8A">answer key</text>
+    <g transform="translate(952,222)">
+      <path d="M-9,-4 V-11 A9,9 0 0 1 9,-11 V-4" fill="none" stroke="#1E293B" stroke-width="3"/>
+      <rect class="ink" x="-14" y="-4" width="28" height="22" rx="5" fill="#FFC53A" stroke-width="2.5"/>
+      <circle cx="0" cy="6" r="3" fill="#1E293B"/>
+    </g>
+  </g>
+  <g transform="translate(846,160) rotate(-15) scale(.6)"><use href="#gmc-aks-key"/></g>
+
+  <!-- ===== captions ===== -->
+  <g class="txt" text-anchor="middle">
+    <text class="ttl" x="170" y="350">Create a token</text>
+    <text class="sub" x="170" y="374">in your own account's settings,</text>
+    <text class="sub" x="170" y="394">not the organization's</text>
+
+    <text class="ttl" x="502" y="350">Save it as a secret</text>
+    <text class="sub" x="502" y="374">in your organization's settings,</text>
+    <text class="sub" x="502" y="394">named <tspan class="mono" style="font-weight:700;fill:#1E293B">INSTRUCTOR_REPO_TOKEN</tspan></text>
+
+    <text class="ttl" x="832" y="350">Each run uses it</text>
+    <text class="sub" x="832" y="374">to write the answer key to</text>
+    <text class="sub" x="832" y="394">your private repository</text>
+  </g>
+</svg>

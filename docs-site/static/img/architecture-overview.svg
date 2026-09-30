@@ -1,0 +1,161 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 500" role="img" aria-labelledby="gmc-arch-title">
+  <title id="gmc-arch-title">One run, start to finish, and what happens when each stage goes wrong. It reads the inputs (fails the run); resolves the tag and commit range (fails the run); identifies the student (warns, and skips the answer key); lists and filters the changed files (if nothing is left, it ends early, successfully by default); reads, strips and marks the code (fails if nothing is readable); builds the prompt; calls the AI and checks the reply (fails after retries); renders the report and PDF (a PDF problem only warns); posts the issue (fails the run); writes to the instructor repository (an error, but the job passes); and labels the repository (warns).</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .ttl{font-size:14px;font-weight:800;fill:#1E293B}
+    .sub{font-size:13px;font-weight:600;fill:#475569}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <path id="gmc-arch-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <path id="gmc-arch-r" d="M-5,-7 L3,0 L-5,7" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="gmc-arch-l" d="M5,-7 L-3,0 L5,7" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="500" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-arch-sparkle" transform="translate(966,34) scale(.6)"/>
+  </g>
+  <text class="txt" x="24" y="44" font-size="17" font-weight="800" fill="#1E293B">One run, start to finish</text>
+  <text class="txt sub" x="266" y="44">coloured by what happens if the stage goes wrong</text>
+
+  <g class="txt">
+    <clipPath id="gmc-arch-c24-70"><rect x="24" y="70" width="176" height="112" rx="14"/></clipPath>
+    <rect x="24" y="70" width="176" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="24" y="70" width="176" height="10" fill="#DC2626" clip-path="url(#gmc-arch-c24-70)"/>
+    <rect x="24" y="70" width="176" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="38" y="104" font-size="12" font-weight="800" fill="#94A3B8">1</text>
+    <text class="ttl" x="38" y="124">Reads the</text>
+    <text class="ttl" x="38" y="142">inputs</text>
+    <rect x="34" y="152" width="156" height="22" rx="11" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+    <text x="112.0" y="167" text-anchor="middle" font-size="11.5" font-weight="700" fill="#991B1B">fails the run</text>
+  </g>
+  <use href="#gmc-arch-r" x="210" y="126"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c218-70"><rect x="218" y="70" width="176" height="112" rx="14"/></clipPath>
+    <rect x="218" y="70" width="176" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="218" y="70" width="176" height="10" fill="#DC2626" clip-path="url(#gmc-arch-c218-70)"/>
+    <rect x="218" y="70" width="176" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="232" y="104" font-size="12" font-weight="800" fill="#94A3B8">2</text>
+    <text class="ttl" x="232" y="124">Resolves the tag</text>
+    <text class="ttl" x="232" y="142">and commit range</text>
+    <rect x="228" y="152" width="156" height="22" rx="11" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+    <text x="306.0" y="167" text-anchor="middle" font-size="11.5" font-weight="700" fill="#991B1B">fails the run</text>
+  </g>
+  <use href="#gmc-arch-r" x="404" y="126"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c412-70"><rect x="412" y="70" width="176" height="112" rx="14"/></clipPath>
+    <rect x="412" y="70" width="176" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="412" y="70" width="176" height="10" fill="#D97706" clip-path="url(#gmc-arch-c412-70)"/>
+    <rect x="412" y="70" width="176" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="426" y="104" font-size="12" font-weight="800" fill="#94A3B8">3</text>
+    <text class="ttl" x="426" y="124">Identifies</text>
+    <text class="ttl" x="426" y="142">the student</text>
+    <rect x="422" y="152" width="156" height="22" rx="11" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+    <text x="500.0" y="167" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400E">warns: no answer key</text>
+  </g>
+  <use href="#gmc-arch-r" x="598" y="126"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c606-70"><rect x="606" y="70" width="176" height="112" rx="14"/></clipPath>
+    <rect x="606" y="70" width="176" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="606" y="70" width="176" height="10" fill="#64748B" clip-path="url(#gmc-arch-c606-70)"/>
+    <rect x="606" y="70" width="176" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="620" y="104" font-size="12" font-weight="800" fill="#94A3B8">4</text>
+    <text class="ttl" x="620" y="124">Lists and filters</text>
+    <text class="ttl" x="620" y="142">the changed files</text>
+    <rect x="616" y="152" width="156" height="22" rx="11" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5"/>
+    <text x="694.0" y="167" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">if empty: ends early</text>
+  </g>
+  <use href="#gmc-arch-r" x="792" y="126"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c800-70"><rect x="800" y="70" width="176" height="112" rx="14"/></clipPath>
+    <rect x="800" y="70" width="176" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="800" y="70" width="176" height="10" fill="#DC2626" clip-path="url(#gmc-arch-c800-70)"/>
+    <rect x="800" y="70" width="176" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="814" y="104" font-size="12" font-weight="800" fill="#94A3B8">5</text>
+    <text class="ttl" x="814" y="124">Reads, strips and</text>
+    <text class="ttl" x="814" y="142">marks the code</text>
+    <rect x="810" y="152" width="156" height="22" rx="11" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+    <text x="888.0" y="167" text-anchor="middle" font-size="11.5" font-weight="700" fill="#991B1B">no text: fails the run</text>
+  </g>
+  <path d="M946,186 V222 Q946,236 932,236 H920" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M928,229 L920,236 L928,243" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c834-250"><rect x="834" y="250" width="142" height="112" rx="14"/></clipPath>
+    <rect x="834" y="250" width="142" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="834" y="250" width="142" height="10" fill="#CBD5E1" clip-path="url(#gmc-arch-c834-250)"/>
+    <rect x="834" y="250" width="142" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="848" y="284" font-size="12" font-weight="800" fill="#94A3B8">6</text>
+    <text class="ttl" style="font-size:13px" x="848" y="304">Builds the</text>
+    <text class="ttl" style="font-size:13px" x="848" y="322">prompt</text>
+  </g>
+  <use href="#gmc-arch-l" x="824" y="306"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c672-250"><rect x="672" y="250" width="142" height="112" rx="14"/></clipPath>
+    <rect x="672" y="250" width="142" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="672" y="250" width="142" height="10" fill="#DC2626" clip-path="url(#gmc-arch-c672-250)"/>
+    <rect x="672" y="250" width="142" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="686" y="284" font-size="12" font-weight="800" fill="#94A3B8">7</text>
+    <text class="ttl" style="font-size:13px" x="686" y="304">Calls the AI,</text>
+    <text class="ttl" style="font-size:13px" x="686" y="322">checks the reply</text>
+    <rect x="682" y="332" width="122" height="22" rx="11" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+    <text x="743.0" y="347" text-anchor="middle" font-size="11.5" font-weight="700" fill="#991B1B">fails after retries</text>
+  </g>
+  <use href="#gmc-arch-l" x="662" y="306"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c510-250"><rect x="510" y="250" width="142" height="112" rx="14"/></clipPath>
+    <rect x="510" y="250" width="142" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="510" y="250" width="142" height="10" fill="#D97706" clip-path="url(#gmc-arch-c510-250)"/>
+    <rect x="510" y="250" width="142" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="524" y="284" font-size="12" font-weight="800" fill="#94A3B8">8</text>
+    <text class="ttl" style="font-size:13px" x="524" y="304">Renders the</text>
+    <text class="ttl" style="font-size:13px" x="524" y="322">report and PDF</text>
+    <rect x="520" y="332" width="122" height="22" rx="11" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+    <text x="581.0" y="347" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400E">PDF only: warns</text>
+  </g>
+  <use href="#gmc-arch-l" x="500" y="306"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c348-250"><rect x="348" y="250" width="142" height="112" rx="14"/></clipPath>
+    <rect x="348" y="250" width="142" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="348" y="250" width="142" height="10" fill="#DC2626" clip-path="url(#gmc-arch-c348-250)"/>
+    <rect x="348" y="250" width="142" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="362" y="284" font-size="12" font-weight="800" fill="#94A3B8">9</text>
+    <text class="ttl" style="font-size:13px" x="362" y="304">Posts the</text>
+    <text class="ttl" style="font-size:13px" x="362" y="322">issue</text>
+    <rect x="358" y="332" width="122" height="22" rx="11" fill="#FEE2E2" stroke="#DC2626" stroke-width="1.5"/>
+    <text x="419.0" y="347" text-anchor="middle" font-size="11.5" font-weight="700" fill="#991B1B">fails the run</text>
+  </g>
+  <use href="#gmc-arch-l" x="338" y="306"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c186-250"><rect x="186" y="250" width="142" height="112" rx="14"/></clipPath>
+    <rect x="186" y="250" width="142" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="186" y="250" width="142" height="10" fill="#D97706" clip-path="url(#gmc-arch-c186-250)"/>
+    <rect x="186" y="250" width="142" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="200" y="284" font-size="12" font-weight="800" fill="#94A3B8">10</text>
+    <text class="ttl" style="font-size:13px" x="200" y="304">Writes to the</text>
+    <text class="ttl" style="font-size:13px" x="200" y="322">instructor repo</text>
+    <rect x="196" y="332" width="122" height="22" rx="11" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+    <text x="257.0" y="347" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400E">error; job passes</text>
+  </g>
+  <use href="#gmc-arch-l" x="176" y="306"/>
+  <g class="txt">
+    <clipPath id="gmc-arch-c24-250"><rect x="24" y="250" width="142" height="112" rx="14"/></clipPath>
+    <rect x="24" y="250" width="142" height="112" rx="14" fill="#FFFFFF"/>
+    <rect x="24" y="250" width="142" height="10" fill="#D97706" clip-path="url(#gmc-arch-c24-250)"/>
+    <rect x="24" y="250" width="142" height="112" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text x="38" y="284" font-size="12" font-weight="800" fill="#94A3B8">11</text>
+    <text class="ttl" style="font-size:13px" x="38" y="304">Labels the</text>
+    <text class="ttl" style="font-size:13px" x="38" y="322">repository</text>
+    <rect x="34" y="332" width="122" height="22" rx="11" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5"/>
+    <text x="95.0" y="347" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400E">warns</text>
+  </g>
+
+  <!-- ===== legend ===== -->
+  <g class="txt">
+    <rect x="24" y="396" width="952" height="80" rx="18" fill="#FFFFFF" fill-opacity=".75"/>
+    <rect x="48" y="416" width="16" height="16" rx="4" fill="#DC2626"/><text class="sub" x="72" y="429" style="fill:#1E293B">Fails the run: a red X</text>
+    <rect x="300" y="416" width="16" height="16" rx="4" fill="#D97706"/><text class="sub" x="324" y="429" style="fill:#1E293B">Warns and carries on: the student still gets their questions</text>
+    <rect x="48" y="446" width="16" height="16" rx="4" fill="#64748B"/><text class="sub" x="72" y="459" style="fill:#1E293B">Ends early without calling the AI: a green tick, unless <tspan font-family="ui-monospace,SFMono-Regular,Menlo,Consolas,monospace" font-weight="700">fail_on_empty_assessment</tspan> is on</text>
+  </g>
+</svg>

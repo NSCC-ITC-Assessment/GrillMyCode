@@ -28,6 +28,8 @@ A student repository is a copy of the template *at the moment the student accept
 - Classroom 50 copies the template's `.github` folder again each time a student runs `gh student submit`, so those students pick up the workflow on their next submit.
 - You can also add the same file to their repositories yourself.
 
+![A timeline for the starter template, with GrillMyCode added to it partway along. Below it, three students. The first accepted before, so their repository starts without GrillMyCode, and gets it the next time they run gh student submit. The second also accepted before, and gets it when you add the file to their repository yourself. The third accepted after, so their repository has GrillMyCode from the start.](/img/late-accept-timeline.svg)
+
 ## Assignments without a template
 
 If you created the assignment with `--empty-repo`, there is no template to copy from, and one setting needs changing. See [Empty-repository assignments](../guides/classroom50.md#empty-repository-assignments).

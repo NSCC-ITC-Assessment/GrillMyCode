@@ -15,6 +15,8 @@ Each run works through these stages in order:
 
 ## 1. The commit range
 
+![A student repository's history: the empty tree, the first commit (the template copy), a bot commit, the student's commits, an earlier phase1 tag, more student commits, and the head. Four bars show what is assessed, from the base up to the head. With starter_code none, the base is the empty tree. With starter_code ignore (the default), context or ask, it is the first commit. skip_committers moves it past a leading run of verified bot commits. On a tag run, tag_diff_base previous-tag or tag:phase1 moves it to the earlier tag. base_sha and head_sha override all of these.](/img/commit-range.svg)
+
 ### Head
 
 The head is the commit the run is about:
@@ -241,6 +243,8 @@ Both are normal straight after an assignment is accepted, so by default such a r
 The model replies with a JSON object rather than a finished report. For each question it names the code to show, as one or more ranges, each a file and its first and last line numbers, then gives the question, its answer and, when there is an [instructor repository](instructor-repository.md), three multiple-choice distractors. GrillMyCode copies the named lines from the student's files and writes the report itself. So every snippet is exactly the code the student submitted, never code the AI retyped or made up, and the numbering, code blocks and layout are the same whatever model you use.
 
 GrillMyCode asks for the format twice: in the prompt, and as a JSON schema. Models on OpenRouter that support [structured outputs](../ai-providers/openrouter.md#structured-outputs) are held to the schema. Others follow the prompt alone and occasionally need a retry.
+
+![The AI reply flows through four numbered checks, and questions fall out at each. 1, reply checked: a reply that isn't the JSON asked for is retried, and a question with no text or no answer is dropped. 2, code copied in: a question whose snippet names a file the AI wasn't sent, lines the file doesn't have, or more than 50 lines is dropped. 3, other code dropped: a question showing none of the student's own lines is dropped, except starter-code questions under ask. A loop from step 3 back to the reply shows that when nothing usable is left, the reply is retried up to ai_retry_max_attempts times, then the run fails. 4, extras cut: questions beyond num_questions are cut, and broader questions move to the end. The rest form the report. In the student's copy only, a question that gives away its answer is held back. Dropped questions are logged as warnings, listed in the run summary, and kept in questions.json marked as dropped.](/img/question-funnel.svg)
 
 The reply goes through these steps before anything is delivered:
 

@@ -1,0 +1,105 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" role="img" aria-labelledby="gmc-excl-title">
+  <title id="gmc-excl-title">How each changed file is filtered. The exclude patterns are the union of three sources: the always-excluded list, the patterns detected for the repository's stack, and additional_exclude_patterns. For each changed file: is it binary? If yes, it is skipped, and nothing brings it back. If not, does it match an exclude pattern? If not, it is assessed. If it does, does it match an exclude_pattern_overrides entry? If yes, it is assessed, because overrides win. If not, it is skipped.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+    .ttl{font-size:16px;font-weight:800;fill:#1E293B}
+    .sub{font-size:13px;font-weight:600;fill:#475569}
+    .q{font-size:15px;font-weight:800;fill:#1E293B}
+    .yn{font-size:13px;font-weight:800}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <path id="gmc-excl-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <path id="gmc-excl-down" d="M0,0 V26 M-6,20 L0,26 L6,20" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="gmc-excl-right" d="M0,0 H40 M34,-6 L40,0 L34,6" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <!-- the question mark diamond on each decision -->
+    <g id="gmc-excl-diamond">
+      <rect x="-11" y="-11" width="22" height="22" rx="4" transform="rotate(45)" fill="#F97316" stroke="#1E293B" stroke-width="2"/>
+      <text x="0" y="5" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF" font-family="system-ui,-apple-system,'Segoe UI',Roboto,Arial,sans-serif">?</text>
+    </g>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="460" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-excl-sparkle" transform="translate(966,36) scale(.6)"/>
+  </g>
+
+  <!-- ===== where the exclude patterns come from ===== -->
+  <rect x="24" y="24" width="316" height="412" rx="22" fill="#FFFFFF" fill-opacity=".7"/>
+  <g class="txt">
+    <text class="ttl" x="44" y="56">The exclude patterns</text>
+    <text class="sub" x="44" y="76">are all three lists combined</text>
+
+    <rect class="ink" x="44" y="100" width="276" height="44" rx="12" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="sub" x="60" y="127" style="fill:#1E293B">Always excluded</text>
+    <rect class="ink" x="44" y="156" width="276" height="44" rx="12" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="sub" x="60" y="183" style="fill:#1E293B">Detected for the repo's stack</text>
+    <rect class="ink" x="44" y="212" width="276" height="44" rx="12" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="mono" x="60" y="239" style="font-size:13px;font-weight:700;fill:#1E293B">additional_exclude_patterns</text>
+
+    <path d="M182,262 V286" stroke="#475569" stroke-width="2.5" stroke-linecap="round"/>
+    <text x="196" y="280" font-size="16" font-weight="800" fill="#C2410C">+</text>
+    <path d="M176,280 L182,288 L188,280" fill="none" stroke="#475569" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+
+    <rect class="ink" x="44" y="296" width="276" height="48" rx="12" fill="#FFEDD5"/>
+    <text class="q" x="182" y="326" text-anchor="middle">Exclude patterns</text>
+  </g>
+  <!-- feeds question 2 -->
+  <path d="M320,320 H352 Q366,320 366,306 V218 Q366,204 380,204 H392" fill="none" stroke="#EA580C" stroke-width="2.5" stroke-dasharray="5 6" stroke-linecap="round"/>
+
+  <!-- ===== the decision flow ===== -->
+  <g class="txt">
+    <rect class="ink" x="400" y="28" width="300" height="40" rx="20" fill="#1E293B" stroke-width="2.5"/>
+    <text x="550" y="54" text-anchor="middle" font-size="15" font-weight="800" fill="#FFFFFF">Each changed file</text>
+  </g>
+  <use href="#gmc-excl-down" x="550" y="72"/>
+
+  <!-- 1. binary? -->
+  <g class="txt">
+    <rect class="ink" x="400" y="102" width="300" height="52" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <use href="#gmc-excl-diamond" x="428" y="128"/>
+    <text class="q" x="452" y="133">Binary? <tspan class="sub">(has a null byte)</tspan></text>
+    <use href="#gmc-excl-right" x="704" y="128"/>
+    <text class="yn" x="716" y="120" style="fill:#B91C1C">yes</text>
+    <rect class="ink" x="748" y="104" width="228" height="48" rx="14" fill="#E2E8F0" stroke-width="2.5"/>
+    <text class="q" x="764" y="126" style="fill:#475569">Skipped</text>
+    <text class="sub" x="764" y="144" style="font-size:12px">nothing brings it back</text>
+  </g>
+  <use href="#gmc-excl-down" x="550" y="158"/>
+  <text class="txt yn" x="562" y="178" style="fill:#15803D">no</text>
+
+  <!-- 2. exclude pattern? -->
+  <g class="txt">
+    <rect class="ink" x="400" y="188" width="300" height="52" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <use href="#gmc-excl-diamond" x="428" y="214"/>
+    <text class="q" x="452" y="219" style="font-size:14px">Matches an exclude pattern?</text>
+    <use href="#gmc-excl-right" x="704" y="214"/>
+    <text class="yn" x="716" y="206" style="fill:#15803D">no</text>
+    <rect class="ink" x="748" y="190" width="228" height="48" rx="14" fill="#DCFCE7" stroke-width="2.5"/>
+    <text class="q" x="764" y="219" style="fill:#15803D">Assessed</text>
+  </g>
+  <use href="#gmc-excl-down" x="550" y="244"/>
+  <text class="txt yn" x="562" y="264" style="fill:#B91C1C">yes</text>
+
+  <!-- 3. override? -->
+  <g class="txt">
+    <rect class="ink" x="400" y="274" width="300" height="52" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <use href="#gmc-excl-diamond" x="428" y="300"/>
+    <text class="q" x="452" y="297">Matches an entry in</text>
+    <text class="mono" x="452" y="316" style="font-size:13px;font-weight:700;fill:#1E293B">exclude_pattern_overrides?</text>
+    <use href="#gmc-excl-right" x="704" y="300"/>
+    <text class="yn" x="716" y="292" style="fill:#15803D">yes</text>
+    <rect class="ink" x="748" y="276" width="228" height="48" rx="14" fill="#DCFCE7" stroke-width="2.5"/>
+    <text class="q" x="764" y="298" style="fill:#15803D">Assessed</text>
+    <text class="sub" x="764" y="316" style="font-size:12px">overrides always win</text>
+  </g>
+  <use href="#gmc-excl-down" x="550" y="330"/>
+  <text class="txt yn" x="562" y="350" style="fill:#B91C1C">no</text>
+
+  <g class="txt">
+    <rect class="ink" x="400" y="360" width="300" height="48" rx="14" fill="#E2E8F0" stroke-width="2.5"/>
+    <text class="q" x="550" y="389" text-anchor="middle" style="fill:#475569">Skipped</text>
+  </g>
+</svg>

@@ -14,6 +14,8 @@ Classroom 50 names every student repository `<classroom>-<assignment>-<username>
 - **Instructor repository:** everything before that login, plus `-grillmycode-instructor`, so `cs-principles-lab-3-grillmycode-instructor`. The classroom slug stays attached, which keeps two classrooms running the same assignment in separate instructor repositories.
 - **Team assignments:** a team repository ends in `-group-<n>` rather than a login, and its assessment is filed under `group-<n>/`.
 
+![The repository name cs-principles-lab-3-jsmith split in two: cs-principles-lab-3 (the classroom and assignment) and -jsmith (the login), which matches the repository's one direct collaborator, jsmith. The first part, plus -grillmycode-instructor, names the instructor repository cs-principles-lab-3-grillmycode-instructor; the login names the student folder jsmith/. A team repository, cs-principles-lab-3-group-2, is filed under group-2/. Anything else, with no match or more than one, gets no answer key: a workflow warning, and the issue and PDF as normal. A footnote says who pushed, who started the run, commit authors and the template are never used.](/img/instructor-repo-naming.svg)
+
 Who pushed, who started the run, who authored the commits and which template the repository came from play no part. Pushing a workflow file into a student's repository, or running the workflow by hand, never changes where an assessment is filed. Each run logs what it resolved; look for `Assignment: cs-principles-lab-3 · Submitter: jsmith` in the Actions log.
 
 If a repository doesn't fit, the action doesn't guess. That covers a repository not created by Classroom 50, a student who is no longer a direct collaborator, or more than one collaborator whose login ends the name. It skips instructor delivery, raises a **workflow warning** giving the reason, and repeats the reason in the run summary. The student's issue and PDF are produced as normal.
@@ -21,6 +23,8 @@ If a repository doesn't fit, the action doesn't guess. That covers a repository 
 Renaming an assignment with `gh teacher assignment rename` renames its student repositories too, so assessments made after a rename go to a new instructor repository named for the new slug.
 
 ## What each run does
+
+![Five steps in order, under the token each uses. With GITHUB_TOKEN: 1, posts the issue and PDF, always first, even with no instructor token. With INSTRUCTOR_REPO_TOKEN: 2, creates the private repository, only if it doesn't exist yet; 3, syncs the action-owned files, the README and quiz workflow; 4, writes the student's files, replacing the last run's; 5, writes questions.json last, because its commit builds the quiz. A note says a failure in steps 2 to 5 shows as an error on the run but never fails the job, since the student already has their questions, and conflicting writes and rate limits are retried.](/img/instructor-repo-run.svg)
 
 1. All student-facing work (the issue, the PDF) uses the workflow's `GITHUB_TOKEN`. Only the steps below use `INSTRUCTOR_REPO_TOKEN`.
 2. If the instructor repository doesn't exist, it is **created as a private repository** in the same organization.

@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" role="img" aria-labelledby="gmc-rel-title">
+  <title id="gmc-rel-title">Build and release pipeline. DEV: a push to a branch runs branch-build.yml, which pushes the image tagged branch-name. STAGING: a merge to main runs staging-build.yml, which pushes the image tagged next. PROD: pushing a v-star tag runs release.yml. A release then: 1, builds and pushes the image with four tags, vX.Y.Z, vX.Y, vX and latest; 2, creates the GitHub Release with generated notes; 3, moves the floating vX and vX.Y git tags; 4, snapshots the docs and commits the snapshot to main. action.yml references the major tag and is never changed by a release.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+    .ttl{font-size:16px;font-weight:800;fill:#1E293B}
+    .sub{font-size:13px;font-weight:600;fill:#475569}
+    .chip{font-size:13px;font-weight:800;fill:#FFFFFF}
+    .code{font-size:13px;font-weight:700;fill:#1E293B}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <path id="gmc-rel-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <path id="gmc-rel-down" d="M0,0 V14 M-6,8 L0,14 L6,8" fill="none" stroke="#94A3B8" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="gmc-rel-arrow" class="ink" fill="#FDBA74" stroke-width="2.2" d="M0,-6 H12 V-13 L26,0 L12,13 V6 H0 Z"/>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="520" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-rel-sparkle" transform="translate(966,30) scale(.6)"/>
+    <use href="#gmc-rel-sparkle" transform="translate(34,494) scale(.6)"/>
+  </g>
+
+  <!-- ===== the three environments ===== -->
+  <g class="txt">
+    <!-- DEV -->
+    <rect class="ink" x="30" y="30" width="286" height="222" rx="18" fill="#FFFFFF" stroke-width="2.5"/>
+    <rect x="50" y="46" width="64" height="26" rx="13" fill="#64748B"/>
+    <text class="chip" x="82" y="64" text-anchor="middle">DEV</text>
+    <text class="ttl" x="50" y="104">Push to a branch</text>
+    <use href="#gmc-rel-down" x="62" y="116"/>
+    <text class="mono code" x="50" y="154">branch-build.yml</text>
+    <use href="#gmc-rel-down" x="62" y="166"/>
+    <rect x="50" y="190" width="170" height="28" rx="8" fill="#F1F5F9" stroke="#64748B" stroke-width="2"/>
+    <text class="mono code" x="60" y="209">:branch-&lt;name&gt;</text>
+    <text class="sub" x="50" y="240">validation only</text>
+
+    <use href="#gmc-rel-arrow" x="322" y="100"/>
+
+    <!-- STAGING -->
+    <rect class="ink" x="356" y="30" width="286" height="222" rx="18" fill="#FFFFFF" stroke-width="2.5"/>
+    <rect x="376" y="46" width="96" height="26" rx="13" fill="#0369A1"/>
+    <text class="chip" x="424" y="64" text-anchor="middle">STAGING</text>
+    <text class="ttl" x="376" y="104">Merge to <tspan class="mono">main</tspan></text>
+    <use href="#gmc-rel-down" x="388" y="116"/>
+    <text class="mono code" x="376" y="154">staging-build.yml</text>
+    <use href="#gmc-rel-down" x="388" y="166"/>
+    <rect x="376" y="190" width="70" height="28" rx="8" fill="#E0F2FE" stroke="#0369A1" stroke-width="2"/>
+    <text class="mono code" x="386" y="209">:next</text>
+    <text class="sub" x="376" y="240">integration testing only</text>
+
+    <use href="#gmc-rel-arrow" x="648" y="100"/>
+
+    <!-- PROD -->
+    <rect class="ink" x="682" y="30" width="288" height="222" rx="18" fill="#FFFFFF" stroke-width="2.5"/>
+    <rect x="702" y="46" width="72" height="26" rx="13" fill="#16A34A"/>
+    <text class="chip" x="738" y="64" text-anchor="middle">PROD</text>
+    <text class="ttl" x="702" y="104">Push a <tspan class="mono">v*</tspan> tag</text>
+    <use href="#gmc-rel-down" x="714" y="116"/>
+    <text class="mono code" x="702" y="154">release.yml</text>
+    <use href="#gmc-rel-down" x="714" y="166"/>
+    <g>
+      <rect x="702" y="190" width="72" height="28" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+      <text class="mono code" x="738" y="209" text-anchor="middle">:vX.Y.Z</text>
+      <rect x="780" y="190" width="56" height="28" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+      <text class="mono code" x="808" y="209" text-anchor="middle">:vX.Y</text>
+      <rect x="842" y="190" width="42" height="28" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+      <text class="mono code" x="863" y="209" text-anchor="middle">:vX</text>
+      <rect x="890" y="190" width="64" height="28" rx="8" fill="#DCFCE7" stroke="#16A34A" stroke-width="2"/>
+      <text class="mono code" x="922" y="209" text-anchor="middle">:latest</text>
+    </g>
+    <text class="sub" x="702" y="240">versioned releases for instructors</text>
+  </g>
+
+  <!-- ===== what a release does ===== -->
+  <path d="M826,252 V288 Q826,298 816,298 H97 Q87,298 87,308 V312" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-dasharray="6 6" stroke-linecap="round"/>
+  <path d="M81,306 L87,314 L93,306" fill="none" stroke="#16A34A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <text class="txt ttl" x="500" y="286" text-anchor="middle">What <tspan class="mono">release.yml</tspan> does</text>
+
+  <g class="txt">
+    <!-- trigger -->
+    <rect class="ink" x="24" y="322" width="120" height="112" rx="14" fill="#1E293B" stroke-width="2.5"/>
+    <text class="mono" x="34" y="368" style="font-size:13px;font-weight:700;fill:#FFFFFF"><tspan fill="#FDBA74">$</tspan> git push</text>
+    <text class="mono" x="34" y="388" style="font-size:13px;font-weight:700;fill:#FFFFFF">origin vX.Y.Z</text>
+
+    <use href="#gmc-rel-arrow" x="148" y="378"/>
+    <rect class="ink" x="180" y="322" width="176" height="112" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="204" cy="346" r="13" fill="#C2410C"/><text x="204" y="351" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">1</text>
+    <text class="ttl" x="226" y="352" style="font-size:15px">Builds and</text>
+    <text class="ttl" x="196" y="376" style="font-size:15px">pushes the image</text>
+    <text class="sub" x="196" y="400">four tags on</text>
+    <text class="sub" x="196" y="418"><tspan class="mono">ghcr.io</tspan></text>
+
+    <use href="#gmc-rel-arrow" x="360" y="378"/>
+
+    <rect class="ink" x="392" y="322" width="176" height="112" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="416" cy="346" r="13" fill="#C2410C"/><text x="416" y="351" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">2</text>
+    <text class="ttl" x="438" y="352" style="font-size:15px">Creates the</text>
+    <text class="ttl" x="408" y="376" style="font-size:15px">GitHub Release</text>
+    <text class="sub" x="408" y="400">with generated</text>
+    <text class="sub" x="408" y="418">release notes</text>
+
+    <use href="#gmc-rel-arrow" x="572" y="378"/>
+
+    <rect class="ink" x="604" y="322" width="176" height="112" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="628" cy="346" r="13" fill="#C2410C"/><text x="628" y="351" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">3</text>
+    <text class="ttl" x="650" y="352" style="font-size:15px">Moves the</text>
+    <text class="ttl" x="620" y="376" style="font-size:15px">floating git tags</text>
+    <text class="sub" x="620" y="400"><tspan class="mono">vX</tspan> and <tspan class="mono">vX.Y</tspan></text>
+    <text class="sub" x="620" y="418"></text>
+
+    <use href="#gmc-rel-arrow" x="784" y="378"/>
+
+    <rect class="ink" x="816" y="322" width="160" height="112" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <circle cx="840" cy="346" r="13" fill="#C2410C"/><text x="840" y="351" text-anchor="middle" font-size="14" font-weight="800" fill="#FFFFFF">4</text>
+    <text class="ttl" x="862" y="352" style="font-size:15px">Snapshots</text>
+    <text class="ttl" x="832" y="376" style="font-size:15px">the docs</text>
+    <text class="sub" x="832" y="400">committed</text>
+    <text class="sub" x="832" y="418">to <tspan class="mono">main</tspan></text>
+  </g>
+
+  <!-- footnote -->
+  <text class="txt sub" x="500" y="480" text-anchor="middle" style="font-size:14px"><tspan class="mono" style="font-weight:700;fill:#1E293B">action.yml</tspan> references the major tag, such as <tspan class="mono" style="font-weight:700;fill:#1E293B">:v0</tspan>, and a release never changes it.</text>
+</svg>

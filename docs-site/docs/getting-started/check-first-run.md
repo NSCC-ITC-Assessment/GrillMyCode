@@ -17,6 +17,8 @@ It's worth watching the first run so you know everything is connected. The simpl
 
 If you see all three, you're done. GrillMyCode is set up for this assignment.
 
+![A GrillMyCode run in the Actions tab can end three ways. Green tick, questions: an issue is pinned in the Issues tab, with a PDF link, and a happy flame says you're done. Green tick, no questions: the issues list is empty and a sleepy flame waits, because straight after a student accepts there is nothing of theirs to ask about yet; read the run summary. Red X: a worried flame beside a log whose last line is red; select the failed step and read the message at the end, and on a first run, check the key.](/img/first-run-outcomes.svg)
+
 ## A green tick, but no questions
 
 This is normal straight after a student accepts the assignment. At that point, the repository holds only your starter code and Classroom 50's setup files, which GrillMyCode leaves out, so there is nothing to ask about yet. The run finishes successfully without creating an issue.

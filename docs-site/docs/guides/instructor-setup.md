@@ -32,6 +32,8 @@ Retake this screenshot so the student's folder shows the `data` folder in place 
 
 ## One-time setup
 
+![Three panels joined by arrows. "In your own account": a settings window, Settings › Developer settings, with repo and workflow ticked and a Generate token button, and a key beside it, captioned "Create a token in your own account's settings, not the organization's". "In your organization": the key goes into a safe labelled "your org", captioned "Save it as a secret in your organization's settings, named INSTRUCTOR_REPO_TOKEN". "Every run": a student's repository with the GrillMyCode flame passes the key to a locked answer key folder, captioned "Each run uses it to write the answer key to your private repository".](/img/answer-key-setup.svg)
+
 ### Create an access token
 
 GrillMyCode needs permission to create repositories in your organization and write to them. You give it that with a **personal access token**: a password tied to your GitHub account, limited to specific permissions.

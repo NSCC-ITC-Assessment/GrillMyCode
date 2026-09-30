@@ -30,6 +30,8 @@ Using Docker means:
 
 ## Execution flow
 
+![One run, start to finish, as eleven stages coloured by what happens if each goes wrong. 1, reads the inputs: fails the run. 2, resolves the tag and commit range: fails the run. 3, identifies the student: warns, no answer key. 4, lists and filters the changed files: if empty, ends early. 5, reads, strips and marks the code: no text fails the run. 6, builds the prompt. 7, calls the AI and checks the reply: fails after retries. 8, renders the report and PDF: a PDF problem only warns. 9, posts the issue: fails the run. 10, writes to the instructor repository: an error, but the job passes. 11, labels the repository: warns. A legend: red fails the run with a red X; amber warns and carries on, and the student still gets their questions; grey ends early without calling the AI, a green tick unless fail_on_empty_assessment is on.](/img/architecture-overview.svg)
+
 When `main.js` runs, it follows this sequence:
 
 ```

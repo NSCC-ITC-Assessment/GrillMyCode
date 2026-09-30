@@ -1,0 +1,132 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" role="img" aria-labelledby="gmc-funnel-title">
+  <title id="gmc-funnel-title">What happens to the questions after the AI replies. The reply passes four checks in turn, and questions can fall out at each. 1, reply checked: a reply that isn't the JSON asked for is retried, and a question with no text or no answer is dropped. 2, code copied in: a question is dropped if a snippet names a file the AI wasn't sent, lines that file doesn't have, or more than 50 lines. 3, other code dropped: a question showing none of the student's own lines is dropped, unless it is an allowed starter-code question. If nothing usable is left after these checks, the reply is retried, up to ai_retry_max_attempts, and then the run fails. 4, extras cut: questions beyond num_questions are removed and broader questions move to the end. The remaining questions form the report. In the student's copy only, a question that gives away its own answer is held back. Dropped questions are logged as warnings, listed in the run summary and kept in questions.json, marked as dropped.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
+    .ttl{font-size:16px;font-weight:800;fill:#1E293B}
+    .sub{font-size:14px;font-weight:600;fill:#475569}
+    .bin{font-size:13px;font-weight:600;fill:#334155}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+    .chute{fill:none;stroke:#DC2626;stroke-width:2.5;stroke-dasharray:4 6;stroke-linecap:round}
+  </style>
+  <defs>
+    <path id="gmc-funnel-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <!-- one question: a small card, top-left at 0,0 -->
+    <g id="gmc-funnel-q">
+      <rect x="0" y="0" width="12" height="16" rx="2.5" fill="#FFFFFF" stroke="#1E293B" stroke-width="1.8"/>
+      <path d="M3,5.5 H9 M3,10 H7" stroke="#FB923C" stroke-width="1.8" stroke-linecap="round"/>
+    </g>
+    <path id="gmc-funnel-down" d="M-6,-8 L0,0 L6,-8" fill="none" stroke="#DC2626" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+    <path id="gmc-funnel-down-grey" d="M-6,-8 L0,0 L6,-8" fill="none" stroke="#64748B" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="520" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-funnel-sparkle" transform="translate(966,40) scale(.6)"/>
+    <use href="#gmc-funnel-sparkle" transform="translate(34,440) scale(.6)"/>
+  </g>
+
+  <!-- ===== retry loop ===== -->
+  <path d="M580,150 V92 Q580,72 560,72 H84 Q64,72 64,92 V154" fill="none" stroke="#0369A1" stroke-width="2.5" stroke-dasharray="7 6" stroke-linecap="round"/>
+  <path d="M57,146 L64,156 L71,146" fill="none" stroke="#0369A1" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="txt">
+    <rect x="148" y="56" width="354" height="32" rx="16" fill="#E0F2FE" stroke="#0369A1" stroke-width="2"/>
+    <text x="325" y="77" text-anchor="middle" font-size="13" font-weight="700" style="fill:#0369A1">Nothing usable left after 1–3? Retry, then fail</text>
+  </g>
+  <text class="txt sub" x="325" y="110" text-anchor="middle" style="font-size:13px">up to <tspan class="mono" style="font-weight:700">ai_retry_max_attempts</tspan> tries</text>
+
+  <!-- ===== the AI reply ===== -->
+  <g class="txt">
+    <rect class="ink" x="24" y="162" width="80" height="96" rx="16" fill="#FFFFFF"/>
+    <text class="mono" x="64" y="210" text-anchor="middle" style="font-size:28px;font-weight:800;fill:#C2410C">{ }</text>
+    <text x="64" y="240" text-anchor="middle" font-size="13" font-weight="800" style="fill:#334155">AI reply</text>
+  </g>
+
+  <!-- ===== the pipe ===== -->
+  <path d="M120,210 H876" fill="none" stroke="#FCD9B6" stroke-width="30" stroke-linecap="round"/>
+
+  <!-- questions in each stretch of the pipe: 7, 6, 5, 4, 3 -->
+  <g>
+    <use href="#gmc-funnel-q" x="116" y="202"/><use href="#gmc-funnel-q" x="131" y="202"/><use href="#gmc-funnel-q" x="146" y="202"/><use href="#gmc-funnel-q" x="161" y="202"/><use href="#gmc-funnel-q" x="176" y="202"/><use href="#gmc-funnel-q" x="191" y="202"/><use href="#gmc-funnel-q" x="206" y="202"/>
+    <use href="#gmc-funnel-q" x="282" y="202"/><use href="#gmc-funnel-q" x="297" y="202"/><use href="#gmc-funnel-q" x="312" y="202"/><use href="#gmc-funnel-q" x="327" y="202"/><use href="#gmc-funnel-q" x="342" y="202"/><use href="#gmc-funnel-q" x="357" y="202"/>
+    <use href="#gmc-funnel-q" x="459" y="202"/><use href="#gmc-funnel-q" x="474" y="202"/><use href="#gmc-funnel-q" x="489" y="202"/><use href="#gmc-funnel-q" x="504" y="202"/><use href="#gmc-funnel-q" x="519" y="202"/>
+    <use href="#gmc-funnel-q" x="636" y="202"/><use href="#gmc-funnel-q" x="651" y="202"/><use href="#gmc-funnel-q" x="666" y="202"/><use href="#gmc-funnel-q" x="681" y="202"/>
+    <use href="#gmc-funnel-q" x="800" y="202"/><use href="#gmc-funnel-q" x="815" y="202"/><use href="#gmc-funnel-q" x="830" y="202"/>
+  </g>
+
+  <!-- ===== stations ===== -->
+  <g class="txt">
+    <circle class="ink" cx="240" cy="210" r="19" fill="#C2410C"/>
+    <text x="240" y="217" text-anchor="middle" font-size="18" font-weight="800" style="fill:#FFFFFF">1</text>
+    <text class="ttl" x="240" y="170" text-anchor="middle">Reply checked</text>
+    <circle class="ink" cx="410" cy="210" r="19" fill="#C2410C"/>
+    <text x="410" y="217" text-anchor="middle" font-size="18" font-weight="800" style="fill:#FFFFFF">2</text>
+    <text class="ttl" x="410" y="170" text-anchor="middle">Code copied in</text>
+    <circle class="ink" cx="580" cy="210" r="19" fill="#C2410C"/>
+    <text x="580" y="217" text-anchor="middle" font-size="18" font-weight="800" style="fill:#FFFFFF">3</text>
+    <text class="ttl" x="580" y="170" text-anchor="middle">Other code dropped</text>
+    <circle class="ink" cx="750" cy="210" r="19" fill="#C2410C"/>
+    <text x="750" y="217" text-anchor="middle" font-size="18" font-weight="800" style="fill:#FFFFFF">4</text>
+    <text class="ttl" x="750" y="170" text-anchor="middle">Extras cut</text>
+  </g>
+
+  <!-- ===== the report ===== -->
+  <g class="txt">
+    <rect class="ink" x="880" y="166" width="80" height="94" rx="10" fill="#FFFFFF"/>
+    <path d="M893,184 H947" stroke="#1E293B" stroke-width="3" stroke-linecap="round"/>
+    <path d="M893,200 H937 M893,214 H943 M893,228 H931 M893,242 H939" stroke="#FB923C" stroke-width="3" stroke-linecap="round"/>
+    <text class="ttl" x="920" y="132" text-anchor="middle">Report</text>
+    <text class="sub" x="920" y="152" text-anchor="middle" style="font-size:13px">numbered in order</text>
+  </g>
+
+  <!-- ===== what falls out at each station ===== -->
+  <path class="chute" d="M240,234 V300"/><use href="#gmc-funnel-down" x="240" y="302"/>
+  <path class="chute" d="M410,234 V300"/><use href="#gmc-funnel-down" x="410" y="302"/>
+  <path class="chute" d="M580,234 V300"/><use href="#gmc-funnel-down" x="580" y="302"/>
+  <path class="chute" d="M750,234 V300" style="stroke:#64748B"/><use href="#gmc-funnel-down-grey" x="750" y="302"/>
+  <path class="chute" d="M920,266 V300" style="stroke:#64748B"/><use href="#gmc-funnel-down-grey" x="920" y="302"/>
+
+  <g class="txt">
+    <!-- 1 -->
+    <rect class="ink" x="158" y="310" width="164" height="124" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="bin" x="171" y="334">Not the JSON asked</text>
+    <text class="bin" x="171" y="352">for: <tspan font-weight="800" style="fill:#0369A1">retried</tspan></text>
+    <text class="bin" x="171" y="382">No question text</text>
+    <text class="bin" x="171" y="400">or no answer:</text>
+    <text class="bin" x="171" y="418" style="font-weight:800;fill:#B91C1C">dropped</text>
+    <!-- 2 -->
+    <rect class="ink" x="328" y="310" width="164" height="124" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="bin" x="341" y="334">A snippet names a</text>
+    <text class="bin" x="341" y="352">file it wasn't sent,</text>
+    <text class="bin" x="341" y="370">lines the file lacks,</text>
+    <text class="bin" x="341" y="388">or over 50 lines:</text>
+    <text class="bin" x="341" y="406" style="font-weight:800;fill:#B91C1C">dropped</text>
+    <!-- 3 -->
+    <rect class="ink" x="498" y="310" width="164" height="124" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="bin" x="511" y="334">Shows none of the</text>
+    <text class="bin" x="511" y="352">student's own lines:</text>
+    <text class="bin" x="511" y="370" style="font-weight:800;fill:#B91C1C">dropped</text>
+    <text class="bin" x="511" y="400" style="font-size:11.5px;fill:#64748B">except starter-code</text>
+    <text class="bin" x="511" y="417" style="font-size:11.5px;fill:#64748B">questions under <tspan class="mono">ask</tspan></text>
+    <!-- 4 -->
+    <rect class="ink" x="668" y="310" width="164" height="124" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="bin" x="681" y="334">Beyond</text>
+    <text class="bin" x="681" y="352"><tspan class="mono" style="font-weight:700">num_questions</tspan>:</text>
+    <text class="bin" x="681" y="370" style="font-weight:800;fill:#475569">cut</text>
+    <text class="bin" x="681" y="400">Broader questions</text>
+    <text class="bin" x="681" y="418">move to the end</text>
+    <!-- student's copy -->
+    <rect class="ink" x="844" y="310" width="144" height="136" rx="14" fill="#FFFFFF" stroke-width="2.5"/>
+    <text class="bin" x="856" y="334" style="font-weight:800">Student's copy</text>
+    <text class="bin" x="856" y="352" style="font-weight:800">only:</text>
+    <text class="bin" x="856" y="376">a question that</text>
+    <text class="bin" x="856" y="394">gives away its</text>
+    <text class="bin" x="856" y="412">answer:</text>
+    <text class="bin" x="856" y="430" style="font-weight:800;fill:#475569">held back</text>
+  </g>
+
+  <!-- footnote -->
+  <text class="txt sub" x="500" y="478" text-anchor="middle">Dropped questions are logged as warnings, listed in the run summary,</text>
+  <text class="txt sub" x="500" y="498" text-anchor="middle">and kept in <tspan class="mono" style="font-weight:700">questions.json</tspan> marked as dropped.</text>
+</svg>

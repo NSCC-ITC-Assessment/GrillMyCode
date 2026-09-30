@@ -209,6 +209,8 @@ concurrency:
   cancel-in-progress: true
 ```
 
+![Two timelines. Same ref: two pushes to main arrive close together, so run 1 is cancelled when the second push arrives, and run 2 runs to the end on the latest commit. Different refs: the phase1 and phase2 tags are pushed together, each tag is its own group, and both runs finish. A footnote says the group is the workflow plus the ref, with cancel-in-progress true, and that a cancelled run can still use Actions minutes and a reply already being generated may still be billed.](/img/overlapping-runs.svg)
+
 When a new push arrives for the same branch while an earlier run is still going, GitHub **cancels the earlier run** and starts a fresh one on the latest commit:
 
 - **Only the latest code is assessed.** The superseded run stops before it publishes, so no stale assessment is produced.
