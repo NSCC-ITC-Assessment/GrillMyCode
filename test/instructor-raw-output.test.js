@@ -205,8 +205,6 @@ describe('formatRawOutput', () => {
 
   const request = {
     numQuestions: 10,
-    temperature: 0.2,
-    topP: 0.95,
     promptHash: 'abc123def456',
     actionRef: 'v1',
   };
@@ -233,7 +231,7 @@ describe('formatRawOutput', () => {
     expect(out).toContain('`length` (native: `MAX_TOKENS`) — the output token limit was reached');
     expect(out).toContain('1,200 in · 4,096 out');
     expect(out).toContain('- **Attempts:** 2 (1 retry) · 12.3 s');
-    expect(out).toContain('10 questions requested · temperature 0.2 · prompt `abc123def456`');
+    expect(out).toContain('10 questions requested · prompt `abc123def456`');
     // Only the host is worth a line when the model served is the one requested.
     expect(out).toContain('- **Served by:** via SomeHost');
   });
@@ -243,7 +241,7 @@ describe('formatRawOutput', () => {
     const record = provenanceOf(out);
 
     expect(record).toMatchObject({
-      version: 1,
+      version: 2,
       baseSha: opts.baseSha,
       headSha: opts.headSha,
       model: 'some/model',

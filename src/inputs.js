@@ -13,9 +13,10 @@ import {
   DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS,
   DEFAULT_CODEBASE_CONTEXT_MAX_CHARS,
   DEFAULT_AI_RETRY_MAX_ATTEMPTS,
-  DEFAULT_AI_TEMPERATURE,
   DEFAULT_AI_REASONING_EFFORT,
   AI_REASONING_EFFORTS,
+  AI_TEMPERATURE_MIN,
+  AI_TEMPERATURE_MAX,
   DEFAULT_NUM_QUESTIONS,
   DEFAULT_AI_PROVIDER,
   DEFAULT_AI_MODEL,
@@ -115,6 +116,27 @@ function readReasoningEffort() {
       `ai_reasoning_effort must be one of ${AI_REASONING_EFFORTS.map((e) => `"${e}"`).join(', ')}; ` +
         `got "${value}".`,
     );
+  }
+  return value;
+}
+
+/**
+ * Reads ai_temperature. Returns null when it is empty, so no temperature is sent
+ * and the model runs at its own. A value that is not a number from
+ * AI_TEMPERATURE_MIN to AI_TEMPERATURE_MAX is ignored with a warning rather than
+ * failing the run: the model's own temperature is a safe fallback, and older
+ * workflows that set a value outside today's range keep running.
+ */
+function readTemperature() {
+  const raw = core.getInput('ai_temperature').trim();
+  if (!raw) return null;
+  const value = Number(raw);
+  if (!Number.isFinite(value) || value < AI_TEMPERATURE_MIN || value > AI_TEMPERATURE_MAX) {
+    core.warning(
+      `ai_temperature must be a number from ${AI_TEMPERATURE_MIN} to ${AI_TEMPERATURE_MAX}; ` +
+        `got "${raw}". It was ignored, so the model runs at its own temperature.`,
+    );
+    return null;
   }
   return value;
 }
@@ -259,10 +281,7 @@ export function readInputs() {
       1,
       parseInt(core.getInput('ai_retry_max_attempts') || String(DEFAULT_AI_RETRY_MAX_ATTEMPTS), 10),
     ),
-    aiTemperature: Math.min(
-      1,
-      Math.max(0, parseFloat(core.getInput('ai_temperature') || String(DEFAULT_AI_TEMPERATURE))),
-    ),
+    aiTemperature: readTemperature(),
     aiReasoningEffort: readReasoningEffort(),
     apiKey,
     numQuestions,

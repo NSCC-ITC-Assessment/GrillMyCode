@@ -133,6 +133,40 @@ export function namedDiffBaseTagError(cfg) {
   return '';
 }
 
+/**
+ * OpenRouter's temperature range; the action ignores anything outside it.
+ * Mirrors AI_TEMPERATURE_MIN / AI_TEMPERATURE_MAX in src/constants.js. The
+ * Wizard accepts at most two decimal places (#.##), and its box steps by
+ * TEMPERATURE_STEP; finer values imply a precision no model documents, though
+ * the action accepts them.
+ */
+export const TEMPERATURE_MIN = 0;
+export const TEMPERATURE_MAX = 2;
+export const TEMPERATURE_STEP = 0.01;
+
+/** A plain decimal with at most two places: 1, 0.7, 0.75, .5 — no exponents. */
+const TEMPERATURE_FORMAT_RE = /^(\d+(\.\d{0,2})?|\.\d{1,2})$/;
+
+/**
+ * Validation message for the AI step's temperature box, or '' when it is fine.
+ * A temperature is only emitted once the instructor opts in, so an unticked box
+ * is never an error; a ticked one must hold a number in range.
+ */
+export function temperatureError(cfg) {
+  if (!cfg.aiTemperatureEnabled) return '';
+  const raw = String(cfg.aiTemperature ?? '').trim();
+  if (!raw) {
+    return `Enter a temperature from ${TEMPERATURE_MIN} to ${TEMPERATURE_MAX}, or untick "Set a temperature" to let the model use its own.`;
+  }
+  // The format is checked on the text as typed, not on the parsed number, so
+  // floating-point rounding can't make 0.07 look like it has more places.
+  const value = Number(raw);
+  if (!TEMPERATURE_FORMAT_RE.test(raw) || value < TEMPERATURE_MIN || value > TEMPERATURE_MAX) {
+    return `Temperature must be from ${TEMPERATURE_MIN} to ${TEMPERATURE_MAX} with at most two decimal places, such as 0.75.`;
+  }
+  return '';
+}
+
 const DEFAULTS = {
   aiProvider: 'openrouter',
   // Compared against the resolved model (base + routing variant), so choosing a
@@ -140,7 +174,6 @@ const DEFAULTS = {
   aiModel: 'google/gemini-3.5-flash-lite',
   aiModelVariant: '',
   aiReasoningEffort: 'default',
-  aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   numQuestions: 20,
   questionEmphasis: 'balanced',
@@ -436,10 +469,14 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
   if (differ(cfg, 'aiReasoningEffort')) {
     lines.push(`          ai_reasoning_effort: ${yamlStr(cfg.aiReasoningEffort)}`);
   }
+  // Opt-in only: an unticked box emits nothing, so the model runs at its own
+  // temperature, whatever was typed before the box was unticked.
+  if (cfg.aiTemperatureEnabled && !temperatureError(cfg)) {
+    lines.push(`          ai_temperature: ${yamlStr(Number(String(cfg.aiTemperature).trim()))}`);
+  }
   if (differ(cfg, 'aiRetryMaxAttempts')) {
     lines.push(`          ai_retry_max_attempts: ${yamlStr(cfg.aiRetryMaxAttempts)}`);
   }
-  pushInput('ai_temperature', 'aiTemperature', yamlStr(cfg.aiTemperature));
 
   // ── Question generation ────────────────────────────────────────────────────
   pushInput('num_questions', 'numQuestions', yamlStr(cfg.numQuestions));

@@ -51,12 +51,14 @@ inputs:
 
   ai_temperature:
     description: >
-      Controls the randomness of the AI's output (0.0 = fully deterministic,
-      1.0 = most random). Lower values produce more predictable, consistent
-      questions; higher values produce more varied output. Most users should
-      leave this at the default.
+      Sampling temperature to send, from 0 to 2 (OpenRouter's range). Empty by
+      default: no temperature is sent and the model runs at its own. Models
+      differ in the range they accept, their default and whether they use
+      temperature at all, so set this only if you know the chosen model's, and
+      check the questions it produces. If you're not sure how a change would
+      affect the questions, don't set it. A value outside 0 to 2 is ignored with
+      a warning.
     required: false
-    default: "0.5"
 
   ai_reasoning_effort:
     description: >

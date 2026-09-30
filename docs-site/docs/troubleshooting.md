@@ -74,7 +74,13 @@ For how the two limits differ, see [Retries and rate limits](ai-providers/openro
 
 If the error mentions `ai_reasoning_effort`, the workflow asked the model to switch reasoning off (`ai_reasoning_effort: "none"`), and the model always reasons. OpenRouter rejects that request rather than guessing a level.
 
-Change `ai_reasoning_effort` to `default` or a low level such as `minimal` or `low`, or remove it. The Workflow Wizard's **Reasoning** setting offers **Off** only for models that allow it. See [Reasoning](ai-providers/openrouter.md#reasoning).
+Change `ai_reasoning_effort` to `default` or a low level such as `minimal` or `low`, or remove it. The Workflow Wizard's **Reasoning** setting, under **Advanced settings** on the AI step, offers **Off** only for models that allow it. See [Reasoning](ai-providers/openrouter.md#reasoning).
+
+### The run failed with `AI API error 400` after setting a temperature
+
+If the error mentions `ai_temperature`, the model, or the provider serving it, doesn't accept the temperature the workflow set. Models differ in the range they accept.
+
+Remove `ai_temperature` so the model runs at its own temperature, or check the model maker's documentation for its range. In the Workflow Wizard, untick **Set a temperature** under **Advanced settings** on the AI step. See [Temperature](ai-providers/openrouter.md#temperature).
 
 ### The run failed with `AI reply could not be used`
 

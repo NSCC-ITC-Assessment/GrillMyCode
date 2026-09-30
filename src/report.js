@@ -168,8 +168,8 @@ function provenanceComment(record) {
  * is bumped whenever a field changes meaning or is removed.
  *
  * @param {object} [opts.request]  - What was asked for: `numQuestions`,
- *   `questionEmphasis`, `temperature`, `topP`, `reasoningEffort`, `promptHash`,
- *   `actionRef`
+ *   `questionEmphasis`, `temperature` (null when none was sent),
+ *   `reasoningEffort`, `promptHash`, `actionRef`
  * @param {object} [opts.response] - The metadata callAI returns
  */
 export function formatRawOutput({
@@ -198,7 +198,11 @@ export function formatRawOutput({
     if (request.questionEmphasis && request.questionEmphasis !== DEFAULT_QUESTION_EMPHASIS) {
       settings.push(`${request.questionEmphasis} emphasis`);
     }
-    settings.push(`temperature ${request.temperature}`);
+    // Only a temperature that was sent is worth a mention; otherwise the model
+    // ran at its own.
+    if (typeof request.temperature === 'number') {
+      settings.push(`temperature ${request.temperature}`);
+    }
     // `default` sends no reasoning setting, so the model decided — say so
     // rather than print a level nobody asked for.
     if (request.reasoningEffort) {
@@ -249,7 +253,7 @@ export function formatRawOutput({
   const fence = '`'.repeat(Math.max(3, longestRun + 1));
 
   const provenance = provenanceComment({
-    version: 1,
+    version: 2,
     generatedAt,
     studentLogin: studentLogin ?? null,
     sourceRepo: sourceRepo ?? null,

@@ -19,7 +19,7 @@ What adds to the cost:
 - **How often it runs.** With the *every push* trigger, a student who pushes 20 times gets 20 assessments. A [submission tag](choosing-a-trigger.md#submission-tag) runs once per submission instead.
 - **The private answer key** (Classroom 50 only). When it's set up, the AI also writes three wrong answers per question for the LMS quiz, which makes each assessment somewhat longer.
 - **The model.** The more capable models can cost many times as much per assessment.
-- **Reasoning.** Many models think before they answer, and that thinking is billed too, which can multiply the cost. The Wizard's **Reasoning** setting shows what your model does and lets you turn it down.
+- **Reasoning.** Many models think before they answer, and that thinking is billed too, which can multiply the cost. The Wizard's **Reasoning** setting, under **Advanced settings** on the AI step, shows what your model does and lets you turn it down.
 
 ## Estimate your cost with trial runs
 
@@ -44,7 +44,7 @@ Do [trial runs](#estimate-your-cost-with-trial-runs) before rolling it out. If t
 
 ## Faster or cheaper, same model
 
-Most models are offered by several companies at different speeds and prices. The Wizard's **Model routing** setting lets you choose what matters more:
+Most models are offered by several companies at different speeds and prices. The Wizard's **Model routing** setting, under **Advanced settings** on the AI step, lets you choose what matters more:
 
 - **Balanced** (recommended): let OpenRouter choose.
 - **Speed:** try the fastest providers first, for when you like the questions but they take too long to arrive. It can cost more.
