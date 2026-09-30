@@ -50,7 +50,12 @@ import {
   selectCodebaseContext,
 } from './files.js';
 import { detectExcludePatterns } from './stack-detection.js';
-import { buildPrompt, buildResponseFormat, PROMPT_TEMPLATE_HASH } from './prompt/prompt.js';
+import {
+  buildPrompt,
+  buildResponseFormat,
+  maxStarterQuestions,
+  PROMPT_TEMPLATE_HASH,
+} from './prompt/prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput, formatPrompt } from './report.js';
 import { postIssue } from './delivery/issue.js';
@@ -144,9 +149,10 @@ function createRunState() {
     // Assessed files that existed before the range, sent with the student's
     // lines marked (see buildAssessedCodeContent).
     markedFiles: [],
-    // include_codebase_context: the starter files and the files of earlier
-    // work sent as context, those left out to stay within the size limit, and
-    // the characters sent. codebaseContextChars stays null when it is off.
+    // Codebase context (starter_code: context or ask, previous_work: context):
+    // the starter files and the files of earlier work sent, those left out to
+    // stay within the size limit, and the characters sent.
+    // codebaseContextChars stays null when nothing asks for it.
     codebaseStarterFiles: [],
     codebaseEarlierFiles: [],
     codebaseContextOmitted: [],
@@ -159,6 +165,10 @@ function createRunState() {
     questionsRequested: null,
     questionsGenerated: null,
     questionsWithheld: 0,
+    // starter_code: ask — how many questions may be, and are, about starter
+    // code alone.
+    starterQuestionLimit: 0,
+    starterQuestions: 0,
 
     issueUrl: '',
     issueNumber: null,
@@ -190,7 +200,7 @@ const refCode = (name) => `\`${name.replace(/`/g, "'")}\``;
 
 /**
  * Links a SHA to its commit page. The empty tree SHA (used as the base when
- * include_initial_commit is set) has no commit page, so it is rendered plain.
+ * starter_code is none) has no commit page, so it is rendered plain.
  */
 function commitLink(repoSlug, sha) {
   const short = shortSha(sha);
@@ -408,11 +418,10 @@ function renderConfiguration(state) {
       `${i.keepComments ? '**yes**' : 'no'}${flag(i.keepComments)}`,
     ],
     ['Answers shown to student', `${i.includeAnswers ? '**YES**' : 'no'}${flag(i.includeAnswers)}`],
-    [
-      'Initial commit assessed',
-      `${i.includeInitialCommit ? '**yes**' : 'no'}${flag(i.includeInitialCommit)}`,
-    ],
+    ['Starter code', renderStarterCodeSetting(state)],
     ...(state.tagName ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
+    // Earlier work exists only once the base moves past the first commit.
+    ...(state.tagName || i.baseSha ? [['Previous work', `\`${i.previousWork}\``]] : []),
     ['Repository labels', i.labelRepos ? 'on' : '**off**'],
     ['Manual SHA override', i.baseSha || i.headSha ? `**in effect**${flag(true)}` : 'none'],
     [
@@ -482,9 +491,41 @@ function renderExcludedFilesSetting(state) {
   );
 }
 
-/** The include_codebase_context row of the configuration table. */
+/**
+ * The starter_code row of the configuration table. Under ask it also counts
+ * the questions about starter code alone, once there are questions.
+ */
+function renderStarterCodeSetting(state) {
+  const mode = state.inputs.starterCode;
+  if (mode !== 'ask' || state.questionsGenerated === null) return `\`${mode}\``;
+  return (
+    `\`ask\` — ${fmtNum(state.starterQuestions)} question${state.starterQuestions === 1 ? '' : 's'} ` +
+    `about starter code alone (limit ${fmtNum(state.starterQuestionLimit)})`
+  );
+}
+
+/**
+ * Whether starter code may be asked about: starter_code: ask, with a question
+ * set large enough to allow any (see maxStarterQuestions). Otherwise starter
+ * lines are neither marked nor askable, so the prompt never shows an `s`
+ * marker it does not explain.
+ */
+function asksAboutStarter(inputs) {
+  return inputs.starterCode === 'ask' && maxStarterQuestions(inputs.numQuestions) > 0;
+}
+
+/** Whether a run's settings send any codebase context: starter code or earlier work. */
+function wantsCodebaseContext(inputs) {
+  return (
+    inputs.starterCode === 'context' ||
+    inputs.starterCode === 'ask' ||
+    inputs.previousWork === 'context'
+  );
+}
+
+/** The codebase context row of the configuration table. */
 function renderCodebaseContextSetting(state) {
-  if (!state.inputs.includeCodebaseContext) return 'off';
+  if (!wantsCodebaseContext(state.inputs)) return 'off';
   if (state.codebaseContextChars === null) return 'on — not used by this run';
   const starter = state.codebaseStarterFiles.length;
   const earlier = state.codebaseEarlierFiles.length;
@@ -652,11 +693,12 @@ async function reportEmptyAssessment({
 
   if (reason === 'empty-range') {
     // The accept-time explanation only holds when the first commit is being
-    // excluded and no SHA override is in play. With include_initial_commit
-    // enabled the base is the empty tree, so a freshly accepted repository has
-    // files in range and this is genuinely unexpected — saying otherwise would
-    // send the reader looking for a cause that cannot apply.
-    const acceptTimeExplains = !inputs.includeInitialCommit && !inputs.baseSha && !inputs.headSha;
+    // excluded and no SHA override is in play. With starter_code: none the
+    // base is the empty tree, so a freshly accepted repository has files in
+    // range and this is genuinely unexpected — saying otherwise would send the
+    // reader looking for a cause that cannot apply.
+    const noStarter = inputs.starterCode === 'none';
+    const acceptTimeExplains = !noStarter && !inputs.baseSha && !inputs.headSha;
     headline = `No assessment questions generated: the commit range ${shortBase}..${shortHead} contains no changed files.`;
     detail =
       `Nothing was compared, so the exclude patterns were never involved.` +
@@ -666,12 +708,12 @@ async function reportEmptyAssessment({
         : '');
     checks = [
       `The range assessed was \`${shortBase}..${shortHead}\`${baseSha === headSha ? ' — base and head are the same commit.' : '.'}`,
-      inputs.includeInitialCommit
-        ? '`include_initial_commit` is **true**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'
-        : '`include_initial_commit` is **false** (the default), so the first commit is excluded. If this is a Classroom 50 empty-repository assignment (`--empty-repo`), the student\'s own first push is that first commit — set `include_initial_commit: "true"` so their work is assessed.',
+      noStarter
+        ? '`starter_code` is **none**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'
+        : `\`starter_code\` is **${inputs.starterCode}**, so the first commit is treated as starter code and excluded. If this is a Classroom 50 empty-repository assignment (\`--empty-repo\`), the student's own first push is that first commit — set \`starter_code: none\` so their work is assessed.`,
       inputs.baseSha || inputs.headSha
         ? 'A manual `base_sha`/`head_sha` override is set on this workflow. Check it still points at the range you intend.'
-        : 'No manual SHA override is set, so the range came from the event and `include_initial_commit`.',
+        : 'No manual SHA override is set, so the range came from the event and `starter_code`.',
     ];
   } else {
     // Only claim the accept-time explanation when the excluded set actually is
@@ -727,18 +769,18 @@ async function reportEmptyAssessment({
 }
 
 /**
- * Reads the rest of the codebase to send as context under
- * include_codebase_context: every file at the head that passes the exclude
- * patterns, did not change in the assessed range, and was not touched by the
- * bot commits skip_committers stepped over. Those are the files the
- * assessment itself leaves out, and they come in two kinds:
+ * Reads the rest of the codebase to send as context: every file at the head
+ * that passes the exclude patterns, did not change in the assessed range, and
+ * was not touched by the bot commits skip_committers stepped over. Those are
+ * the files the assessment itself leaves out, and they come in two kinds:
  *
  *   starter — unchanged since the first commit, so code the student was given.
- *             Only when include_initial_commit is off; with it on, the first
- *             commit is the student's own work.
+ *             Sent under starter_code: context or ask. With starter_code: none
+ *             the first commit is the student's own work, so there are none.
  *   earlier — changed before the range but not in it: the student's own work
  *             from an earlier submission, once tag_diff_base or base_sha moves
- *             the base past the first commit.
+ *             the base past the first commit. Sent under previous_work:
+ *             context.
  *
  * A file unchanged in the range is identical at the base and the head, so a
  * starter file read here is byte-for-byte the first commit's copy.
@@ -764,15 +806,17 @@ function loadCodebaseContext({
     return none;
   }
 
+  const sendStarter = inputs.starterCode === 'context' || inputs.starterCode === 'ask';
+  const sendEarlier = inputs.previousWork === 'context';
   const found = findCodebaseContextFiles({
     baseSha,
     headSha,
-    firstCommit: inputs.includeInitialCommit ? null : getFirstCommit(),
+    firstCommit: inputs.starterCode === 'none' ? null : getFirstCommit(),
     excludePatterns,
     excludePatternOverrides: inputs.excludePatternOverrides,
     assessedFiles: files,
     skippedRange,
-  });
+  }).filter((f) => (f.kind === 'starter' ? sendStarter : sendEarlier));
   const kindOf = new Map(found.map((f) => [f.filepath, f.kind]));
   let candidates = found.map(({ filepath, content }) => ({ filepath, content }));
   if (!inputs.keepComments) candidates = stripCommentsFromFiles(candidates).strippedFiles;
@@ -780,6 +824,7 @@ function loadCodebaseContext({
     candidates.map((f) => ({ ...f, kind: kindOf.get(f.filepath) })),
     files,
     inputs.codebaseContextMaxChars,
+    { askStarter: asksAboutStarter(inputs) },
   );
   const { starterContent, earlierContent, sources, starterFiles, earlierFiles, omitted } =
     selection;
@@ -1030,26 +1075,33 @@ async function run() {
     // The base copy is processed exactly like the head copy, so the comparison
     // is between the two versions the AI would see. With the empty tree as the
     // base every file is new and nothing is marked.
-    let baseFiles =
-      baseSha === GIT_EMPTY_TREE_SHA
-        ? []
-        : collectFilesAt(
-            processedFiles.map((f) => f.filepath),
-            baseSha,
-          );
-    // A file sent with its comments is compared with its base copy unstripped
-    // too, or the base's comments would be marked as the student's lines.
-    if (!inputs.keepComments && baseFiles.length > 0) {
-      const toStrip = baseFiles.filter((f) => !commentsKept.includes(f.filepath));
-      const stripped = new Map(
-        stripCommentsFromFiles(toStrip).strippedFiles.map((f) => [f.filepath, f]),
+    const processedCopiesAt = (sha) => {
+      let copies = collectFilesAt(
+        processedFiles.map((f) => f.filepath),
+        sha,
       );
-      baseFiles = baseFiles.map((f) => stripped.get(f.filepath) ?? f);
+      // A file sent with its comments is compared with its earlier copy
+      // unstripped too, or that copy's comments would be marked as the
+      // student's lines.
+      if (!inputs.keepComments && copies.length > 0) {
+        const toStrip = copies.filter((f) => !commentsKept.includes(f.filepath));
+        const stripped = new Map(
+          stripCommentsFromFiles(toStrip).strippedFiles.map((f) => [f.filepath, f]),
+        );
+        copies = copies.map((f) => stripped.get(f.filepath) ?? f);
+      }
+      return new Map(copies.map((f) => [f.filepath, f.content]));
+    };
+    const baseByPath = baseSha === GIT_EMPTY_TREE_SHA ? new Map() : processedCopiesAt(baseSha);
+    // Under starter_code: ask, the unchanged lines that are also unchanged
+    // since the first commit are marked as starter code the AI may ask about.
+    // When the base is the first commit, that is every unchanged line.
+    let starterByPath = null;
+    if (asksAboutStarter(inputs) && baseSha !== GIT_EMPTY_TREE_SHA) {
+      const firstCommit = getFirstCommit();
+      starterByPath = firstCommit === baseSha ? baseByPath : processedCopiesAt(firstCommit);
     }
-    const assessed = buildAssessedCodeContent(
-      processedFiles,
-      new Map(baseFiles.map((f) => [f.filepath, f.content])),
-    );
+    const assessed = buildAssessedCodeContent(processedFiles, baseByPath, starterByPath);
 
     // The files the AI is sent, line by line, so the snippets it names by line
     // number can be read back out of them (see resolveSnippets).
@@ -1101,7 +1153,7 @@ async function run() {
       starterContent: starterContext,
       earlierContent: earlierContext,
       sources: codebaseSources,
-    } = inputs.includeCodebaseContext
+    } = wantsCodebaseContext(inputs)
       ? loadCodebaseContext({
           state,
           inputs,
@@ -1132,6 +1184,13 @@ async function run() {
             'multiple-choice distractors (nothing downstream would consume them).',
     );
 
+    // starter_code: ask. Nothing to ask about when every starter file was left
+    // out and no starter line was marked, so the prompt says nothing of it.
+    const starterLinesMarked = state.markedFiles.length > 0 && assessed.starterLines > 0;
+    if (asksAboutStarter(inputs) && (starterContext || starterLinesMarked)) {
+      state.starterQuestionLimit = maxStarterQuestions(inputs.numQuestions);
+    }
+
     const messages = buildPrompt({
       codeContent,
       files,
@@ -1143,6 +1202,8 @@ async function run() {
       markedFiles: state.markedFiles,
       starterContext,
       earlierContext,
+      starterQuestions: state.starterQuestionLimit,
+      starterLinesMarked,
     });
     core.debug(`Prompt messages:\n${JSON.stringify(messages, null, 2)}`);
 
@@ -1238,6 +1299,19 @@ async function run() {
           `code the student did not write in this submission (${where}).`,
       );
     }
+    // The cap is the prompt's to enforce: dropping a question here would cut
+    // the set short of the count asked for, so an overrun is only reported.
+    const aboutStarter = resolved.questions.filter((q) => q.aboutStarter).length;
+    if (aboutStarter > state.starterQuestionLimit) {
+      core.warning(
+        `${aboutStarter} question(s) are about starter code alone, more than the limit of ` +
+          `${state.starterQuestionLimit} for starter_code: ask.`,
+      );
+      state.diagnostics.push(
+        `${aboutStarter} question(s) were about starter code alone, more than the limit of ` +
+          `${state.starterQuestionLimit}.`,
+      );
+    }
     const { questions: arranged, surplus } = arrangeQuestions(
       resolved.questions,
       inputs.numQuestions,
@@ -1250,6 +1324,7 @@ async function run() {
     // Numbered once, here, so every copy of the report numbers a question the
     // same way — the student's copy keeps the gaps a withheld question leaves.
     const finalQuestions = numberQuestions(arranged);
+    state.starterQuestions = finalQuestions.filter((q) => q.aboutStarter).length;
     // Filed in the instructor's questions.json, in reply order, so a dropped
     // question can be read there rather than only named in a warning.
     const droppedQuestions = [...resolved.unresolved, ...resolved.notStudentWork].sort(
@@ -1325,6 +1400,7 @@ async function run() {
       previousTagName: state.previousTagName,
       assignmentContextFiles,
       codebaseContextFiles,
+      starterQuestions: state.starterQuestions,
       contextSummary: studentContextSummary,
       studentLogin: submitter,
       sourceRepo,
@@ -1376,6 +1452,7 @@ async function run() {
       previousTagName: state.previousTagName,
       assignmentContextFiles,
       codebaseContextFiles,
+      starterQuestions: state.starterQuestions,
       contextSummary: studentContextSummary,
       studentLogin: submitter,
       sourceRepo,
@@ -1498,6 +1575,7 @@ async function run() {
         previousTagName: state.previousTagName,
         assignmentContextFiles,
         codebaseContextFiles,
+        starterQuestions: state.starterQuestions,
         contextSummary,
         studentLogin: submitter,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,

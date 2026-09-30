@@ -24,75 +24,132 @@ export default function StepFileOptions({ cfg, onChange }) {
       </div>
 
       <div className={styles.fieldGroup}>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={cfg.includeInitialCommit}
-            onChange={(e) => onChange({ includeInitialCommit: e.target.checked })}
-          />
-          <span>
-            <strong>Include initial (template) commit</strong>
-            <div className={styles.radioDescription}>
-              When left unchecked (default), the diff base is pinned to the repository's first commit,
-              excluding template or starter code provided by the instructor. Only the student's own
-              additions are assessed. Enable to include the initial commit's eligible files in the diff.
-            </div>
-          </span>
-        </label>
-        {!cfg.includeInitialCommit && (
-          <div
-            className={styles.notice}
-            style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)', marginTop: '0.5rem' }}
-          >
-            <strong>Tick this if your assignment uses empty student repositories.</strong> A
-            Classroom 50 assignment registered with{' '}
-            <code>gh teacher assignment add --empty-repo</code> gives each student a bare repository
-            with no commits at all, so the repository's first commit is the student's own first push
-            rather than instructor starter code. Left unchecked, that entire first push is excluded
-            from assessment, and a student who commits their work all at once gets no questions
-            generated. Templated and README-seeded assignments should leave this unchecked.
-          </div>
-        )}
+        <label className={styles.label}>How do students' repositories start?</label>
+        <div className={styles.radioGroup}>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="repoStart"
+              value="empty"
+              checked={cfg.repoStart === 'empty'}
+              onChange={() => onChange({ repoStart: 'empty', starterCode: 'none' })}
+            />
+            <span>
+              <strong>Empty</strong> <code>starter_code: none</code>
+              <div className={styles.radioDescription}>
+                A Classroom 50 assignment registered with{' '}
+                <code>gh teacher assignment add --empty-repo</code>. Each student gets a bare
+                repository, so its first commit is the student's own first push, and it is
+                assessed.
+              </div>
+            </span>
+          </label>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="repoStart"
+              value="template"
+              checked={cfg.repoStart === 'template'}
+              onChange={() => onChange({ repoStart: 'template', starterCode: 'ignore' })}
+            />
+            <span>
+              <strong>From a template, with no starter code</strong>
+              <div className={styles.radioDescription}>
+                The template holds only instructions, such as a README, or the assignment is
+                seeded with a README. That first commit is left out.
+              </div>
+            </span>
+          </label>
+          <label className={styles.radioLabel}>
+            <input
+              type="radio"
+              name="repoStart"
+              value="template-code"
+              checked={cfg.repoStart === 'template-code'}
+              onChange={() =>
+                onChange({
+                  repoStart: 'template-code',
+                  starterCode: cfg.starterCode === 'none' ? 'ignore' : cfg.starterCode,
+                })
+              }
+            />
+            <span>
+              <strong>From a template, with starter code</strong>
+              <div className={styles.radioDescription}>
+                The template holds code for the student to build on. That first commit is left
+                out, and the next question sets what the AI does with the starter code.
+              </div>
+            </span>
+          </label>
+        </div>
       </div>
 
+      {cfg.repoStart === 'template-code' && (
+        <div className={styles.fieldGroup}>
+          <label className={styles.label}>What should the AI do with the starter code?</label>
+          <div className={styles.radioGroup}>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="starterCode"
+                value="ignore"
+                checked={cfg.starterCode === 'ignore'}
+                onChange={() => onChange({ starterCode: 'ignore' })}
+              />
+              <span>
+                <strong>Ignore it</strong> <code>ignore</code>
+                <div className={styles.radioDescription}>
+                  Questions come only from the student's work, and starter files the student
+                  hasn't changed aren't sent to the AI.
+                </div>
+              </span>
+            </label>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="starterCode"
+                value="context"
+                checked={cfg.starterCode === 'context'}
+                onChange={() => onChange({ starterCode: 'context' })}
+              />
+              <span>
+                <strong>Use it as background</strong> <code>context</code> (Recommended)
+                <div className={styles.radioDescription}>
+                  Starter files the student hasn't changed are sent to the AI as background, so
+                  questions can cover how the student's code uses them. No question is about the
+                  starter code alone.{' '}
+                  <strong>This will likely increase the cost of each run,</strong> because the
+                  starter code is sent every time. The limit is under <strong>Advanced</strong>.
+                </div>
+              </span>
+            </label>
+            <label className={styles.radioLabel}>
+              <input
+                type="radio"
+                name="starterCode"
+                value="ask"
+                checked={cfg.starterCode === 'ask'}
+                onChange={() => onChange({ starterCode: 'ask' })}
+              />
+              <span>
+                <strong>Ask about it too</strong> <code>ask</code>
+                <div className={styles.radioDescription}>
+                  As above, and up to one in five questions may be about the starter code itself,
+                  worded as about the provided code. The starter code is the same for every
+                  student, so answers to those questions can be shared. Costs the same as
+                  background.
+                </div>
+              </span>
+            </label>
+          </div>
+        </div>
+      )}
+
       <div className={styles.fieldGroup}>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={cfg.includeCodebaseContext}
-            onChange={(e) => onChange({ includeCodebaseContext: e.target.checked })}
-          />
-          <span>
-            <strong>Give the AI the rest of the project as context</strong> (Recommended)
-            <div className={styles.radioDescription}>
-              Normally the AI sees only the code being assessed. Tick this to also give it the rest
-              of the project as background, so it can ask how the assessed code fits with the code
-              around it. <strong>The rest of the project</strong> means every eligible file that's
-              left once the usual exclusions are applied and the files being assessed are set
-              aside. Anything the exclusions leave out, such as generated files, lock files or
-              files you listed to exclude, is never sent. In practice that leaves:
-              <ul>
-                <li>
-                  <strong>Your starter code</strong> that the student hasn't changed.
-                </li>
-                <li>
-                  <strong>The student's earlier work</strong> that this submission didn't touch,
-                  when each submission tag is assessed on its own (for example, phase 1 code
-                  while phase 2 is assessed).
-                </li>
-              </ul>
-              The AI never asks about this code on its own: every question is still about the code
-              being assessed.
-              <br />
-              <strong>This will likely increase the cost of each run,</strong> because this code is
-              sent to the AI every time, in addition to the code being assessed. How much depends
-              on the size of the project; the limit is under <strong>Advanced</strong>.
-              <br />
-              Whether or not this is ticked, when a student edits a file that already existed,
-              only the lines they added or changed are asked about.
-            </div>
-          </span>
-        </label>
+        <span className={styles.hint}>
+          Whatever you choose, when a student edits a file that already existed, only the lines
+          they added or changed are treated as their work.
+        </span>
       </div>
 
       <div className={styles.fieldGroup}>

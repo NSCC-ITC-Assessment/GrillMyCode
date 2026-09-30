@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 720" role="img" aria-labelledby="gmc-ms-title">
-  <title id="gmc-ms-title">What each milestone tag asks about. A student's timeline has three tags: phase1, phase2 and final. With option 1, "All work to date is assessed", each tag's questions cover everything from the start, so the bars grow longer. With option 2, "Only work since the previous tag is assessed", each tag covers just the stretch since the tag before it. With option 3, "Only work since a tag you name is assessed", each stage has its own workflow that names the tag to start from: here the phase2 and final workflows both name phase1, so final covers everything after phase1. Starter code is never included.</title>
+  <title id="gmc-ms-title">What each milestone tag asks about. A student's timeline has three tags: phase1, phase2 and final. With option 1, "All work to date is assessed", each tag's questions cover everything from the start, so the bars grow longer. With option 2, "Only work since the previous tag is assessed", each tag covers just the stretch since the tag before it. With option 3, "Only work since a tag you name is assessed", each stage has its own workflow that names the tag to start from: here the phase2 and final workflows both name phase1, so final covers everything after phase1. Starter code is left out by default.</title>
   <style>
     .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
     .ttl{font-size:18px;font-weight:800;fill:#1E293B}
@@ -167,5 +167,5 @@
   <use href="#gmc-ms-run" x="918" y="597"/>
 
   <!-- footnote -->
-  <text class="txt sub" x="500" y="692" text-anchor="middle">Each tag gets its own set of questions. Your starter code is never included.</text>
+  <text class="txt sub" x="500" y="692" text-anchor="middle">Each tag gets its own set of questions. Your starter code is left out by default.</text>
 </svg>

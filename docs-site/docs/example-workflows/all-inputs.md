@@ -196,23 +196,23 @@ jobs:
 
           # ── Diff resolution ───────────────────────────────────────────────
 
-          # Include the initial commit's eligible files in the diff (default: false).
-          # Set to "true" to use the empty tree as the base instead,
-          # which includes the initial commit's eligible files in the diff.
-          # Required for Classroom 50 empty-repository assignments
-          # (--empty-repo): those repos start with no commits at all, so the
-          # first commit is the student's own work, not starter code.
-          # include_initial_commit: "false"
+          # What the repository's first commit is, and what the AI does with
+          # the starter code in it (default: "ignore").
+          #   none    — the repository starts empty (Classroom 50 --empty-repo),
+          #             so the first commit is the student's own work and is
+          #             assessed.
+          #   ignore  — the first commit is your starter code and is left out.
+          #   context — as ignore, and unchanged starter files are sent as
+          #             background. Questions are never about them alone.
+          #   ask     — as context, and up to one in five questions may be about
+          #             the starter code itself.
+          # starter_code: "ignore"
 
-          # Give the AI the rest of the project as background, so questions
-          # can cover how the assessed code fits with the code around it. "The
-          # rest" is every eligible file left once the exclusions are applied
-          # and the assessed files are set aside: starter code the student
-          # hasn't changed, plus (when tag_diff_base assesses only the latest
-          # phase) the student's earlier work that this submission didn't
-          # touch. Excluded files are never sent. Questions are never about
-          # it alone.
-          # include_codebase_context: "false"
+          # Send the student's earlier work that this submission didn't touch
+          # as background (default: "context"), or "ignore" to leave it out.
+          # Only matters when tag_diff_base assesses only the latest phase, or
+          # base_sha is set. Never asked about on its own.
+          # previous_work: "context"
 
           # Maximum characters sent as codebase context, shared by starter code
           # and earlier work. Files nearest the assessed files go first; any

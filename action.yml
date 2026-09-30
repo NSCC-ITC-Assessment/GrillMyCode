@@ -212,46 +212,68 @@ inputs:
     required: false
     default: ""
 
+  starter_code:
+    description: >
+      What the repository's first commit is, and what the AI does with the
+      starter code in it. One of:
+      "none" — there is no starter code: the repository was created empty
+      (Classroom 50 gh teacher assignment add --empty-repo), so the first
+      commit is the student's own first push and is assessed.
+      "ignore" (the default) — the first commit is your starter code and is
+      left out; starter files the student never changed are not sent.
+      "context" — as ignore, but starter files the student never changed are
+      sent as background, so questions about the student's code can draw on
+      what it calls, extends or is called by. They are never asked about on
+      their own.
+      "ask" — as context, and some questions may be about the starter code
+      itself: the unchanged starter files and the unchanged starter lines of
+      files the student edited. At most one in five questions (at least one
+      once there are two) is about starter code alone, and each is worded as
+      about the provided code. Starter code is the same for every student, so
+      answers to those questions can be shared.
+      In every mode, a file that existed before the assessed range is sent
+      whole with the student's added and changed lines marked, and questions
+      about it are limited to those lines (and, under ask, its starter lines).
+      Use additional_exclude_patterns to keep a file out entirely. Files left
+      out by a rule (exclude patterns, commits skipped by skip_committers,
+      binary files) are never sent.
+      Replaces include_initial_commit and include_codebase_context.
+    required: false
+    default: ""
+
+  previous_work:
+    description: >
+      Whether the student's own earlier work that this submission did not
+      touch is sent to the AI as background: "context" (the default) or
+      "ignore". Earlier work exists only when the assessed range starts after
+      the first commit — tag_diff_base previous-tag or tag:<name>, or base_sha
+      — so this has no effect on other runs. It is never asked about on its
+      own. Shares codebase_context_max_chars with starter code.
+    required: false
+    default: ""
+
   include_initial_commit:
     description: >
-      When false (the default), the diff base is pinned to the repository's very
-      first commit so that starter/template files are excluded from assessment.
-      When true, the base is set to the empty tree regardless of the event type,
-      so the initial commit's eligible files are included in the assessed diff.
-      Set this to "true" for Classroom 50 empty-repository assignments
-      (gh teacher assignment add --empty-repo): those repos are created bare, so
-      the first commit is the student's own first push rather than starter code,
-      and the default would exclude it.
+      Deprecated: use starter_code instead. "true" is read as starter_code:
+      none. Ignored when starter_code is set. Will be removed in the next major
+      version.
     required: false
-    default: "false"
+    default: ""
 
   include_codebase_context:
     description: >
-      When true, the rest of the project is sent to the AI as background, so
-      questions about the code being assessed can draw on what it calls,
-      extends or is called by. "The rest" is every eligible file left once the
-      exclusions are applied and the assessed files are set aside: every file
-      that passes the exclude patterns and did not change in the assessed
-      range. That is
-      starter code the student has never changed and, when the assessed range
-      starts after the first commit (tag_diff_base: previous-tag or tag:<name>,
-      or base_sha), the student's own earlier work that this submission did
-      not touch. Files left out by a rule (exclude patterns, commits skipped
-      by skip_committers, binary files) are never sent. The AI is told never
-      to ask about these files on their own, and a question that shows only
-      them is dropped. When the whole history is assessed
-      (include_initial_commit true with no later base) there is nothing left
-      to add. Independent of this setting, a file that existed
-      before the assessed range is always assessed with the student's added
-      and changed lines marked, and questions are limited to those lines.
+      Deprecated: use starter_code and previous_work instead. "true" is read as
+      starter_code: context and previous_work: context; "false" as
+      previous_work: ignore. Each is ignored when the new input is set. Will be
+      removed in the next major version.
     required: false
-    default: "false"
+    default: ""
 
   codebase_context_max_chars:
     description: >
-      Maximum total characters sent as codebase context when
-      include_codebase_context is true. Starter code and earlier work share
-      the limit. Files are added whole, those in the same folders as the
+      Maximum total characters sent as codebase context: starter code under
+      starter_code context or ask, and earlier work under previous_work
+      context. Starter code and earlier work share the limit. Files are added whole, those in the same folders as the
       assessed files first; a file that would exceed the limit is left out and
       counted in the run summary. Values below 1 are clamped to 1.
     required: false
@@ -345,7 +367,7 @@ inputs:
   base_sha:
     description: >-
       Override the base commit SHA for the diff. When provided this takes
-      precedence over include_initial_commit. Auto-detected when not provided.
+      precedence over starter_code. Auto-detected when not provided.
     required: false
     default: ""
 
@@ -404,6 +426,8 @@ runs:
     INPUT_ASSIGNMENT_CONTEXT: ${{ inputs.assignment_context }}
     INPUT_ASSIGNMENT_CONTEXT_MAX_CHARS: ${{ inputs.assignment_context_max_chars }}
     INPUT_INSTRUCTOR_CONTEXT: ${{ inputs.instructor_context }}
+    INPUT_STARTER_CODE: ${{ inputs.starter_code }}
+    INPUT_PREVIOUS_WORK: ${{ inputs.previous_work }}
     INPUT_INCLUDE_INITIAL_COMMIT: ${{ inputs.include_initial_commit }}
     INPUT_INCLUDE_CODEBASE_CONTEXT: ${{ inputs.include_codebase_context }}
     INPUT_CODEBASE_CONTEXT_MAX_CHARS: ${{ inputs.codebase_context_max_chars }}

@@ -28,13 +28,14 @@ import { findMatchingTagPattern, namedDiffBaseTag, pickPreviousSubmissionTag } f
  * Determines the base and head commit SHAs for the diff based on the
  * GitHub Actions event type. Manual overrides take precedence.
  *
- * include_initial_commit controls the diff base regardless of event type:
- *   false (default) — base is pinned to the first commit; the initial
- *                     commit's files are excluded from the assessed diff.
- *   true            — base is set to the empty tree SHA; the initial commit's
- *                     files are included in the diff.
+ * starter_code controls the diff base regardless of event type:
+ *   none            — base is set to the empty tree SHA; the initial commit is
+ *                     the student's own work and its files are in the diff.
+ *   any other value — base is pinned to the first commit; the initial
+ *                     commit's starter files are excluded from the assessed
+ *                     diff.
  *
- * Manual base_sha / head_sha overrides always take precedence over this flag.
+ * Manual base_sha / head_sha overrides always take precedence over this.
  *
  * tagName is set for a run started by a submission tag (see resolveTagName).
  * The tagged commit is then the head — peeled, because an annotated tag's push
@@ -81,7 +82,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // unparsed — see above — and it means skip_committers walks the range the
   // caller actually asked for instead of advancing the base against a head
   // that is about to be discarded. base_sha cannot move up here in the same
-  // way: it is documented as taking precedence over include_initial_commit,
+  // way: it is documented as taking precedence over starter_code,
   // so it has to be applied after that block has had its say.
   if (tagName) {
     // A tag push or a manual run started on a tag. Push payloads carry the
@@ -100,21 +101,21 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
     headSha = overrideHead ?? sanitiseSha(ctx.sha);
   }
 
-  // ── Apply include_initial_commit ──────────────────────────────────────────
-  // Always override baseSha based on this flag, regardless of event type.
-  if (!inputs.includeInitialCommit) {
+  // ── Apply starter_code ────────────────────────────────────────────────────
+  // Always override baseSha based on it, regardless of event type.
+  if (inputs.starterCode !== 'none') {
     const initialCommit = getFirstCommit();
     if (baseSha !== initialCommit) {
       core.info(
-        `include_initial_commit is disabled: overriding base SHA from ` +
+        `starter_code is ${inputs.starterCode}: overriding base SHA from ` +
           `${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)} to initial commit ${initialCommit.substring(0, GIT_SHA_SHORT_LENGTH)} ` +
-          `to exclude Classroom 50 starter files from the diff.`,
+          `to exclude the starter files from the diff.`,
       );
     }
     baseSha = initialCommit;
   } else {
     core.info(
-      `include_initial_commit is enabled: using empty tree as base so the initial commit's eligible files are included in the diff.`,
+      `starter_code is none: using empty tree as base so the initial commit's eligible files are included in the diff.`,
     );
     baseSha = GIT_EMPTY_TREE_SHA;
   }

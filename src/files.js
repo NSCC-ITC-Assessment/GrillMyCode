@@ -223,11 +223,13 @@ function numberedSection(filepath, entries, heading = '') {
  * be read back out (see resolveSnippets in postprocess.js).
  *
  * Returns `{ content, sources }`. Each source is `{ filepath, lines,
- * studentLines }`: `studentLines` is 'all' when every line is the student's
- * work in this submission, and an empty set for `student: false` — codebase
- * context, which is never theirs to be assessed on.
+ * studentLines, starterLines }`: `studentLines` is 'all' when every line is the
+ * student's work in this submission, and an empty set for `student: false` —
+ * codebase context, which is never theirs to be assessed on. `starterLines` is
+ * 'all' for `starter: true` — starter code that may be asked about
+ * (starter_code: ask) — and otherwise an empty set.
  */
-export function buildNumberedCodeContent(files, { student = true } = {}) {
+export function buildNumberedCodeContent(files, { student = true, starter = false } = {}) {
   const sections = [];
   const sources = [];
   for (const { filepath, content } of files) {
@@ -238,7 +240,12 @@ export function buildNumberedCodeContent(files, { student = true } = {}) {
         lines.map((text, i) => ({ number: i + 1, text })),
       ),
     );
-    sources.push({ filepath, lines, studentLines: student ? 'all' : new Set() });
+    sources.push({
+      filepath,
+      lines,
+      studentLines: student ? 'all' : new Set(),
+      starterLines: starter ? 'all' : new Set(),
+    });
   }
   return { content: sections.join('\n\n'), sources };
 }
@@ -257,18 +264,28 @@ export function buildNumberedCodeContent(files, { student = true } = {}) {
  * file up for questions. Line numbers count the file as it is now, so a
  * removed line has none.
  *
- * Returns `{ content, sources, markedFiles, addedLines }`: the files rendered
- * with markers, their lines (see buildNumberedCodeContent; a marked file's
- * `studentLines` is the set of its added line numbers), and how many lines
- * across the whole submission the student wrote, which the caller uses to tell
- * a submission with nothing to mark from one that has work in it. Blank lines
- * are never counted as the student's.
+ * `starterByPath` is given under starter_code: ask only. It maps a path to its
+ * content at the first commit, processed the same way. An unchanged line that
+ * is also unchanged since the first commit is starter code the student was
+ * given, and is marked LINE_MARKERS.starter so the AI may ask about it; the
+ * other unchanged lines are the student's own earlier work. When the base is
+ * the first commit, the caller passes `baseByPath` again, and every unchanged
+ * line is starter code.
+ *
+ * Returns `{ content, sources, markedFiles, addedLines, starterLines }`: the
+ * files rendered with markers, their lines (see buildNumberedCodeContent; a
+ * marked file's `studentLines` is the set of its added line numbers and its
+ * `starterLines` the set of its starter line numbers), how many lines across
+ * the whole submission the student wrote, which the caller uses to tell a
+ * submission with nothing to mark from one that has work in it, and how many
+ * starter lines were marked. Blank lines are never counted as either.
  */
-export function buildAssessedCodeContent(files, baseByPath) {
+export function buildAssessedCodeContent(files, baseByPath, starterByPath = null) {
   const sections = [];
   const sources = [];
   const markedFiles = [];
   let addedLines = 0;
+  let starterLineCount = 0;
 
   for (const file of files) {
     if (!baseByPath.has(file.filepath)) {
@@ -279,21 +296,32 @@ export function buildAssessedCodeContent(files, baseByPath) {
       continue;
     }
 
+    const sinceStart = starterByPath?.has(file.filepath)
+      ? unchangedLineNumbers(starterByPath.get(file.filepath), file.content)
+      : new Set();
     const lines = [];
     const added = new Set();
+    const starter = new Set();
     const entries = diffLines(baseByPath.get(file.filepath), file.content).map(
       ({ marker, text }) => {
         if (marker === LINE_MARKERS.removed) return { marker, number: null, text };
         lines.push(text);
+        const number = lines.length;
         // A blank line is nobody's work: it is often all a changed comment
         // leaves behind once stripped.
-        if (marker === LINE_MARKERS.added && text.trim()) added.add(lines.length);
-        return { marker, number: lines.length, text };
+        if (!text.trim()) return { marker, number, text };
+        if (marker === LINE_MARKERS.added) added.add(number);
+        else if (sinceStart.has(number)) {
+          starter.add(number);
+          return { marker: LINE_MARKERS.starter, number, text };
+        }
+        return { marker, number, text };
       },
     );
     addedLines += added.size;
+    starterLineCount += starter.size;
     markedFiles.push(file.filepath);
-    sources.push({ filepath: file.filepath, lines, studentLines: added });
+    sources.push({ filepath: file.filepath, lines, studentLines: added, starterLines: starter });
     sections.push(
       numberedSection(
         file.filepath,
@@ -303,7 +331,25 @@ export function buildAssessedCodeContent(files, baseByPath) {
     );
   }
 
-  return { content: sections.join('\n\n'), sources, markedFiles, addedLines };
+  return {
+    content: sections.join('\n\n'),
+    sources,
+    markedFiles,
+    addedLines,
+    starterLines: starterLineCount,
+  };
+}
+
+/** The line numbers of `newText` that are unchanged from `oldText`. */
+function unchangedLineNumbers(oldText, newText) {
+  const unchanged = new Set();
+  let number = 0;
+  for (const { marker } of diffLines(oldText, newText)) {
+    if (marker === LINE_MARKERS.removed) continue;
+    number += 1;
+    if (marker === LINE_MARKERS.unchanged) unchanged.add(number);
+  }
+  return unchanged;
 }
 
 /** Directory segments of a path's parent folder ('' for a root-level file). */
@@ -333,7 +379,7 @@ export function folderDistance(a, b) {
  *
  *   'starter' — also unchanged since `firstCommit`, so code the student was
  *               given. Pass firstCommit as null when the first commit is the
- *               student's own work (include_initial_commit), and every file is
+ *               student's own work (starter_code: none), and every file is
  *               'earlier'.
  *   'earlier' — changed before the range but not in it: the student's work
  *               from an earlier submission.
@@ -390,12 +436,20 @@ export function findCodebaseContextFiles({
  * a class or function, which is worse than not showing it. One that does not
  * fit is left out and the next, smaller one is still tried.
  *
+ * With `askStarter` (starter_code: ask) the starter files' lines may be asked
+ * about, and their sources say so (see buildNumberedCodeContent).
+ *
  * Returns `{ starterContent, earlierContent, sources, starterFiles,
  * earlierFiles, omitted }` — the numbered blocks for each kind, the chosen
  * files' lines (see buildNumberedCodeContent), the paths that made it into
  * each, and the paths left out for size.
  */
-export function selectCodebaseContext(candidates, assessedFiles, maxChars) {
+export function selectCodebaseContext(
+  candidates,
+  assessedFiles,
+  maxChars,
+  { askStarter = false } = {},
+) {
   const distance = (filepath) =>
     assessedFiles.length === 0
       ? 0
@@ -422,7 +476,7 @@ export function selectCodebaseContext(candidates, assessedFiles, maxChars) {
     used += cost;
   }
 
-  const starter = numberedContext(chosen.starter);
+  const starter = numberedContext(chosen.starter, askStarter);
   const earlier = numberedContext(chosen.earlier);
   return {
     starterContent: starter.content,
@@ -435,8 +489,8 @@ export function selectCodebaseContext(candidates, assessedFiles, maxChars) {
 }
 
 /** Codebase context files, numbered like the submission but never the student's work. */
-function numberedContext(files) {
-  return buildNumberedCodeContent(files, { student: false });
+function numberedContext(files, starter = false) {
+  return buildNumberedCodeContent(files, { student: false, starter });
 }
 
 /**

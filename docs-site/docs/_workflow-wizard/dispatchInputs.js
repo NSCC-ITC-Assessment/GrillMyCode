@@ -58,12 +58,13 @@
  * question_emphasis only changes which kinds of question are asked about the
  * same code, so it cannot narrow or empty the assessment either.
  *
- * include_codebase_context only adds background — files the AI is told never to
- * ask about on their own — so it cannot narrow or empty the assessment either.
- * It is listed because it is the setting an instructor reaches for when a
- * run's questions came out shallow for want of the surrounding code. Its size
- * limit, codebase_context_max_chars, stays in the file: like
- * assignment_context_max_chars it is a structural cap, not a per-run choice.
+ * starter_code is listed for two recoveries: none brings back a first commit
+ * that an empty-repository student filled with all their work, and context adds
+ * the starter code as background when a run's questions came out shallow for
+ * want of it. Its size limit, codebase_context_max_chars, stays in the file:
+ * like assignment_context_max_chars it is a structural cap, not a per-run
+ * choice. previous_work is not offered: it matters only on tag runs diffed from
+ * an earlier tag, whose setting belongs with tag_diff_base in the file.
  */
 
 /**
@@ -188,20 +189,13 @@ export const DISPATCH_OVERRIDES = [
     hint: 'Re-run with comments preserved when a student’s comments are themselves part of what you want to assess.',
   },
   {
-    key: 'include_initial_commit',
-    cfgKey: 'includeInitialCommit',
-    label: 'Include initial commit',
-    type: 'boolean',
-    description: 'Include the repository’s first commit in the assessed diff',
-    hint: 'Lets you recover a run where a student committed everything at once and the first-commit exclusion left nothing to assess.',
-  },
-  {
-    key: 'include_codebase_context',
-    cfgKey: 'includeCodebaseContext',
-    label: 'Include codebase context',
-    type: 'boolean',
-    description: 'Send the rest of the project to the AI as background for the assessed code',
-    hint: 'Re-run with the surrounding code visible when questions came out shallow because the AI could not see what the student’s code calls or extends. Likely increases the cost of that run.',
+    key: 'starter_code',
+    cfgKey: 'starterCode',
+    label: 'Starter code',
+    type: 'choice',
+    options: ['none', 'ignore', 'context', 'ask'],
+    description: 'What the first commit is, and what the AI does with starter code: none, ignore, context or ask',
+    hint: 'Re-run with none when a student committed everything at once to an empty repository, or with context when questions came out shallow because the AI could not see the code the student built on. Context and ask likely increase the cost of that run.',
   },
   {
     key: 'ai_temperature',
@@ -219,9 +213,9 @@ export const DISPATCH_OVERRIDES = [
  * assignment.
  *
  * The rest stay unticked because they are situational rather than routine —
- * tag_diff_base re-scopes a milestone, include_initial_commit is a
- * per-assignment structural choice, include_codebase_context raises the cost of
- * a run, and ai_temperature is best left fixed.
+ * tag_diff_base re-scopes a milestone, starter_code is a per-assignment
+ * structural choice that can also raise the cost of a run, and ai_temperature
+ * is best left fixed.
  *
  * The catalogue follows the wizard's own step order (AI, Questions, Trigger,
  * Files, File opts, Advanced), and within a step the order of its controls, so

@@ -16,7 +16,7 @@ A run that finds nothing to assess ends early and, by default, still **succeeds*
 
 - **"The commit range … contains no changed files."** Nothing was compared at all. This is normal straight after a student accepts an assignment, before they push any work.
 
-  On an **empty-repository** assignment (`--empty-repo`), it also happens when the student's work is all in the first commit. Set `include_initial_commit: 'true'`; see [Using GrillMyCode with Classroom 50](guides/classroom50.md#empty-repository-assignments). Otherwise, check any `base_sha` or `head_sha` override.
+  On an **empty-repository** assignment (`--empty-repo`), it also happens when the student's work is all in the first commit. Set `starter_code: none`; see [Using GrillMyCode with Classroom 50](guides/classroom50.md#empty-repository-assignments). Otherwise, check any `base_sha` or `head_sha` override.
 - **"All N changed file(s) were removed by the exclude patterns."** Files changed, but every one was filtered out. The summary lists them. Bring back the ones you need with `exclude_pattern_overrides`; see [Choosing which files are assessed](guides/choosing-files.md#bringing-something-back).
 
 Once students have started work, set [`fail_on_empty_assessment`](reference/inputs-outputs.md) to `'true'` so an unassessed repository shows as a failed run instead of a green tick.

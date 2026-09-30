@@ -13,9 +13,9 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
 3. **Delivery** — Informational only: the assessment issue and PDF are always delivered, so there is nothing to choose
 4. **Instructor** — "Created by Classroom 50?" question, instructor repository delivery + token secret name, and `labelRepos`
 5. **Files** — auto-detected stack patterns (shown as callout), additional_exclude_patterns, exclude_pattern_overrides
-6. **File opts** — keep_comments, include_initial_commit, include_codebase_context, skip_committers
-7. **Trigger** — Placed after the file steps so most values it can expose as manual run overrides are already set. Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the instructor's own tag names (`submissionTags`) and `tagDiffBase`. Tags are never inferred — there is deliberately no preset for Classroom 50's own `submit/*` tags
-8. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, codebase context max chars — shown only while codebase context is on, SHA overrides)
+6. **File opts** — keep_comments; "How do students' repositories start?" (Empty / From a template, with no starter code / From a template, with starter code), which sets `starterCode`, and, for starter code, "What should the AI do with the starter code?" (Ignore it / Use it as background / Ask about it too); skip_committers
+7. **Trigger** — Placed after the file steps so most values it can expose as manual run overrides are already set. Which event triggers the workflow: push + manual, **submission tag + manual**, or manual only. Push and tag are mutually exclusive (an instructor who wants both keeps two workflow files). Tag mode collects the instructor's own tag names (`submissionTags`) and `tagDiffBase`, and, when `tagDiffBase` isn't `cumulative`, the "Give the AI the student's earlier work as context" checkbox (`previousWork`). Tags are never inferred — there is deliberately no preset for Classroom 50's own `submit/*` tags
+8. **Advanced** — Edge-case inputs shown with their defaults and explanations (temperature, retry attempts, context max chars, codebase context max chars — shown only while `sendsCodebaseContext` is true, SHA overrides)
 9. **Review** — Generated YAML in styled code block with one-click copy button + checklist of prerequisites
 
 ---
@@ -55,8 +55,9 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   additionalExcludePatterns: '',
   excludeWorkflowFiles: true,
   keepComments: false,
-  includeInitialCommit: false,
-  includeCodebaseContext: false,
+  repoStart: 'template-code',               // UI only — 'empty' | 'template' | 'template-code'
+  starterCode: 'ignore',                     // 'none' | 'ignore' | 'context' | 'ask'
+  previousWork: 'context',                   // 'context' | 'ignore'
   skipCommitters: 'github-actions[bot]',
 
   outputFile: 'grill-my-code.md',
@@ -119,16 +120,23 @@ Add a multi-step wizard React page to the existing Docusaurus docs-site that gui
   would configure a label that is never written. Its checkbox — checked and marked Recommended by
   default — lives on the Instructor step, under the token field, for the same reason; it is not an
   Advanced-step option
-- `include_codebase_context` is unticked by default, matching the action default, but its label
-  is marked **(Recommended)**, with a caveat in its description that it will likely increase the
-  cost of each run. It is emitted only when ticked; `codebase_context_max_chars` only when
-  codebase context is on and the value differs from the default. The checkbox is shown whatever
-  `include_initial_commit` is: with it on there is no starter code, but a tag run with
-  `tag_diff_base: previous-tag` still has earlier work to send. `include_codebase_context` is
-  offered as a dispatch override on the Trigger step, unticked (a manual run that switches it on
-  costs more); when it is overridden, `codebase_context_max_chars` is emitted whenever it differs
-  from the default, not only when the checkbox is ticked. `codebase_context_max_chars` itself is
-  not a dispatch override — it is a structural cap, like `assignment_context_max_chars`
+- `starter_code` is set by the File opts radios: **Empty** → `none`; **From a template, with
+  no starter code** → `ignore`; **From a template, with starter code** → the second radio
+  group, **Ignore it** (`ignore`), **Use it as background** (`context`, marked **(Recommended)**
+  with a caveat that it will likely increase the cost of each run) or **Ask about it too**
+  (`ask`). `repoStart` records the first choice only for the UI, since two of its answers emit
+  the same value. The default, `ignore`, matches the action default and is not emitted.
+  `starter_code` is offered as a `type: 'choice'` dispatch override on the Trigger step,
+  unticked (a manual run that switches context on costs more). The deprecated
+  `include_initial_commit` and `include_codebase_context` are never emitted
+- `previous_work` is emitted, when not `context`, only if `hasEarlierWork(cfg)`: a tag run with
+  `tagDiffBase` other than `cumulative`, or a `base_sha` override. Other runs have no earlier
+  work, so the Trigger step shows its checkbox only for a non-cumulative `tagDiffBase`. It is not
+  a dispatch override
+- `codebase_context_max_chars` is emitted only when it differs from the default and either
+  `sendsCodebaseContext(cfg)` (starter code under `context` or `ask`, or earlier work where there
+  is any) or `starter_code` is overridden. It is not a dispatch override — it is a structural
+  cap, like `assignment_context_max_chars`
 - Include inline YAML comments on non-obvious inputs
 - Secret references use `${{ secrets.SECRET_NAME }}` format
 

@@ -309,6 +309,43 @@ describe('resolveSnippets', () => {
       );
     });
   });
+
+  // starter_code: ask — the sources name the starter lines that may be asked about.
+  describe('starter code under starter_code: ask', () => {
+    const marked = {
+      filepath: 'index.php',
+      lines: ['$a = 1;', '$b = 2;', '$c = 3;'],
+      studentLines: new Set([2]),
+      starterLines: new Set([1]),
+    };
+    const starter = {
+      filepath: 'lib.php',
+      lines: ['function f() {}'],
+      studentLines: new Set(),
+      starterLines: 'all',
+    };
+    const sources = [marked, starter, APP];
+
+    it.each([
+      ['a starter file', [ref('lib.php', 1)], true, true],
+      ['a starter line of a marked file', [ref('index.php', 1)], true, true],
+      ['an unchanged line that is not starter code', [ref('index.php', 3)], false, false],
+      [
+        'starter code beside the student’s line',
+        [ref('lib.php', 1), ref('index.php', 2)],
+        true,
+        false,
+      ],
+    ])('%s', (_, snippets, kept, aboutStarter) => {
+      const result = resolve([ask(...snippets)], sources);
+      expect(result.questions).toHaveLength(kept ? 1 : 0);
+      if (kept) expect(result.questions[0].aboutStarter).toBe(aboutStarter);
+    });
+
+    it('never marks a question with no snippet as about starter code', () => {
+      expect(resolve([ask()], sources).questions[0].aboutStarter).toBe(false);
+    });
+  });
 });
 
 describe('describeDropped', () => {
@@ -445,6 +482,18 @@ describe('renderQuestions', () => {
     numberQuestions(
       resolveSnippets(parseQuestionsReply(reply(...questions)).questions, SOURCES).questions,
     );
+
+  it('notes a question about starter code in the instructor view only', () => {
+    const [q] = parsed(raw(1));
+    const starterQ = { ...q, aboutStarter: true };
+    const note = "_About the starter code, not the student's own work._";
+    expect(renderQuestions([starterQ], { view: 'instructor' })).toContain(
+      `\n\n${note}\n\n**Answer:**`,
+    );
+    for (const view of ['student', 'answers']) {
+      expect(renderQuestions([starterQ], { view })).not.toContain(note);
+    }
+  });
 
   it('renders the instructor view with answers and distractors', () => {
     expect(renderQuestions(parsed(raw(1), raw(2)), { view: 'instructor' })).toBe(

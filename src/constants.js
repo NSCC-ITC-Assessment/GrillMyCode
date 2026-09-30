@@ -465,24 +465,70 @@ export const INSTRUCTOR_REPO_SUFFIX = '-grillmycode-instructor';
 export const DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS = 20000;
 
 /**
+ * Accepted values of the starter_code input, which says what the repository's
+ * first commit is and what the AI does with the starter code in it:
+ *   none    — there is no starter code: the repository was created empty, so
+ *             the first commit is the student's own work and is assessed.
+ *   ignore  — the first commit is the instructor's and is left out; starter
+ *             files the student never changed are not sent.
+ *   context — as ignore, but unchanged starter files are sent as background,
+ *             never a question target on their own.
+ *   ask     — as context, and up to maxStarterQuestions() of the questions may
+ *             be about the starter code itself, including the unchanged starter
+ *             lines of files the student edited.
+ */
+export const STARTER_CODE_MODES = ['none', 'ignore', 'context', 'ask'];
+
+/**
+ * Default starter_code. Matches the behaviour before the input existed, when
+ * include_initial_commit and include_codebase_context both defaulted to false.
+ */
+export const DEFAULT_STARTER_CODE = 'ignore';
+
+/**
+ * Accepted values of the previous_work input: whether the student's own
+ * earlier work that this submission did not touch is sent as background. It
+ * exists only when the assessed range starts after the first commit
+ * (tag_diff_base: previous-tag or tag:<name>, or base_sha).
+ */
+export const PREVIOUS_WORK_MODES = ['context', 'ignore'];
+
+/** Default previous_work. */
+export const DEFAULT_PREVIOUS_WORK = 'context';
+
+/**
+ * Under starter_code: ask, the largest share of the questions (rounded down,
+ * but at least one once there are two questions) that may be about starter
+ * code alone. Starter code is the same in every student's repository, so a
+ * question about it can be answered once and passed around; the cap keeps most
+ * of the set on the student's own work. Unlike the MIXING RULES quotas, the
+ * model is told never to relax it.
+ */
+export const STARTER_QUESTION_MAX_SHARE = 1 / 5;
+
+/**
  * Default maximum total characters of codebase context — unchanged starter
- * code and earlier student work — sent to the AI when include_codebase_context
- * is true. Overridable via the codebase_context_max_chars action input. Files
- * are added whole, nearest to the student's changed files first, and a file
- * that would overflow the limit is left out rather than cut off part-way.
+ * code (starter_code: context or ask) and earlier student work
+ * (previous_work: context) — sent to the AI. Overridable via the
+ * codebase_context_max_chars action input. Files are added whole, nearest to
+ * the student's changed files first, and a file that would overflow the limit
+ * is left out rather than cut off part-way.
  */
 export const DEFAULT_CODEBASE_CONTEXT_MAX_CHARS = 50000;
 
 /**
  * Marker column prefixed to every line of an assessed file that already
  * existed before the assessed range, so the AI can tell the student's lines
- * from the code they started with. Mirrors unified-diff notation, which models
- * read reliably.
+ * from the code they started with. `added`, `removed` and `unchanged` mirror
+ * unified-diff notation, which models read reliably. `starter` replaces
+ * `unchanged` on a line that is also unchanged since the first commit, under
+ * starter_code: ask only, where those lines may be asked about.
  */
 export const LINE_MARKERS = Object.freeze({
   added: '+',
   removed: '-',
   unchanged: ' ',
+  starter: 's',
 });
 
 /**
@@ -494,7 +540,7 @@ export const GITHUB_API_VERSION = '2026-03-10';
 /**
  * SHA of git's well-known empty tree object. Used as the diff base when the
  * full repository history — including the initial commit — should be included
- * in the assessed diff (i.e. when include_initial_commit is true).
+ * in the assessed diff (i.e. when starter_code is none).
  * This value is a fixed constant in git and never changes.
  */
 export const GIT_EMPTY_TREE_SHA = '4b825dc642cb6eb9a060e54bf8d69288fbee4904';
@@ -537,7 +583,7 @@ export const AI_RETRYABLE_STATUS_CODES = [429, 500, 502, 503, 504];
  * Accepted values of the tag_diff_base input, which picks the diff base for a
  * run started by a submission tag:
  *   cumulative   — the same base as any other run (first commit, or the empty
- *                  tree with include_initial_commit), so each tag assesses all
+ *                  tree with starter_code: none), so each tag assesses all
  *                  of the student's work to date.
  *   previous-tag — the nearest earlier submission tag, so each tag assesses
  *                  only the work since the one before it. Falls back to the

@@ -576,6 +576,9 @@ export async function deliverToInstructorRepo({
  * rendered from, as data, which the quiz workflow builds the quiz from. Each
  * snippet keeps the lines of its file it was read from.
  *
+ * `about_starter_code` marks a question about starter code alone, which
+ * starter_code: ask allows.
+ *
  * The questions dropped for not pointing at the student's code follow, with
  * `dropped: true` and no number, so an instructor can see what was asked and
  * which lines it showed. The quiz workflow skips them.
@@ -585,6 +588,7 @@ export function buildQuestionsJson(questions, droppedQuestions = []) {
     number: dropped ? null : q.number,
     dropped,
     broader: q.broader,
+    about_starter_code: q.aboutStarter === true,
     snippets: q.snippets.map(({ file, start, end, language, code }) => ({
       file,
       start_line: start,

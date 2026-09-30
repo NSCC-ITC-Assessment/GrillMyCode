@@ -11,7 +11,7 @@ Each run works through these stages in order:
 1. Choose a **commit range**: a base commit and a head commit.
 2. List the files that changed between them, and **filter** them.
 3. Read the full content of each remaining file at the head commit, **strip comments**, and **mark the student's lines** in any file that existed at the base.
-4. Send the code to the AI, with the remaining eligible files as [codebase context](#codebase-context) if you turned it on, and **post-process** its reply.
+4. Send the code to the AI, with the remaining eligible files as [codebase context](#codebase-context) when `starter_code` or `previous_work` asks for it, and **post-process** its reply.
 
 ## 1. The commit range
 
@@ -31,10 +31,10 @@ The head is the commit the run is about:
 
 The base does **not** depend on what was pushed. Every run assesses all of the student's work to date, whether it's the first push or the fiftieth.
 
-| `include_initial_commit` | Base | Effect |
+| `starter_code` | Base | Effect |
 |---|---|---|
-| `false` (default) | The repository's first commit | The first commit, usually the template copy, is left out |
-| `true` | The empty tree | Every commit counts, including the first |
+| `ignore` (default), `context` or `ask` | The repository's first commit | The first commit, usually the template copy, is left out |
+| `none` | The empty tree | Every commit counts, including the first |
 
 Two things can move the base later than that:
 
@@ -45,7 +45,7 @@ Two things can move the base later than that:
 
 ### How this excludes Classroom 50 template code
 
-When a student accepts a templated Classroom 50 assignment, `gh student accept` creates their repository by copying the template (`POST /repos/{template_owner}/{template_repo}/generate`). That copy is the repository's **first commit**. With the default `include_initial_commit: 'false'` it is the base, so the template's starter code is never assessed, just as under GitHub Classroom. A starter file the student hasn't changed isn't in the diff at all. In one they have changed, only their own lines are open to questions; see [Files that existed at the base](#files-that-existed-at-the-base).
+When a student accepts a templated Classroom 50 assignment, `gh student accept` creates their repository by copying the template (`POST /repos/{template_owner}/{template_repo}/generate`). That copy is the repository's **first commit**. With any `starter_code` value but `none` it is the base, so the template's starter code is never assessed, just as under GitHub Classroom. A starter file the student hasn't changed isn't in the diff at all. In one they have changed, only their own lines are open to questions; see [Files that existed at the base](#files-that-existed-at-the-base).
 
 `gh student accept` then adds one or two more commits straight away:
 
@@ -61,13 +61,13 @@ See [Classroom 50 internals](classroom50-internals.md) for every commit Classroo
 
 ### Empty-repository assignments
 
-With `--empty-repo` the first commit is the **student's own first push**, which the default base leaves out. Set `include_initial_commit: 'true'`; see [Empty-repository assignments](../guides/classroom50.md#empty-repository-assignments).
+With `--empty-repo` the first commit is the **student's own first push**, which the default base leaves out. Set `starter_code: none`; see [Empty-repository assignments](../guides/classroom50.md#empty-repository-assignments).
 
-An assignment created *without* `--empty-repo` but also without a template is seeded with a README. Its first commit is that README, so the default is correct for it.
+An assignment created *without* `--empty-repo` but also without a template is seeded with a README. Its first commit is that README, so the default `starter_code: ignore` is correct for it.
 
 ### Including the first commit on purpose
 
-`include_initial_commit: 'true'` pins the base to the empty tree for every event type, so all files from the very beginning of history are eligible. To also include setup files that are excluded by pattern, such as `.classroom50.yaml`, add them to `exclude_pattern_overrides`; see [File filtering](exclude-patterns.md).
+`starter_code: none` pins the base to the empty tree for every event type, so all files from the very beginning of history are eligible. To also include setup files that are excluded by pattern, such as `.classroom50.yaml`, add them to `exclude_pattern_overrides`; see [File filtering](exclude-patterns.md).
 
 ### Skipping bot commits
 
@@ -108,6 +108,7 @@ A file that already existed at the base commit, such as a starter file the stude
 | Marker | Meaning | Used for |
 |---|---|---|
 | `+` | Added or changed by the student in the range | Questions: every question about the file must show at least one of these lines |
+| `s` | Starter code: unchanged since the first commit. Only with `starter_code: ask` | [Starter-code questions](#asking-about-starter-code), otherwise context |
 | (space) | Unchanged since the base | Context only |
 | `-` | Removed by the student | Context only. It shows what the student replaced, and never appears in a question's snippet |
 
@@ -119,13 +120,55 @@ The comparison is made **after** comment stripping, between the base and head ve
 
 If no file in the submission has a single added or changed line, for example because the student only edited comments, the files are sent whole without markers, and the run summary says so.
 
-What counts as "before the range" follows the base. By default that is the first commit, so the unmarked lines are starter code. With `tag_diff_base: previous-tag` or `tag:<name>`, the unmarked lines also include the student's own work from before that tag, and the questions cover only what changed since. Earlier files the submission didn't touch at all can be sent as [codebase context](#codebase-context). With `include_initial_commit: 'true'` the base is the empty tree, so nothing is marked.
+What counts as "before the range" follows the base. By default that is the first commit, so the unmarked lines are starter code. With `tag_diff_base: previous-tag` or `tag:<name>`, the unmarked lines also include the student's own work from before that tag, and the questions cover only what changed since. Earlier files the submission didn't touch at all can be sent as [codebase context](#codebase-context). With `starter_code: none` the base is the empty tree, so nothing is marked.
+
+With `starter_code: ask`, an unchanged line that is also unchanged since the first commit is marked `s` instead of a space. On a tag run with `previous-tag`, that separates your starter code from the student's earlier work in the same file: only the `s` lines may be asked about.
 
 The run summary's **Files assessed** section says how many files were marked. A question that shows none of the marked lines is dropped after the AI replies; see [step 3](#4-after-the-ai-replies).
 
+## Starter code
+
+`starter_code` says what the repository's first commit is, and what the AI does with the starter code in it:
+
+| `starter_code` | First commit | Unchanged starter files | Starter code in questions |
+|---|---|---|---|
+| `none` | The student's own work, assessed | None exist | — |
+| `ignore` (default) | Your starter code, left out | Not sent | Never |
+| `context` | Your starter code, left out | Sent as [codebase context](#codebase-context) | Only alongside the student's code |
+| `ask` | Your starter code, left out | Sent as codebase context | Up to one in five questions may be about it alone; see [Asking about starter code](#asking-about-starter-code) |
+
+In every mode, a starter file the student edited is assessed like any [file that existed at the base](#files-that-existed-at-the-base): it is sent whole with the student's lines marked. To keep a file out entirely, even when the student edits it, add it to `additional_exclude_patterns`.
+
+`starter_code` replaces `include_initial_commit` and `include_codebase_context`, which still work for now; see [Deprecated inputs](inputs-outputs.md#deprecated-inputs).
+
+### Asking about starter code
+
+With `starter_code: ask` the AI may ask about the starter code itself, not only use it as background. What counts as starter code:
+
+- **Unchanged starter files**, sent in the starter-code block of the codebase context.
+- **Starter lines of edited files**: lines unchanged since the first commit in a file the student edited, marked `s` (see [Files that existed at the base](#files-that-existed-at-the-base)). This is where most starter code sits in a "fill in the TODOs" assignment.
+
+The rules the AI is given:
+
+- At most **one in five** questions, rounded down, may be about starter code alone: at least one once there are two questions, and none in a one-question run. It is never told to relax this limit, and is told to write broader questions about the student's code instead of exceeding it.
+- A starter-code question is worded as about the provided code ("the provided `loadCities` function"), never "your code".
+- It should prefer starter code that the student's code calls, extends or depends on.
+- Every other question must still show, and be about, the student's own lines.
+
+Starter code is the same in every student's repository, so answers to these questions can be shared between students. The limit keeps most of each set on the student's own work.
+
+A starter-code question is kept after the reply (see [step 3](#4-after-the-ai-replies)). In the instructor repository its `questions.md` entry is labelled _About the starter code, not the student's own work_, and `questions.json` sets `about_starter_code: true`. The run summary's **Starter code** row counts them. If the model goes over the limit, the extra questions are kept and the run logs a warning.
+
+If there is no starter code to ask about, because every starter file was left out for size and no edited file has a starter line, `ask` works like `context`.
+
 ## Codebase context
 
-By default the AI sees only the code being assessed. It is told that the repository may hold other code it wasn't sent, such as starter code, and never to assume what that code does: it states any value it depends on in the question, or asks something else. With `include_codebase_context: 'true'` it is also sent **the rest of the project** as background: every eligible file that's left once the exclusions are applied and the assessed files are set aside. It can then ask how the assessed code fits with the code around it: what it calls, extends or overrides, what calls it, and how data passes between them.
+By default the AI sees only the code being assessed. It is told that the repository may hold other code it wasn't sent, such as starter code, and never to assume what that code does: it states any value it depends on in the question, or asks something else. It can also be sent **the rest of the project** as background: eligible files that aren't being assessed. It can then ask how the assessed code fits with the code around it: what it calls, extends or overrides, what calls it, and how data passes between them.
+
+Two inputs control which of those files are sent:
+
+- **Starter code**, with `starter_code: context` or `ask`. See [Starter code](#starter-code).
+- **Earlier work**, with `previous_work: context` (the default). Set `previous_work: ignore` to leave it out.
 
 ### What is sent
 
@@ -139,19 +182,20 @@ A file left out of the assessment by a rule (an exclude pattern, the always-on `
 
 In practice these files come in two kinds, and which ones exist depends on the commit range:
 
-| Kind | What it is | When there is any |
-|---|---|---|
-| **Starter code** | Files from the first commit that the student has never changed | Whenever `include_initial_commit` is `'false'` (the default) |
-| **Earlier work** | The student's own files from before the range that this submission didn't touch | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, or a manual `base_sha` |
+| Kind | What it is | When there is any | Sent when |
+|---|---|---|---|
+| **Starter code** | Files from the first commit that the student has never changed | Whenever `starter_code` isn't `none` | `starter_code: context` or `ask` |
+| **Earlier work** | The student's own files from before the range that this submission didn't touch | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, or a manual `base_sha` | `previous_work: context` (default) |
 
 Some examples:
 
 | Setup | The AI is given as context |
 |---|---|
-| Default: every push assesses all work to date | Unchanged starter files only. Every file the student has touched is being assessed already |
-| Tag run with `tag_diff_base: previous-tag`, assessing `phase2` | Unchanged starter files, plus phase 1 files that phase 2 didn't touch |
-| `include_initial_commit: 'true'`, with no later base | Nothing: the whole history is being assessed. The run log says so |
-| `include_initial_commit: 'true'` with `previous-tag` | Earlier work only. The first commit is the student's, so nothing counts as starter code |
+| Default: `starter_code: ignore`, every push assesses all work to date | Nothing. There is no earlier work, and starter code isn't sent |
+| `starter_code: context`, every push assesses all work to date | Unchanged starter files only. Every file the student has touched is being assessed already |
+| `starter_code: context`, tag run with `tag_diff_base: previous-tag`, assessing `phase2` | Unchanged starter files, plus phase 1 files that phase 2 didn't touch |
+| `starter_code: none`, with no later base | Nothing: the whole history is being assessed. The run log says so |
+| `starter_code: none` with `previous-tag` | Earlier work only. The first commit is the student's, so nothing counts as starter code |
 
 A phase 1 file that phase 2 **did** edit isn't sent as context. It is assessed, with the phase 2 lines marked and the phase 1 lines visible around them; see [Files that existed at the base](#files-that-existed-at-the-base).
 
@@ -159,7 +203,7 @@ Comments are stripped unless `keep_comments` is `'true'`. Binary files are skipp
 
 ### How the AI is told to use it
 
-- **Never a question target on its own.** Every question must show, and be about, code being assessed. A question may also show a context snippet when the answer depends on it. A question that shows **only** context files is dropped after the reply (see step 3 of [After the AI replies](#4-after-the-ai-replies)). Context files are numbered like the submission, so their lines can be shown the same way.
+- **Never a question target on its own.** Every question must show, and be about, code being assessed. A question may also show a context snippet when the answer depends on it. A question that shows **only** context files is dropped after the reply (see step 3 of [After the AI replies](#4-after-the-ai-replies)). Context files are numbered like the submission, so their lines can be shown the same way. The one exception is starter code under [`starter_code: ask`](#asking-about-starter-code).
 - **Starter code** is sent in its own block, marked as reference data. Its content is identical to the first commit, which the student can't rewrite.
 - **Earlier work** is the student's own writing, so it is held to the same untrusted-input rules as the submission: the AI analyses it but never follows any instruction in it.
 
@@ -176,7 +220,7 @@ A file that would go over the limit is left out, and smaller files after it are 
 ### Where it shows
 
 - **Report header:** **Codebase context**, with the number of files used.
-- **Run summary:** the **Codebase context** row of the configuration table shows the starter and earlier-work counts, the size, and how many files were left out, with a collapsed list of the files of each kind.
+- **Run summary:** the **Codebase context** row of the configuration table shows the starter and earlier-work counts, the size, and how many files were left out, with a collapsed list of the files of each kind. The **Starter code** and, on tag and `base_sha` runs, **Previous work** rows show the settings.
 - **Run log:** every file sent, by kind.
 
 ## When there is nothing to assess
@@ -185,7 +229,7 @@ A run ends early, without calling the AI or creating an issue, in two cases:
 
 | Run summary says | Cause | What to check |
 |---|---|---|
-| The commit range contains no changed files | Base and head are the same commit, so nothing was compared | `include_initial_commit` for empty-repository assignments; any `base_sha`/`head_sha` override |
+| The commit range contains no changed files | Base and head are the same commit, so nothing was compared | `starter_code: none` for empty-repository assignments; any `base_sha`/`head_sha` override |
 | All N changed files were removed by the exclude patterns | Files changed, but every one was filtered out | The summary lists the excluded files; use `exclude_pattern_overrides` to bring back the ones you need |
 
 Both are normal straight after an assignment is accepted, so by default such a run **succeeds**. Set `fail_on_empty_assessment: 'true'` to have it fail instead, once students have started work.
@@ -200,7 +244,7 @@ The reply goes through these steps before anything is delivered:
 
 1. **Reply checked.** A reply that isn't the JSON asked for is retried, and each retry counts towards `ai_retry_max_attempts`. If the model stopped at its output limit it isn't retried, since a retry would stop at the same place. The complete questions before the cut are used instead, and the run summary says so. A question with no question text or no answer is dropped, and the warning gives its position in the reply, such as `entry 23 of 30`, so you can find it in `data/raw-ai-output.md`. If nothing usable is left, including when no question passes steps 2 and 3, the reply is retried, and once attempts run out the run fails with `AI reply could not be used`.
 2. **Code copied in.** Each snippet's lines are copied from the file it names. A question is dropped if a snippet names a file the AI wasn't sent, such as an `assignment_context` file or one that doesn't exist, lines that file doesn't have, or more than 50 lines. A name matches when it is the file's path or the end of it (`app.py` matches `src/app.py`), ignoring case. A name that matches two files, such as `index.php` when there are two, matches neither.
-3. **Questions about other code dropped.** Every question must show at least one line the student wrote in the range: any line of a new file, or a `+` line of a [file that existed at the base](#files-that-existed-at-the-base). A question showing only unchanged lines, or only [codebase context](#codebase-context), is dropped. Questions dropped here and in step 2 are logged as warnings and listed in the run summary, and kept in the instructor repository's [`questions.json`](instructor-repository.md#questionsjson) marked as dropped. A report can therefore hold fewer than `num_questions`. Each warning gives the question's position in the reply and the lines it named, such as `entry 7 of 12: game.js lines 40–46`, so you can find it in `data/raw-ai-output.md`. The line numbers are [those of the student's file](#3-comment-stripping-and-line-marking).
+3. **Questions about other code dropped.** Every question must show at least one line the student wrote in the range: any line of a new file, or a `+` line of a [file that existed at the base](#files-that-existed-at-the-base). A question showing only unchanged lines, or only [codebase context](#codebase-context), is dropped, except a question about starter code under [`starter_code: ask`](#asking-about-starter-code). Questions dropped here and in step 2 are logged as warnings and listed in the run summary, and kept in the instructor repository's [`questions.json`](instructor-repository.md#questionsjson) marked as dropped. A report can therefore hold fewer than `num_questions`. Each warning gives the question's position in the reply and the lines it named, such as `entry 7 of 12: game.js lines 40–46`, so you can find it in `data/raw-ai-output.md`. The line numbers are [those of the student's file](#3-comment-stripping-and-line-marking).
 4. **Extra questions cut.** Questions beyond `num_questions` are removed. Any "broader" questions, about the code as a whole rather than one snippet, are placed last, under a **Broader Questions** heading. The questions left are numbered in order.
 5. **Answers left out for the student.** The student's copy is written without answers or multiple-choice distractors. A question whose own text would reveal an answer is **withheld** from the student's copy, and the report says how many were withheld. It keeps its number, so questions are numbered the same in every copy. The **Instructor Note** gets the same check, and is left out of the student's copy if it would reveal an answer. The instructor repository copy is never affected.
 
