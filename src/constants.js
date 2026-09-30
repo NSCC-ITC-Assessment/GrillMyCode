@@ -475,7 +475,7 @@ export const DEFAULT_ASSIGNMENT_CONTEXT_MAX_CHARS = 20000;
  *             never a question target on their own.
  *   ask     — as context, and up to maxStarterQuestions() of the questions may
  *             be about the starter code itself, including the unchanged starter
- *             lines of files the student edited.
+ *             lines of files the student edited, in this submission or before.
  */
 export const STARTER_CODE_MODES = ['none', 'ignore', 'context', 'ask'];
 
@@ -522,7 +522,9 @@ export const DEFAULT_CODEBASE_CONTEXT_MAX_CHARS = 50000;
  * from the code they started with. `added`, `removed` and `unchanged` mirror
  * unified-diff notation, which models read reliably. `starter` replaces
  * `unchanged` on a line that is also unchanged since the first commit, under
- * starter_code: ask only, where those lines may be asked about.
+ * starter_code: ask only, where those lines may be asked about. Under ask, an
+ * earlier-work file that began as starter code carries the column too, with
+ * only `starter` and `unchanged` in it.
  */
 export const LINE_MARKERS = Object.freeze({
   added: '+',
@@ -530,6 +532,14 @@ export const LINE_MARKERS = Object.freeze({
   unchanged: ' ',
   starter: 's',
 });
+
+/**
+ * Heading added after the path of an earlier-work file that began as starter
+ * code: a file from the first commit that the student changed before the
+ * assessed range but not in it, so it mixes the instructor's code with the
+ * student's. The prompt quotes it, so the AI can tell such a file apart.
+ */
+export const EARLIER_STARTER_HEADING = ' (began as starter code)';
 
 /**
  * GitHub REST API version sent in the X-GitHub-Api-Version header on every

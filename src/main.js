@@ -780,13 +780,18 @@ async function reportEmptyAssessment({
  *   earlier — changed before the range but not in it: the student's own work
  *             from an earlier submission, once tag_diff_base or base_sha moves
  *             the base past the first commit. Sent under previous_work:
- *             context.
+ *             context. A starter file the student changed before the range is
+ *             earlier work too, headed as having begun as starter code, and
+ *             under ask its lines still as given may be asked about. Under
+ *             previous_work: ignore it is not sent at all: its first-commit
+ *             copy would show the AI code the student has since replaced.
  *
  * A file unchanged in the range is identical at the base and the head, so a
  * starter file read here is byte-for-byte the first commit's copy.
  *
  * Records what it chose on `state` and returns `{ starterContent,
- * earlierContent }` ('' for a kind with nothing to send).
+ * earlierContent, sources, earlierFromStarter, earlierStarterLines }` ('' for
+ * a kind with nothing to send; see selectCodebaseContext).
  */
 function loadCodebaseContext({
   state,
@@ -797,7 +802,13 @@ function loadCodebaseContext({
   files,
   excludePatterns,
 }) {
-  const none = { starterContent: '', earlierContent: '', sources: [] };
+  const none = {
+    starterContent: '',
+    earlierContent: '',
+    sources: [],
+    earlierFromStarter: false,
+    earlierStarterLines: 0,
+  };
   if (baseSha === GIT_EMPTY_TREE_SHA) {
     core.info(
       'Codebase context: the whole history is being assessed, so there is no other code to add.',
@@ -817,17 +828,51 @@ function loadCodebaseContext({
     assessedFiles: files,
     skippedRange,
   }).filter((f) => (f.kind === 'starter' ? sendStarter : sendEarlier));
+  const askStarter = asksAboutStarter(inputs);
   const kindOf = new Map(found.map((f) => [f.filepath, f.kind]));
   let candidates = found.map(({ filepath, content }) => ({ filepath, content }));
-  if (!inputs.keepComments) candidates = stripCommentsFromFiles(candidates).strippedFiles;
+  // An earlier file that began as starter code carries its first-commit copy.
+  // Only under ask are its lines compared with it, so only then is it processed.
+  let starterCopies = found
+    .filter((f) => f.starterCopy !== undefined)
+    .map(({ filepath, starterCopy }) => ({ filepath, content: starterCopy }));
+  if (!inputs.keepComments) {
+    const stripped = stripCommentsFromFiles(candidates);
+    candidates = stripped.strippedFiles;
+    // A file sent with its comments is compared with its first-commit copy
+    // unstripped too, as the assessed files are with their earlier copies.
+    const toStrip = starterCopies.filter((f) => !stripped.commentsKept.includes(f.filepath));
+    if (askStarter && toStrip.length > 0) {
+      const strippedCopies = new Map(
+        stripCommentsFromFiles(toStrip).strippedFiles.map((f) => [f.filepath, f.content]),
+      );
+      starterCopies = starterCopies.map((f) => ({
+        ...f,
+        content: strippedCopies.get(f.filepath) ?? f.content,
+      }));
+    }
+  }
+  const starterCopyOf = new Map(starterCopies.map((f) => [f.filepath, f.content]));
   const selection = selectCodebaseContext(
-    candidates.map((f) => ({ ...f, kind: kindOf.get(f.filepath) })),
+    candidates.map((f) => ({
+      ...f,
+      kind: kindOf.get(f.filepath),
+      ...(starterCopyOf.has(f.filepath) && { starterCopy: starterCopyOf.get(f.filepath) }),
+    })),
     files,
     inputs.codebaseContextMaxChars,
-    { askStarter: asksAboutStarter(inputs) },
+    { askStarter },
   );
-  const { starterContent, earlierContent, sources, starterFiles, earlierFiles, omitted } =
-    selection;
+  const {
+    starterContent,
+    earlierContent,
+    sources,
+    starterFiles,
+    earlierFiles,
+    omitted,
+    earlierFromStarter,
+    earlierStarterLines,
+  } = selection;
   state.codebaseStarterFiles = starterFiles;
   state.codebaseEarlierFiles = earlierFiles;
   state.codebaseContextOmitted = omitted;
@@ -850,7 +895,7 @@ function loadCodebaseContext({
         `\`codebase_context_max_chars\`.`,
     );
   }
-  return { starterContent, earlierContent, sources };
+  return { starterContent, earlierContent, sources, earlierFromStarter, earlierStarterLines };
 }
 
 // ─── Entry Point ─────────────────────────────────────────────────────────────
@@ -1153,6 +1198,8 @@ async function run() {
       starterContent: starterContext,
       earlierContent: earlierContext,
       sources: codebaseSources,
+      earlierFromStarter,
+      earlierStarterLines,
     } = wantsCodebaseContext(inputs)
       ? loadCodebaseContext({
           state,
@@ -1163,7 +1210,13 @@ async function run() {
           files,
           excludePatterns,
         })
-      : { starterContent: '', earlierContent: '', sources: [] };
+      : {
+          starterContent: '',
+          earlierContent: '',
+          sources: [],
+          earlierFromStarter: false,
+          earlierStarterLines: 0,
+        };
     const codebaseContextFiles = [...state.codebaseStarterFiles, ...state.codebaseEarlierFiles];
     const codeSources = [...assessedSources, ...codebaseSources];
 
@@ -1187,7 +1240,11 @@ async function run() {
     // starter_code: ask. Nothing to ask about when every starter file was left
     // out and no starter line was marked, so the prompt says nothing of it.
     const starterLinesMarked = state.markedFiles.length > 0 && assessed.starterLines > 0;
-    if (asksAboutStarter(inputs) && (starterContext || starterLinesMarked)) {
+    const earlierStarterMarked = earlierStarterLines > 0;
+    if (
+      asksAboutStarter(inputs) &&
+      (starterContext || starterLinesMarked || earlierStarterMarked)
+    ) {
       state.starterQuestionLimit = maxStarterQuestions(inputs.numQuestions);
     }
 
@@ -1204,6 +1261,8 @@ async function run() {
       earlierContext,
       starterQuestions: state.starterQuestionLimit,
       starterLinesMarked,
+      earlierFromStarter,
+      earlierStarterMarked,
     });
     core.debug(`Prompt messages:\n${JSON.stringify(messages, null, 2)}`);
 

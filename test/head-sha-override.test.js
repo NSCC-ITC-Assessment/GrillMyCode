@@ -90,6 +90,21 @@ describe('head_sha override', () => {
   });
 });
 
+describe('the base does not depend on what was pushed', () => {
+  // Every run assesses all work to date, so a push's `before` is never read:
+  // starter_code alone picks the base.
+  it.each([
+    ['an earlier commit', EVENT_BEFORE],
+    ['all zeros, for a new branch', '0'.repeat(40)],
+    ['unusable', 'not-a-sha'],
+  ])('is the first commit whatever `before` is: %s', async (_label, before) => {
+    const ctx = { ...pushCtx(), payload: { before, after: EVENT_AFTER } };
+    const { baseSha, headSha } = await resolveSHAs(ctx, octokit, inputs({ starterCode: 'ignore' }));
+    expect(baseSha).toBe(FIRST_COMMIT);
+    expect(headSha).toBe(EVENT_AFTER);
+  });
+});
+
 describe('head_sha override does not disturb event parsing', () => {
   // The both-supplied fast path exists to skip event parsing entirely. Removing
   // it in favour of a second tail override — which is what a symmetric-looking

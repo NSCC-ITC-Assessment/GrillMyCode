@@ -61,9 +61,9 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // This is a short-circuit, not a duplicate of the tails below: with both ends
   // named there is nothing left to detect, so we skip event parsing entirely.
   // That is load-bearing. The event payload is not guaranteed to hold a usable
-  // SHA (workflow_dispatch on some runners leaves ctx.sha undefined, and
-  // ctx.payload.before is absent outside push), and parsing it anyway would
-  // throw before reaching an override that had already answered the question.
+  // SHA (workflow_dispatch on some runners leaves ctx.sha undefined), and
+  // parsing it anyway would throw before reaching an override that had already
+  // answered the question.
   if (inputs.baseSha && overrideHead) {
     return {
       baseSha: sanitiseSha(inputs.baseSha),
@@ -77,6 +77,10 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   let baseSha, headSha;
 
   // ── Determine the event-specific head SHA ────────────────────────────────
+  // Only the head depends on the event. The base never does: every run
+  // assesses all work to date, from the base starter_code picks below, so a
+  // push's `before` is never read.
+  //
   // A manual head_sha is resolved here rather than in a tail beside the
   // base_sha override below, for two reasons. It keeps the event SHA
   // unparsed — see above — and it means skip_committers walks the range the
@@ -89,30 +93,20 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
     // pushed object in `after`; a dispatch carries the commit in ctx.sha.
     const eventSha = event === 'push' ? ctx.payload.after : ctx.sha;
     headSha = overrideHead ?? sanitiseSha(peelToCommit(sanitiseSha(eventSha)));
-    baseSha = getFirstCommit();
   } else if (event === 'push') {
     headSha = overrideHead ?? sanitiseSha(ctx.payload.after);
-    const before = ctx.payload.before;
-    // All-zero SHA means this is the very first push to a new branch.
-    baseSha = /^0+$/.test(before) ? getFirstCommit() : sanitiseSha(before);
   } else {
     // workflow_dispatch and all other events: HEAD of the current branch.
-    baseSha = getFirstCommit();
     headSha = overrideHead ?? sanitiseSha(ctx.sha);
   }
 
   // ── Apply starter_code ────────────────────────────────────────────────────
-  // Always override baseSha based on it, regardless of event type.
   if (inputs.starterCode !== 'none') {
-    const initialCommit = getFirstCommit();
-    if (baseSha !== initialCommit) {
-      core.info(
-        `starter_code is ${inputs.starterCode}: overriding base SHA from ` +
-          `${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)} to initial commit ${initialCommit.substring(0, GIT_SHA_SHORT_LENGTH)} ` +
-          `to exclude the starter files from the diff.`,
-      );
-    }
-    baseSha = initialCommit;
+    baseSha = getFirstCommit();
+    core.info(
+      `starter_code is ${inputs.starterCode}: base is the initial commit ` +
+        `${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)}, so the starter files are left out of the diff.`,
+    );
   } else {
     core.info(
       `starter_code is none: using empty tree as base so the initial commit's eligible files are included in the diff.`,

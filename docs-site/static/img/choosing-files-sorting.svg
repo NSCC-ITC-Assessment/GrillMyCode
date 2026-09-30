@@ -213,8 +213,9 @@
     <text class="ttl" x="880" y="338">code remains</text>
     <text class="sub" x="880" y="360">questions are focused here</text>
 
-    <text class="sub" x="750" y="560">If a student edits your starter file,</text>
-    <text class="sub" x="750" y="580">only their own lines are asked about.</text>
+    <text class="sub" x="750" y="540">If a student edits your starter file,</text>
+    <text class="sub" x="750" y="560">only their own lines are asked about,</text>
+    <text class="sub" x="750" y="580">unless you allow questions on it.</text>
   </g>
   </g>
 </svg>

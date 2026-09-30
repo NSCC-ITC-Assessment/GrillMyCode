@@ -60,7 +60,7 @@ jobs:
 ## Good to know
 
 - On a push trigger, or with `tag_diff_base: "cumulative"`, all of the student's work is already being assessed, so the background is your unchanged starter code only.
-- Add `previous_work: "ignore"` to send only the starter code, not earlier milestones.
+- Add `previous_work: "ignore"` to send only the starter code, not earlier milestones. Starter files the student changed in an earlier milestone are then left out too.
 - Earlier work that the new milestone edited isn't background. It is assessed, with the new lines marked for questions and the earlier lines shown around them.
 - A question that shows only background code is dropped. A question may show a background snippet beside the assessed code.
 - The issue header shows how many background files were used; the run summary shows how many were left out for size.

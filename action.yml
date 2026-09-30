@@ -227,7 +227,7 @@ inputs:
       their own.
       "ask" — as context, and some questions may be about the starter code
       itself: the unchanged starter files and the unchanged starter lines of
-      files the student edited. At most one in five questions (at least one
+      files the student edited, in this submission or an earlier one. At most one in five questions (at least one
       once there are two) is about starter code alone, and each is worded as
       about the provided code. Starter code is the same for every student, so
       answers to those questions can be shared.
@@ -248,7 +248,9 @@ inputs:
       "ignore". Earlier work exists only when the assessed range starts after
       the first commit — tag_diff_base previous-tag or tag:<name>, or base_sha
       — so this has no effect on other runs. It is never asked about on its
-      own. Shares codebase_context_max_chars with starter code.
+      own, except the unchanged starter lines of a starter file the student
+      changed earlier, under starter_code ask. Under ignore, such a file is not
+      sent either. Shares codebase_context_max_chars with starter code.
     required: false
     default: ""
 

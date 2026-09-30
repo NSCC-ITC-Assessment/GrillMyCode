@@ -14,6 +14,7 @@ import {
   selectCodebaseContext,
 } from '../src/files.js';
 import { buildPrompt, maxStarterQuestions } from '../src/prompt/prompt.js';
+import { resolveSnippets } from '../src/postprocess.js';
 import { GIT_EMPTY_TREE_SHA } from '../src/constants.js';
 
 describe('diffLines', () => {
@@ -304,6 +305,100 @@ describe('selectCodebaseContext under starter_code: ask', () => {
   });
 });
 
+// A starter file the student changed before the range, and not in it: earlier
+// work that still holds lines of starter code as given.
+describe('selectCodebaseContext with earlier files that began as starter code', () => {
+  const edited = {
+    filepath: 'src/main.py',
+    content: 'def main():\n    play()\n\ndef helper():\n    return 1\n',
+    kind: 'earlier',
+    starterCopy: 'def main():\n    pass\n\ndef helper():\n    return 1\n',
+  };
+  const select = (candidates, askStarter) =>
+    selectCodebaseContext(candidates, ['src/game.py'], 10_000, { askStarter });
+
+  it('marks the lines still as given under ask, and lets only those be asked about', () => {
+    const { earlierContent, sources, earlierFromStarter, earlierStarterLines } = select(
+      [edited],
+      true,
+    );
+    expect(earlierContent).toBe(
+      [
+        '### `src/main.py` (began as starter code)',
+        '```py',
+        's 1 | def main():',
+        '  2 |     play()',
+        '  3 |',
+        's 4 | def helper():',
+        's 5 |     return 1',
+        '```',
+      ].join('\n'),
+    );
+    expect(sources[0].starterLines).toEqual(new Set([1, 4, 5]));
+    expect(sources[0].studentLines).toEqual(new Set());
+    expect(earlierFromStarter).toBe(true);
+    expect(earlierStarterLines).toBe(3);
+  });
+
+  it('heads the file but marks nothing without ask', () => {
+    const { earlierContent, sources, earlierFromStarter, earlierStarterLines } = select(
+      [edited],
+      false,
+    );
+    expect(earlierContent).toContain(
+      '### `src/main.py` (began as starter code)\n```py\n1 | def main():',
+    );
+    expect(sources[0].starterLines).toEqual(new Set());
+    expect(earlierFromStarter).toBe(true);
+    expect(earlierStarterLines).toBe(0);
+  });
+
+  it('keeps no marker column when no line is still as given', () => {
+    const { earlierContent, earlierStarterLines } = select(
+      [{ ...edited, starterCopy: 'pass\n' }],
+      true,
+    );
+    expect(earlierContent).toContain('```py\n1 | def main():');
+    expect(earlierStarterLines).toBe(0);
+  });
+
+  it('leaves the student’s own earlier files unheaded and unmarked', () => {
+    const { earlierContent, earlierFromStarter } = select(
+      [{ filepath: 'src/player.py', content: 'class Player:\n', kind: 'earlier' }],
+      true,
+    );
+    expect(earlierContent).toBe('### `src/player.py`\n```py\n1 | class Player:\n```');
+    expect(earlierFromStarter).toBe(false);
+  });
+
+  it('counts the marker column against the budget', () => {
+    const marked = select([edited], true).earlierContent;
+    const { earlierFiles, omitted } = selectCodebaseContext(
+      [edited],
+      ['src/game.py'],
+      marked.length - 1,
+      { askStarter: true },
+    );
+    expect(earlierFiles).toEqual([]);
+    expect(omitted).toEqual(['src/main.py']);
+  });
+
+  it('keeps a question about its starter lines as a starter-code question', () => {
+    const { sources } = select([edited], true);
+    const question = (start, end) => ({
+      question: 'Q',
+      answer: 'A',
+      snippets: [{ file: 'src/main.py', start, end }],
+    });
+    const { questions, notStudentWork } = resolveSnippets(
+      [question(4, 5), question(2, 2)],
+      sources,
+    );
+    expect(questions.map((q) => [q.snippets[0].start, q.aboutStarter])).toEqual([[4, true]]);
+    expect(notStudentWork.map((q) => q.snippets[0].start)).toEqual([2]);
+  });
+});
+
 describe('buildPrompt starter-code questions', () => {
   const base = { codeContent: 'code', files: ['a.js'], numQuestions: 10 };
 
@@ -328,6 +423,38 @@ describe('buildPrompt starter-code questions', () => {
     expect(buildPrompt({ ...marked, starterContext: 'S' })[0].content).not.toContain(
       '- `s` — a line of starter code',
     );
+  });
+});
+
+describe('buildPrompt earlier work that began as starter code', () => {
+  const base = { codeContent: 'code', files: ['a.js'], numQuestions: 10, earlierContext: 'E' };
+
+  it('explains the heading whenever such a file is sent', () => {
+    const [system, user] = buildPrompt({ ...base, earlierFromStarter: true });
+    expect(system.content).toContain('A file headed "(began as starter code)"');
+    expect(system.content).not.toContain('STARTER CODE QUESTIONS — ALLOWED');
+    expect(user.content).toContain('context only, not for questions on its own');
+  });
+
+  it('lets its s lines be asked about under ask', () => {
+    const [system, user] = buildPrompt({
+      ...base,
+      earlierFromStarter: true,
+      earlierStarterMarked: true,
+      starterQuestions: 2,
+    });
+    expect(system.content).toContain('CODEBASE CONTEXT — BACKGROUND:');
+    expect(system.content).toContain(
+      'the lines marked `s` in the earlier-work files headed "(began as starter code)"',
+    );
+    expect(system.content).toContain('`s` marks a line of starter code still as the student');
+    expect(user.content).toContain('context only apart from its lines marked `s`');
+  });
+
+  it('says nothing of it for earlier work that is all the student’s', () => {
+    const [system] = buildPrompt(base);
+    expect(system.content).not.toContain('began as starter code');
+    expect(system.content).toContain('CODEBASE CONTEXT — BACKGROUND ONLY');
   });
 });
 
@@ -527,6 +654,34 @@ describe('findCodebaseContextFiles', () => {
       'earlier:src/player.py',
       'starter:src/board.py',
     ]);
+  });
+
+  it('gives a starter file changed in phase 1 its first-commit copy', () => {
+    const found = findCodebaseContextFiles({
+      baseSha: commits.phase1,
+      headSha: commits.phase2,
+      firstCommit: commits.starter,
+      excludePatterns: ['**/*.md'],
+      excludePatternOverrides: [],
+      assessedFiles: ['src/game.py'],
+      skippedRange: { from: commits.starter, to: commits.bot },
+    });
+    const byPath = Object.fromEntries(found.map((f) => [f.filepath, f]));
+    expect(byPath['src/main.py'].starterCopy).toBe('def main():\n    pass\n');
+    expect(byPath['src/player.py']).not.toHaveProperty('starterCopy');
+    expect(byPath['src/board.py']).not.toHaveProperty('starterCopy');
+  });
+
+  it('gives no first-commit copy when the first commit is the student’s', () => {
+    const found = findCodebaseContextFiles({
+      baseSha: commits.phase1,
+      headSha: commits.phase2,
+      firstCommit: null,
+      excludePatterns: ['**/*.md'],
+      excludePatternOverrides: [],
+      assessedFiles: ['src/game.py'],
+    });
+    expect(found.some((f) => 'starterCopy' in f)).toBe(false);
   });
 
   it('sends only unchanged starter code when all work to date is assessed', () => {

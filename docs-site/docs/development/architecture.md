@@ -110,7 +110,10 @@ loadCodebaseContext()   ← only when starter_code is context or ask, or previou
     │  starter_code is none), otherwise 'earlier' — student work from before
     │  a later base (tag_diff_base, base_sha); each kind is kept only when
     │  its input asks for it
-    │  Under starter_code: ask, starter files' lines may be asked about
+    │  An 'earlier' file also in the first commit began as starter code: it
+    │  carries its first-commit copy and is headed "(began as starter code)"
+    │  Under starter_code: ask, starter files' lines may be asked about, and
+    │  so may the lines of those earlier files still as given, marked `s`
     │  selectCodebaseContext() orders both kinds by folder distance from the
     │  assessed files and adds whole files up to codebase_context_max_chars,
     │  numbered like the submission; none of their lines are the student's
