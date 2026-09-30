@@ -29,8 +29,15 @@ export const REASONING_LEVELS = [
   { value: 'max', label: 'Maximum' },
 ];
 
-/** Levels at which the Wizard suggests trying a lower one first. */
-export const COSTLY_REASONING_LEVELS = ['high', 'xhigh', 'max'];
+/**
+ * Whether `effort` asks for more reasoning than the model's default, which costs
+ * more. False when the default isn't known, since there is nothing to compare.
+ */
+export function isAboveDefaultEffort(effort, defaultEffort) {
+  const rank = (value) => REASONING_LEVELS.findIndex((l) => l.value === value);
+  if (effort === 'default' || rank(defaultEffort) < 1) return false;
+  return rank(effort) > rank(defaultEffort);
+}
 
 export function levelLabel(value) {
   return REASONING_LEVELS.find((l) => l.value === value)?.label ?? value;

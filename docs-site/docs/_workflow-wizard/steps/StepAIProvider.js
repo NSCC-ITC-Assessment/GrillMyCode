@@ -10,8 +10,8 @@ import {
   temperatureError,
 } from '../generateYaml';
 import {
-  COSTLY_REASONING_LEVELS,
   formatDollars,
+  isAboveDefaultEffort,
   levelLabel,
   lookupModel,
   modelConcerns,
@@ -143,7 +143,6 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
     </span>
   );
   const effort = cfg.aiReasoningEffort || 'default';
-  const effectiveEffort = effort === 'default' ? reasoning.defaultEffort : effort;
   const allowedEfforts = reasoning.options.map((o) => o.value).join(',');
 
   const tempEnabled = !!cfg.aiTemperatureEnabled;
@@ -391,16 +390,6 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
             (live from OpenRouter).
           </span>
         )}
-        {reasoning.known &&
-          effort === 'default' &&
-          COSTLY_REASONING_LEVELS.includes(effectiveEffort) && (
-            <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-              ⚠️ This model reasons at {levelLabel(effectiveEffort).toLowerCase()} effort by
-              default, which will likely require more tokens and therefore result in a higher
-              overall cost. Consider setting <strong>Reasoning</strong> to <strong>Low</strong>{' '}
-              under Advanced settings and comparing the questions.
-            </span>
-          )}
       </div>
 
       <div className={styles.fieldGroup} style={{ marginTop: '1.75rem' }}>
@@ -459,11 +448,14 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
                 {reasoning.note}
               </span>
             )}
-            {reasoning.known && effort !== 'default' && COSTLY_REASONING_LEVELS.includes(effort) && (
+            {reasoning.known &&
+              !pricing?.free &&
+              isAboveDefaultEffort(effort, reasoning.defaultEffort) && (
               <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-                ⚠️ Reasoning at this level will likely require more tokens and therefore result in
-                a higher overall cost. Consider trying <strong>Low</strong> first and comparing the
-                questions.
+                ⚠️ This is more reasoning than the model's default (
+                {levelLabel(reasoning.defaultEffort)}), which will likely require more tokens and
+                therefore result in a higher overall cost. Do a trial run and compare the questions
+                with the model default before settling on it.
               </span>
             )}
           </div>

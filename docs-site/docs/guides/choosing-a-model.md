@@ -40,7 +40,7 @@ The Workflow Wizard's **AI** step offers the models tested with GrillMyCode, cho
 
 For advanced courses, a more capable model may ask sharper questions about complex code. In the Wizard, choose **Own Choice** to search [OpenRouter's catalogue](https://openrouter.ai/models) by price, reasoning and a coding benchmark. That benchmark measures writing code, not asking good questions about it, so treat it as a starting point. Models that can't handle a full assessment are left out.
 
-Do [trial runs](#estimate-your-cost-with-trial-runs) before rolling it out. If the model reasons at a high level by default, try **Low** under **Reasoning** and compare the questions before settling on a higher level.
+Do [trial runs](#estimate-your-cost-with-trial-runs) before rolling it out.
 
 ## Faster or cheaper, same model
 
