@@ -14,7 +14,12 @@ import path from 'path';
 import { minimatch } from 'minimatch';
 import { extractText, getDocumentProxy } from 'unpdf';
 import mammoth from 'mammoth';
-import { COMMENT_REMOVER_BIN, COMMENT_STRIP_TIMEOUT_MS, LINE_MARKERS } from './constants.js';
+import {
+  COMMENT_REMOVER_BIN,
+  COMMENT_STRIP_TIMEOUT_MS,
+  EARLIER_STARTER_HEADING,
+  LINE_MARKERS,
+} from './constants.js';
 import { diffLines, git, listChangedPaths, listTreeFiles, readFileAt } from './git.js';
 
 /**
@@ -384,6 +389,12 @@ export function folderDistance(a, b) {
  *   'earlier' — changed before the range but not in it: the student's work
  *               from an earlier submission.
  *
+ * An earlier file that was also in the first commit began as starter code the
+ * student then changed, so it mixes the two. It stays 'earlier' — it holds the
+ * student's writing, so it is never passed off as the instructor's — and
+ * carries `starterCopy`, its content at the first commit, so its lines still
+ * as given can be told apart (see selectCodebaseContext).
+ *
  * A file unchanged in the range is identical at the base and the head, so a
  * starter file read here is byte-for-byte the first commit's copy. Binary
  * files are skipped.
@@ -410,17 +421,22 @@ export function findCodebaseContextFiles({
     excludePatternOverrides,
   ).filter((p) => !changedInRange.has(p) && !skipped.has(p) && !assessedFiles.includes(p));
 
-  let isStarter = () => false;
+  let inFirstCommit = new Set();
+  let changedSinceStart = new Set();
   if (firstCommit) {
-    const inFirstCommit = new Set(listTreeFiles(firstCommit));
-    const changedSinceStart = new Set(listChangedPaths(firstCommit, headSha));
-    isStarter = (p) => inFirstCommit.has(p) && !changedSinceStart.has(p);
+    inFirstCommit = new Set(listTreeFiles(firstCommit));
+    changedSinceStart = new Set(listChangedPaths(firstCommit, headSha));
   }
 
-  return collectFilesAt(paths, headSha).map((f) => ({
-    ...f,
-    kind: isStarter(f.filepath) ? 'starter' : 'earlier',
-  }));
+  return collectFilesAt(paths, headSha).map((f) => {
+    if (!inFirstCommit.has(f.filepath)) return { ...f, kind: 'earlier' };
+    if (!changedSinceStart.has(f.filepath)) return { ...f, kind: 'starter' };
+    const starterCopy = readFileAt(firstCommit, f.filepath);
+    // A binary first-commit copy has no lines to compare.
+    return starterCopy === null || starterCopy.includes('\0')
+      ? { ...f, kind: 'earlier' }
+      : { ...f, kind: 'earlier', starterCopy };
+  });
 }
 
 /**
@@ -437,12 +453,17 @@ export function findCodebaseContextFiles({
  * fit is left out and the next, smaller one is still tried.
  *
  * With `askStarter` (starter_code: ask) the starter files' lines may be asked
- * about, and their sources say so (see buildNumberedCodeContent).
+ * about, and their sources say so (see buildNumberedCodeContent). So may the
+ * lines still as given in an earlier file that began as starter code (see
+ * numberedEarlierContext), or whether starter code could be asked about would
+ * hang on whether the student happened to edit its file this submission.
  *
  * Returns `{ starterContent, earlierContent, sources, starterFiles,
- * earlierFiles, omitted }` — the numbered blocks for each kind, the chosen
- * files' lines (see buildNumberedCodeContent), the paths that made it into
- * each, and the paths left out for size.
+ * earlierFiles, omitted, earlierFromStarter, earlierStarterLines }` — the
+ * numbered blocks for each kind, the chosen files' lines (see
+ * buildNumberedCodeContent), the paths that made it into each, the paths left
+ * out for size, whether any chosen earlier file began as starter code, and how
+ * many of its lines are marked as starter code (0 without `askStarter`).
  */
 export function selectCodebaseContext(
   candidates,
@@ -464,20 +485,26 @@ export function selectCodebaseContext(
   const omitted = [];
   let used = 0;
 
+  const render = (files, kind) =>
+    kind === 'starter'
+      ? numberedContext(files, askStarter)
+      : numberedEarlierContext(files, askStarter);
+
   for (const file of ordered) {
+    const kind = file.kind === 'starter' ? 'starter' : 'earlier';
     // Counted as if every file shared one block; split across two, the
     // separators only shrink, so the total never exceeds maxChars.
-    const cost = numberedContext([file]).content.length + (used > 0 ? 2 : 0);
+    const cost = render([file], kind).content.length + (used > 0 ? 2 : 0);
     if (used + cost > maxChars) {
       omitted.push(file.filepath);
       continue;
     }
-    chosen[file.kind === 'starter' ? 'starter' : 'earlier'].push(file);
+    chosen[kind].push(file);
     used += cost;
   }
 
-  const starter = numberedContext(chosen.starter, askStarter);
-  const earlier = numberedContext(chosen.earlier);
+  const starter = render(chosen.starter, 'starter');
+  const earlier = render(chosen.earlier, 'earlier');
   return {
     starterContent: starter.content,
     earlierContent: earlier.content,
@@ -485,12 +512,72 @@ export function selectCodebaseContext(
     starterFiles: chosen.starter.map((f) => f.filepath),
     earlierFiles: chosen.earlier.map((f) => f.filepath),
     omitted,
+    earlierFromStarter: chosen.earlier.some((f) => f.starterCopy !== undefined),
+    earlierStarterLines: earlier.starterLines,
   };
 }
 
 /** Codebase context files, numbered like the submission but never the student's work. */
 function numberedContext(files, starter = false) {
   return buildNumberedCodeContent(files, { student: false, starter });
+}
+
+/**
+ * The starter lines of each earlier file, by candidate object. A file is
+ * rendered once to weigh it against the budget and again in its block, and
+ * working the lines out runs git diff.
+ */
+const starterLinesCache = new WeakMap();
+
+/**
+ * Earlier work, numbered like numberedContext. A file that began as starter
+ * code — one carrying `starterCopy`, its content at the first commit — is
+ * headed EARLIER_STARTER_HEADING, since it mixes the instructor's code with the
+ * student's. With `askStarter`, a line of it still as given is marked
+ * LINE_MARKERS.starter and may be asked about, and every other line
+ * LINE_MARKERS.unchanged. A file with no such line keeps no marker column.
+ *
+ * Returns `{ content, sources, starterLines }`, where starterLines counts the
+ * marked lines.
+ */
+function numberedEarlierContext(files, askStarter) {
+  const sections = [];
+  const sources = [];
+  let starterLineCount = 0;
+  for (const file of files) {
+    if (file.starterCopy === undefined) {
+      const numbered = numberedContext([file]);
+      sections.push(numbered.content);
+      sources.push(...numbered.sources);
+      continue;
+    }
+    const lines = splitFileLines(file.content);
+    let starter = new Set();
+    if (askStarter) {
+      if (!starterLinesCache.has(file)) {
+        // A blank line is nobody's code, as in buildAssessedCodeContent.
+        const sinceStart = unchangedLineNumbers(file.starterCopy, file.content);
+        starterLinesCache.set(file, new Set([...sinceStart].filter((n) => lines[n - 1]?.trim())));
+      }
+      starter = starterLinesCache.get(file);
+    }
+    const marked = starter.size > 0;
+    const entries = lines.map((text, i) => {
+      const number = i + 1;
+      if (!marked) return { number, text };
+      const marker = starter.has(number) ? LINE_MARKERS.starter : LINE_MARKERS.unchanged;
+      return { marker, number, text };
+    });
+    starterLineCount += starter.size;
+    sources.push({
+      filepath: file.filepath,
+      lines,
+      studentLines: new Set(),
+      starterLines: starter,
+    });
+    sections.push(numberedSection(file.filepath, entries, EARLIER_STARTER_HEADING));
+  }
+  return { content: sections.join('\n\n'), sources, starterLines: starterLineCount };
 }
 
 /**
