@@ -1,0 +1,61 @@
+name: Check OpenRouter quantizations
+
+# Every AI request sends AI_ALLOWED_QUANTIZATIONS (src/constants.js) as an
+# allow-list, so a level OpenRouter adds is silently excluded, and one it drops
+# could get every request rejected. This compares OpenRouter's list with ours
+# weekly and opens (or updates) one issue when they differ.
+
+on:
+  schedule:
+    - cron: "0 6 * * 1"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+
+      # The script imports only src/constants.js, which has no dependencies,
+      # so no install is needed.
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "26"
+
+      - name: Compare with OpenRouter's list
+        id: check
+        run: node scripts/check-openrouter-quantizations.js quantization-report.md
+
+      # Runs after a failed check too: the script writes a report saying the
+      # spec couldn't be read, so a broken check doesn't go unnoticed.
+      - name: Open or update the tracking issue
+        if: always() && steps.check.outputs.attention == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          FINGERPRINT: ${{ steps.check.outputs.fingerprint }}
+          LABEL: openrouter-quantization
+          # Who is assigned a new issue. Assignment failing (for example, if
+          # this account loses access) doesn't stop the issue being opened.
+          ASSIGNEE: w0244079
+        run: |
+          set -euo pipefail
+          gh label create "$LABEL" --color d93f0b \
+            --description "OpenRouter's quantization levels changed" 2>/dev/null || true
+          existing=$(gh issue list --label "$LABEL" --state open --json number --jq '.[0].number // empty')
+          if [ -z "$existing" ]; then
+            url=$(gh issue create --label "$LABEL" --body-file quantization-report.md \
+              --title "OpenRouter's quantization levels need a decision")
+            gh issue edit "$url" --add-assignee "$ASSIGNEE" \
+              || echo "::warning::Could not assign $ASSIGNEE to $url"
+          elif gh issue view "$existing" --json body,comments \
+              --jq '[.body, .comments[].body] | join("\n")' | grep -qF "quantization-check: $FINGERPRINT"; then
+            echo "Issue #$existing already reports these findings."
+          else
+            gh issue comment "$existing" --body-file quantization-report.md
+          fi

@@ -354,7 +354,7 @@ describe('callAI response format and parsing', () => {
     expect(bodies[1].response_format).toEqual({ type: 'json_object' });
     // A routing preference, never a requirement: a model without structured
     // outputs must still be reachable.
-    expect(bodies[1]).not.toHaveProperty('provider');
+    expect(bodies[1].provider ?? {}).not.toHaveProperty('require_parameters');
   });
 
   it('returns what parse made of the trimmed reply', async () => {

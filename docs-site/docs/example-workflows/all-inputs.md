@@ -62,8 +62,8 @@ jobs:
           # serving the model is tried first — ":nitro" for the fastest (use when
           # the model's questions are good but assessments are slow to arrive;
           # check pricing first, as fast endpoints can cost more), ":floor" for
-          # the cheapest. The model is unchanged, but a cheap provider may run a
-          # compressed copy of it (e.g. fp4) that writes weaker questions.
+          # the cheapest. The model is unchanged, and providers that run a
+          # compressed copy of it (e.g. fp4) are never used, whichever you choose.
           ai_model: "google/gemini-3.5-flash-lite"
 
           # Total number of attempts (initial + retries) when calling the AI provider.

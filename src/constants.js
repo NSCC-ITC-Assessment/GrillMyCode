@@ -299,6 +299,32 @@ export const AI_REASONING_EFFORTS = [
 export const DEFAULT_AI_REASONING_EFFORT = 'default';
 
 /**
+ * Quantization levels an OpenRouter endpoint may serve the model at, sent as
+ * `provider.quantizations` on every request. OpenRouter only allow-lists, so
+ * this names every level except the compressed ones — fp6 and the 4-bit
+ * formats (fp4, mxfp4, nvfp4, int4) — which lose the most on the precise
+ * reasoning, long prompts and strict JSON output question generation relies
+ * on. fp8 stays in: many models are released at fp8 and their makers serve
+ * them that way.
+ *
+ * `unknown` must stay in. Endpoints that don't report a precision, including
+ * Google and OpenAI serving their own models, report `unknown`, and leaving it
+ * out would exclude every endpoint of such a model. A model served only at a
+ * compressed level gets a 404 from OpenRouter instead of a reply.
+ * https://openrouter.ai/docs/guides/routing/provider-selection
+ */
+export const AI_ALLOWED_QUANTIZATIONS = ['fp32', 'bf16', 'fp16', 'fp8', 'mxfp8', 'int8', 'unknown'];
+
+/**
+ * Quantization levels deliberately left out of AI_ALLOWED_QUANTIZATIONS. Never
+ * sent — OpenRouter has no exclusion list — but recorded so the weekly
+ * check-openrouter-quantizations workflow can tell a level already decided on
+ * from one OpenRouter has added since. Every level OpenRouter lists belongs in
+ * exactly one of the two lists.
+ */
+export const AI_EXCLUDED_QUANTIZATIONS = ['fp6', 'fp4', 'mxfp4', 'nvfp4', 'int4'];
+
+/**
  * Fallback default branch name for a newly created instructor repository,
  * used when the API response does not include a default_branch value.
  */

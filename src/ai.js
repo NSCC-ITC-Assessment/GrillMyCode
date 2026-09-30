@@ -25,6 +25,7 @@
 
 import * as core from '@actions/core';
 import {
+  AI_ALLOWED_QUANTIZATIONS,
   AI_RETRY_BASE_DELAY_MS,
   AI_RETRY_MAX_DELAY_MS,
   AI_RETRY_RATE_LIMIT_DELAY_MS,
@@ -109,6 +110,23 @@ function temperatureRejectedNote(status, temperature) {
     `The request set ai_temperature to ${temperature}, which the model may not accept. ` +
     'Check the range the model supports, or remove ai_temperature so the model runs at its ' +
     'own temperature.'
+  );
+}
+
+/**
+ * Returns a plain-language explanation for a 404, which the quantization filter
+ * causes when every endpoint of the model serves it at a compressed precision.
+ * OpenRouter doesn't document that message, so any 404 gets the note, worded as
+ * a possibility — except the guardrail and data-policy 404, which has its own
+ * cause and troubleshooting entry. Null for any other status.
+ */
+function compressedOnlyNote(status, error) {
+  if (status !== 404 || /guardrail|data policy/i.test(error?.message ?? '')) return null;
+  return (
+    'GrillMyCode only uses providers that serve the model at fp8 precision or higher, or ' +
+    "that don't report a precision. If every provider of this model runs a compressed copy, " +
+    'OpenRouter has none to route to: choose another model. See ' +
+    'https://grillmycode.org/docs/ai-providers/openrouter#compressed-models'
   );
 }
 
@@ -220,6 +238,7 @@ export async function callAI({
   parse = (content) => content,
 }) {
   let url;
+  let providerPreferences;
   const headers = { 'Content-Type': 'application/json' };
 
   switch (provider) {
@@ -228,6 +247,10 @@ export async function callAI({
       headers['Authorization'] = `Bearer ${apiKey}`;
       headers['HTTP-Referer'] = 'https://github.com/NSCC-ITC-Assessment/GrillMyCode';
       headers['X-Title'] = 'GrillMyCode';
+      // Skips endpoints serving a compressed copy of the model; see
+      // AI_ALLOWED_QUANTIZATIONS. A routing variant such as :floor only
+      // reorders what is left, so it can't bring one back.
+      providerPreferences = { quantizations: AI_ALLOWED_QUANTIZATIONS };
       break;
 
     default:
@@ -241,6 +264,7 @@ export async function callAI({
     ...(typeof temperature === 'number' ? { temperature } : {}),
     ...(reasoning ? { reasoning } : {}),
     ...(responseFormat ? { response_format: responseFormat } : {}),
+    ...(providerPreferences ? { provider: providerPreferences } : {}),
   });
 
   let lastError;
@@ -274,8 +298,10 @@ export async function callAI({
           reasoningRejectedNote(response.status, reasoningEffort),
           temperatureRejectedNote(response.status, temperature),
         ].filter(Boolean);
+        const errorBody = parseErrorBody(errorText);
         const note =
-          upstreamRateLimitNote(parseErrorBody(errorText)) ??
+          upstreamRateLimitNote(errorBody) ??
+          compressedOnlyNote(response.status, errorBody) ??
           (settingsNotes.length ? settingsNotes.join(' ') : null);
         throw new Error(
           note
