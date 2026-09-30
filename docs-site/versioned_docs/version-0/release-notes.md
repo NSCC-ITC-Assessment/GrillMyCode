@@ -5,6 +5,21 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.21.0 — 2026-09-30
+
+### What's Changed
+
+### Features
+
+- add starter_code and previous_work inputs
+
+### Documentation
+
+- enhance cost reminder section in AI Provider step with collapsible details
+- update workflow wizard prompts and model selection details for clarity
+- display selected model details in AI Provider step of workflow wizard
+- update documentation to clarify Classroom 50 assignment requirements for private answer key
+
 ## v0.20.1 — 2026-09-28
 
 ### What's Changed

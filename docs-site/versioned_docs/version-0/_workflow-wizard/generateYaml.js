@@ -55,6 +55,29 @@ export function effectiveAiModel(cfg) {
  * confirmed they use Classroom 50. This also covers ticking the checkbox and then
  * switching that answer to "No". Shared with the Review step's checklist.
  */
+/**
+ * Whether a run can have earlier work — the student's own code from before the
+ * assessed range — which only a base later than the first commit leaves: a tag
+ * run diffed from an earlier tag, or a base_sha override. previous_work has no
+ * effect otherwise, so it is neither offered nor emitted.
+ */
+export function hasEarlierWork(cfg) {
+  return (isTagTrigger(cfg) && (cfg.tagDiffBase || 'cumulative') !== 'cumulative') || Boolean(cfg.baseSha);
+}
+
+/**
+ * Whether the run sends any codebase context, and so whether its size limit
+ * matters: starter code under context or ask, or earlier work where there is
+ * any. Shared with the Advanced step, which shows the limit only then.
+ */
+export function sendsCodebaseContext(cfg) {
+  return (
+    cfg.starterCode === 'context' ||
+    cfg.starterCode === 'ask' ||
+    (cfg.previousWork === 'context' && hasEarlierWork(cfg))
+  );
+}
+
 export function instructorRepoActive(cfg) {
   return cfg.usesClassroom50 === true && cfg.instructorRepoEnabled;
 }
@@ -128,8 +151,8 @@ const DEFAULTS = {
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
   keepComments: false,
-  includeInitialCommit: false,
-  includeCodebaseContext: false,
+  starterCode: 'ignore',
+  previousWork: 'context',
   codebaseContextMaxChars: 50000,
   skipCommitters: 'github-actions[bot]',
   instructorRepoEnabled: false,
@@ -460,12 +483,12 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
     );
   }
   pushInput('keep_comments', 'keepComments', yamlStr(cfg.keepComments));
-  pushInput('include_initial_commit', 'includeInitialCommit', yamlStr(cfg.includeInitialCommit));
-  pushInput('include_codebase_context', 'includeCodebaseContext', yamlStr(cfg.includeCodebaseContext));
-  // Also emitted when codebase context is a dispatch override, so a manual run
-  // that switches it on still gets the limit the instructor configured.
+  pushInput('starter_code', 'starterCode', yamlStr(cfg.starterCode));
+  if (hasEarlierWork(cfg)) pushInput('previous_work', 'previousWork', yamlStr(cfg.previousWork));
+  // Also emitted when starter_code is a dispatch override, so a manual run
+  // that switches context on still gets the limit the instructor configured.
   if (
-    (cfg.includeCodebaseContext || overridden.has('include_codebase_context')) &&
+    (sendsCodebaseContext(cfg) || overridden.has('starter_code')) &&
     differ(cfg, 'codebaseContextMaxChars')
   ) {
     lines.push(`          codebase_context_max_chars: ${yamlStr(cfg.codebaseContextMaxChars)}`);

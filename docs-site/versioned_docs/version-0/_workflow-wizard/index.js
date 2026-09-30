@@ -83,8 +83,15 @@ const INITIAL_CONFIG = {
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
   keepComments: false,
-  includeInitialCommit: false,
-  includeCodebaseContext: false,
+  // How students' repositories start, for the File opts step's radios only:
+  // 'empty', 'template' (no starter code) or 'template-code'. It is not an
+  // action input — starterCode is — but 'template' and 'template-code' with
+  // starter code ignored both emit ignore, so the choice is kept separately.
+  repoStart: 'template-code',
+  starterCode: 'ignore',
+  // previous_work. Offered on the Trigger step when a tag run starts after an
+  // earlier tag, the only runs besides a base_sha override with earlier work.
+  previousWork: 'context',
   codebaseContextMaxChars: 50000,
   skipCommitters: 'github-actions[bot]',
 

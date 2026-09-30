@@ -234,6 +234,30 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
               </div>
             )}
           </div>
+
+          {(cfg.tagDiffBase || 'cumulative') !== 'cumulative' && (
+            <div className={styles.fieldGroup}>
+              <label className={styles.checkboxLabel}>
+                <input
+                  type="checkbox"
+                  checked={cfg.previousWork === 'context'}
+                  onChange={(e) =>
+                    onChange({ previousWork: e.target.checked ? 'context' : 'ignore' })
+                  }
+                />
+                <span>
+                  <strong>Give the AI the student's earlier work as context</strong>{' '}
+                  <code>previous_work</code>
+                  <div className={styles.radioDescription}>
+                    Earlier files that this tag's work didn't touch, such as phase 1 code while
+                    phase 2 is assessed, are sent as background, so questions can ask how the new
+                    code fits with them. They are never asked about on their own. Untick to send
+                    only the new work, which costs less per run.
+                  </div>
+                </span>
+              </label>
+            </div>
+          )}
         </div>
       )}
 

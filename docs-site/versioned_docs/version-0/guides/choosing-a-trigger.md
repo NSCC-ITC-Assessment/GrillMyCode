@@ -65,7 +65,7 @@ Name one tag per stage, such as `phase1`, `phase2` and `final`. Each stage gets 
 
 You also choose what each later milestone covers:
 
-![A student's timeline with three tags: phase1, phase2 and final. Under option 1, "All work to date is assessed", the default, each tag's bar starts at the beginning, so phase2's bar is longer than phase1's and final's is longest. Under option 2, "Only work since the previous tag is assessed", the three bars sit end to end, each covering only the stretch since the tag before it. Under option 3, "Only work since a tag you name is assessed", the phase2 and final workflows each name phase1 as their starting point, so the phase2 bar and a longer final bar both begin at phase1. A small flame marks each tag's set of questions. A note says each tag gets its own set of questions and your starter code is never included.](/img/milestone-tags-coverage.svg)
+![A student's timeline with three tags: phase1, phase2 and final. Under option 1, "All work to date is assessed", the default, each tag's bar starts at the beginning, so phase2's bar is longer than phase1's and final's is longest. Under option 2, "Only work since the previous tag is assessed", the three bars sit end to end, each covering only the stretch since the tag before it. Under option 3, "Only work since a tag you name is assessed", the phase2 and final workflows each name phase1 as their starting point, so the phase2 bar and a longer final bar both begin at phase1. A small flame marks each tag's set of questions. A note says each tag gets its own set of questions and your starter code is left out by default.](/img/milestone-tags-coverage.svg)
 
 | Setting | `phase2` asks about… | Good for |
 |---|---|---|
