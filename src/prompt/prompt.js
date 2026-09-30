@@ -473,18 +473,23 @@ The instructor allows some questions about the starter code the student was give
   // without its three options is not a partial failure downstream: the quiz
   // item it produces has nothing to choose between, so the whole reply is a
   // loss. The explicit counts give the model something it can verify against
-  // its own output before responding.
+  // its own output before responding. The rule is stated in both directions:
+  // worded only against too few, it let a model pad questions with a fourth
+  // distractor, reading the length rules' "all four options" as four wrong
+  // ones — so the prompt says once what the four options are.
   const distractorMandate = includeDistractors
     ? `
 
 DISTRACTORS ARE NOT OPTIONAL — THIS IS THE ONE RULE THAT CANNOT BE BENT:
-Every single one of the ${numQuestions} questions MUST carry its own "distractors" array containing exactly three incorrect options. ${numQuestions} questions means ${numQuestions} distractor arrays and ${numQuestions * 3} distractors — there is no such thing as a question that is finished without them.
+Every single one of the ${numQuestions} questions MUST carry its own "distractors" array containing exactly three incorrect options — not two or less, not four or more. ${numQuestions} questions means ${numQuestions} distractor arrays and ${numQuestions * 3} distractors — there is no such thing as a question that is finished without them.
 
-There are NO exemptions. Not for short-answer questions. Not for broader questions. Not for the first question, the last question, or any question in between. Not when the code snippet is short, trivial, or repetitive. Not when the correct answer feels self-evident. Not when you judge that plausible wrong answers are hard to invent — if you cannot write three distractors for a question, that question is unusable: discard it and ask a different question you CAN write three distractors for. Never substitute a placeholder, a note, an apology, or an explanation of why distractors were omitted; never emit a question whose "distractors" array holds fewer than three incorrect options.
+Wherever these instructions speak of "the four options" or "all four options", they mean the correct answer plus its three distractors. A question never has four distractors: a fourth wrong option is as much a failure as a missing one.
 
-A response in which even ONE question is missing its distractors, or carries fewer than three, is a FAILED response and is rejected in its entirety. Partial credit does not exist here: the output is consumed by a parser that builds a multiple-choice quiz, so a question without distractors silently produces an unanswerable quiz item. Omitting distractors is a worse failure than producing no output at all.
+There are NO exemptions. Not for short-answer questions. Not for broader questions. Not for the first question, the last question, or any question in between. Not when the code snippet is short, trivial, or repetitive. Not when the correct answer feels self-evident. Not when you judge that plausible wrong answers are hard to invent — if you cannot write three distractors for a question, that question is unusable: discard it and ask a different question you CAN write three distractors for. Never substitute a placeholder, a note, an apology, or an explanation of why distractors were omitted; never emit a question whose "distractors" array holds fewer or more than three incorrect options.
 
-FINAL CHECK BEFORE YOU RESPOND: count your own output. You must see ${numQuestions} question objects, ${numQuestions} "distractors" arrays, and ${numQuestions * 3} distractors. If any of those three counts is short, you have failed the task — go back and fill in what is missing before you send anything.`
+A response in which even ONE question is missing its distractors, or carries any number other than three, is a FAILED response and is rejected in its entirety. Partial credit does not exist here: the output is consumed by a parser that builds a multiple-choice quiz, so a question without distractors silently produces an unanswerable quiz item, and a question with an extra one produces an item with more choices than the rest of the quiz. Omitting distractors is a worse failure than producing no output at all.
+
+FINAL CHECK BEFORE YOU RESPOND: count your own output. You must see ${numQuestions} question objects, ${numQuestions} "distractors" arrays, and ${numQuestions * 3} distractors. If any of those three counts is short or over, you have failed the task — go back and fill in what is missing, or delete what is extra, before you send anything.`
     : '';
   const distractorExample = includeDistractors
     ? `
@@ -527,13 +532,13 @@ FINAL CHECK BEFORE YOU RESPOND: count your own output. You must see ${numQuestio
     : '';
   const lengthRule = includeDistractors
     ? `LENGTH RULE (all other questions):
-Every option must read like a confident answer a student might give — include specific code elements, mechanisms, or reasoning in ALL four options. No throwaway one-liner distractors next to a detailed correct answer.
+Every option must read like a confident answer a student might give — include specific code elements, mechanisms, or reasoning in ALL four options (the correct answer and its three distractors). No throwaway one-liner distractors next to a detailed correct answer.
 - Each option (correct and distractors) must be at least 8 words. Answers shorter than 8 words lack the specificity needed to test comprehension.
 - SAME DEPTH FOR EVERY OPTION (this controls length — read carefully): The model's default is to lavish detail on the answer it knows is correct. Resist that, but do not overcorrect by trimming the correct answer and padding the distractors instead: a correct answer far shorter than the rest is exactly as easy to spot as one far longer. Phrase every option, the correct answer included, as economically as its content allows, and give all four the same depth of detail, so their lengths differ only because their content does.
 - ABSOLUTE WORD BUDGETS (use these directly — do not rely on relative comparisons you have to count): aim EVERY option, the correct answer and each distractor alike, at roughly 12–20 words, and keep the correct answer under the ${LONG_ANSWER_MAX_CHARS}-character cap below. All four options share one band, so none reads as the odd one out. When the correct answer needs an embedded reason (see STRUCTURAL MATCHING), all four may run to about 25 words together.
 - CORRECT ANSWER LENGTH CAP: The correct answer for all long-answer questions (i.e. not short-answer) must be ${LONG_ANSWER_MAX_CHARS} characters or fewer. Write the correct answer concisely so it fits within this limit. Distractors are exempt from this cap and may be longer than ${LONG_ANSWER_MAX_CHARS} characters if needed to balance option lengths. Treat this cap as a hard ceiling, NOT a target.
 - VISUAL BALANCE (MANDATORY, REJECTION-LEVEL): The correct answer must never visibly stand apart from the distractors. An option that is glaringly longer or shorter than the other three draws the eye, and when that option is the correct one, it hands the student the answer. The correct answer may be the longest or the shortest option, but only by a small margin. Enforce it concretely:
-  - After writing all four options, sort them by character length. If the correct answer is the longest, it must be no more than about 20% longer than the next-longest option. If it is the shortest, it must be no more than about 20% shorter than the next-shortest. If it is further out than that, lengthen or shorten the distractors nearest to it until it is not — never shorten a distractor below 8 words.
+  - After writing all four options, sort them by character length. If the correct answer is the longest, it must be no more than about 20% longer than the next-longest option. If it is the shortest, it must be no more than about 20% shorter than the next-shortest. If it is further out than that, lengthen or shorten the distractors nearest to it until it is not — never shorten a distractor below 8 words, and never add a fourth distractor to even out the lengths.
   - Across the question set, let the correct answer's place in the length order vary — sometimes the longest, sometimes the shortest, most often in between — so no pattern emerges.
   - Vary WHICH distractors are the long ones across the question set, so the position of the longest option is unpredictable.
 - STRUCTURAL MATCHING: Every distractor must mirror the syntactic and logical structure of the correct answer. This has two forms:
