@@ -3,7 +3,6 @@ import styles from '../styles.module.css';
 import { sendsCodebaseContext } from '../generateYaml';
 
 const DEFAULTS = {
-  aiTemperature: 0.5,
   aiRetryMaxAttempts: 5,
   assignmentContextMaxChars: 20000,
   codebaseContextMaxChars: 50000,
@@ -18,46 +17,23 @@ export default function StepAdvanced({ cfg, onChange }) {
         the generated workflow to keep it clean.
       </div>
 
-      <div className={styles.inlineRow}>
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>AI temperature <span className={styles.optionalBadge}>optional</span></label>
-          <span className={styles.hint}>
-            Controls randomness (0.0 = deterministic, 1.0 = most varied). Lower values produce
-            more consistent questions across runs. Default: <code>0.5</code>
-          </span>
-          <input
-            type="number"
-            className={`${styles.input} ${styles.numberInput}`}
-            min={0}
-            max={1}
-            step={0.05}
-            value={cfg.aiTemperature}
-            onChange={(e) =>
-              onChange({
-                aiTemperature: Math.min(1, Math.max(0, parseFloat(e.target.value) || 0)),
-              })
-            }
-          />
-        </div>
-
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Max retry attempts <span className={styles.optionalBadge}>optional</span></label>
-          <span className={styles.hint}>
-            Total attempts (initial + retries) when the AI provider returns an error or rate-limit
-            response, or a reply GrillMyCode can't use. Values below 1 are clamped to 1. Default:{' '}
-            <code>5</code>
-          </span>
-          <input
-            type="number"
-            className={`${styles.input} ${styles.numberInput}`}
-            min={1}
-            step={1}
-            value={cfg.aiRetryMaxAttempts}
-            onChange={(e) =>
-              onChange({ aiRetryMaxAttempts: Math.max(1, parseInt(e.target.value, 10) || 1) })
-            }
-          />
-        </div>
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Max retry attempts <span className={styles.optionalBadge}>optional</span></label>
+        <span className={styles.hint}>
+          Total attempts (initial + retries) when the AI provider returns an error or rate-limit
+          response, or a reply GrillMyCode can't use. Values below 1 are clamped to 1. Default:{' '}
+          <code>5</code>
+        </span>
+        <input
+          type="number"
+          className={`${styles.input} ${styles.numberInput}`}
+          min={1}
+          step={1}
+          value={cfg.aiRetryMaxAttempts}
+          onChange={(e) =>
+            onChange({ aiRetryMaxAttempts: Math.max(1, parseInt(e.target.value, 10) || 1) })
+          }
+        />
       </div>
 
       <div className={styles.fieldGroup}>
