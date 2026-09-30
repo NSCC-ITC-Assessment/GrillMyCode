@@ -4,8 +4,9 @@ import {
   MIN_CONTEXT_TOKENS,
   MIN_OUTPUT_TOKENS,
   PICKER_SORTS,
-  PRICE_LIMITS,
   formatContext,
+  formatDollars,
+  outputPriceSteps,
   pickerModels,
   searchModels,
 } from '../modelCatalog';
@@ -24,8 +25,9 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
   const [structuredOnly, setStructuredOnly] = useState(true);
   const [recentOnly, setRecentOnly] = useState(true);
   const [freeOnly, setFreeOnly] = useState(false);
-  // Index into PRICE_LIMITS; a <select> value cannot be null.
-  const [priceLimit, setPriceLimit] = useState(0);
+  // Output prices in dollars per million tokens; null leaves that end open.
+  const [priceRange, setPriceRange] = useState({ min: null, max: null });
+  const priceSteps = useMemo(() => outputPriceSteps(catalog), [catalog]);
 
   const rows = useMemo(
     () =>
@@ -33,9 +35,12 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
         structuredOnly,
         recentOnly,
         freeOnly,
-        maxOutputPrice: PRICE_LIMITS[priceLimit].value,
+        // The price slider is disabled while free-only is ticked, so it must
+        // not filter then: a raised minimum would empty the list.
+        maxOutputPrice: freeOnly ? null : priceRange.max,
+        minOutputPrice: freeOnly ? null : priceRange.min,
       }),
-    [catalog, structuredOnly, recentOnly, freeOnly, priceLimit],
+    [catalog, structuredOnly, recentOnly, freeOnly, priceRange],
   );
   const matches = useMemo(() => searchModels(rows, query, sort), [rows, query, sort]);
 
@@ -103,19 +108,12 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
           />
           Free models only
         </label>
-        <select
-          className={styles.select}
-          value={priceLimit}
+        <PriceRangeSlider
+          steps={priceSteps}
+          range={priceRange}
           disabled={freeOnly}
-          onChange={(e) => setPriceLimit(Number(e.target.value))}
-          aria-label="Output price limit"
-        >
-          {PRICE_LIMITS.map((p, i) => (
-            <option key={p.label} value={i}>
-              {p.label}
-            </option>
-          ))}
-        </select>
+          onChange={setPriceRange}
+        />
       </div>
       <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
         {matches.length} {matches.length === 1 ? 'model' : 'models'}.{' '}
@@ -166,6 +164,87 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
             No models match. Try fewer words, or loosen the filters above.
           </span>
         )}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Two-handled slider over `steps`, the catalogue's distinct output prices in
+ * ascending order. Each stop is a price some model has, so the cheap end, where
+ * most models are, gets most of the track. `range` holds the chosen prices, with
+ * null for an end left at the lowest or highest price, so a changed catalogue
+ * never strands the selection.
+ */
+function PriceRangeSlider({ steps, range, disabled, onChange }) {
+  const last = steps.length - 1;
+  if (last < 1) return null;
+
+  const indexOf = (price, fallback) => {
+    const i = price === null ? -1 : steps.indexOf(price);
+    return i === -1 ? fallback : i;
+  };
+  const low = indexOf(range.min, 0);
+  const high = indexOf(range.max, last);
+  const setLow = (i) => {
+    const next = Math.min(i, high);
+    onChange({ ...range, min: next === 0 ? null : steps[next] });
+  };
+  const setHigh = (i) => {
+    const next = Math.max(i, low);
+    onChange({ ...range, max: next === last ? null : steps[next] });
+  };
+  // Thumbs sit 0.5rem in from each end of the track, so the fill between them
+  // is placed on the same scale.
+  const at = (i) => `calc(${i / last} * (100% - 1rem) + 0.5rem)`;
+  const narrowed = low > 0 || high < last;
+
+  return (
+    <div className={`${styles.priceRange} ${disabled ? styles.priceRangeDisabled : ''}`}>
+      <span className={styles.priceRangeLabel}>
+        Output price: {formatDollars(steps[low])} to {formatDollars(steps[high])} per million
+        tokens
+      </span>
+      <div className={styles.priceSliderRow}>
+        <div className={styles.priceSlider}>
+        <div className={styles.priceSliderTrack} />
+        <div
+          className={styles.priceSliderFill}
+          style={{ left: at(low), right: `calc(100% - ${at(high)})` }}
+        />
+        <input
+          type="range"
+          min={0}
+          max={last}
+          value={low}
+          disabled={disabled}
+          onChange={(e) => setLow(Number(e.target.value))}
+          aria-label="Lowest output price"
+          aria-valuetext={`${formatDollars(steps[low])} per million tokens`}
+          // Both thumbs at the top end: only the low one can move, so it goes on top.
+          style={low === last ? { zIndex: 2 } : undefined}
+        />
+        <input
+          type="range"
+          min={0}
+          max={last}
+          value={high}
+          disabled={disabled}
+          onChange={(e) => setHigh(Number(e.target.value))}
+          aria-label="Highest output price"
+          aria-valuetext={`${formatDollars(steps[high])} per million tokens`}
+        />
+        </div>
+        {/* Hidden rather than removed at full range, so the slider doesn't jump. */}
+        <button
+          type="button"
+          className={styles.priceReset}
+          onClick={() => onChange({ min: null, max: null })}
+          disabled={disabled || !narrowed}
+          style={narrowed ? undefined : { visibility: 'hidden' }}
+        >
+          Reset
+        </button>
       </div>
     </div>
   );

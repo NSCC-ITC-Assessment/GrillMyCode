@@ -257,13 +257,6 @@ export function modelConcerns(model) {
   return concerns;
 }
 
-/** Output price limits for the list, in dollars per million tokens; null is any. */
-export const PRICE_LIMITS = [
-  { value: null, label: 'Any output price' },
-  { value: 1, label: 'Output up to $1 per million tokens' },
-  { value: 5, label: 'Output up to $5 per million tokens' },
-];
-
 /**
  * The catalogue as picker rows.
  *
@@ -279,12 +272,19 @@ export const PRICE_LIMITS = [
  *
  * Left out on request: models without structured outputs (`structuredOnly`),
  * ones released more than RECENT_DAYS ago (`recentOnly`), ones whose output
- * price is above `maxOutputPrice` dollars per million tokens, and ones that
- * are not free (`freeOnly`).
+ * price is outside `minOutputPrice` to `maxOutputPrice` dollars per million
+ * tokens (either end may be null, for no limit), and ones that are not free
+ * (`freeOnly`).
  */
 export function pickerModels(
   catalog,
-  { structuredOnly = true, recentOnly = true, maxOutputPrice = null, freeOnly = false } = {},
+  {
+    structuredOnly = true,
+    recentOnly = true,
+    maxOutputPrice = null,
+    minOutputPrice = null,
+    freeOnly = false,
+  } = {},
 ) {
   if (catalog.status !== 'ready') return [];
   const releasedAfter = Date.now() / 1000 - RECENT_DAYS * 24 * 60 * 60;
@@ -302,6 +302,7 @@ export function pickerModels(
     if (recentOnly && !(model.created >= releasedAfter)) continue;
     const outputPrice = Number(model.pricing.completion);
     if (maxOutputPrice !== null && outputPrice * 1_000_000 > maxOutputPrice) continue;
+    if (minOutputPrice !== null && outputPrice * 1_000_000 < minOutputPrice) continue;
     if (freeOnly && !pricing.free) continue;
 
     const codingIndex = model.benchmarks?.artificial_analysis?.coding_index;
@@ -319,6 +320,18 @@ export function pickerModels(
     });
   }
   return rows;
+}
+
+/**
+ * Every distinct output price in the picker, in dollars per million tokens and
+ * ascending: the stops of its price slider. Taken with no optional filter on,
+ * so the slider's ends don't move as filters change.
+ */
+export function outputPriceSteps(catalog) {
+  const prices = pickerModels(catalog, { structuredOnly: false, recentOnly: false }).map(
+    (row) => row.outputPrice * 1_000_000,
+  );
+  return [...new Set(prices)].sort((a, b) => a - b);
 }
 
 export const PICKER_SORTS = [
