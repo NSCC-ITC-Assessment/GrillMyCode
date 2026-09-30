@@ -150,7 +150,6 @@ The two must agree, so **edit both when you change a default**. If they drift, a
 | `exclude_pattern_overrides` | Bring back a file the default exclusions removed |
 | `keep_comments` | Assess a submission where the comments are themselves the work |
 | `starter_code` | Recover a run where the student committed everything at once to an empty repository (`none`), or let the AI see your starter code when questions came out shallow (`context`); `context` and `ask` likely increase the run's cost |
-| `ai_temperature` | Rarely useful; most instructors should leave this fixed |
 
 The Wizard lists them in this order and ticks `ai_model` through `keep_comments` by default, apart from `tag_diff_base`.
 

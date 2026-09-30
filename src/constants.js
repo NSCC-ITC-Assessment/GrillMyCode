@@ -260,12 +260,15 @@ export const DEFAULT_AI_PROVIDER = 'openrouter';
 export const DEFAULT_AI_MODEL = 'google/gemini-3.5-flash-lite';
 
 /**
- * Default AI model sampling temperature (0 = deterministic, 1 = most random).
- * Overridable via the ai_temperature action input.
- * 0.5 keeps questions tightly anchored to the submitted code while still
- * producing enough phrasing variation that repeated runs differ meaningfully.
+ * Accepted range of the ai_temperature action input: OpenRouter's range.
+ * There is no default: when the input is empty no temperature is sent, so the
+ * model runs at its own. Models differ in the range they accept, their default
+ * and whether they use temperature at all, and OpenRouter publishes none of
+ * that per model, so a value is sent only when the instructor sets one.
+ * https://openrouter.ai/docs/api/reference/parameters
  */
-export const DEFAULT_AI_TEMPERATURE = 0.5;
+export const AI_TEMPERATURE_MIN = 0;
+export const AI_TEMPERATURE_MAX = 2;
 
 /**
  * Accepted values of the ai_reasoning_effort action input — the union of the
@@ -382,12 +385,6 @@ export const INSTRUCTOR_RATE_LIMIT_FALLBACK_MS = 60_000;
  * student's next push.
  */
 export const INSTRUCTOR_RATE_LIMIT_MAX_WAIT_MS = 60_000;
-
-/**
- * AI nucleus-sampling probability mass cutoff.
- * Keeps the model focused while still allowing varied phrasing.
- */
-export const AI_TOP_P = 0.95;
 
 /**
  * Page size when listing a student repository's direct collaborators to resolve

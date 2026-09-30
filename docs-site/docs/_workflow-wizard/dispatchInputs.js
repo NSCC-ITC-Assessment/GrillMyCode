@@ -197,14 +197,6 @@ export const DISPATCH_OVERRIDES = [
     description: 'What the first commit is, and what the AI does with starter code: none, ignore, context or ask',
     hint: 'Re-run with none when a student committed everything at once to an empty repository, or with context when questions came out shallow because the AI could not see the code the student built on. Context and ask likely increase the cost of that run.',
   },
-  {
-    key: 'ai_temperature',
-    cfgKey: 'aiTemperature',
-    label: 'AI temperature',
-    type: 'string',
-    description: 'Randomness of the AI output, 0.0 (deterministic) to 1.0 (most varied)',
-    hint: 'Rarely worth exposing — most instructors should leave temperature fixed.',
-  },
 ];
 
 /**
@@ -213,9 +205,8 @@ export const DISPATCH_OVERRIDES = [
  * assignment.
  *
  * The rest stay unticked because they are situational rather than routine —
- * tag_diff_base re-scopes a milestone, starter_code is a per-assignment
- * structural choice that can also raise the cost of a run, and ai_temperature
- * is best left fixed.
+ * tag_diff_base re-scopes a milestone, and starter_code is a per-assignment
+ * structural choice that can also raise the cost of a run.
  *
  * The catalogue follows the wizard's own step order (AI, Questions, Trigger,
  * Files, File opts, Advanced), and within a step the order of its controls, so

@@ -6,7 +6,7 @@ only read it by hand when a quiz looks wrong. Here are ideas for getting more
 out of it. Only the first is implemented so far.
 
 - **Record more details in the file header.** _(Done.)_ Save the settings used
-  (question count, temperature, prompt version) and the AI's response details
+  (question count, reasoning effort, prompt version) and the AI's response details
   (why it stopped, tokens used, retries). _Benefit:_ we can tell a reply that
   got cut off from one that just had fewer questions, and several ideas below
   depend on it.

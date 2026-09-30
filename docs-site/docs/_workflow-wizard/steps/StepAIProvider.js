@@ -1,10 +1,17 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import styles from '../styles.module.css';
 import ModelPicker from './ModelPicker';
-import { effectiveAiModel, MODEL_ROUTING_VARIANTS } from '../generateYaml';
 import {
-  COSTLY_REASONING_LEVELS,
+  effectiveAiModel,
+  MODEL_ROUTING_VARIANTS,
+  TEMPERATURE_MAX,
+  TEMPERATURE_MIN,
+  TEMPERATURE_STEP,
+  temperatureError,
+} from '../generateYaml';
+import {
   formatDollars,
+  isAboveDefaultEffort,
   levelLabel,
   lookupModel,
   modelConcerns,
@@ -136,8 +143,17 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
     </span>
   );
   const effort = cfg.aiReasoningEffort || 'default';
-  const effectiveEffort = effort === 'default' ? reasoning.defaultEffort : effort;
   const allowedEfforts = reasoning.options.map((o) => o.value).join(',');
+
+  const tempEnabled = !!cfg.aiTemperatureEnabled;
+  const tempError = temperatureError(cfg);
+
+  const advancedChanged = [
+    effort !== 'default',
+    variant !== '',
+    tempEnabled,
+  ].filter(Boolean).length;
+  const [advancedOpen, setAdvancedOpen] = useState(advancedChanged > 0);
 
   // A level the newly chosen model does not offer falls back to its default,
   // rather than staying selected but invisible in the dropdown.
@@ -160,25 +176,51 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         </span>
       </div>
 
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>API key secret name</label>
+        <span className={styles.hint}>
+          The name of the org-level GitHub Actions secret that holds your OpenRouter API key. Enter
+          just the secret name (e.g. <code>OPENROUTER_API_KEY</code>) — the workflow will reference
+          it as <code>{'${{ secrets.YOUR_SECRET }}'}</code>. This is required: OpenRouter cannot use
+          the built-in <code>GITHUB_TOKEN</code>.
+        </span>
+        <input
+          type="text"
+          className={styles.input}
+          style={{ borderColor: secretEmpty ? 'var(--ifm-color-danger)' : undefined }}
+          value={cfg.apiKeySecret || ''}
+          onChange={(e) => onChange({ apiKeySecret: e.target.value })}
+          placeholder="OPENROUTER_API_KEY"
+        />
+        {secretEmpty && (
+          <span
+            style={{
+              fontSize: '0.78rem',
+              color: 'var(--ifm-color-danger)',
+              marginTop: '0.3rem',
+              display: 'block',
+            }}
+          >
+            Please enter the name of the secret holding your OpenRouter API key.
+          </span>
+        )}
+      </div>
+
       <div
         className={styles.notice}
         style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)' }}
       >
         <details>
           <summary style={{ cursor: 'pointer' }}>
-            <strong>💸 Cost reminder</strong>
+            <strong>📌 Reminders about cost and OpenRouter</strong>
           </summary>
-          <div style={{ marginTop: '0.5rem' }}>
+          <div style={{ marginTop: '0.75rem' }}>
+            <strong>💸 Cost</strong>
+            <br />
             OpenRouter charges per token based on the model you select. Pricing varies significantly
-            between models — some are free, others can be expensive at scale. Check{' '}
-            <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
-              openrouter.ai/models
-            </a>{' '}
-            for the current pricing of your chosen model before deploying to a class of students.
-            <br />
-            <br />
-            The pre-defined models in the list below were chosen partly for their low cost when
-            tested, and have been tested to work well with GrillMyCode. An assessment can cost{' '}
+            between models — some are free, others can be expensive at scale. The pre-defined models
+            in the list below were chosen partly for their low cost when tested, and have been
+            tested to work well with GrillMyCode. An assessment can cost{' '}
             <strong>less than one cent</strong>, but the cost can rise sharply with the model, its
             reasoning setting and how much code is assessed.
             <br />
@@ -195,6 +237,18 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
             </a>
             <br />
             <br />
+            <strong>📡 Model details change constantly</strong>
+            <br />
+            The model list, prices, reasoning levels and providers on this step come from
+            OpenRouter, where models are added and retired and prices, defaults and providers change
+            all the time, sometimes daily. What you see is how things stood when
+            this page loaded. Treat it as a guide: confirm your model's details on{' '}
+            <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
+              openrouter.ai/models
+            </a>{' '}
+            before deploying, and check again before each new term.
+            <br />
+            <br />
             <a
               href={`${docsBase}/ai-providers/openrouter`}
               target="_blank"
@@ -204,17 +258,6 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
             </a>
           </div>
         </details>
-      </div>
-
-      <div className={styles.notice}>
-        <strong>📡 These details from OpenRouter change constantly:</strong> the model list, prices, reasoning
-        levels and providers on this step come from OpenRouter, where models are added and retired
-        and prices, defaults and providers change all the time, sometimes daily. What you see is how
-        things stood when this page loaded. Treat it as a guide: confirm your model's details on{' '}
-        <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
-          openrouter.ai/models
-        </a>{' '}
-        before deploying, and check again before each new term.
       </div>
 
       <div className={styles.fieldGroup}>
@@ -334,48 +377,6 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
             )}
           </div>
         )}
-      </div>
-
-      <div className={styles.fieldGroup}>
-        <label className={styles.label}>Reasoning</label>
-        <span className={styles.hint}>
-          Many models think before they answer. That thinking is billed as output, so it can
-          multiply what each run costs several times over, and more of it doesn't always mean
-          better questions. Some models do a lot of it unless told otherwise.
-        </span>
-        <select
-          className={styles.select}
-          value={effort}
-          disabled={reasoning.options.length < 2}
-          onChange={(e) => onChange({ aiReasoningEffort: e.target.value })}
-        >
-          {reasoning.options.map((o) => (
-            <option key={o.value} value={o.value}>
-              {o.label}
-            </option>
-          ))}
-        </select>
-        {modelUsable && (
-          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-            {catalog.status === 'loading' && "Checking OpenRouter's catalogue for this model…"}
-            {catalog.status === 'unavailable' &&
-              "OpenRouter's catalogue couldn't be reached, so every level is listed. A level the model doesn't support is mapped to its nearest one, and Off fails the run on a model that always reasons."}
-            {catalog.status === 'ready' &&
-              !modelInfo &&
-              "This model isn't in OpenRouter's catalogue, so every level is listed. Check the model ID."}
-            {reasoning.note}
-          </span>
-        )}
-        {reasoning.known && COSTLY_REASONING_LEVELS.includes(effectiveEffort) && (
-          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-            ⚠️{' '}
-            {effort === 'default'
-              ? `This model reasons at ${levelLabel(effectiveEffort).toLowerCase()} effort by default, which`
-              : 'Reasoning at this level'}{' '}
-            will likely require more tokens and therefore result in a higher overall cost. Consider
-            trying <strong>Low</strong> first and comparing the questions.
-          </span>
-        )}
         {pricing && (
           <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
             {pricing.free ? (
@@ -391,86 +392,183 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         )}
       </div>
 
-      <div className={styles.fieldGroup}>
-        <label className={styles.label}>Model routing</label>
-        <span className={styles.hint}>
-          Most models are served by several providers, which differ in speed and price. Optionally
-          add an OpenRouter{' '}
-          <a
-            href="https://openrouter.ai/docs/guides/routing/model-variants/overview"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            routing variant
-          </a>{' '}
-          to the model ID to say which of them should be tried first. This changes the provider, not
-          the model — but some providers run a compressed copy of the model, which can write weaker
-          questions, and the cheapest providers often do.
-        </span>
-        <select
-          className={styles.select}
-          value={variant}
-          onChange={(e) => onChange({ aiModelVariant: e.target.value })}
+      <div className={styles.fieldGroup} style={{ marginTop: '1.75rem' }}>
+        <button
+          type="button"
+          className={styles.disclosureBtn}
+          onClick={() => setAdvancedOpen((o) => !o)}
+          aria-expanded={advancedOpen}
+          aria-controls="model-advanced-settings"
         >
-          {MODEL_VARIANTS.map((v) => (
-            <option key={v.value} value={v.value}>
-              {v.label}
-            </option>
-          ))}
-        </select>
-        <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-          {selectedVariant.hint}
-        </span>
-        {endpoints.status === 'loading' && (
-          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-            Checking which providers serve this model…
-          </span>
-        )}
-        {routing && <RoutingNotes routing={routing} />}
-        {modelTrimmed && !modelMalformed && (
-          <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-            {variantInModel && variant ? (
-              <>
-                Your model ID already ends in a routing variant, so it is used as typed:{' '}
-                <code>{resolvedModel}</code>
-              </>
-            ) : (
-              <>
-                The workflow will request <code>{resolvedModel}</code>
-              </>
-            )}
-          </span>
-        )}
-      </div>
-
-      <div className={styles.fieldGroup}>
-        <label className={styles.label}>API key secret name</label>
-        <span className={styles.hint}>
-          The name of the org-level GitHub Actions secret that holds your OpenRouter API key. Enter
-          just the secret name (e.g. <code>OPENROUTER_API_KEY</code>) — the workflow will reference
-          it as <code>{'${{ secrets.YOUR_SECRET }}'}</code>. This is required: OpenRouter cannot use
-          the built-in <code>GITHUB_TOKEN</code>.
-        </span>
-        <input
-          type="text"
-          className={styles.input}
-          style={{ borderColor: secretEmpty ? 'var(--ifm-color-danger)' : undefined }}
-          value={cfg.apiKeySecret || ''}
-          onChange={(e) => onChange({ apiKeySecret: e.target.value })}
-          placeholder="OPENROUTER_API_KEY"
-        />
-        {secretEmpty && (
           <span
-            style={{
-              fontSize: '0.78rem',
-              color: 'var(--ifm-color-danger)',
-              marginTop: '0.3rem',
-              display: 'block',
-            }}
+            className={`${styles.disclosureChevron} ${advancedOpen ? styles.disclosureChevronOpen : ''}`}
+            aria-hidden="true"
           >
-            Please enter the name of the secret holding your OpenRouter API key.
+            ▶
           </span>
-        )}
+          <span className={styles.disclosureTitle}>Advanced settings</span>
+          {advancedChanged > 0 ? (
+            <span className={styles.disclosureCount}>{advancedChanged} changed</span>
+          ) : (
+            <span className={styles.optionalBadge} style={{ marginLeft: 0 }}>optional</span>
+          )}
+        </button>
+        <div id="model-advanced-settings" hidden={!advancedOpen} style={{ marginTop: '1rem' }}>
+          <span className={styles.hint} style={{ marginBottom: '1rem' }}>
+            Each of these starts at a default that suits most assignments. Only change one if you
+            know how it will affect the questions or the cost.
+          </span>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Reasoning</label>
+            <span className={styles.hint}>
+              Many models think before they answer. That thinking is billed as output, so it can
+              multiply what each run costs several times over, and more of it doesn't always mean
+              better questions. Some models do a lot of it unless told otherwise.
+            </span>
+            <select
+              className={styles.select}
+              value={effort}
+              disabled={reasoning.options.length < 2}
+              onChange={(e) => onChange({ aiReasoningEffort: e.target.value })}
+            >
+              {reasoning.options.map((o) => (
+                <option key={o.value} value={o.value}>
+                  {o.label}
+                </option>
+              ))}
+            </select>
+            {modelUsable && (
+              <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+                {catalog.status === 'loading' && "Checking OpenRouter's catalogue for this model…"}
+                {catalog.status === 'unavailable' &&
+                  "OpenRouter's catalogue couldn't be reached, so every level is listed. A level the model doesn't support is mapped to its nearest one, and Off fails the run on a model that always reasons."}
+                {catalog.status === 'ready' &&
+                  !modelInfo &&
+                  "This model isn't in OpenRouter's catalogue, so every level is listed. Check the model ID."}
+                {reasoning.note}
+              </span>
+            )}
+            {reasoning.known &&
+              !pricing?.free &&
+              isAboveDefaultEffort(effort, reasoning.defaultEffort) && (
+              <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+                ⚠️ This is more reasoning than the model's default (
+                {levelLabel(reasoning.defaultEffort)}), which will likely require more tokens and
+                therefore result in a higher overall cost. Do a trial run and compare the questions
+                with the model default before settling on it.
+              </span>
+            )}
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Model routing</label>
+            <span className={styles.hint}>
+              Most models are served by several providers, which differ in speed and price.
+              Optionally add an OpenRouter{' '}
+              <a
+                href="https://openrouter.ai/docs/guides/routing/model-variants/overview"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                routing variant
+              </a>{' '}
+              to the model ID to say which of them should be tried first. This changes the
+              provider, not the model — but some providers run a compressed copy of the model,
+              which can write weaker questions, and the cheapest providers often do.
+            </span>
+            <select
+              className={styles.select}
+              value={variant}
+              onChange={(e) => onChange({ aiModelVariant: e.target.value })}
+            >
+              {MODEL_VARIANTS.map((v) => (
+                <option key={v.value} value={v.value}>
+                  {v.label}
+                </option>
+              ))}
+            </select>
+            <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+              {selectedVariant.hint}
+            </span>
+            {endpoints.status === 'loading' && (
+              <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+                Checking which providers serve this model…
+              </span>
+            )}
+            {routing && <RoutingNotes routing={routing} />}
+            {modelTrimmed && !modelMalformed && (
+              <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+                {variantInModel && variant ? (
+                  <>
+                    Your model ID already ends in a routing variant, so it is used as typed:{' '}
+                    <code>{resolvedModel}</code>
+                  </>
+                ) : (
+                  <>
+                    The workflow will request <code>{resolvedModel}</code>
+                  </>
+                )}
+              </span>
+            )}
+          </div>
+
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>Temperature</label>
+            <span className={styles.hint}>
+              Temperature changes how varied the model's wording and choices are. Unless you set
+              one, the model runs at its own temperature. Models differ in the range they accept,
+              what they start at, and whether they use temperature at all, and OpenRouter doesn't
+              publish this for each model. Any value you enter must come from what you know about
+              the chosen model: you're responsible for checking that it's valid for that model, and
+              for the questions it produces. <strong>If you're not sure, leave this unticked.</strong>
+            </span>
+            <label className={styles.checkboxLabel}>
+              <input
+                type="checkbox"
+                checked={tempEnabled}
+                onChange={(e) =>
+                  onChange(
+                    e.target.checked
+                      ? { aiTemperatureEnabled: true }
+                      : { aiTemperatureEnabled: false, aiTemperature: '' },
+                  )
+                }
+              />
+              <span>
+                <strong>Set a temperature</strong>
+                <div className={styles.radioDescription}>
+                  Unticking clears the value, and no temperature is sent.
+                </div>
+              </span>
+            </label>
+            <input
+              type="number"
+              aria-label="Temperature"
+              className={`${styles.input} ${styles.numberInput}`}
+              style={{ borderColor: tempError ? 'var(--ifm-color-danger)' : undefined }}
+              min={TEMPERATURE_MIN}
+              max={TEMPERATURE_MAX}
+              step={TEMPERATURE_STEP}
+              disabled={!tempEnabled}
+              value={cfg.aiTemperature ?? ''}
+              placeholder={`${TEMPERATURE_MIN} to ${TEMPERATURE_MAX}`}
+              onChange={(e) => onChange({ aiTemperature: e.target.value })}
+            />
+            {tempError ? (
+              <span
+                className={styles.hint}
+                style={{ color: 'var(--ifm-color-danger)', marginTop: '0.3rem', display: 'block' }}
+              >
+                {tempError}
+              </span>
+            ) : (
+              <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
+                OpenRouter accepts {TEMPERATURE_MIN} to {TEMPERATURE_MAX}; enter up to two decimal
+                places, such as 0.75. The chosen model's own range may be narrower.
+              </span>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   );

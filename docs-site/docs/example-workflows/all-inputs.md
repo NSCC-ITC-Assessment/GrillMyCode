@@ -74,12 +74,6 @@ jobs:
           # Values below 1 are clamped to 1.
           # ai_retry_max_attempts: "5"
 
-          # Controls the randomness of the AI's output (0.0 = fully deterministic,
-          # 1.0 = most random). Lower values produce more consistent questions;
-          # higher values produce more varied output. Most users should leave this
-          # at the default.
-          # ai_temperature: "0.5"
-
           # How much the model reasons before answering: default, none, minimal,
           # low, medium, high, xhigh or max. "default" sends no setting, so the
           # model's own default applies — some reason at "high" unless told
@@ -88,6 +82,13 @@ jobs:
           # model that always reasons; any other unsupported level is mapped to
           # the nearest one the model has.
           # ai_reasoning_effort: "default"
+
+          # A temperature to send, from 0 to 2 (OpenRouter's range). Leave it
+          # unset and the model runs at its own. Models differ in the range they
+          # accept and whether they use temperature at all, so set it only if
+          # you know the chosen model's. If you're not sure how a change would
+          # affect the questions, don't set it.
+          # ai_temperature: "0.3"
 
           # ── Question generation ───────────────────────────────────────────
 

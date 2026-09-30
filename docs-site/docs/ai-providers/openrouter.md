@@ -24,8 +24,8 @@ Models are added and retired, and their prices, reasoning defaults, capabilities
 | `api_key` | `${{ secrets.OPENROUTER_API_KEY }}`. **Required** |
 | `ai_model` | Any OpenRouter model ID, in `provider/model-name` format. Defaults to `google/gemini-3.5-flash-lite`. May end with a [routing variant](#model-routing-variants), such as `:nitro` |
 | `ai_provider` | `openrouter`, the default. May be left out |
-| `ai_temperature` | Randomness of the output, from `0.0` to `1.0`. Default `0.5` |
 | `ai_reasoning_effort` | How much the model thinks before answering. Default `default`, the model's own setting. See [Reasoning](#reasoning) |
+| `ai_temperature` | A temperature to send, from `0` to `2`. No default: unless it's set, the model runs at its own. See [Temperature](#temperature) |
 | `ai_retry_max_attempts` | Total attempts per request, including the first. Default `5` |
 
 Model IDs must match OpenRouter's catalogue exactly; see [openrouter.ai/models](https://openrouter.ai/models). For example: `anthropic/claude-sonnet-5`, `openai/gpt-5-mini`, `meta-llama/llama-3.1-70b-instruct`.
@@ -83,7 +83,7 @@ Things worth knowing before you use one:
 
 Variants are an OpenRouter feature. They live in the model ID rather than in a separate action input, so nothing changes for any other provider GrillMyCode might support later.
 
-In the [Workflow Wizard](../workflow-wizard.mdx) this is the **Model routing** setting on the AI step, which appends the suffix to the model you picked. Once a model is chosen, the Wizard fetches its providers live from OpenRouter and shows the output price range for each option, whether the choice makes any difference to cost, and whether any provider runs a compressed copy below `fp8`.
+In the [Workflow Wizard](../workflow-wizard.mdx) this is the **Model routing** setting under **Advanced settings** on the AI step, which appends the suffix to the model you picked. Once a model is chosen, the Wizard fetches its providers live from OpenRouter and shows the output price range for each option, whether the choice makes any difference to cost, and whether any provider runs a compressed copy below `fp8`.
 
 :::note Other suffixes
 OpenRouter also has suffixes that select a *different* model entry rather than a different provider, such as `:free`. Those are outside what the Wizard offers, but `ai_model` accepts any model string OpenRouter does. See OpenRouter's [model variants](https://openrouter.ai/docs/guides/routing/model-variants/overview) documentation.
@@ -114,6 +114,30 @@ Things worth knowing:
     api_key: ${{ secrets.OPENROUTER_API_KEY }}
     ai_model: 'anthropic/claude-sonnet-5'
     ai_reasoning_effort: 'low'
+```
+
+## Temperature
+
+Temperature changes how varied a model's replies are. `ai_temperature` has no default: unless you set it, GrillMyCode sends no temperature and the model runs at its own.
+
+**If you're not sure how a temperature would affect the questions, don't set it.** Set one only when you know how the chosen model handles temperature, because you're responsible for whether the value suits it and for the questions it produces:
+
+- **Models differ.** They differ in the range they accept, what they start at, and whether they use temperature at all. OpenRouter doesn't publish this for each model, so check the model maker's own documentation.
+- **GrillMyCode checks only OpenRouter's range**, `0` to `2`. A value outside it, or one that isn't a number, is ignored with a warning in the log, and the model runs at its own temperature.
+- **A value the model doesn't accept** may be ignored, adjusted or rejected, depending on the provider serving it. A rejection fails the run with a `400`; see [Troubleshooting](../troubleshooting.md#the-run-failed-with-ai-api-error-400-after-setting-a-temperature).
+- **Compare before you commit to it.** Run a few submissions with and without the temperature and compare the questions.
+
+A temperature that was sent is shown in the run summary's configuration and in the **Settings** line of `raw-ai-output.md`. GrillMyCode never sends `top_p`.
+
+In the [Workflow Wizard](../workflow-wizard.mdx), this is **Temperature** under **Advanced settings** on the AI step. It stays off unless you tick **Set a temperature**, and unticking it clears the value. The Wizard accepts `0` to `2` with at most two decimal places, such as `0.75`; in the workflow file you can set any value in the range.
+
+```yaml
+- uses: NSCC-ITC-Assessment/GrillMyCode@v0
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
+    ai_model: 'anthropic/claude-sonnet-5'
+    ai_temperature: '0.3'
 ```
 
 ## Retries and rate limits

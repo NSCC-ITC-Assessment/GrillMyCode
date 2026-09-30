@@ -25,7 +25,6 @@
 
 import * as core from '@actions/core';
 import {
-  AI_TOP_P,
   AI_RETRY_BASE_DELAY_MS,
   AI_RETRY_MAX_DELAY_MS,
   AI_RETRY_RATE_LIMIT_DELAY_MS,
@@ -95,6 +94,21 @@ function reasoningRejectedNote(status, effort) {
     `The request set ai_reasoning_effort to "${effort}", which the model may not accept — ` +
     'OpenRouter rejects "none" for a model whose reasoning cannot be switched off. Try ' +
     '"default" or another level; the Workflow Wizard lists the levels each model supports.'
+  );
+}
+
+/**
+ * Returns a plain-language explanation for a 400 on a request that set a
+ * temperature, which the model may not accept, or null when none was set or
+ * the status is not 400. OpenRouter accepts 0 to 2, but a model's own range
+ * can be narrower.
+ */
+function temperatureRejectedNote(status, temperature) {
+  if (status !== 400 || typeof temperature !== 'number') return null;
+  return (
+    `The request set ai_temperature to ${temperature}, which the model may not accept. ` +
+    'Check the range the model supports, or remove ai_temperature so the model runs at its ' +
+    'own temperature.'
   );
 }
 
@@ -177,7 +191,8 @@ function stringOrNull(value) {
  * @param {string} opts.apiKey         - Provider API key
  * @param {Array}  opts.messages       - Chat messages array
  * @param {number} opts.retryMaxAttempts - Total attempts (initial + retries)
- * @param {number} opts.temperature    - Sampling temperature
+ * @param {number|null} [opts.temperature] - Sent only when set; otherwise the
+ *   model runs at its own temperature
  * @param {string} [opts.reasoningEffort] - An ai_reasoning_effort value; see
  *   reasoningParam
  * @param {object} [opts.responseFormat] - Sent as `response_format` when given
@@ -199,7 +214,7 @@ export async function callAI({
   apiKey,
   messages,
   retryMaxAttempts,
-  temperature,
+  temperature = null,
   reasoningEffort,
   responseFormat,
   parse = (content) => content,
@@ -223,8 +238,7 @@ export async function callAI({
   const body = JSON.stringify({
     model,
     messages,
-    temperature: temperature,
-    top_p: AI_TOP_P,
+    ...(typeof temperature === 'number' ? { temperature } : {}),
     ...(reasoning ? { reasoning } : {}),
     ...(responseFormat ? { response_format: responseFormat } : {}),
   });
@@ -256,9 +270,13 @@ export async function callAI({
 
       if (!isRetryable || attempt === retryMaxAttempts - 1) {
         const errorText = await response.text().catch(() => '(no body)');
+        const settingsNotes = [
+          reasoningRejectedNote(response.status, reasoningEffort),
+          temperatureRejectedNote(response.status, temperature),
+        ].filter(Boolean);
         const note =
           upstreamRateLimitNote(parseErrorBody(errorText)) ??
-          reasoningRejectedNote(response.status, reasoningEffort);
+          (settingsNotes.length ? settingsNotes.join(' ') : null);
         throw new Error(
           note
             ? `AI API error ${statusLabel(response)}: ${note} Response: ${errorText}`

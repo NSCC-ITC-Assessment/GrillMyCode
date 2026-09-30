@@ -110,15 +110,15 @@ describe('raw output settings line', () => {
     provider: 'openrouter',
     model: 'some/model',
   };
-  const request = { numQuestions: 10, temperature: 0.5, topP: 0.95 };
+  const request = { numQuestions: 10 };
 
   it('names the level that was sent', () => {
     const out = formatRawOutput({ ...opts, request: { ...request, reasoningEffort: 'low' } });
-    expect(out).toContain('temperature 0.5 · reasoning `low`');
+    expect(out).toContain('10 questions requested · reasoning `low`');
   });
 
   it('says the model decided at the default', () => {
     const out = formatRawOutput({ ...opts, request: { ...request, reasoningEffort: 'default' } });
-    expect(out).toContain('temperature 0.5 · reasoning: model default');
+    expect(out).toContain('10 questions requested · reasoning: model default');
   });
 });

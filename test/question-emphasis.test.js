@@ -280,15 +280,16 @@ describe('raw output records the emphasis', () => {
     provider: 'openrouter',
     model: 'some/model',
   };
-  const request = { numQuestions: 10, temperature: 0.2 };
+  const request = { numQuestions: 10 };
 
   it('names a tilt in the settings line', () => {
     const out = formatRawOutput({ ...opts, request: { ...request, questionEmphasis: 'research' } });
-    expect(out).toContain('10 questions requested · research emphasis · temperature 0.2');
+    expect(out).toContain('10 questions requested · research emphasis');
   });
 
   it('says nothing for balanced', () => {
     const out = formatRawOutput({ ...opts, request: { ...request, questionEmphasis: 'balanced' } });
-    expect(out).toContain('10 questions requested · temperature 0.2');
+    expect(out).toContain('10 questions requested');
+    expect(out).not.toContain('balanced emphasis');
   });
 });

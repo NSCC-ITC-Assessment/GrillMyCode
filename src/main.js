@@ -16,7 +16,6 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import { Minimatch } from 'minimatch';
 import {
-  AI_TOP_P,
   EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
   SUMMARY_FILE_LIST_LIMIT,
   SUMMARY_FILE_TABLE_LIMIT,
@@ -399,7 +398,10 @@ function renderConfiguration(state) {
   const rows = [
     ['Provider', `\`${i.aiProvider}\``],
     ['Model', `\`${i.aiModel}\``],
-    ['Temperature', String(i.aiTemperature)],
+    [
+      'Temperature',
+      typeof i.aiTemperature === 'number' ? String(i.aiTemperature) : 'model default',
+    ],
     [
       'Reasoning effort',
       i.aiReasoningEffort === 'default' ? 'model default' : `\`${i.aiReasoningEffort}\``,
@@ -1652,7 +1654,6 @@ async function run() {
           numQuestions: inputs.numQuestions,
           questionEmphasis: inputs.questionEmphasis,
           temperature: inputs.aiTemperature,
-          topP: AI_TOP_P,
           reasoningEffort: inputs.aiReasoningEffort,
           promptHash: PROMPT_TEMPLATE_HASH,
           actionRef: process.env.GITHUB_ACTION_REF || null,
