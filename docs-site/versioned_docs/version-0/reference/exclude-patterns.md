@@ -67,7 +67,7 @@ Unlike JavaScript and PHP — where each framework ships its own gitignore templ
 
 :::
 
-If detection fails (e.g. the GitHub API is unreachable) the action falls back to a broad built-in list covering the most common languages.
+If detection fails (e.g. the GitHub API is unreachable) the action falls back to a broad built-in list covering the most common languages, together with the [patterns always excluded](#patterns-always-excluded).
 
 ## Patterns always excluded
 

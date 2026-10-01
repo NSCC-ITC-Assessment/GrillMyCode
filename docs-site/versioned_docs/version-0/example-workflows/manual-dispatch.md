@@ -79,7 +79,7 @@ jobs:
 - True/false settings use `type: choice` with `'false'` and `'true'`, not `type: boolean`.
 - The form can't hold multi-line text; keep a multi-line `instructor_context` in an `env` block.
 
-The Wizard builds this for you: on the **Trigger** step, expand **Manual run overrides**.
+The Wizard builds this for you: tick the settings you want on its **Manual runs** step.
 
 ## Related
 

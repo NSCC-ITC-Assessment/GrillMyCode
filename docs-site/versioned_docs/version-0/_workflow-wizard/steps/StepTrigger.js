@@ -1,11 +1,7 @@
-import React, { useState } from 'react';
+import React from 'react';
 import styles from '../styles.module.css';
-import {
-  MAX_DISPATCH_INPUTS,
-  availableDispatchOverrides,
-  resolveDispatchOverrides,
-} from '../dispatchInputs';
 import { isTagTrigger } from '../generateYaml';
+import CodebaseContextLimit, { codebaseLimitStep } from './CodebaseContextLimit';
 
 const TRIGGERS = [
   {
@@ -31,24 +27,6 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
   const tagTrigger = isTagTrigger(cfg);
   const namedTagMode = (cfg.tagDiffBase || '').startsWith('tag:');
   const namedTag = namedTagMode ? cfg.tagDiffBase.slice('tag:'.length) : '';
-
-  const catalogue = availableDispatchOverrides({ tagTrigger });
-  const selected = resolveDispatchOverrides(cfg.dispatchOverrides, { tagTrigger });
-  const selectedSet = new Set(selected);
-  const atCap = selected.length >= MAX_DISPATCH_INPUTS;
-
-  // Always collapsed on entry so the trigger choice stays the focus of this
-  // step. Some overrides are ticked by default, so seeding this from the
-  // selection would mean it was never actually collapsed — the "n selected"
-  // badge on the header carries that state instead.
-  const [overridesOpen, setOverridesOpen] = useState(false);
-
-  function toggleOverride(key, checked) {
-    const next = checked
-      ? [...selected, key]
-      : selected.filter((k) => k !== key);
-    onChange({ dispatchOverrides: resolveDispatchOverrides(next, { tagTrigger }) });
-  }
 
   return (
     <div>
@@ -257,103 +235,16 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
                   </div>
                 </span>
               </label>
+              {cfg.previousWork === 'context' && codebaseLimitStep(cfg) === 'Repositories' && (
+                <span className={styles.hint} style={{ marginTop: '0.5rem' }}>
+                  Earlier work shares the codebase context limit you set on the Repositories step.
+                </span>
+              )}
             </div>
           )}
+          {codebaseLimitStep(cfg) === 'Trigger' && <CodebaseContextLimit cfg={cfg} onChange={onChange} />}
         </div>
       )}
-
-      <div className={styles.fieldGroup} style={{ marginTop: '1.75rem' }}>
-        <button
-          type="button"
-          className={styles.disclosureBtn}
-          onClick={() => setOverridesOpen((o) => !o)}
-          aria-expanded={overridesOpen}
-          aria-controls="dispatch-overrides"
-        >
-          <span
-            className={`${styles.disclosureChevron} ${overridesOpen ? styles.disclosureChevronOpen : ''}`}
-            aria-hidden="true"
-          >
-            ▶
-          </span>
-          <span className={styles.disclosureTitle}>Manual run overrides</span>
-          {selected.length > 0 ? (
-            <span className={styles.disclosureCount}>{selected.length} selected</span>
-          ) : (
-            <span className={styles.optionalBadge} style={{ marginLeft: 0 }}>optional</span>
-          )}
-        </button>
-        <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
-          Expose chosen settings as fields on the <strong>Run workflow</strong> button, so you can
-          change them for a single manual run without editing the workflow file.
-        </span>
-
-        <div id="dispatch-overrides" hidden={!overridesOpen}>
-          <span className={styles.hint}>
-            Every setting you choose in this wizard is otherwise baked into the workflow file, so
-            changing one means editing and committing the file again. Tick any setting below to
-            also expose it as a field on the run form. The value you picked elsewhere in this
-            wizard stays the default, and is what any run that leaves the field untouched
-            continues to use.
-          </span>
-
-          <div className={styles.checkboxGroup} style={{ marginTop: '0.75rem' }}>
-            {catalogue.map((o) => {
-              const checked = selectedSet.has(o.key);
-              const disabled = !checked && atCap;
-              return (
-                <label
-                  key={o.key}
-                  className={disabled ? styles.checkboxLabelDisabled : styles.checkboxLabel}
-                  title={
-                    disabled
-                      ? `GitHub allows at most ${MAX_DISPATCH_INPUTS} workflow_dispatch inputs. Untick another to select this one.`
-                      : undefined
-                  }
-                >
-                  <input
-                    type="checkbox"
-                    checked={checked}
-                    disabled={disabled}
-                    onChange={(e) => toggleOverride(o.key, e.target.checked)}
-                  />
-                  <span>
-                    <strong>{o.label}</strong> <code>{o.key}</code>
-                    <div className={styles.radioDescription}>{o.hint}</div>
-                  </span>
-                </label>
-              );
-            })}
-          </div>
-
-          <div
-            className={styles.notice}
-            style={
-              atCap
-                ? { borderLeftColor: 'var(--ifm-color-warning, #f59e0b)', marginTop: '0.75rem' }
-                : { marginTop: '0.75rem' }
-            }
-          >
-            {/* Counted against the settings actually on offer, not GitHub's
-                input cap — measuring against a number larger than the list
-                reads as though options are hidden. The cap only becomes worth
-                mentioning if the catalogue ever grows past it. */}
-            {selected.length} of {catalogue.length} selected.{' '}
-            {atCap ? (
-              <>
-                You have reached GitHub's limit — a workflow declaring more than{' '}
-                {MAX_DISPATCH_INPUTS} <code>workflow_dispatch</code> inputs fails to parse. Untick one
-                to choose a different setting.
-              </>
-            ) : (
-              <>
-                Each one becomes a field on the run form, so pick only the settings you genuinely
-                expect to vary between runs.
-              </>
-            )}
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

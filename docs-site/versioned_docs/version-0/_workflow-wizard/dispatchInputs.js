@@ -3,7 +3,7 @@
  * letting an instructor change them on the fly when starting a manual run from
  * the Actions tab.
  *
- * Shared by the Trigger step (which renders the checkboxes) and generateYaml
+ * Shared by the Manual runs step (which renders the checkboxes) and generateYaml
  * (which emits both the `on.workflow_dispatch.inputs` block and the matching
  * `${{ github.event.inputs.* || <fallback> }}` expressions), so the two can
  * never disagree about which keys exist or how they are typed.
@@ -86,6 +86,12 @@ export const MAX_DISPATCH_INPUTS = 25;
  *              DEFAULT_DISPATCH_OVERRIDES).
  * `tagTriggerOnly` — offered, and emitted, only when the workflow is
  *              triggered by submission tags; the action ignores it otherwise.
+ * `starterAskOnly` — offered, and emitted, only when it can take effect: the
+ *              starter code answer is ask, or starter_code is itself an
+ *              override, which can switch a run to ask.
+ * `templateOnly` — offered, and emitted, only when repositories start from a
+ *              starter template. An empty repository holds only the
+ *              student's own files, so the Wizard skips the step that sets it.
  */
 export const DISPATCH_OVERRIDES = [
   {
@@ -96,6 +102,16 @@ export const DISPATCH_OVERRIDES = [
     defaultSelected: true,
     description: 'OpenRouter model ID in provider/model-name format',
     hint: 'Try a different model on a single run — useful when one model produces weak questions for a particular assignment.',
+  },
+  {
+    key: 'ai_reasoning_effort',
+    cfgKey: 'aiReasoningEffort',
+    label: 'Reasoning effort',
+    type: 'choice',
+    options: ['default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+    description:
+      "How much the model thinks before answering: default keeps the model's own; a level it does not support is mapped to its nearest one, and none fails on a model that always reasons",
+    hint: 'Re-run with less reasoning to cut the cost or time of a run, or with more when a set of questions came out shallow. Reasoning is billed as output, so a higher level can multiply what that run costs, and none fails the run on a model that always reasons.',
   },
   {
     key: 'num_questions',
@@ -111,10 +127,10 @@ export const DISPATCH_OVERRIDES = [
     cfgKey: 'questionEmphasis',
     label: 'Question emphasis',
     type: 'choice',
-    options: ['balanced', 'research', 'tracing'],
+    options: ['balanced', 'tracing', 'research'],
     defaultSelected: true,
     description:
-      'balanced mixes question types; research asks only questions that need documentation or edge cases; tracing only questions answered by running the code in your head',
+      'balanced mixes question types; tracing asks only questions answered by running the code in your head; research only questions that need documentation or edge cases',
     hint: 'Re-run with the other kind of question — for example, research questions for a student who can trace the code but not explain it.',
   },
   {
@@ -123,6 +139,7 @@ export const DISPATCH_OVERRIDES = [
     label: 'Assignment context files',
     type: 'string',
     defaultSelected: true,
+    templateOnly: true,
     normalize: true,
     description:
       'Comma-separated file glob(s) whose contents are given to the AI as assignment context',
@@ -197,6 +214,16 @@ export const DISPATCH_OVERRIDES = [
     description: 'What the first commit is, and what the AI does with starter code: none, ignore, context or ask',
     hint: 'Re-run with none when a student committed everything at once to an empty repository, or with context when questions came out shallow because the AI could not see the code the student built on. Context and ask likely increase the cost of that run.',
   },
+  {
+    key: 'starter_questions_one_in',
+    cfgKey: 'starterQuestionsOneIn',
+    label: 'Starter code question share',
+    type: 'string',
+    starterAskOnly: true,
+    description:
+      'Under starter_code ask, up to one in this many questions may be about the starter code alone (2 or more)',
+    hint: 'Allow more or fewer questions about your starter code on a single run — for example, alongside switching Starter code to ask.',
+  },
 ];
 
 /**
@@ -205,12 +232,11 @@ export const DISPATCH_OVERRIDES = [
  * assignment.
  *
  * The rest stay unticked because they are situational rather than routine —
- * tag_diff_base re-scopes a milestone, and starter_code is a per-assignment
- * structural choice that can also raise the cost of a run.
+ * ai_reasoning_effort can multiply what a run costs, tag_diff_base re-scopes a
+ * milestone, and starter_code and starter_questions_one_in are per-assignment
+ * structural choices that can also raise the cost of a run.
  *
- * The catalogue follows the wizard's own step order (AI, Questions, Trigger,
- * Files, File opts, Advanced), and within a step the order of its controls, so
- * the Run workflow form lists fields in the order the wizard asked about them.
+ * The catalogue's order is the order of the fields on the Run workflow form.
  */
 export const DEFAULT_DISPATCH_OVERRIDES = DISPATCH_OVERRIDES.filter((o) => o.defaultSelected).map(
   (o) => o.key,
@@ -222,25 +248,46 @@ export const DISPATCH_OVERRIDES_BY_KEY = Object.fromEntries(
 );
 
 /**
- * The overrides on offer for a trigger: every entry, less the tagTriggerOnly
- * ones unless the workflow is triggered by submission tags.
+ * The overrides on offer: every entry, less the tagTriggerOnly ones unless the
+ * workflow is triggered by submission tags, the templateOnly ones when
+ * repositories start empty, and the starterAskOnly ones unless starterAsk is
+ * set (see resolveDispatchOverrides).
  */
-export function availableDispatchOverrides({ tagTrigger = false } = {}) {
-  return DISPATCH_OVERRIDES.filter((o) => tagTrigger || !o.tagTriggerOnly);
+export function availableDispatchOverrides({
+  tagTrigger = false,
+  emptyRepo = false,
+  starterAsk = false,
+} = {}) {
+  return DISPATCH_OVERRIDES.filter(
+    (o) =>
+      (tagTrigger || !o.tagTriggerOnly) &&
+      !(emptyRepo && o.templateOnly) &&
+      (starterAsk || !o.starterAskOnly),
+  );
 }
 
 /**
  * Returns the selected override keys in catalogue order, deduplicated, with
- * unknown keys dropped — and tagTriggerOnly keys too, unless tagTrigger is set —
- * and the list truncated to GitHub's input cap. The UI, the generator and
- * the review checklist all go through this, so an over-long selection, or one
- * left over from a trigger the instructor has since switched away from, can
- * never reach the emitted YAML.
+ * unknown keys dropped — and tagTriggerOnly keys too, unless tagTrigger is set,
+ * templateOnly keys under emptyRepo, and starterAskOnly keys unless the starter
+ * code answer is ask (starterAsk) or starter_code is selected too — and the
+ * list truncated to GitHub's input cap. Empty when `enabled` is false: the
+ * instructor answered No to manual run overrides, which keeps their ticks for
+ * a change of mind. The UI, the generator and the review checklist all go
+ * through this, so an over-long selection, or one left over from a trigger the
+ * instructor has since switched away from, can never reach the emitted YAML.
  */
-export function resolveDispatchOverrides(selected, { tagTrigger = false } = {}) {
-  if (!Array.isArray(selected) || selected.length === 0) return [];
+export function resolveDispatchOverrides(
+  selected,
+  { tagTrigger = false, emptyRepo = false, starterAsk = false, enabled = true } = {},
+) {
+  if (!enabled || !Array.isArray(selected) || selected.length === 0) return [];
   const wanted = new Set(selected);
-  return availableDispatchOverrides({ tagTrigger })
+  return availableDispatchOverrides({
+    tagTrigger,
+    emptyRepo,
+    starterAsk: starterAsk || wanted.has('starter_code'),
+  })
     .filter((o) => wanted.has(o.key))
     .map((o) => o.key)
     .slice(0, MAX_DISPATCH_INPUTS);

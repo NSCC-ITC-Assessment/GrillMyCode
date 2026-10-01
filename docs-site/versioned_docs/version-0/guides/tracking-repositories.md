@@ -25,7 +25,7 @@ With the [private answer key](instructor-setup.md) set up, GrillMyCode can also 
 - **A topic.** A `grillmycode` tag on the repository. You can filter by it, with the search `org:your-org topic:grillmycode`.
 - **A note in the description.** GrillMyCode adds `· 🔥 GrillMyCode: 20 questions` to the end of the description. It shows the number of questions, and it appears in every list view.
 
-Labels need the answer-key token because GitHub doesn't let a workflow's built-in permissions change a repository's topics or description. Labels are turned on by **Label assessed repositories in the organization list** in the Workflow Wizard's **Instructor** step, which is ticked by default. Untick it to leave repositories unlabelled.
+Labels need the answer-key token because GitHub doesn't let a workflow's built-in permissions change a repository's topics or description. Labels are turned on by the **Labelled student repositories in the organization list** checkbox in the Workflow Wizard's **Delivery** step, which is ticked by default. Untick it to leave repositories unlabelled.
 
 ![An organization's repository list. Three student repositories show "· 🔥 GrillMyCode: 20 questions" at the end of their description and a grillmycode topic; one student's repository has neither.](/img/screenshots/org-repository-markers.png)
 

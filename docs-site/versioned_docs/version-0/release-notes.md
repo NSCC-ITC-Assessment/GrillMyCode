@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.23.0 — 2026-10-01
+
+### What's Changed
+
+### Features
+
+- **wizard:** reorganize the Workflow Wizard and add starter_questions_one_in
+
 ## v0.22.0 — 2026-09-30
 
 ### What's Changed

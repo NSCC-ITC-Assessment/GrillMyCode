@@ -65,17 +65,64 @@ export function hasEarlierWork(cfg) {
   return (isTagTrigger(cfg) && (cfg.tagDiffBase || 'cumulative') !== 'cumulative') || Boolean(cfg.baseSha);
 }
 
+/** Smallest starter_questions_one_in, as MIN_STARTER_QUESTIONS_ONE_IN in src/constants.js. */
+export const MIN_STARTER_QUESTIONS_ONE_IN = 2;
+
+/**
+ * How many questions may be about starter code alone under starter_code: ask,
+ * as maxStarterQuestions in src/prompt/prompt.js: one in starterQuestionsOneIn,
+ * rounded down, but at least one once there are two questions.
+ */
+export function maxStarterQuestions(cfg) {
+  if (cfg.numQuestions < 2) return 0;
+  return Math.max(1, Math.floor(cfg.numQuestions / cfg.starterQuestionsOneIn));
+}
+
+/**
+ * Validation message for the Questions step's starter question share, or ''.
+ * It is asked only under starter_code: ask with two or more questions, and
+ * runs from MIN_STARTER_QUESTIONS_ONE_IN to the number of questions, where it
+ * allows one.
+ */
+export function starterQuestionsOneInError(cfg) {
+  if (cfg.starterCode !== 'ask' || cfg.numQuestions < 2) return '';
+  const n = cfg.starterQuestionsOneIn;
+  if (!Number.isInteger(n) || n < MIN_STARTER_QUESTIONS_ONE_IN || n > cfg.numQuestions) {
+    return `Enter a whole number from ${MIN_STARTER_QUESTIONS_ONE_IN} to ${cfg.numQuestions}, the number of questions.`;
+  }
+  return '';
+}
+
+/** Largest starter_questions_one_in the action accepts: MAX_QUESTIONS in src/constants.js. */
+export const MAX_STARTER_QUESTIONS_ONE_IN = 50;
+
+/**
+ * Validation message for the starter code share set on the Manual runs step,
+ * or ''. That field appears only when the share is a dispatch override and the
+ * starter code answer isn't ask, so it is only the run form's pre-filled value:
+ * the run may also change the number of questions, so it is checked against
+ * the action's own range rather than the number of questions.
+ */
+export function starterShareDefaultError(cfg) {
+  const n = cfg.starterQuestionsOneIn;
+  if (!Number.isInteger(n) || n < MIN_STARTER_QUESTIONS_ONE_IN || n > MAX_STARTER_QUESTIONS_ONE_IN) {
+    return `Enter a whole number from ${MIN_STARTER_QUESTIONS_ONE_IN} to ${MAX_STARTER_QUESTIONS_ONE_IN} for the starter code question share.`;
+  }
+  return '';
+}
+
+/** Whether the starter code answer sends starter code as codebase context. */
+export function sendsStarterContext(cfg) {
+  return cfg.starterCode === 'context' || cfg.starterCode === 'ask';
+}
+
 /**
  * Whether the run sends any codebase context, and so whether its size limit
  * matters: starter code under context or ask, or earlier work where there is
- * any. Shared with the Advanced step, which shows the limit only then.
+ * any. Shared with codebaseLimitStep, which shows the limit only then.
  */
 export function sendsCodebaseContext(cfg) {
-  return (
-    cfg.starterCode === 'context' ||
-    cfg.starterCode === 'ask' ||
-    (cfg.previousWork === 'context' && hasEarlierWork(cfg))
-  );
+  return sendsStarterContext(cfg) || (cfg.previousWork === 'context' && hasEarlierWork(cfg));
 }
 
 export function instructorRepoActive(cfg) {
@@ -167,7 +214,7 @@ export function temperatureError(cfg) {
   return '';
 }
 
-const DEFAULTS = {
+export const DEFAULTS = {
   aiProvider: 'openrouter',
   // Compared against the resolved model (base + routing variant), so choosing a
   // variant on the default model counts as a change and emits the input.
@@ -185,6 +232,7 @@ const DEFAULTS = {
   additionalExcludePatterns: '',
   keepComments: false,
   starterCode: 'ignore',
+  starterQuestionsOneIn: 5,
   previousWork: 'context',
   codebaseContextMaxChars: 50000,
   skipCommitters: 'github-actions[bot]',
@@ -319,7 +367,12 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
   const lines = [];
 
   const tagTrigger = isTagTrigger(cfg);
-  const overrideKeys = resolveDispatchOverrides(cfg.dispatchOverrides, { tagTrigger });
+  const overrideKeys = resolveDispatchOverrides(cfg.dispatchOverrides, {
+    tagTrigger,
+    emptyRepo: cfg.repoStart === 'empty',
+    starterAsk: cfg.starterCode === 'ask',
+    enabled: cfg.dispatchOverridesEnabled === true,
+  });
   const overridden = new Set(overrideKeys);
 
   /**
@@ -466,9 +519,7 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
     lines.push(`          # any model from https://openrouter.ai/models (provider/model-name).`);
     lines.push(`          # ai_model: ${yamlStr(cfg.aiModel)}`);
   }
-  if (differ(cfg, 'aiReasoningEffort')) {
-    lines.push(`          ai_reasoning_effort: ${yamlStr(cfg.aiReasoningEffort)}`);
-  }
+  pushInput('ai_reasoning_effort', 'aiReasoningEffort', yamlStr(cfg.aiReasoningEffort));
   // Opt-in only: an unticked box emits nothing, so the model runs at its own
   // temperature, whatever was typed before the box was unticked.
   if (cfg.aiTemperatureEnabled && !temperatureError(cfg)) {
@@ -521,6 +572,11 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
   }
   pushInput('keep_comments', 'keepComments', yamlStr(cfg.keepComments));
   pushInput('starter_code', 'starterCode', yamlStr(cfg.starterCode));
+  // Also emitted when starter_code is a dispatch override, so a manual run
+  // that switches to ask still gets the share the instructor configured.
+  if (cfg.starterCode === 'ask' || overridden.has('starter_code')) {
+    pushInput('starter_questions_one_in', 'starterQuestionsOneIn', yamlStr(cfg.starterQuestionsOneIn));
+  }
   if (hasEarlierWork(cfg)) pushInput('previous_work', 'previousWork', yamlStr(cfg.previousWork));
   // Also emitted when starter_code is a dispatch override, so a manual run
   // that switches context on still gets the limit the instructor configured.

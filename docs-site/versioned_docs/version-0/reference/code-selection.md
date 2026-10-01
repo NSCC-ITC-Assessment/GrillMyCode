@@ -137,7 +137,7 @@ The run summary's **Files assessed** section says how many files were marked. A 
 | `none` | The student's own work, assessed | None exist | — |
 | `ignore` (default) | Your starter code, left out | Not sent | Never |
 | `context` | Your starter code, left out | Sent as [codebase context](#codebase-context) | Only alongside the student's code |
-| `ask` | Your starter code, left out | Sent as codebase context | Up to one in five questions may be about it alone; see [Asking about starter code](#asking-about-starter-code) |
+| `ask` | Your starter code, left out | Sent as codebase context | Up to one in five questions by default may be about it alone; see [Asking about starter code](#asking-about-starter-code) |
 
 In every mode, a starter file the student edited is assessed like any [file that existed at the base](#files-that-existed-at-the-base): it is sent whole with the student's lines marked. To keep a file out entirely, even when the student edits it, add it to `additional_exclude_patterns`.
 
@@ -152,7 +152,7 @@ With `starter_code: ask` the AI may ask about the starter code itself, not only 
 
 The rules the AI is given:
 
-- At most **one in five** questions, rounded down, may be about starter code alone: at least one once there are two questions, and none in a one-question run. It is never told to relax this limit, and is told to write broader questions about the student's code instead of exceeding it.
+- At most **one in five** questions, rounded down, may be about starter code alone: at least one once there are two questions, and none in a one-question run. `starter_questions_one_in` changes the five: `10` allows 2 of 20, and `2`, the smallest, allows half. It is never told to relax this limit, and is told to write broader questions about the student's code instead of exceeding it.
 - A starter-code question is worded as about the provided code ("the provided `loadCities` function"), never "your code".
 - It should prefer starter code that the student's code calls, extends or depends on.
 - Every other question must still show, and be about, the student's own lines.

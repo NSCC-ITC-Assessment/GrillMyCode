@@ -37,7 +37,7 @@ An assignment created with `gh teacher assignment add --empty-repo` gives each s
 GrillMyCode normally skips a repository's first commit, because that's usually your starter code. In an empty repository it's the student's work, so a student who commits everything at once would get no questions.
 
 :::warning[Change one setting for empty-repository assignments]
-In the Workflow Wizard's **File handling options** step, answer **How do students' repositories start?** with **Empty**. There's no template to leave out, so you lose nothing.
+In the Workflow Wizard's **Repositories** step, answer **How do students' repositories start?** with **Empty**. There's no template to leave out, so you lose nothing.
 :::
 
 There's also no template to ship the workflow from, so add the workflow file to each student's repository directly.

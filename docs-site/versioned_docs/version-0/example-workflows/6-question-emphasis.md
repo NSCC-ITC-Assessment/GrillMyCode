@@ -52,7 +52,7 @@ jobs:
 
 - It's all-or-nothing. When the code is too small or too simple to supply enough good questions of that kind, the AI writes easier or repetitive ones of the same kind rather than switching.
 - Every question still has one checkable answer, and one in every three is still short-answer.
-- To try another emphasis on a single run, tick it under **Manual run overrides** in the Workflow Wizard's **Trigger** step.
+- To try another emphasis on a single run, tick it in the Workflow Wizard's **Manual runs** step. It's ticked by default.
 
 ## Related
 

@@ -142,7 +142,9 @@ The two must agree, so **edit both when you change a default**. If they drift, a
 | Input | Why expose it |
 |---|---|
 | `ai_model` | Try a different model when one produces weak questions |
+| `ai_reasoning_effort` | Re-run with less reasoning to cut a run's cost, or more when questions came out shallow. The form lists every level; one the model doesn't support is mapped to its nearest, and `none` fails on a model that always reasons |
 | `num_questions` | Re-run with a shorter or longer question set |
+| `question_emphasis` | Re-run with only tracing or only research questions |
 | `assignment_context` | Point one run at a different brief or rubric (see below) |
 | `instructor_context` | Retarget the questions for one run |
 | `tag_diff_base` | Tag-triggered workflows only: re-run a milestone cumulatively, only since the previous tag, or since a tag you type in |
@@ -150,8 +152,9 @@ The two must agree, so **edit both when you change a default**. If they drift, a
 | `exclude_pattern_overrides` | Bring back a file the default exclusions removed |
 | `keep_comments` | Assess a submission where the comments are themselves the work |
 | `starter_code` | Recover a run where the student committed everything at once to an empty repository (`none`), or let the AI see your starter code when questions came out shallow (`context`); `context` and `ask` likely increase the run's cost |
+| `starter_questions_one_in` | Allow more or fewer questions about your starter code on one run. The Wizard offers it only when `starter_code` is `ask` or is on the form too |
 
-The Wizard lists them in this order and ticks `ai_model` through `keep_comments` by default, apart from `tag_diff_base`.
+The Wizard lists them in this order and ticks `ai_model` through `keep_comments` by default, apart from `ai_reasoning_effort` and `tag_diff_base`.
 
 ### Settings to keep out of the form
 
