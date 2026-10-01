@@ -469,6 +469,17 @@ describe('maxStarterQuestions', () => {
   ])('%i questions allow %i about starter code', (n, max) => {
     expect(maxStarterQuestions(n)).toBe(max);
   });
+
+  it.each([
+    [20, 2, 10],
+    [20, 10, 2],
+    [20, 20, 1],
+    [20, 50, 1],
+    [50, 50, 1],
+    [1, 2, 0],
+  ])('%i questions at one in %i allow %i about starter code', (n, oneIn, max) => {
+    expect(maxStarterQuestions(n, oneIn)).toBe(max);
+  });
 });
 
 describe('buildPrompt codebase context and marked files', () => {

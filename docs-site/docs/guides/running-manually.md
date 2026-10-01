@@ -24,10 +24,11 @@ It doesn't matter who starts the run. The assessment always belongs to the stude
 
 Normally, the settings in the workflow file apply to every run, and changing one means editing the file. You can instead put chosen settings on the **Run workflow** form, pre-filled with their usual values. Whatever you change there applies to that one run only.
 
-Set this up in the Workflow Wizard's **Trigger** step, under **Manual run overrides**. These are ticked by default:
+Set this up in the Workflow Wizard's **Manual runs** step. Answer **Yes** to its first question to choose settings for the form, or **No** if you'd rather every run used the workflow file's settings. Under **Yes**, these are ticked by default:
 
 - AI model
 - number of questions
+- question emphasis
 - assignment brief files
 - instructor instructions
 - extra files to leave out

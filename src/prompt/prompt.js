@@ -15,7 +15,7 @@ import {
   SNIPPET_MAX_LINES,
   DEFAULT_QUESTION_EMPHASIS,
   RESEARCH_LOOKUP_QUESTION_SHARE,
-  STARTER_QUESTION_MAX_SHARE,
+  DEFAULT_STARTER_QUESTIONS_ONE_IN,
   EARLIER_STARTER_HEADING,
 } from '../constants.js';
 import { buildOpeningCheck, buildQuestionWordRule, openingsFor } from './openings.js';
@@ -23,13 +23,13 @@ import { listWith } from './text.js';
 
 /**
  * How many of `numQuestions` questions may be about starter code alone under
- * starter_code: ask — STARTER_QUESTION_MAX_SHARE of them, rounded down, but at
- * least one once there are two questions. A single question is always about
- * the student's own work.
+ * starter_code: ask — one in `oneIn` of them (starter_questions_one_in),
+ * rounded down, but at least one once there are two questions. A single
+ * question is always about the student's own work.
  */
-export function maxStarterQuestions(numQuestions) {
+export function maxStarterQuestions(numQuestions, oneIn = DEFAULT_STARTER_QUESTIONS_ONE_IN) {
   if (numQuestions < 2) return 0;
-  return Math.max(1, Math.floor(numQuestions * STARTER_QUESTION_MAX_SHARE));
+  return Math.max(1, Math.floor(numQuestions / oneIn));
 }
 
 /**

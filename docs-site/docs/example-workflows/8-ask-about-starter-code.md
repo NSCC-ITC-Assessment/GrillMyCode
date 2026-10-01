@@ -46,6 +46,7 @@ jobs:
 ## Change these
 
 - **`starter_code: "context"`** if you want the starter code as background only, with no questions about it.
+- **`starter_questions_one_in`** (default `5`) to allow more or fewer questions about the starter code: `10` allows 2 of 20, and `2` allows half.
 - **`codebase_context_max_chars`** (default `50000`) to raise or lower how much unchanged starter code is sent.
 
 ## Good to know

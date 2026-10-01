@@ -168,6 +168,8 @@ Numeric limits, default values, threshold values, and external API version strin
 
 The bundled template data lives in `src/data/gitignore-templates.json` (generated — do not edit by hand). Run `node scripts/fetch-gitignore-templates.js` to refresh it.
 
+The Workflow Wizard lists every pattern the action can apply on its own, from `docs-site/docs/_workflow-wizard/excludeLists.json` (also generated — do not edit by hand). After changing the template data, the lists in `src/constants.js` or the detection maps in `src/stack-detection.js`, run `node scripts/build-wizard-exclude-lists.js`; `test/wizard-exclude-lists.test.js` fails until you do. The weekly template refresh workflow runs both scripts.
+
 ## No Shell Interpolation
 
 All `git` and external process invocations must use `spawnSync` with a plain args array. Do not use `exec`, `execSync`, or template-string shell commands. This prevents shell-injection vulnerabilities.

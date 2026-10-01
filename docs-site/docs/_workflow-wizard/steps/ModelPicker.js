@@ -50,11 +50,8 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
   if (catalog.status === 'unavailable') {
     return (
       <span className={styles.hint}>
-        OpenRouter's model list couldn't be loaded. Type a model ID above, or browse{' '}
-        <a href="https://openrouter.ai/models" target="_blank" rel="noopener noreferrer">
-          openrouter.ai/models
-        </a>
-        .
+        OpenRouter's model list couldn't be loaded, so there's nothing to pick from. Reload the
+        page to try again, or choose one of the pre-tested models above.
       </span>
     );
   }
@@ -83,38 +80,43 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
           ))}
         </select>
       </div>
-      <div className={styles.modelFilters}>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={structuredOnly}
-            onChange={(e) => setStructuredOnly(e.target.checked)}
+      {/* Collapsed so the search and the list come first; the count below
+          still shows how many models the criteria leave. */}
+      <details className={styles.criteriaDisclosure}>
+        <summary>Additional criteria (click to expand)</summary>
+        <div className={styles.modelFilters}>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={structuredOnly}
+              onChange={(e) => setStructuredOnly(e.target.checked)}
+            />
+            Only models that support structured outputs (recommended)
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={recentOnly}
+              onChange={(e) => setRecentOnly(e.target.checked)}
+            />
+            Released in the last year
+          </label>
+          <label className={styles.checkboxLabel}>
+            <input
+              type="checkbox"
+              checked={freeOnly}
+              onChange={(e) => setFreeOnly(e.target.checked)}
+            />
+            Free models only
+          </label>
+          <PriceRangeSlider
+            steps={priceSteps}
+            range={priceRange}
+            disabled={freeOnly}
+            onChange={setPriceRange}
           />
-          Only models that support structured outputs (recommended)
-        </label>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={recentOnly}
-            onChange={(e) => setRecentOnly(e.target.checked)}
-          />
-          Released in the last year
-        </label>
-        <label className={styles.checkboxLabel}>
-          <input
-            type="checkbox"
-            checked={freeOnly}
-            onChange={(e) => setFreeOnly(e.target.checked)}
-          />
-          Free models only
-        </label>
-        <PriceRangeSlider
-          steps={priceSteps}
-          range={priceRange}
-          disabled={freeOnly}
-          onChange={setPriceRange}
-        />
-      </div>
+        </div>
+      </details>
       <span className={styles.hint} style={{ marginTop: '0.4rem' }}>
         {matches.length} {matches.length === 1 ? 'model' : 'models'}.{' '}
         Prices are per million tokens, live from OpenRouter. The coding score is Artificial
@@ -161,7 +163,7 @@ export default function ModelPicker({ catalog, selectedId, testedIds, onPick }) 
         })}
         {matches.length === 0 && (
           <span className={styles.hint} style={{ padding: '0.75rem' }}>
-            No models match. Try fewer words, or loosen the filters above.
+            No models match. Try fewer words, or loosen the additional criteria above.
           </span>
         )}
       </div>

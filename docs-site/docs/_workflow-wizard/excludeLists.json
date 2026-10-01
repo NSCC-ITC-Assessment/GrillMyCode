@@ -1,0 +1,4107 @@
+{
+  "always": [
+    {
+      "label": "Git files",
+      "patterns": [
+        "**/.git/**",
+        "**/.gitignore",
+        "**/.gitattributes",
+        "**/.gitmodules",
+        "**/.mailmap",
+        "**/.git-blame-ignore-revs"
+      ]
+    },
+    {
+      "label": "Classroom 50 setup file",
+      "patterns": [
+        "**/.classroom50.yaml"
+      ]
+    },
+    {
+      "label": "Lock files",
+      "patterns": [
+        "**/*.lock",
+        "**/package-lock.json",
+        "**/yarn.lock",
+        "**/pnpm-lock.yaml",
+        "**/Pipfile.lock",
+        "**/poetry.lock"
+      ]
+    },
+    {
+      "label": "Minified files",
+      "patterns": [
+        "**/*.min.js",
+        "**/*.min.css"
+      ]
+    },
+    {
+      "label": "Environment files",
+      "patterns": [
+        "**/.env",
+        "**/.env.*"
+      ]
+    },
+    {
+      "label": "Generated build metadata",
+      "patterns": [
+        "**/*.tsbuildinfo"
+      ]
+    },
+    {
+      "label": "Python tool caches",
+      "patterns": [
+        "**/.gradio/**",
+        "**/.dvc/cache/**"
+      ]
+    },
+    {
+      "label": "Operating system files",
+      "patterns": [
+        "**/.DS_Store",
+        "**/Thumbs.db"
+      ]
+    },
+    {
+      "label": "Source maps, logs, Markdown and SVG files",
+      "patterns": [
+        "**/*.map",
+        "**/*.log",
+        "**/*.md",
+        "**/*.svg"
+      ]
+    },
+    {
+      "label": "GitHub Actions workflows",
+      "patterns": [
+        ".github/workflows/**"
+      ]
+    }
+  ],
+  "editors": [
+    {
+      "label": "VS Code and its forks",
+      "patterns": [
+        "**/.vscode/**",
+        "**/.vscode-test/**",
+        "**/*.code-workspace",
+        "**/.history/**"
+      ]
+    },
+    {
+      "label": "Visual Studio",
+      "patterns": [
+        "**/.vs/**"
+      ]
+    },
+    {
+      "label": "JetBrains IDEs and Fleet",
+      "patterns": [
+        "**/.idea/**",
+        "**/*.iml",
+        "**/*.ipr",
+        "**/*.iws",
+        "**/.fleet/**"
+      ]
+    },
+    {
+      "label": "Eclipse",
+      "patterns": [
+        "**/.project",
+        "**/.classpath",
+        "**/.factorypath",
+        "**/.settings/**"
+      ]
+    },
+    {
+      "label": "NetBeans",
+      "patterns": [
+        "**/nbproject/**"
+      ]
+    },
+    {
+      "label": "Xcode project bundles",
+      "patterns": [
+        "**/*.xcodeproj/**",
+        "**/*.xcworkspace/**",
+        "**/xcuserdata/**"
+      ]
+    },
+    {
+      "label": "Sublime Text, Zed, Nova, Theia",
+      "patterns": [
+        "**/*.sublime-project",
+        "**/*.sublime-workspace",
+        "**/.zed/**",
+        "**/.nova/**",
+        "**/.theia/**"
+      ]
+    },
+    {
+      "label": "Vim and Emacs swap, backup and session files",
+      "patterns": [
+        "**/*.swp",
+        "**/*.swo",
+        "**/*~",
+        "**/.#*",
+        "**/#*#",
+        "**/.netrwhist",
+        "**/Session.vim"
+      ]
+    },
+    {
+      "label": "AI coding assistants",
+      "patterns": [
+        "**/.cursor/**",
+        "**/.cursorrules",
+        "**/.cursorignore",
+        "**/.windsurf/**",
+        "**/.windsurfrules",
+        "**/.claude/**",
+        "**/.continue/**"
+      ]
+    },
+    {
+      "label": "EditorConfig and dev containers",
+      "patterns": [
+        "**/.editorconfig",
+        "**/.devcontainer/**"
+      ]
+    }
+  ],
+  "ideTemplates": [
+    {
+      "template": "Global/JetBrains",
+      "signals": [
+        {
+          "name": ".idea",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Global/VisualStudioCode",
+      "signals": [
+        {
+          "name": ".vscode",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Global/Xcode",
+      "signals": [
+        {
+          "name": "*.xcodeproj",
+          "in": "root"
+        },
+        {
+          "name": "*.xcworkspace",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "VisualStudio",
+      "signals": [
+        {
+          "name": ".vs",
+          "in": "root"
+        }
+      ]
+    }
+  ],
+  "nonCode": [
+    {
+      "label": "Diagrams (draw.io, Excalidraw, BPMN, PlantUML, Mermaid)",
+      "patterns": [
+        "**/*.drawio",
+        "**/*.dio",
+        "**/*.excalidraw",
+        "**/*.bpmn",
+        "**/*.puml",
+        "**/*.plantuml",
+        "**/*.mmd"
+      ]
+    },
+    {
+      "label": "Tabular data",
+      "patterns": [
+        "**/*.csv",
+        "**/*.tsv"
+      ]
+    }
+  ],
+  "languages": [
+    {
+      "template": "Ada",
+      "languages": [
+        "Ada"
+      ]
+    },
+    {
+      "template": "Agda",
+      "languages": [
+        "Agda"
+      ]
+    },
+    {
+      "template": "Ballerina",
+      "languages": [
+        "Ballerina"
+      ]
+    },
+    {
+      "template": "C",
+      "languages": [
+        "C"
+      ]
+    },
+    {
+      "template": "C++",
+      "languages": [
+        "C++"
+      ]
+    },
+    {
+      "template": "CMake",
+      "languages": [
+        "CMake"
+      ]
+    },
+    {
+      "template": "D",
+      "languages": [
+        "D"
+      ]
+    },
+    {
+      "template": "Dart",
+      "languages": [
+        "Dart"
+      ]
+    },
+    {
+      "template": "DM",
+      "languages": [
+        "DM"
+      ]
+    },
+    {
+      "template": "Dotnet",
+      "languages": [
+        "C#"
+      ]
+    },
+    {
+      "template": "Eagle",
+      "languages": [
+        "Eagle"
+      ]
+    },
+    {
+      "template": "Elixir",
+      "languages": [
+        "Elixir"
+      ]
+    },
+    {
+      "template": "Elm",
+      "languages": [
+        "Elm"
+      ]
+    },
+    {
+      "template": "Erlang",
+      "languages": [
+        "Erlang"
+      ]
+    },
+    {
+      "template": "Fancy",
+      "languages": [
+        "Fancy"
+      ]
+    },
+    {
+      "template": "Fortran",
+      "languages": [
+        "Fortran"
+      ]
+    },
+    {
+      "template": "Gleam",
+      "languages": [
+        "Gleam"
+      ]
+    },
+    {
+      "template": "Global/Linux",
+      "languages": [
+        "Bash",
+        "Shell",
+        "Zsh"
+      ]
+    },
+    {
+      "template": "Go",
+      "languages": [
+        "Go"
+      ]
+    },
+    {
+      "template": "Gradle",
+      "languages": [
+        "Gradle"
+      ]
+    },
+    {
+      "template": "Haskell",
+      "languages": [
+        "Haskell"
+      ]
+    },
+    {
+      "template": "Haxe",
+      "languages": [
+        "Haxe"
+      ]
+    },
+    {
+      "template": "HIP",
+      "languages": [
+        "HIP"
+      ]
+    },
+    {
+      "template": "Idris",
+      "languages": [
+        "Idris"
+      ]
+    },
+    {
+      "template": "Java",
+      "languages": [
+        "Clojure",
+        "Groovy",
+        "Java",
+        "Kotlin",
+        "Scala"
+      ]
+    },
+    {
+      "template": "Julia",
+      "languages": [
+        "Julia"
+      ]
+    },
+    {
+      "template": "LabVIEW",
+      "languages": [
+        "LabVIEW"
+      ]
+    },
+    {
+      "template": "Lean",
+      "languages": [
+        "Lean"
+      ]
+    },
+    {
+      "template": "Lua",
+      "languages": [
+        "Lua"
+      ]
+    },
+    {
+      "template": "Luau",
+      "languages": [
+        "Luau"
+      ]
+    },
+    {
+      "template": "Mercury",
+      "languages": [
+        "Mercury"
+      ]
+    },
+    {
+      "template": "Modelica",
+      "languages": [
+        "Modelica"
+      ]
+    },
+    {
+      "template": "MoonBit",
+      "languages": [
+        "MoonBit"
+      ]
+    },
+    {
+      "template": "Nim",
+      "languages": [
+        "Nim"
+      ]
+    },
+    {
+      "template": "Nix",
+      "languages": [
+        "Nix"
+      ]
+    },
+    {
+      "template": "Node",
+      "languages": [
+        "CoffeeScript",
+        "JavaScript",
+        "TypeScript"
+      ]
+    },
+    {
+      "template": "Objective-C",
+      "languages": [
+        "Objective-C",
+        "Objective-C++"
+      ]
+    },
+    {
+      "template": "OCaml",
+      "languages": [
+        "OCaml"
+      ]
+    },
+    {
+      "template": "Opa",
+      "languages": [
+        "Opa"
+      ]
+    },
+    {
+      "template": "Perl",
+      "languages": [
+        "Perl"
+      ]
+    },
+    {
+      "template": "Processing",
+      "languages": [
+        "Processing"
+      ]
+    },
+    {
+      "template": "PureScript",
+      "languages": [
+        "PureScript"
+      ]
+    },
+    {
+      "template": "Python",
+      "languages": [
+        "Python"
+      ]
+    },
+    {
+      "template": "R",
+      "languages": [
+        "R"
+      ]
+    },
+    {
+      "template": "Racket",
+      "languages": [
+        "Racket"
+      ]
+    },
+    {
+      "template": "Raku",
+      "languages": [
+        "Raku"
+      ]
+    },
+    {
+      "template": "ReScript",
+      "languages": [
+        "ReScript"
+      ]
+    },
+    {
+      "template": "Ruby",
+      "languages": [
+        "Ruby"
+      ]
+    },
+    {
+      "template": "Rust",
+      "languages": [
+        "Rust"
+      ]
+    },
+    {
+      "template": "Sass",
+      "languages": [
+        "Sass"
+      ]
+    },
+    {
+      "template": "Scala",
+      "languages": [
+        "Scala"
+      ]
+    },
+    {
+      "template": "Scheme",
+      "languages": [
+        "Scheme"
+      ]
+    },
+    {
+      "template": "Smalltalk",
+      "languages": [
+        "Smalltalk"
+      ]
+    },
+    {
+      "template": "Swift",
+      "languages": [
+        "Swift"
+      ]
+    },
+    {
+      "template": "TeX",
+      "languages": [
+        "TeX"
+      ]
+    },
+    {
+      "template": "VBA",
+      "languages": [
+        "VBA"
+      ]
+    },
+    {
+      "template": "VisualStudio",
+      "languages": [
+        "F#",
+        "Visual Basic .NET"
+      ]
+    },
+    {
+      "template": "Xojo",
+      "languages": [
+        "Xojo"
+      ]
+    },
+    {
+      "template": "Zephir",
+      "languages": [
+        "Zephir"
+      ]
+    },
+    {
+      "template": "Zig",
+      "languages": [
+        "Zig"
+      ]
+    }
+  ],
+  "projectFiles": [
+    {
+      "template": "Android",
+      "signals": [
+        {
+          "name": "local.properties",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Angular",
+      "signals": [
+        {
+          "name": "angular.json",
+          "in": "root"
+        },
+        {
+          "name": "@angular/core",
+          "in": "package.json"
+        }
+      ]
+    },
+    {
+      "template": "Autotools",
+      "signals": [
+        {
+          "name": "configure.ac",
+          "in": "root"
+        },
+        {
+          "name": "configure.in",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "bun",
+      "signals": [
+        {
+          "name": "bun.lockb",
+          "in": "root"
+        },
+        {
+          "name": "bun.lock",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "C",
+      "signals": [
+        {
+          "name": "Makefile",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "C++",
+      "signals": [
+        {
+          "name": "Makefile",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "CakePHP",
+      "signals": [
+        {
+          "name": "cakephp/cakephp",
+          "in": "composer.json"
+        }
+      ]
+    },
+    {
+      "template": "CMake",
+      "signals": [
+        {
+          "name": "CMakeLists.txt",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "CodeIgniter",
+      "signals": [
+        {
+          "name": "codeigniter4/framework",
+          "in": "composer.json"
+        }
+      ]
+    },
+    {
+      "template": "community/AWS/CDK",
+      "signals": [
+        {
+          "name": "cdk.json",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "community/AWS/SAM",
+      "signals": [
+        {
+          "name": "samconfig.toml",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "community/Elixir/Phoenix",
+      "signals": [
+        {
+          "name": "phoenix",
+          "in": "mix.exs"
+        }
+      ]
+    },
+    {
+      "template": "community/Golang/Hugo",
+      "signals": [
+        {
+          "name": "hugo.toml",
+          "in": "root"
+        },
+        {
+          "name": "hugo.yaml",
+          "in": "root"
+        },
+        {
+          "name": "hugo.json",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "community/JavaScript/Expo",
+      "signals": [
+        {
+          "name": "expo",
+          "in": "package.json"
+        }
+      ]
+    },
+    {
+      "template": "community/JavaScript/Vue",
+      "signals": [
+        {
+          "name": "vue",
+          "in": "package.json"
+        }
+      ]
+    },
+    {
+      "template": "community/Python/JupyterNotebooks",
+      "signals": [
+        {
+          "name": "*.ipynb",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "community/Strapi",
+      "signals": [
+        {
+          "name": "@strapi/strapi",
+          "in": "package.json"
+        }
+      ]
+    },
+    {
+      "template": "community/Tauri",
+      "signals": [
+        {
+          "name": "src-tauri",
+          "in": "root"
+        },
+        {
+          "name": "@tauri-apps/api",
+          "in": "package.json"
+        }
+      ]
+    },
+    {
+      "template": "Composer",
+      "signals": [
+        {
+          "name": "composer.json",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Dart",
+      "signals": [
+        {
+          "name": "pubspec.yaml",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Deno",
+      "signals": [
+        {
+          "name": "deno.json",
+          "in": "root"
+        },
+        {
+          "name": "deno.jsonc",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Drupal",
+      "signals": [
+        {
+          "name": "drupal/core",
+          "in": "composer.json"
+        },
+        {
+          "name": "drupal/core-recommended",
+          "in": "composer.json"
+        }
+      ]
+    },
+    {
+      "template": "Elixir",
+      "signals": [
+        {
+          "name": "mix.exs",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Firebase",
+      "signals": [
+        {
+          "name": "firebase.json",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Flutter",
+      "signals": [
+        {
+          "name": "pubspec.yaml",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Go",
+      "signals": [
+        {
+          "name": "go.mod",
+          "in": "root"
+        },
+        {
+          "name": "go.sum",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Godot",
+      "signals": [
+        {
+          "name": "project.godot",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Gradle",
+      "signals": [
+        {
+          "name": "build.gradle",
+          "in": "root"
+        },
+        {
+          "name": "build.gradle.kts",
+          "in": "root"
+        },
+        {
+          "name": "settings.gradle",
+          "in": "root"
+        },
+        {
+          "name": "settings.gradle.kts",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Grails",
+      "signals": [
+        {
+          "name": "grails-app",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Java",
+      "signals": [
+        {
+          "name": "pom.xml",
+          "in": "root"
+        },
+        {
+          "name": "build.gradle",
+          "in": "root"
+        },
+        {
+          "name": "build.gradle.kts",
+          "in": "root"
+        },
+        {
+          "name": "settings.gradle",
+          "in": "root"
+        },
+        {
+          "name": "settings.gradle.kts",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Jekyll",
+      "signals": [
+        {
+          "name": "_config.yml",
+          "in": "root"
+        },
+        {
+          "name": "jekyll",
+          "in": "Gemfile"
+        }
+      ]
+    },
+    {
+      "template": "Laravel",
+      "signals": [
+        {
+          "name": "artisan",
+          "in": "root"
+        },
+        {
+          "name": "laravel/framework",
+          "in": "composer.json"
+        },
+        {
+          "name": "laravel/lumen-framework",
+          "in": "composer.json"
+        }
+      ]
+    },
+    {
+      "template": "Maven",
+      "signals": [
+        {
+          "name": "pom.xml",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Nanoc",
+      "signals": [
+        {
+          "name": "nanoc",
+          "in": "Gemfile"
+        }
+      ]
+    },
+    {
+      "template": "Nestjs",
+      "signals": [
+        {
+          "name": "nest-cli.json",
+          "in": "root"
+        },
+        {
+          "name": "@nestjs/core",
+          "in": "package.json"
+        }
+      ]
+    },
+    {
+      "template": "Nextjs",
+      "signals": [
+        {
+          "name": "next.config.js",
+          "in": "root"
+        },
+        {
+          "name": "next.config.ts",
+          "in": "root"
+        },
+        {
+          "name": "next.config.mjs",
+          "in": "root"
+        },
+        {
+          "name": "next",
+          "in": "package.json"
+        }
+      ]
+    },
+    {
+      "template": "Nix",
+      "signals": [
+        {
+          "name": "flake.nix",
+          "in": "root"
+        },
+        {
+          "name": "default.nix",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Node",
+      "signals": [
+        {
+          "name": "package.json",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": null,
+      "signals": [
+        {
+          "name": "nuxt.config.js",
+          "in": "root"
+        },
+        {
+          "name": "nuxt.config.ts",
+          "in": "root"
+        },
+        {
+          "name": "nuxt",
+          "in": "package.json"
+        },
+        {
+          "name": "@nuxt/kit",
+          "in": "package.json"
+        }
+      ],
+      "patterns": [
+        ".nuxt/**",
+        ".output/**"
+      ]
+    },
+    {
+      "template": "Objective-C",
+      "signals": [
+        {
+          "name": "Podfile",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Python",
+      "signals": [
+        {
+          "name": "requirements.txt",
+          "in": "root"
+        },
+        {
+          "name": "pyproject.toml",
+          "in": "root"
+        },
+        {
+          "name": "Pipfile",
+          "in": "root"
+        },
+        {
+          "name": "Pipfile.lock",
+          "in": "root"
+        },
+        {
+          "name": "setup.py",
+          "in": "root"
+        },
+        {
+          "name": "setup.cfg",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Qt",
+      "signals": [
+        {
+          "name": "*.pro",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Rails",
+      "signals": [
+        {
+          "name": "Rakefile",
+          "in": "root"
+        },
+        {
+          "name": "rails",
+          "in": "Gemfile"
+        }
+      ]
+    },
+    {
+      "template": "Ruby",
+      "signals": [
+        {
+          "name": "Gemfile",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Rust",
+      "signals": [
+        {
+          "name": "Cargo.toml",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": null,
+      "signals": [
+        {
+          "name": "svelte.config.js",
+          "in": "root"
+        },
+        {
+          "name": "svelte.config.ts",
+          "in": "root"
+        },
+        {
+          "name": "svelte",
+          "in": "package.json"
+        }
+      ],
+      "patterns": [
+        ".svelte-kit/**"
+      ]
+    },
+    {
+      "template": "Swift",
+      "signals": [
+        {
+          "name": "Podfile",
+          "in": "root"
+        },
+        {
+          "name": "Package.swift",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Symfony",
+      "signals": [
+        {
+          "name": "symfony.lock",
+          "in": "root"
+        },
+        {
+          "name": "symfony/framework-bundle",
+          "in": "composer.json"
+        },
+        {
+          "name": "symfony/symfony",
+          "in": "composer.json"
+        }
+      ]
+    },
+    {
+      "template": "Terraform",
+      "signals": [
+        {
+          "name": "terraform.tfvars",
+          "in": "root"
+        },
+        {
+          "name": ".terraform",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "Unity",
+      "signals": [
+        {
+          "name": "ProjectSettings",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "UnrealEngine",
+      "signals": [
+        {
+          "name": "*.uproject",
+          "in": "root"
+        }
+      ]
+    },
+    {
+      "template": "WordPress",
+      "signals": [
+        {
+          "name": "wp-config.php",
+          "in": "root"
+        },
+        {
+          "name": "roots/wordpress",
+          "in": "composer.json"
+        },
+        {
+          "name": "johnpbloch/wordpress",
+          "in": "composer.json"
+        },
+        {
+          "name": "johnpbloch/wordpress-core",
+          "in": "composer.json"
+        }
+      ]
+    },
+    {
+      "template": "Yii",
+      "signals": [
+        {
+          "name": "yiisoft/yii2",
+          "in": "composer.json"
+        }
+      ]
+    }
+  ],
+  "fallback": [
+    "**/node_modules/**",
+    "**/*.lock",
+    "**/package-lock.json",
+    "**/yarn.lock",
+    "**/pnpm-lock.yaml",
+    "**/*.min.js",
+    "**/*.min.css",
+    "**/dist/**",
+    "**/build/**",
+    "**/out/**",
+    "**/coverage/**",
+    "**/.nyc_output/**",
+    "**/.next/**",
+    "**/.nuxt/**",
+    "**/.output/**",
+    "**/.svelte-kit/**",
+    "**/.astro/**",
+    "**/.expo/**",
+    "**/.parcel-cache/**",
+    "**/.turbo/**",
+    "**/__pycache__/**",
+    "**/*.pyc",
+    "**/.venv/**",
+    "**/venv/**",
+    "**/.pytest_cache/**",
+    "**/*.egg-info/**",
+    "**/.tox/**",
+    "**/target/**",
+    "**/.gradle/**",
+    "**/.bundle/**",
+    "**/vendor/**",
+    "**/obj/**",
+    "**/CMakeFiles/**",
+    "**/cmake-build-*/**",
+    "**/CMakeCache.txt",
+    "**/CMakeCache.txt.dir/**",
+    "**/.git/**",
+    "**/.gitignore",
+    "**/.classroom50.yaml",
+    "**/.env",
+    "**/.env.*",
+    "**/*.tsbuildinfo",
+    "**/.DS_Store",
+    "**/Thumbs.db",
+    "**/*.svg",
+    "**/*.map",
+    "**/*.log",
+    "**/*.md",
+    "**/.vscode/**",
+    "**/.vscode-test/**",
+    "**/*.code-workspace",
+    "**/.history/**",
+    "**/.vs/**",
+    "**/.idea/**",
+    "**/*.iml",
+    "**/*.ipr",
+    "**/*.iws",
+    "**/.fleet/**",
+    "**/.project",
+    "**/.classpath",
+    "**/.factorypath",
+    "**/.settings/**",
+    "**/nbproject/**",
+    "**/*.xcodeproj/**",
+    "**/*.xcworkspace/**",
+    "**/xcuserdata/**",
+    "**/*.sublime-project",
+    "**/*.sublime-workspace",
+    "**/.zed/**",
+    "**/.nova/**",
+    "**/.theia/**",
+    "**/*.swp",
+    "**/*.swo",
+    "**/*~",
+    "**/.#*",
+    "**/#*#",
+    "**/.netrwhist",
+    "**/Session.vim",
+    "**/.cursor/**",
+    "**/.cursorrules",
+    "**/.cursorignore",
+    "**/.windsurf/**",
+    "**/.windsurfrules",
+    "**/.claude/**",
+    "**/.continue/**",
+    "**/.editorconfig",
+    "**/.devcontainer/**",
+    "**/*.drawio",
+    "**/*.dio",
+    "**/*.excalidraw",
+    "**/*.bpmn",
+    "**/*.puml",
+    "**/*.plantuml",
+    "**/*.mmd",
+    "**/*.csv",
+    "**/*.tsv"
+  ],
+  "templates": {
+    "Ada": [
+      "**/*.o",
+      "**/*.ali"
+    ],
+    "Agda": [
+      "**/*.agdai",
+      "**/MAlonzo/**"
+    ],
+    "Android": [
+      "**/.gradle/**",
+      "**/build/**",
+      "**/.kotlin/**",
+      "**/local.properties",
+      "**/local.properties/**",
+      "**/*.log",
+      "**/captures/**",
+      "**/.externalNativeBuild/**",
+      "**/.cxx/**",
+      "**/*.aab",
+      "**/*.apk",
+      "**/output-metadata.json",
+      "**/output-metadata.json/**",
+      "**/*.iml",
+      "**/.idea/**",
+      "**/misc.xml",
+      "**/misc.xml/**",
+      "**/deploymentTargetDropDown.xml",
+      "**/deploymentTargetDropDown.xml/**",
+      "**/render.experimental.xml",
+      "**/render.experimental.xml/**",
+      "**/*.jks",
+      "**/*.keystore",
+      "**/google-services.json",
+      "**/google-services.json/**",
+      "**/*.hprof"
+    ],
+    "Angular": [
+      "dist/**",
+      "out-tsc/**",
+      "tmp/**",
+      "coverage/**",
+      "e2e/test-output/**",
+      ".angular/**",
+      "**/.angular/**",
+      "node_modules/**",
+      "package-lock.json",
+      "package-lock.json/**",
+      "yarn.lock",
+      "yarn.lock/**",
+      ".env",
+      ".env/**",
+      ".angular-cli.json",
+      ".angular-cli.json/**",
+      ".ng/**",
+      "**/*.tsbuildinfo",
+      "**/npm-debug.log*",
+      "**/yarn-debug.log*",
+      "**/yarn-error.log*"
+    ],
+    "Autotools": [
+      "**/Makefile.in",
+      "**/Makefile.in/**",
+      "ar-lib",
+      "ar-lib/**",
+      "mdate-sh",
+      "mdate-sh/**",
+      "py-compile",
+      "py-compile/**",
+      "test-driver",
+      "test-driver/**",
+      "ylwrap",
+      "ylwrap/**",
+      "**/.deps/**",
+      "**/.dirstamp",
+      "**/.dirstamp/**",
+      "**/autom4te.cache",
+      "**/autom4te.cache/**",
+      "autoscan.log",
+      "autoscan.log/**",
+      "autoscan-*.log",
+      "aclocal.m4",
+      "aclocal.m4/**",
+      "compile",
+      "compile/**",
+      "config.cache",
+      "config.cache/**",
+      "config.guess",
+      "config.guess/**",
+      "config.h.in",
+      "config.h.in/**",
+      "config.log",
+      "config.log/**",
+      "config.status",
+      "config.status/**",
+      "config.sub",
+      "config.sub/**",
+      "configure",
+      "configure/**",
+      "configure.scan",
+      "configure.scan/**",
+      "depcomp",
+      "depcomp/**",
+      "install-sh",
+      "install-sh/**",
+      "missing",
+      "missing/**",
+      "stamp-h1",
+      "stamp-h1/**",
+      "libtool",
+      "libtool/**",
+      "ltmain.sh",
+      "ltmain.sh/**",
+      "**/.libs/**",
+      "texinfo.tex",
+      "texinfo.tex/**",
+      "m4/libtool.m4",
+      "m4/libtool.m4/**",
+      "m4/ltoptions.m4",
+      "m4/ltoptions.m4/**",
+      "m4/ltsugar.m4",
+      "m4/ltsugar.m4/**",
+      "m4/ltversion.m4",
+      "m4/ltversion.m4/**",
+      "m4/lt~obsolete.m4",
+      "m4/lt~obsolete.m4/**",
+      "**/Makefile",
+      "**/Makefile/**"
+    ],
+    "Ballerina": [
+      "**/target/**",
+      "**/generated/**",
+      "**/Dependencies.toml",
+      "**/Dependencies.toml/**",
+      "**/Config.toml",
+      "**/Config.toml/**"
+    ],
+    "C": [
+      "**/*.d",
+      "**/*.o",
+      "**/*.ko",
+      "**/*.obj",
+      "**/*.elf",
+      "**/*.ilk",
+      "**/*.map",
+      "**/*.exp",
+      "**/*.gch",
+      "**/*.pch",
+      "**/*.lib",
+      "**/*.a",
+      "**/*.la",
+      "**/*.lo",
+      "**/*.dll",
+      "**/*.so",
+      "**/*.so.*",
+      "**/*.dylib",
+      "**/*.exe",
+      "**/*.out",
+      "**/*.app",
+      "**/*.i*86",
+      "**/*.x86_64",
+      "**/*.hex",
+      "**/*.dSYM/**",
+      "**/*.su",
+      "**/*.idb",
+      "**/*.pdb",
+      "**/*.mod*",
+      "**/*.cmd",
+      "**/.tmp_versions/**",
+      "**/modules.order",
+      "**/modules.order/**",
+      "**/Module.symvers",
+      "**/Module.symvers/**",
+      "**/Mkfile.old",
+      "**/Mkfile.old/**",
+      "**/dkms.conf",
+      "**/dkms.conf/**",
+      "**/*.dwo"
+    ],
+    "C++": [
+      "**/*.d",
+      "**/*.slo",
+      "**/*.lo",
+      "**/*.o",
+      "**/*.obj",
+      "**/*.gch",
+      "**/*.pch",
+      "**/*.ilk",
+      "**/*.pdb",
+      "**/*.so",
+      "**/*.dylib",
+      "**/*.dll",
+      "**/*.so.*",
+      "**/*.mod",
+      "**/*.smod",
+      "**/*.lai",
+      "**/*.la",
+      "**/*.a",
+      "**/*.lib",
+      "**/*.exe",
+      "**/*.out",
+      "**/*.app",
+      "**/build/**",
+      "**/Build/**",
+      "**/build-*/**",
+      "**/CMakeFiles/**",
+      "**/CMakeCache.txt",
+      "**/CMakeCache.txt/**",
+      "**/cmake_install.cmake",
+      "**/cmake_install.cmake/**",
+      "**/Makefile",
+      "**/Makefile/**",
+      "**/install_manifest.txt",
+      "**/install_manifest.txt/**",
+      "**/compile_commands.json",
+      "**/compile_commands.json/**",
+      "**/*.tmp",
+      "**/*.log",
+      "**/*.bak",
+      "**/*.swp",
+      "**/vcpkg_installed/**",
+      "**/*.dwo",
+      "**/Testing/**",
+      "**/.cache/**"
+    ],
+    "CMake": [
+      "**/CMakeLists.txt.user",
+      "**/CMakeLists.txt.user/**",
+      "**/CMakeCache.txt",
+      "**/CMakeCache.txt/**",
+      "**/CMakeFiles",
+      "**/CMakeFiles/**",
+      "**/CMakeScripts",
+      "**/CMakeScripts/**",
+      "**/Testing",
+      "**/Testing/**",
+      "**/Makefile",
+      "**/Makefile/**",
+      "**/cmake_install.cmake",
+      "**/cmake_install.cmake/**",
+      "**/install_manifest.txt",
+      "**/install_manifest.txt/**",
+      "**/compile_commands.json",
+      "**/compile_commands.json/**",
+      "**/CTestTestfile.cmake",
+      "**/CTestTestfile.cmake/**",
+      "**/_deps",
+      "**/_deps/**",
+      "**/CMakeUserPresets.json",
+      "**/CMakeUserPresets.json/**"
+    ],
+    "CakePHP": [
+      "vendor/*",
+      "config/app.php",
+      "config/app.php/**",
+      "tmp/cache/models/*",
+      "tmp/cache/persistent/*",
+      "tmp/cache/views/*",
+      "tmp/sessions/*",
+      "tmp/tests/*",
+      "logs/*",
+      "app/tmp/*",
+      "app/Config/core.php",
+      "app/Config/core.php/**",
+      "app/Config/database.php",
+      "app/Config/database.php/**",
+      "vendors/*"
+    ],
+    "CodeIgniter": [
+      "*/config/development",
+      "*/logs/log-*.php",
+      "*/cache/*",
+      "user_guide_src/build/*",
+      "user_guide_src/cilexer/build/*",
+      "user_guide_src/cilexer/dist/*",
+      "user_guide_src/cilexer/pycilexer.egg-info/*",
+      "application/logs/*",
+      "vendor/**"
+    ],
+    "Composer": [
+      "**/composer.phar",
+      "**/composer.phar/**",
+      "vendor/**"
+    ],
+    "D": [
+      "**/*.o",
+      "**/*.obj",
+      "**/*.so",
+      "**/*.dylib",
+      "**/*.dll",
+      "**/*.a",
+      "**/*.lib",
+      "**/*.exe",
+      "**/.dub",
+      "**/.dub/**",
+      "**/docs.json",
+      "**/docs.json/**",
+      "**/__dummy.html",
+      "**/__dummy.html/**",
+      "**/docs/**",
+      "**/*.lst"
+    ],
+    "DM": [
+      "**/*.dmb",
+      "**/*.rsc",
+      "**/*.int",
+      "**/*.lk",
+      "**/*.zip"
+    ],
+    "Dart": [
+      "**/.dart_tool/**",
+      "**/.packages",
+      "**/.packages/**",
+      "**/build/**",
+      "**/pubspec.lock",
+      "**/pubspec.lock/**",
+      "doc/api/**",
+      "**/.env*",
+      "**/*.dart.js",
+      "**/*.info.json",
+      "**/*.js",
+      "**/*.js_",
+      "**/*.js.deps",
+      "**/*.js.map",
+      "**/.flutter-plugins",
+      "**/.flutter-plugins/**",
+      "**/.flutter-plugins-dependencies",
+      "**/.flutter-plugins-dependencies/**"
+    ],
+    "Deno": [
+      "**/.deno/**",
+      "**/coverage/**",
+      "**/*.lcov"
+    ],
+    "Dotnet": [
+      "**/[Dd]ebug/**",
+      "**/[Dd]ebugPublic/**",
+      "**/[Rr]elease/**",
+      "**/[Rr]eleases/**",
+      "**/x64/**",
+      "**/x86/**",
+      "**/[Ww][Ii][Nn]32/**",
+      "**/[Aa][Rr][Mm]/**",
+      "**/[Aa][Rr][Mm]64/**",
+      "**/bld/**",
+      "**/[Bb]in/**",
+      "**/[Oo]bj/**",
+      "**/[Ll]og/**",
+      "**/[Ll]ogs/**",
+      "**/project.lock.json",
+      "**/project.lock.json/**",
+      "**/project.fragment.lock.json",
+      "**/project.fragment.lock.json/**",
+      "**/artifacts/**",
+      "**/ScaffoldingReadMe.txt",
+      "**/ScaffoldingReadMe.txt/**",
+      "**/*.nupkg",
+      "**/*.snupkg",
+      "**/.env",
+      "**/.env/**",
+      "**/~$*",
+      "**/*~",
+      "**/CodeCoverage/**",
+      "**/*.binlog",
+      "**/[Tt]est[Rr]esult*/**",
+      "**/[Bb]uild[Ll]og.*",
+      "**/*.VisualState.xml",
+      "**/TestResult.xml",
+      "**/TestResult.xml/**",
+      "**/nunit-*.xml"
+    ],
+    "Drupal": [
+      "web/sites/*/*settings*.php",
+      "web/sites/*/*services*.yml",
+      "web/sites/*/files",
+      "web/sites/*/public",
+      "web/sites/*/private",
+      "web/sites/*/files-public",
+      "web/sites/*/files-private",
+      "web/sites/*/translations",
+      "web/sites/*/tmp",
+      "web/sites/*/cache",
+      "web/vendor",
+      "web/vendor/**",
+      "web/core",
+      "web/core/**",
+      "web/modules/README.txt",
+      "web/modules/README.txt/**",
+      "web/modules/contrib",
+      "web/modules/contrib/**",
+      "web/profiles/README.txt",
+      "web/profiles/README.txt/**",
+      "web/profiles/contrib",
+      "web/profiles/contrib/**",
+      "web/sites/development.services.yml",
+      "web/sites/development.services.yml/**",
+      "web/sites/example.settings.local.php",
+      "web/sites/example.settings.local.php/**",
+      "web/sites/example.sites.php",
+      "web/sites/example.sites.php/**",
+      "web/sites/README.txt",
+      "web/sites/README.txt/**",
+      "web/themes/README.txt",
+      "web/themes/README.txt/**",
+      "web/themes/contrib",
+      "web/themes/contrib/**",
+      "web/.csslintrc",
+      "web/.csslintrc/**",
+      "web/.editorconfig",
+      "web/.editorconfig/**",
+      "web/.eslintignore",
+      "web/.eslintignore/**",
+      "web/.eslintrc.json",
+      "web/.eslintrc.json/**",
+      "web/.gitattributes",
+      "web/.gitattributes/**",
+      "web/.htaccess",
+      "web/.htaccess/**",
+      "web/.ht.router.php",
+      "web/.ht.router.php/**",
+      "web/autoload.php",
+      "web/autoload.php/**",
+      "web/composer.json",
+      "web/composer.json/**",
+      "web/composer.lock",
+      "web/composer.lock/**",
+      "web/example.gitignore",
+      "web/example.gitignore/**",
+      "web/index.php",
+      "web/index.php/**",
+      "web/INSTALL.txt",
+      "web/INSTALL.txt/**",
+      "web/LICENSE.txt",
+      "web/LICENSE.txt/**",
+      "web/README.txt",
+      "web/README.txt/**",
+      "web/robots.txt",
+      "web/robots.txt/**",
+      "web/update.php",
+      "web/update.php/**",
+      "web/web.config",
+      "web/web.config/**",
+      "vendor",
+      "vendor/**",
+      "composer.phar",
+      "composer.phar/**",
+      "composer",
+      "composer/**",
+      "robo.phar",
+      "robo.phar/**",
+      "robo",
+      "robo/**",
+      "drush.phar",
+      "drush.phar/**",
+      "drush",
+      "drush/**",
+      "drupal.phar",
+      "drupal.phar/**",
+      "drupal",
+      "drupal/**"
+    ],
+    "Eagle": [
+      "**/*.s#?",
+      "**/*.b#?",
+      "**/*.l#?",
+      "**/*.b$?",
+      "**/*.s$?",
+      "**/*.l$?",
+      "**/eagle.epf",
+      "**/eagle.epf/**",
+      "**/*.pro",
+      "**/*.job",
+      "**/*.$$$",
+      "**/*.cmp",
+      "**/*.ly2",
+      "**/*.l15",
+      "**/*.sol",
+      "**/*.plc",
+      "**/*.stc",
+      "**/*.sts",
+      "**/*.crc",
+      "**/*.crs",
+      "**/*.dri",
+      "**/*.drl",
+      "**/*.gpi",
+      "**/*.pls",
+      "**/*.ger",
+      "**/*.xln",
+      "**/*.drd",
+      "**/*.drd.*",
+      "**/*.s#*",
+      "**/*.b#*",
+      "**/*.info",
+      "**/*.eps",
+      "**/*.lck"
+    ],
+    "Elixir": [
+      "_build",
+      "_build/**",
+      "cover",
+      "cover/**",
+      "deps",
+      "deps/**",
+      "doc",
+      "doc/**",
+      ".fetch",
+      ".fetch/**",
+      "**/erl_crash.dump",
+      "**/erl_crash.dump/**",
+      "**/*.ez",
+      "**/*.beam",
+      "config/*.secret.exs",
+      "**/.elixir_ls/**"
+    ],
+    "Elm": [
+      "**/elm-stuff",
+      "**/elm-stuff/**",
+      "**/repl-temp-*"
+    ],
+    "Erlang": [
+      "**/.eunit",
+      "**/.eunit/**",
+      "**/*.o",
+      "**/*.beam",
+      "**/*.plt",
+      "**/erl_crash.dump",
+      "**/erl_crash.dump/**",
+      ".concrete/DEV_MODE",
+      ".concrete/DEV_MODE/**",
+      "**/.rebar",
+      "**/.rebar/**",
+      "rel/example_project",
+      "rel/example_project/**",
+      "ebin/*.beam",
+      "**/deps",
+      "**/deps/**",
+      "**/.rebar3",
+      "**/.rebar3/**",
+      "**/_build/**",
+      "**/_checkouts/**"
+    ],
+    "Fancy": [
+      "**/*.rbc",
+      "**/*.fyc"
+    ],
+    "Firebase": [
+      "firebase-debug.log",
+      "firebase-debug.log/**",
+      "firebase-debug.*.log",
+      "**/.firebaserc",
+      "**/.firebaserc/**",
+      "firebase.json",
+      "firebase.json/**",
+      "**/*.cache",
+      "hosting/.cache",
+      "hosting/.cache/**",
+      "functions/node_modules/**",
+      "functions/.env",
+      "functions/.env/**",
+      "functions/package-lock.json",
+      "functions/package-lock.json/**",
+      "firebase-*.zip",
+      ".firebase/**",
+      "emulator-ui/**",
+      "**/*.log",
+      "**/npm-debug.log*",
+      "**/yarn-debug.log*",
+      "**/yarn-error.log*",
+      ".env.*"
+    ],
+    "Flutter": [
+      "**/*.class",
+      "**/*.lock",
+      "**/*.log",
+      "**/*.pyc",
+      "**/*.swp",
+      "**/.buildlog/**",
+      "**/.history",
+      "**/.history/**",
+      "bin/cache/**",
+      "bin/internal/bootstrap.bat",
+      "bin/internal/bootstrap.bat/**",
+      "bin/internal/bootstrap.sh",
+      "bin/internal/bootstrap.sh/**",
+      "bin/mingit/**",
+      "dev/benchmarks/mega_gallery/**",
+      "dev/bots/.recipe_deps",
+      "dev/bots/.recipe_deps/**",
+      "dev/bots/android_tools/**",
+      "dev/devicelab/ABresults*.json",
+      "dev/docs/doc/**",
+      "dev/docs/flutter.docs.zip",
+      "dev/docs/flutter.docs.zip/**",
+      "dev/docs/lib/**",
+      "dev/docs/pubspec.yaml",
+      "dev/docs/pubspec.yaml/**",
+      "dev/integration_tests/**/xcuserdata",
+      "dev/integration_tests/**/Pods",
+      "packages/flutter/coverage/**",
+      "**/version",
+      "**/version/**",
+      "**/analysis_benchmark.json",
+      "**/analysis_benchmark.json/**",
+      "**/.packages.generated",
+      "**/.packages.generated/**",
+      "**/doc/api/**",
+      "**/.dart_tool/**",
+      "**/.flutter-plugins",
+      "**/.flutter-plugins/**",
+      "**/.flutter-plugins-dependencies",
+      "**/.flutter-plugins-dependencies/**",
+      "**/generated_plugin_registrant.dart",
+      "**/.packages",
+      "**/.packages/**",
+      "**/.pub-preload-cache/**",
+      "**/.pub/**",
+      "**/build/**",
+      "**/flutter_*.png",
+      "**/linked_*.ds",
+      "**/unlinked.ds",
+      "**/unlinked.ds/**",
+      "**/unlinked_spec.ds",
+      "**/unlinked_spec.ds/**",
+      "**/android/**/gradle-wrapper.jar",
+      "**/.gradle/**",
+      "**/android/captures/**",
+      "**/android/gradlew",
+      "**/android/gradlew.bat",
+      "**/android/local.properties",
+      "**/android/**/GeneratedPluginRegistrant.java",
+      "**/android/key.properties",
+      "**/*.jks",
+      "**/ios/**/*.mode1v3",
+      "**/ios/**/*.mode2v3",
+      "**/ios/**/*.moved-aside",
+      "**/ios/**/*.pbxuser",
+      "**/ios/**/*.perspectivev3",
+      "**/ios/**/*sync/**",
+      "**/ios/**/.sconsign.dblite",
+      "**/ios/**/.tags*",
+      "**/ios/**/.vagrant/**",
+      "**/ios/**/DerivedData/**",
+      "**/ios/**/Icon?",
+      "**/ios/**/Pods/**",
+      "**/ios/**/.symlinks/**",
+      "**/ios/**/profile",
+      "**/ios/**/xcuserdata",
+      "**/ios/.generated/**",
+      "**/ios/Flutter/.last_build_id",
+      "**/ios/Flutter/App.framework",
+      "**/ios/Flutter/Flutter.framework",
+      "**/ios/Flutter/Flutter.podspec",
+      "**/ios/Flutter/Generated.xcconfig",
+      "**/ios/Flutter/ephemeral",
+      "**/ios/Flutter/app.flx",
+      "**/ios/Flutter/app.zip",
+      "**/ios/Flutter/flutter_assets/**",
+      "**/ios/Flutter/flutter_export_environment.sh",
+      "**/ios/ServiceDefinitions.json",
+      "**/ios/Runner/GeneratedPluginRegistrant.*",
+      "**/Flutter/ephemeral/**",
+      "**/Pods/**",
+      "**/macos/Flutter/GeneratedPluginRegistrant.swift",
+      "**/macos/Flutter/ephemeral",
+      "**/xcuserdata/**",
+      "**/windows/flutter/generated_plugin_registrant.cc",
+      "**/windows/flutter/generated_plugin_registrant.h",
+      "**/windows/flutter/generated_plugins.cmake",
+      "**/linux/flutter/generated_plugin_registrant.cc",
+      "**/linux/flutter/generated_plugin_registrant.h",
+      "**/linux/flutter/generated_plugins.cmake",
+      "**/coverage/**",
+      "**/app.*.symbols"
+    ],
+    "Fortran": [
+      "**/C++.gitignore",
+      "**/C++.gitignore/**"
+    ],
+    "Gleam": [
+      "**/*.beam",
+      "**/*.ez",
+      "build",
+      "build/**",
+      "**/erl_crash.dump",
+      "**/erl_crash.dump/**"
+    ],
+    "Global/JetBrains": [
+      ".idea/**/workspace.xml",
+      ".idea/**/tasks.xml",
+      ".idea/**/usage.statistics.xml",
+      ".idea/**/dictionaries",
+      ".idea/**/shelf",
+      ".idea/**/aws.xml",
+      ".idea/**/contentModel.xml",
+      ".idea/**/dataSources/**",
+      ".idea/**/dataSources.ids",
+      ".idea/**/dataSources.local.xml",
+      ".idea/**/sqlDataSources.xml",
+      ".idea/**/dynamic.xml",
+      ".idea/**/uiDesigner.xml",
+      ".idea/**/dbnavigator.xml",
+      ".idea/**/gradle.xml",
+      ".idea/**/libraries",
+      "**/cmake-build-*/**",
+      ".idea/**/mongoSettings.xml",
+      "**/*.iws",
+      "**/out/**",
+      "**/.idea_modules/**",
+      "**/atlassian-ide-plugin.xml",
+      "**/atlassian-ide-plugin.xml/**",
+      ".idea/replstate.xml",
+      ".idea/replstate.xml/**",
+      ".idea/sonarlint/**",
+      ".idea/sonarlint.xml",
+      ".idea/sonarlint.xml/**",
+      "**/com_crashlytics_export_strings.xml",
+      "**/com_crashlytics_export_strings.xml/**",
+      "**/crashlytics.properties",
+      "**/crashlytics.properties/**",
+      "**/crashlytics-build.properties",
+      "**/crashlytics-build.properties/**",
+      "**/fabric.properties",
+      "**/fabric.properties/**",
+      ".idea/httpRequests",
+      ".idea/httpRequests/**",
+      "**/http-client.private.env.json",
+      "**/http-client.private.env.json/**",
+      ".idea/caches/build_file_checksums.ser",
+      ".idea/caches/build_file_checksums.ser/**",
+      ".idea/.cache/.Apifox_Helper",
+      ".idea/.cache/.Apifox_Helper/**",
+      ".idea/ApifoxUploaderProjectSetting.xml",
+      ".idea/ApifoxUploaderProjectSetting.xml/**",
+      ".idea/**/copilot.data.migration.*.xml"
+    ],
+    "Global/Linux": [
+      "**/*~",
+      "**/.fuse_hidden*",
+      "**/.directory",
+      "**/.directory/**",
+      "**/.Trash-*",
+      "**/.nfs*",
+      "**/nohup.out",
+      "**/nohup.out/**"
+    ],
+    "Global/VisualStudioCode": [
+      ".vscode/*",
+      "**/*.vsix"
+    ],
+    "Global/Xcode": [
+      "**/xcuserdata/**"
+    ],
+    "Go": [
+      "**/*.exe",
+      "**/*.exe~",
+      "**/*.dll",
+      "**/*.so",
+      "**/*.dylib",
+      "**/*.test",
+      "**/*.out",
+      "**/coverage.*",
+      "**/*.coverprofile",
+      "**/profile.cov",
+      "**/profile.cov/**",
+      "**/go.work",
+      "**/go.work/**",
+      "**/go.work.sum",
+      "**/go.work.sum/**",
+      "**/.env",
+      "**/.env/**"
+    ],
+    "Godot": [
+      "**/~*.dll",
+      "**/.godot/**",
+      "**/.nomedia",
+      "**/.nomedia/**",
+      "**/.import/**",
+      "**/export.cfg",
+      "**/export.cfg/**",
+      "**/export_credentials.cfg",
+      "**/export_credentials.cfg/**",
+      "**/*.tmp",
+      "**/*.translation",
+      "**/.mono/**",
+      "**/data_*/**",
+      "**/mono_crash.*.json"
+    ],
+    "Gradle": [
+      "**/.gradle",
+      "**/.gradle/**",
+      "**/build/**",
+      "**/gradle-app.setting",
+      "**/gradle-app.setting/**",
+      "**/.gradletasknamecache",
+      "**/.gradletasknamecache/**",
+      "**/.project",
+      "**/.project/**",
+      "**/.classpath",
+      "**/.classpath/**"
+    ],
+    "Grails": [
+      "web-app/WEB-INF/classes",
+      "web-app/WEB-INF/classes/**",
+      "prodDb.*",
+      "**/*Db.properties",
+      "**/*Db.script",
+      "stacktrace.log",
+      "stacktrace.log/**",
+      "test/reports",
+      "test/reports/**",
+      "logs",
+      "logs/**",
+      "*.war",
+      "*.zip",
+      "plugin.xml",
+      "plugin.xml/**",
+      "plugins",
+      "plugins/**",
+      "web-app/plugins",
+      "web-app/plugins/**",
+      "target",
+      "target/**"
+    ],
+    "HIP": [
+      "build/**",
+      "CMakeFiles/**",
+      "CMakeCache.txt",
+      "CMakeCache.txt/**",
+      "Makefile",
+      "Makefile/**",
+      "cmake_install.cmake",
+      "cmake_install.cmake/**",
+      "install_manifest.txt",
+      "install_manifest.txt/**",
+      "**/*.ninja-dep",
+      "**/*.ninja_log",
+      "**/meson-logs/**",
+      "**/*.o",
+      "**/*.obj",
+      "**/*.so",
+      "**/*.a",
+      "**/*.d",
+      "**/*.gch",
+      "**/*.ii",
+      "**/*.ii.cpp",
+      "**/*.out",
+      "**/*.exe",
+      "**/*.hsaco",
+      "**/*.s",
+      "**/*.kernels.cpp",
+      "**/*.hip.cpp.*",
+      "bin/hipInfo",
+      "bin/hipInfo/**",
+      "bin/hipBusBandwidth",
+      "bin/hipBusBandwidth/**",
+      "bin/hipDispatchLatency",
+      "bin/hipDispatchLatency/**",
+      "bin/hipify-clang",
+      "bin/hipify-clang/**",
+      "samples/**/*.out",
+      "samples/**/*.code",
+      "samples/**/*.hsaco",
+      "samples/**/*.co",
+      "**/tags",
+      "**/tags/**",
+      "**/*.log",
+      "tests_output/**",
+      "samples_output/**"
+    ],
+    "Haskell": [
+      "**/dist",
+      "**/dist/**",
+      "**/dist-*",
+      "**/cabal-dev",
+      "**/cabal-dev/**",
+      "**/*.o",
+      "**/*.hi",
+      "**/*.hie",
+      "**/*.chi",
+      "**/*.chs.h",
+      "**/*.dyn_o",
+      "**/*.dyn_hi",
+      "**/.hpc",
+      "**/.hpc/**",
+      "**/.hsenv",
+      "**/.hsenv/**",
+      "**/.cabal-sandbox/**",
+      "**/cabal.sandbox.config",
+      "**/cabal.sandbox.config/**",
+      "**/*.prof",
+      "**/*.aux",
+      "**/*.hp",
+      "**/*.eventlog",
+      "**/.stack-work/**",
+      "**/cabal.project.local",
+      "**/cabal.project.local/**",
+      "**/cabal.project.local~",
+      "**/cabal.project.local~/**",
+      "**/.HTF/**",
+      "**/.ghc.environment.*"
+    ],
+    "Haxe": [
+      "**/.haxelib/**",
+      ".haxelsp/recording/**",
+      "**/dump/**"
+    ],
+    "Idris": [
+      "**/*.ttc",
+      "**/*.ttm",
+      "**/*.ibc",
+      "**/*.o"
+    ],
+    "Java": [
+      "**/*.class",
+      "**/*.log",
+      "**/*.ctxt",
+      "**/.mtj.tmp/**",
+      "**/*.jar",
+      "**/*.war",
+      "**/*.nar",
+      "**/*.ear",
+      "**/*.zip",
+      "**/*.tar.gz",
+      "**/*.rar",
+      "**/hs_err_pid*",
+      "**/replay_pid*"
+    ],
+    "Jekyll": [
+      "**/_site/**",
+      "**/.sass-cache/**",
+      "**/.jekyll-cache/**",
+      "**/.jekyll-metadata",
+      "**/.jekyll-metadata/**",
+      "**/.bundle/**",
+      "**/vendor/**"
+    ],
+    "Julia": [
+      "**/*.jl.cov",
+      "**/*.jl.*.cov",
+      "**/*.jl.mem",
+      "**/*.jl.*.mem",
+      "deps/deps.jl",
+      "deps/deps.jl/**",
+      "deps/build.log",
+      "deps/build.log/**",
+      "deps/downloads/**",
+      "deps/usr/**",
+      "deps/src/**",
+      "docs/build/**",
+      "docs/site/**",
+      "**/Manifest*.toml",
+      "**/LocalPreferences.toml",
+      "**/LocalPreferences.toml/**",
+      "**/JuliaLocalPreferences.toml",
+      "**/JuliaLocalPreferences.toml/**",
+      "**/.CondaPkg/**"
+    ],
+    "LabVIEW": [
+      "**/*.lvlibp",
+      "**/*.llb",
+      "**/*.dll",
+      "**/*.so",
+      "**/*.so.*",
+      "**/*.dylib",
+      "**/*.exe",
+      "**/*.aliases",
+      "**/*.lvlps",
+      "**/.cache/**",
+      "**/*.UserState"
+    ],
+    "Laravel": [
+      "vendor/**",
+      "**/node_modules/**",
+      "**/npm-debug.log",
+      "**/npm-debug.log/**",
+      "**/yarn-error.log",
+      "**/yarn-error.log/**",
+      "bootstrap/compiled.php",
+      "bootstrap/compiled.php/**",
+      "app/storage/**",
+      "public/storage",
+      "public/storage/**",
+      "public/hot",
+      "public/hot/**",
+      "public_html/storage",
+      "public_html/storage/**",
+      "public_html/hot",
+      "public_html/hot/**",
+      "storage/*.key",
+      "**/.env",
+      "**/.env/**",
+      "**/Homestead.yaml",
+      "**/Homestead.yaml/**",
+      "**/Homestead.json",
+      "**/Homestead.json/**",
+      ".vagrant",
+      ".vagrant/**",
+      "**/.phpunit.result.cache",
+      "**/.phpunit.result.cache/**",
+      ".phpunit.cache",
+      ".phpunit.cache/**",
+      "public/build",
+      "public/build/**",
+      "storage/pail",
+      "storage/pail/**",
+      "**/.env.backup",
+      "**/.env.backup/**",
+      "**/.env.production",
+      "**/.env.production/**",
+      "**/.phpactor.json",
+      "**/.phpactor.json/**",
+      "**/auth.json",
+      "**/auth.json/**"
+    ],
+    "Lean": [
+      "**/.lake/**"
+    ],
+    "Lua": [
+      "**/luac.out",
+      "**/luac.out/**",
+      "**/*.src.rock",
+      "**/*.zip",
+      "**/*.tar.gz",
+      "**/*.o",
+      "**/*.os",
+      "**/*.ko",
+      "**/*.obj",
+      "**/*.elf",
+      "**/*.gch",
+      "**/*.pch",
+      "**/*.lib",
+      "**/*.a",
+      "**/*.la",
+      "**/*.lo",
+      "**/*.def",
+      "**/*.exp",
+      "**/*.dll",
+      "**/*.so",
+      "**/*.so.*",
+      "**/*.dylib",
+      "**/*.exe",
+      "**/*.out",
+      "**/*.app",
+      "**/*.i*86",
+      "**/*.x86_64",
+      "**/*.hex"
+    ],
+    "Luau": [
+      "**/coverage.out",
+      "**/coverage.out/**",
+      "**/profile.out",
+      "**/profile.out/**",
+      "**/profile.svg",
+      "**/profile.svg/**",
+      "**/trace.json",
+      "**/trace.json/**"
+    ],
+    "Maven": [
+      "**/target/**",
+      "**/pom.xml.tag",
+      "**/pom.xml.tag/**",
+      "**/pom.xml.releaseBackup",
+      "**/pom.xml.releaseBackup/**",
+      "**/pom.xml.versionsBackup",
+      "**/pom.xml.versionsBackup/**",
+      "**/pom.xml.next",
+      "**/pom.xml.next/**",
+      "**/release.properties",
+      "**/release.properties/**",
+      "**/dependency-reduced-pom.xml",
+      "**/dependency-reduced-pom.xml/**",
+      "**/buildNumber.properties",
+      "**/buildNumber.properties/**",
+      ".mvn/timing.properties",
+      ".mvn/timing.properties/**",
+      ".mvn/wrapper/maven-wrapper.jar",
+      ".mvn/wrapper/maven-wrapper.jar/**",
+      "**/.project",
+      "**/.project/**",
+      "**/.classpath",
+      "**/.classpath/**"
+    ],
+    "Mercury": [
+      "**/Mercury/**",
+      "**/Mercury.modules",
+      "**/Mercury.modules/**",
+      "**/*.mh",
+      "**/*.err",
+      "**/*.init",
+      "**/*.dll",
+      "**/*.exe",
+      "**/*.a",
+      "**/*.so",
+      "**/*.dylib",
+      "**/*.beams",
+      "**/*.d",
+      "**/*.c_date"
+    ],
+    "Modelica": [
+      "**/*~",
+      "**/*.bak",
+      "**/*.bak-mo",
+      "**/*.mof",
+      "**/\\#*\\#",
+      "**/*.moe",
+      "**/*.mol",
+      "**/*.exe",
+      "**/*.exp",
+      "**/*.o",
+      "**/*.pyc",
+      "**/*.mat",
+      "**/*.gz",
+      "**/*.rar",
+      "**/*.tar",
+      "**/*.zip",
+      "**/buildlog.txt",
+      "**/buildlog.txt/**",
+      "**/dsfinal.txt",
+      "**/dsfinal.txt/**",
+      "**/dsin.txt",
+      "**/dsin.txt/**",
+      "**/dslog.txt",
+      "**/dslog.txt/**",
+      "**/dsmodel*",
+      "**/dsres.txt",
+      "**/dsres.txt/**",
+      "**/dymosim*",
+      "**/request",
+      "**/request/**",
+      "**/stat",
+      "**/stat/**",
+      "**/status",
+      "**/status/**",
+      "**/stop",
+      "**/stop/**",
+      "**/success",
+      "**/success/**",
+      "**/*."
+    ],
+    "MoonBit": [
+      "**/_build/**",
+      "**/.mooncakes/**",
+      "**/moonbit-coverage-*.txt",
+      "**/_coverage/**",
+      "**/bisect.coverage",
+      "**/bisect.coverage/**",
+      "**/*.js.map",
+      "**/node_modules/**",
+      "**/*.wasm",
+      "**/*.wat",
+      "**/.moonagent/**",
+      "**/*.ll",
+      "**/*.bc",
+      "**/*.o",
+      "**/*.s",
+      "**/*.out",
+      "**/*.exe",
+      "**/*.dSYM/**"
+    ],
+    "Nanoc": [
+      "**/output/**",
+      "tmp/nanoc/**",
+      "**/crash.log",
+      "**/crash.log/**"
+    ],
+    "Nestjs": [
+      "dist",
+      "dist/**",
+      "node_modules",
+      "node_modules/**",
+      "build",
+      "build/**",
+      "tmp",
+      "tmp/**",
+      "**/logs",
+      "**/logs/**",
+      "**/*.log",
+      "**/npm-debug.log*",
+      "**/pnpm-debug.log*",
+      "**/yarn-debug.log*",
+      "**/yarn-error.log*",
+      "**/lerna-debug.log*",
+      "**/.env",
+      "**/.env/**",
+      "**/.env.development",
+      "**/.env.development/**",
+      "**/.env.test",
+      "**/.env.test/**",
+      "**/.env.production",
+      "**/.env.production/**",
+      "**/.temp",
+      "**/.temp/**",
+      "**/.tmp",
+      "**/.tmp/**"
+    ],
+    "Nextjs": [
+      "node_modules",
+      "node_modules/**",
+      ".pnp",
+      ".pnp/**",
+      "**/.pnp.js",
+      "**/.pnp.js/**",
+      "coverage",
+      "coverage/**",
+      ".next/**",
+      "out/**",
+      "build",
+      "build/**",
+      "**/.DS_Store",
+      "**/.DS_Store/**",
+      "**/*.pem",
+      "**/npm-debug.log*",
+      "**/yarn-debug.log*",
+      "**/yarn-error.log*",
+      "**/.env*.local",
+      "**/.env",
+      "**/.env/**",
+      "**/.vercel",
+      "**/.vercel/**",
+      "**/*.tsbuildinfo",
+      "**/next-env.d.ts",
+      "**/next-env.d.ts/**"
+    ],
+    "Nim": [
+      "**/nimcache/**",
+      "**/nimblecache/**",
+      "**/htmldocs/**"
+    ],
+    "Nix": [
+      "**/result",
+      "**/result/**",
+      "**/result-*",
+      "**/.direnv",
+      "**/.direnv/**",
+      "**/.nixos-test-history"
+    ],
+    "Node": [
+      "**/logs",
+      "**/logs/**",
+      "**/*.log",
+      "**/npm-debug.log*",
+      "**/yarn-debug.log*",
+      "**/yarn-error.log*",
+      "**/lerna-debug.log*",
+      "**/report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json",
+      "**/pids",
+      "**/pids/**",
+      "**/*.pid",
+      "**/*.seed",
+      "**/*.pid.lock",
+      "**/lib-cov",
+      "**/lib-cov/**",
+      "**/coverage",
+      "**/coverage/**",
+      "**/*.lcov",
+      "**/.nyc_output",
+      "**/.nyc_output/**",
+      "**/.grunt",
+      "**/.grunt/**",
+      "**/bower_components",
+      "**/bower_components/**",
+      "**/.lock-wscript",
+      "**/.lock-wscript/**",
+      "build/Release",
+      "build/Release/**",
+      "**/node_modules/**",
+      "**/jspm_packages/**",
+      "**/web_modules/**",
+      "**/*.tsbuildinfo",
+      "**/.npm",
+      "**/.npm/**",
+      "**/.eslintcache",
+      "**/.eslintcache/**",
+      "**/.stylelintcache",
+      "**/.stylelintcache/**",
+      "**/.node_repl_history",
+      "**/.node_repl_history/**",
+      "**/*.tgz",
+      "**/.yarn-integrity",
+      "**/.yarn-integrity/**",
+      "**/.env",
+      "**/.env/**",
+      "**/.env.*",
+      "**/.cache",
+      "**/.cache/**",
+      "**/.parcel-cache",
+      "**/.parcel-cache/**",
+      "**/.next",
+      "**/.next/**",
+      "**/out",
+      "**/out/**",
+      "**/.nuxt",
+      "**/.nuxt/**",
+      "**/dist",
+      "**/dist/**",
+      "**/.output",
+      "**/.output/**",
+      ".vuepress/dist",
+      ".vuepress/dist/**",
+      "**/.temp",
+      "**/.temp/**",
+      "**/.svelte-kit/**",
+      "**/.vitepress/dist",
+      "**/.vitepress/cache",
+      "**/.docusaurus",
+      "**/.docusaurus/**",
+      "**/.serverless/**",
+      "**/.fusebox/**",
+      "**/.dynamodb/**",
+      "**/.firebase/**",
+      "**/.tern-port",
+      "**/.tern-port/**",
+      "**/.vscode-test",
+      "**/.vscode-test/**",
+      "**/.pnpm-store",
+      "**/.pnpm-store/**",
+      "**/.pnp.*",
+      ".yarn/*",
+      "**/vite.config.js.timestamp-*",
+      "**/vite.config.ts.timestamp-*",
+      "**/.vite/**",
+      "**/.astro/**",
+      "**/.turbo",
+      "**/.turbo/**"
+    ],
+    "OCaml": [
+      "**/*.annot",
+      "**/*.cmo",
+      "**/*.cma",
+      "**/*.cmi",
+      "**/*.a",
+      "**/*.o",
+      "**/*.cmx",
+      "**/*.cmxs",
+      "**/*.cmxa",
+      "**/*.cmt",
+      "**/*.cmti",
+      "**/_build/**",
+      "**/*.byte",
+      "**/*.native",
+      "**/setup.data",
+      "**/setup.data/**",
+      "**/setup.log",
+      "**/setup.log/**",
+      "**/.merlin",
+      "**/.merlin/**",
+      "**/*.install",
+      "**/_opam/**"
+    ],
+    "Objective-C": [
+      "**/xcuserdata/**",
+      "**/*.hmap",
+      "**/*.ipa",
+      "**/*.dSYM.zip",
+      "**/*.dSYM",
+      "Carthage/Build/**",
+      "fastlane/report.xml",
+      "fastlane/report.xml/**",
+      "fastlane/Preview.html",
+      "fastlane/Preview.html/**",
+      "fastlane/screenshots/**/*.png",
+      "fastlane/test_output",
+      "fastlane/test_output/**"
+    ],
+    "Opa": [
+      "**/_build",
+      "**/_build/**",
+      "**/_tracks",
+      "**/_tracks/**",
+      "**/opa-debug-js",
+      "**/opa-debug-js/**",
+      "**/*.opp",
+      "**/*.opx",
+      "**/*.opx.broken",
+      "**/*.dump",
+      "**/*.api",
+      "**/*.api-txt",
+      "**/*.exe",
+      "**/*.log"
+    ],
+    "Perl": [
+      "**/.last_cover_stats",
+      "**/.last_cover_stats/**",
+      "META.yml",
+      "META.yml/**",
+      "META.json",
+      "META.json/**",
+      "MYMETA.*",
+      "**/*.o",
+      "**/*.pm.tdy",
+      "**/*.bs",
+      "**/cover_db/**",
+      "**/nytprof.out",
+      "**/nytprof.out/**",
+      ".build/**",
+      "**/_build/**",
+      "**/Build",
+      "**/Build/**",
+      "**/Build.bat",
+      "**/Build.bat/**",
+      "**/inc/**",
+      "blib/**",
+      "_eumm/**",
+      "*.gz",
+      "Makefile",
+      "Makefile/**",
+      "Makefile.old",
+      "Makefile.old/**",
+      "MANIFEST.bak",
+      "MANIFEST.bak/**",
+      "pm_to_blib",
+      "pm_to_blib/**",
+      "*.zip",
+      "local/**",
+      ".carmel/**"
+    ],
+    "Processing": [
+      "**/.DS_Store",
+      "**/.DS_Store/**",
+      "**/applet",
+      "**/applet/**",
+      "**/application.linux-arm64",
+      "**/application.linux-arm64/**",
+      "**/application.linux-armv6hf",
+      "**/application.linux-armv6hf/**",
+      "**/application.linux32",
+      "**/application.linux32/**",
+      "**/application.linux64",
+      "**/application.linux64/**",
+      "**/application.windows32",
+      "**/application.windows32/**",
+      "**/application.windows64",
+      "**/application.windows64/**",
+      "**/application.macosx",
+      "**/application.macosx/**",
+      "**/out",
+      "**/out/**"
+    ],
+    "PureScript": [
+      "**/.psci_modules",
+      "**/.psci_modules/**",
+      "**/.spago",
+      "**/.spago/**",
+      "**/bower_components",
+      "**/bower_components/**",
+      "**/node_modules",
+      "**/node_modules/**",
+      "**/.psci",
+      "**/.psci/**",
+      "**/output",
+      "**/output/**"
+    ],
+    "Python": [
+      "**/__pycache__/**",
+      "**/*.py[codz]",
+      "**/*$py.class",
+      "**/*.so",
+      "**/.Python",
+      "**/.Python/**",
+      "**/build/**",
+      "**/develop-eggs/**",
+      "**/dist/**",
+      "**/downloads/**",
+      "**/eggs/**",
+      "**/.eggs/**",
+      "**/lib/**",
+      "**/lib64/**",
+      "**/parts/**",
+      "**/sdist/**",
+      "**/var/**",
+      "**/wheels/**",
+      "share/python-wheels/**",
+      "**/*.egg-info/**",
+      "**/.installed.cfg",
+      "**/.installed.cfg/**",
+      "**/*.egg",
+      "**/MANIFEST",
+      "**/MANIFEST/**",
+      "**/*.manifest",
+      "**/*.spec",
+      "**/pip-log.txt",
+      "**/pip-log.txt/**",
+      "**/pip-delete-this-directory.txt",
+      "**/pip-delete-this-directory.txt/**",
+      "**/htmlcov/**",
+      "**/.tox/**",
+      "**/.nox/**",
+      "**/.coverage",
+      "**/.coverage/**",
+      "**/.coverage.*",
+      "**/.cache",
+      "**/.cache/**",
+      "**/nosetests.xml",
+      "**/nosetests.xml/**",
+      "**/coverage.xml",
+      "**/coverage.xml/**",
+      "**/*.cover",
+      "**/*.py.cover",
+      "**/*.lcov",
+      "**/.hypothesis/**",
+      "**/.pytest_cache/**",
+      "**/cover/**",
+      "**/*.mo",
+      "**/*.pot",
+      "**/*.log",
+      "**/local_settings.py",
+      "**/local_settings.py/**",
+      "**/db.sqlite3",
+      "**/db.sqlite3/**",
+      "**/db.sqlite3-journal",
+      "**/db.sqlite3-journal/**",
+      "**/instance/**",
+      "**/.webassets-cache",
+      "**/.webassets-cache/**",
+      "**/.scrapy",
+      "**/.scrapy/**",
+      "docs/_build/**",
+      "**/.pybuilder/**",
+      "**/target/**",
+      "**/.ipynb_checkpoints",
+      "**/.ipynb_checkpoints/**",
+      "**/profile_default/**",
+      "**/ipython_config.py",
+      "**/ipython_config.py/**",
+      "**/.pdm-python",
+      "**/.pdm-python/**",
+      "**/.pdm-build/**",
+      ".pixi/*",
+      "**/__pypackages__/**",
+      "**/celerybeat-schedule*",
+      "**/celerybeat.pid",
+      "**/celerybeat.pid/**",
+      "**/*.rdb",
+      "**/*.aof",
+      "**/*.pid",
+      "**/mnesia/**",
+      "**/rabbitmq/**",
+      "**/rabbitmq-data/**",
+      "**/activemq-data/**",
+      "**/*.sage.py",
+      "**/.env",
+      "**/.env/**",
+      "**/.envrc",
+      "**/.envrc/**",
+      "**/.venv",
+      "**/.venv/**",
+      "**/env/**",
+      "**/venv/**",
+      "**/ENV/**",
+      "**/env.bak/**",
+      "**/venv.bak/**",
+      "**/.spyderproject",
+      "**/.spyderproject/**",
+      "**/.spyproject",
+      "**/.spyproject/**",
+      "**/.ropeproject",
+      "**/.ropeproject/**",
+      "site",
+      "site/**",
+      "**/.mypy_cache/**",
+      "**/.dmypy.json",
+      "**/.dmypy.json/**",
+      "**/dmypy.json",
+      "**/dmypy.json/**",
+      "**/.pyre/**",
+      "**/.pytype/**",
+      "**/cython_debug/**",
+      "**/.abstra/**",
+      "**/tempCodeRunnerFile.py",
+      "**/tempCodeRunnerFile.py/**",
+      "**/.ruff_cache/**",
+      "**/.pypirc",
+      "**/.pypirc/**",
+      "marimo/_static/**",
+      "marimo/_lsp/**",
+      "**/__marimo__/**",
+      ".streamlit/secrets.toml",
+      ".streamlit/secrets.toml/**"
+    ],
+    "Qt": [
+      "**/*.slo",
+      "**/*.lo",
+      "**/*.o",
+      "**/*.a",
+      "**/*.la",
+      "**/*.lai",
+      "**/*.so",
+      "**/*.so.*",
+      "**/*.dll",
+      "**/*.dylib",
+      "**/object_script.*.Release",
+      "**/object_script.*.Debug",
+      "**/*_plugin_import.cpp",
+      ".qmake.cache",
+      ".qmake.cache/**",
+      ".qmake.stash",
+      ".qmake.stash/**",
+      "**/*.pro.user",
+      "**/*.pro.user.*",
+      "**/*.qbs.user",
+      "**/*.qbs.user.*",
+      "**/*.moc",
+      "**/moc_*.cpp",
+      "**/moc_*.h",
+      "**/qrc_*.cpp",
+      "**/ui_*.h",
+      "**/*.qmlc",
+      "**/*.jsc",
+      "**/Makefile*",
+      "**/*build-*",
+      "**/build/**",
+      "**/*.qm",
+      "**/*.prl",
+      "**/*.qmlls.ini",
+      "**/target_wrapper.*",
+      "**/*.autosave",
+      "**/*.qmlproject.user",
+      "**/*.qmlproject.user.*",
+      "**/CMakeLists.txt.user*",
+      "**/compile_commands.json",
+      "**/compile_commands.json/**",
+      "**/*creator.user*",
+      "**/*_qmlcache.qrc"
+    ],
+    "R": [
+      "**/.Rhistory",
+      "**/.Rhistory/**",
+      "**/.Rapp.history",
+      "**/.Rapp.history/**",
+      "**/.RData",
+      "**/.RData/**",
+      "**/.RDataTmp",
+      "**/.RDataTmp/**",
+      "**/.Ruserdata",
+      "**/.Ruserdata/**",
+      "**/*-Ex.R",
+      "*.tar.gz",
+      "*.Rcheck/**",
+      "**/.Rproj.user/**",
+      "vignettes/*.html",
+      "vignettes/*.pdf",
+      "**/.httr-oauth",
+      "**/.httr-oauth/**",
+      "**/*_cache/**",
+      "cache/**",
+      "**/*.utf8.md",
+      "**/*.knit.md",
+      "**/.Renviron",
+      "**/.Renviron/**",
+      "**/.env",
+      "**/.env/**",
+      "**/docs/**",
+      "po/*~",
+      "**/rsconnect/**"
+    ],
+    "Racket": [
+      "**/.DS_Store",
+      "**/.DS_Store/**",
+      "**/compiled/**",
+      "doc/**",
+      "**/*~",
+      "**/*.bak",
+      "**/\\#*",
+      "**/.\\#*"
+    ],
+    "Rails": [
+      "**/*.rbc",
+      "**/capybara-*.html",
+      "**/.rspec",
+      "**/.rspec/**",
+      "db/*.sqlite3",
+      "db/*.sqlite3-journal",
+      "db/*.sqlite3-[0-9]*",
+      "public/system",
+      "public/system/**",
+      "coverage/**",
+      "spec/tmp",
+      "spec/tmp/**",
+      "**/*.orig",
+      "**/rerun.txt",
+      "**/rerun.txt/**",
+      "**/pickle-email-*.html",
+      "log/*",
+      "tmp/*",
+      "config/initializers/secret_token.rb",
+      "config/initializers/secret_token.rb/**",
+      "config/master.key",
+      "config/master.key/**",
+      "**/.env",
+      "**/.env/**",
+      "**/.env*.local",
+      ".bundle",
+      ".bundle/**",
+      "vendor/bundle",
+      "vendor/bundle/**",
+      "**/.rvmrc",
+      "**/.rvmrc/**",
+      "vendor/assets/bower_components",
+      "vendor/assets/bower_components/**",
+      "**/*.bowerrc",
+      "**/bower.json",
+      "**/bower.json/**",
+      "**/.powenv",
+      "**/.powenv/**",
+      "**/.byebug_history",
+      "**/.byebug_history/**",
+      "**/node_modules/**",
+      "public/packs",
+      "public/packs/**",
+      "public/packs-test",
+      "public/packs-test/**",
+      "public/assets",
+      "public/assets/**",
+      "yarn-error.log",
+      "yarn-error.log/**",
+      "**/yarn-debug.log*",
+      "**/.yarn-integrity",
+      "**/.yarn-integrity/**",
+      "storage/*",
+      "public/uploads",
+      "public/uploads/**"
+    ],
+    "Raku": [
+      "**/.precomp",
+      "**/.precomp/**",
+      "lib/.precomp",
+      "lib/.precomp/**"
+    ],
+    "ReScript": [
+      "node_modules/**",
+      "lib/**",
+      "**/.bsb.lock",
+      "**/.bsb.lock/**"
+    ],
+    "Ruby": [
+      "**/*.gem",
+      "**/*.rbc",
+      ".config",
+      ".config/**",
+      "coverage/**",
+      "InstalledFiles",
+      "InstalledFiles/**",
+      "pkg/**",
+      "spec/reports/**",
+      "spec/examples.txt",
+      "spec/examples.txt/**",
+      "test/tmp/**",
+      "test/version_tmp/**",
+      "tmp/**",
+      "**/.byebug_history",
+      "**/.byebug_history/**",
+      "**/.dat*",
+      "**/.repl_history",
+      "**/.repl_history/**",
+      "**/build/**",
+      "**/*.bridgesupport",
+      "**/build-iPhoneOS/**",
+      "**/build-iPhoneSimulator/**",
+      ".yardoc/**",
+      "_yardoc/**",
+      "doc/**",
+      "rdoc/**",
+      ".bundle/**",
+      "vendor/bundle",
+      "vendor/bundle/**",
+      "lib/bundler/man/**",
+      "**/.rvmrc",
+      "**/.rvmrc/**"
+    ],
+    "Rust": [
+      "**/debug",
+      "**/debug/**",
+      "**/target",
+      "**/target/**",
+      "**/*.rs.bk",
+      "**/*.pdb",
+      "**/mutants.out*/**",
+      "**/rustc-ice-*.txt"
+    ],
+    "Sass": [
+      "**/.sass-cache/**",
+      "**/*.css.map",
+      "**/*.sass.map",
+      "**/*.scss.map"
+    ],
+    "Scala": [
+      "**/*.class",
+      "**/*.tasty",
+      "**/*.log",
+      "**/hs_err_pid*"
+    ],
+    "Scheme": [
+      "**/*.ss~",
+      "**/*.ss#*",
+      "**/.#*.ss",
+      "**/*.scm~",
+      "**/*.scm#*",
+      "**/.#*.scm"
+    ],
+    "Smalltalk": [
+      "**/*.changes",
+      "**/*.chg",
+      "**/*.image",
+      "**/*.img7",
+      "**/*.img",
+      "**/PharoDebug.log",
+      "**/PharoDebug.log/**",
+      "**/SqueakDebug.log",
+      "**/SqueakDebug.log/**",
+      "**/*.sml",
+      "**/*.errors",
+      "package-cache",
+      "package-cache/**",
+      "play-cache",
+      "play-cache/**",
+      "play-stash",
+      "play-stash/**",
+      "github-cache",
+      "github-cache/**",
+      "**/github-*.zip"
+    ],
+    "Swift": [
+      "**/xcuserdata/**",
+      "**/*.hmap",
+      "**/*.ipa",
+      "**/*.dSYM.zip",
+      "**/*.dSYM",
+      "**/timeline.xctimeline",
+      "**/timeline.xctimeline/**",
+      "**/playground.xcworkspace",
+      "**/playground.xcworkspace/**",
+      "**/.build/**",
+      "Carthage/Build/**",
+      "fastlane/report.xml",
+      "fastlane/report.xml/**",
+      "fastlane/Preview.html",
+      "fastlane/Preview.html/**",
+      "fastlane/screenshots/**/*.png",
+      "fastlane/test_output",
+      "fastlane/test_output/**"
+    ],
+    "Symfony": [
+      "app/cache/*",
+      "app/logs/*",
+      "app/spool/*",
+      "var/cache/*",
+      "var/logs/*",
+      "var/sessions/*",
+      "var/log/*",
+      "app/config/parameters.yml",
+      "app/config/parameters.yml/**",
+      "app/config/parameters.ini",
+      "app/config/parameters.ini/**",
+      "app/bootstrap.php.cache",
+      "app/bootstrap.php.cache/**",
+      "var/bootstrap.php.cache",
+      "var/bootstrap.php.cache/**",
+      "bin/*",
+      "vendor/**",
+      "web/bundles/**",
+      "web/uploads/**",
+      "app/phpunit.xml",
+      "app/phpunit.xml/**",
+      "phpunit.xml",
+      "phpunit.xml/**",
+      "build/**",
+      "composer.phar",
+      "composer.phar/**",
+      "**/Entity/*~",
+      ".web-server-pid",
+      ".web-server-pid/**"
+    ],
+    "TeX": [
+      "**/*.aux",
+      "**/*.lof",
+      "**/*.log",
+      "**/*.lot",
+      "**/*.fls",
+      "**/*.out",
+      "**/*.toc",
+      "**/*.fmt",
+      "**/*.fot",
+      "**/*.cb",
+      "**/*.cb2",
+      "**/.*.lb",
+      "**/*.dvi",
+      "**/*.xdv",
+      "**/*-converted-to.*",
+      "**/.pdf",
+      "**/.pdf/**",
+      "**/*.bbl",
+      "**/*.bbl-SAVE-ERROR",
+      "**/*.bcf",
+      "**/*.bcf-SAVE-ERROR",
+      "**/*.blg",
+      "**/*-blx.aux",
+      "**/*-blx.bib",
+      "**/*.run.xml",
+      "**/*.fdb_latexmk",
+      "**/*.synctex",
+      "**/*.synctex(busy)",
+      "**/*.synctex.gz",
+      "**/*.synctex.gz(busy)",
+      "**/*.pdfsync",
+      "**/*.rubbercache",
+      "**/rubber.cache",
+      "**/rubber.cache/**",
+      "**/latex.out/**",
+      "**/*.alg",
+      "**/*.loa",
+      "**/acs-*.bib",
+      "**/*.thm",
+      "**/*.atfi",
+      "**/*.nav",
+      "**/*.pre",
+      "**/*.snm",
+      "**/*.vrb",
+      "**/*.soc",
+      "**/*.loc",
+      "**/*.cut",
+      "**/*.tuc",
+      "**/*.tui",
+      "**/*.tuo",
+      "**/*.cpt",
+      "**/*.spl",
+      "**/*.ent",
+      "**/*.lox",
+      "**/*.mf",
+      "**/*.mp",
+      "**/*.t[1-9]",
+      "**/*.t[1-9][0-9]",
+      "**/*.tfm",
+      "**/*.end",
+      "**/*.?end",
+      "**/*.[1-9]",
+      "**/*.[1-9][0-9]",
+      "**/*.[1-9][0-9][0-9]",
+      "**/*.[1-9]R",
+      "**/*.[1-9][0-9]R",
+      "**/*.[1-9][0-9][0-9]R",
+      "**/*.eledsec[1-9]",
+      "**/*.eledsec[1-9]R",
+      "**/*.eledsec[1-9][0-9]",
+      "**/*.eledsec[1-9][0-9]R",
+      "**/*.eledsec[1-9][0-9][0-9]",
+      "**/*.eledsec[1-9][0-9][0-9]R",
+      "**/*.acn",
+      "**/*.acr",
+      "**/*.glg",
+      "**/*.glg-abr",
+      "**/*.glo",
+      "**/*.glo-abr",
+      "**/*.gls",
+      "**/*.gls-abr",
+      "**/*.glsdefs",
+      "**/*.lzo",
+      "**/*.lzs",
+      "**/*.slg",
+      "**/*.slo",
+      "**/*.sls",
+      "**/*.gnuplot",
+      "**/*.table",
+      "**/*-gnuplottex-*",
+      "**/*.gaux",
+      "**/*.glog",
+      "**/*.gtex",
+      "**/*.4ct",
+      "**/*.4tc",
+      "**/*.idv",
+      "**/*.lg",
+      "**/*.trc",
+      "**/*.xref",
+      "**/*.hd",
+      "**/*.brf",
+      "**/*-concordance.tex",
+      "**/*-tikzDictionary",
+      "**/*.lol",
+      "**/*.ltjruby",
+      "**/*.idx",
+      "**/*.ilg",
+      "**/*.ind",
+      "**/*.maf",
+      "**/*.mlf",
+      "**/*.mlt",
+      "**/*.mtc[0-9]*",
+      "**/*.slf[0-9]*",
+      "**/*.slt[0-9]*",
+      "**/*.stc[0-9]*",
+      "**/_minted*",
+      "**/*.data.minted",
+      "**/*.pyg",
+      "**/*.mw",
+      "**/*.newpax",
+      "**/*.nlg",
+      "**/*.nlo",
+      "**/*.nls",
+      "**/*.pax",
+      "**/*.pdfpc",
+      "**/*.sagetex.sage",
+      "**/*.sagetex.py",
+      "**/*.sagetex.scmd",
+      "**/*.wrt",
+      "**/*.spell.bad",
+      "**/*.spell.txt",
+      "**/svg-inkscape/**",
+      "**/*.sout",
+      "**/*.sympy",
+      "**/sympy-plots-for-*.tex/**",
+      "**/*.upa",
+      "**/*.upb",
+      "**/*.pytxcode",
+      "**/pythontex-files-*/**",
+      "**/*.listing",
+      "**/*.loe",
+      "**/*.dpth",
+      "**/*.md5",
+      "**/*.auxlock",
+      "**/*.ptc",
+      "**/*.tdo",
+      "**/*.hst",
+      "**/*.ver",
+      "**/*.lod",
+      "**/*.xcp",
+      "**/*.xmpi",
+      "**/*.xdy",
+      "**/*.xyc",
+      "**/*.xyd",
+      "**/*.ttt",
+      "**/*.fff",
+      "**/TSWLatexianTemp*",
+      "**/*.bak",
+      "**/*.sav",
+      "**/*.bak[0-9]*",
+      "**/.texpadtmp",
+      "**/.texpadtmp/**",
+      "**/*.lyx~",
+      "**/*.backup",
+      "**/.*.swp",
+      "**/*~[0-9]*",
+      "**/*.tps",
+      "./auto/*",
+      "**/*.el",
+      "**/*-tags.tex",
+      "**/*.sta",
+      "**/*.lpz",
+      "**/*.xwm"
+    ],
+    "Terraform": [
+      "**/.terraform/**",
+      "**/*.tfstate",
+      "**/*.tfstate.*",
+      "**/crash.log",
+      "**/crash.log/**",
+      "**/crash.*.log",
+      "**/*.tfvars",
+      "**/*.tfvars.json",
+      "**/override.tf",
+      "**/override.tf/**",
+      "**/override.tf.json",
+      "**/override.tf.json/**",
+      "**/*_override.tf",
+      "**/*_override.tf.json",
+      "**/.terraform.tfstate.lock.info",
+      "**/.terraform.tfstate.lock.info/**",
+      "**/.terraformrc",
+      "**/.terraformrc/**",
+      "**/terraform.rc",
+      "**/terraform.rc/**"
+    ],
+    "Unity": [
+      "**/.utmp/**",
+      "[Ll]ibrary/**",
+      "[Tt]emp/**",
+      "[Oo]bj/**",
+      "[Bb]uild/**",
+      "[Bb]uilds/**",
+      "[Ll]ogs/**",
+      "[Uu]ser[Ss]ettings/**",
+      "**/*.log",
+      "**/*.blend1",
+      "**/*.blend1.meta",
+      "[Mm]emoryCaptures/**",
+      "[Rr]ecordings/**",
+      "[Aa]ssets/Plugins/Editor/JetBrains*",
+      "**/*.DotSettings.user",
+      "**/.vs/**",
+      "**/.gradle/**",
+      "**/ExportedObj/**",
+      "**/.consulo/**",
+      "**/*.csproj",
+      "**/*.unityproj",
+      "**/*.sln",
+      "**/*.slnx",
+      "**/*.suo",
+      "**/*.tmp",
+      "**/*.user",
+      "**/*.userprefs",
+      "**/*.pidb",
+      "**/*.booproj",
+      "**/*.svd",
+      "**/*.pdb",
+      "**/*.mdb",
+      "**/*.opendb",
+      "**/*.VC.db",
+      "**/*.pidb.meta",
+      "**/*.pdb.meta",
+      "**/*.mdb.meta",
+      "**/sysinfo.txt",
+      "**/sysinfo.txt/**",
+      "**/mono_crash.*",
+      "**/*.apk",
+      "**/*.aab",
+      "**/*.unitypackage",
+      "**/*.unitypackage.meta",
+      "**/*.app",
+      "**/crashlytics-build.properties",
+      "**/crashlytics-build.properties/**",
+      "**/InitTestScene*.unity*",
+      "ServerData",
+      "ServerData/**",
+      "[Aa]ssets/StreamingAssets/aa*",
+      "[Aa]ssets/AddressableAssetsData/link.xml*",
+      "[Aa]ssets/Addressables_Temp*",
+      "[Aa]ssets/AddressableAssetsData/*/*.bin*",
+      "[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db",
+      "[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Flow/UnitOptions.db.meta",
+      "[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers",
+      "[Aa]ssets/Unity.VisualScripting.Generated/VisualScripting.Core/Property Providers.meta",
+      "[Aa]ssets/[Ii]nit[Tt]est[Ss]cene*.unity*",
+      "UIElementsSchema/**",
+      "[Aa]ssets/[Ss]ceneDependencyCache*"
+    ],
+    "UnrealEngine": [
+      "**/.vs/**",
+      "**/*.slo",
+      "**/*.lo",
+      "**/*.o",
+      "**/*.obj",
+      "**/*.gch",
+      "**/*.pch",
+      "**/*.so",
+      "**/*.dylib",
+      "**/*.dll",
+      "**/*.mod",
+      "**/*.lai",
+      "**/*.la",
+      "**/*.a",
+      "**/*.lib",
+      "**/*.exe",
+      "**/*.out",
+      "**/*.app",
+      "**/*.ipa",
+      "**/*.xcodeproj",
+      "**/*.xcworkspace",
+      "**/*.sln",
+      "**/*.suo",
+      "**/*.opensdf",
+      "**/*.sdf",
+      "**/*.VC.db",
+      "**/*.VC.opendb",
+      "**/.vsconfig",
+      "**/.vsconfig/**",
+      "SourceArt/**/*.png",
+      "SourceArt/**/*.tga",
+      "Binaries/*",
+      "Plugins/**/Binaries/*",
+      "Build/*",
+      "Build/*/**",
+      "**/*_BuiltData.uasset",
+      "Saved/*",
+      "Intermediate/*",
+      "Plugins/**/Intermediate/*",
+      "DerivedDataCache/*"
+    ],
+    "VBA": [
+      "**/~$*",
+      "**/*.[lL][aA][cC][cC][dD][bB]",
+      "**/*.[lL][dD][bB]"
+    ],
+    "VisualStudio": [
+      "**/*.rsuser",
+      "**/*.suo",
+      "**/*.user",
+      "**/*.userosscache",
+      "**/*.sln.docstates",
+      "**/*.env",
+      "**/*.userprefs",
+      "**/mono_crash.*",
+      "**/[Dd]ebug/**",
+      "**/[Dd]ebugPublic/**",
+      "**/[Rr]elease/**",
+      "**/[Rr]eleases/**",
+      "[Dd]ebug/x64/**",
+      "[Dd]ebugPublic/x64/**",
+      "[Rr]elease/x64/**",
+      "[Rr]eleases/x64/**",
+      "bin/x64/**",
+      "obj/x64/**",
+      "[Dd]ebug/x86/**",
+      "[Dd]ebugPublic/x86/**",
+      "[Rr]elease/x86/**",
+      "[Rr]eleases/x86/**",
+      "bin/x86/**",
+      "obj/x86/**",
+      "**/[Ww][Ii][Nn]32/**",
+      "**/[Aa][Rr][Mm]/**",
+      "**/[Aa][Rr][Mm]64/**",
+      "**/[Aa][Rr][Mm]64[Ee][Cc]/**",
+      "**/bld/**",
+      "**/[Oo]bj/**",
+      "**/[Oo]ut/**",
+      "**/[Ll]og/**",
+      "**/[Ll]ogs/**",
+      "**/[Bb]in/*",
+      "**/.vs/**",
+      "**/Generated\\ Files/**",
+      "**/[Tt]est[Rr]esult*/**",
+      "**/[Bb]uild[Ll]og.*",
+      "**/*.trx",
+      "**/*.VisualState.xml",
+      "**/TestResult.xml",
+      "**/TestResult.xml/**",
+      "**/nunit-*.xml",
+      "**/*.received.*",
+      "**/[Dd]ebugPS/**",
+      "**/[Rr]eleasePS/**",
+      "**/dlldata.c",
+      "**/dlldata.c/**",
+      "**/BenchmarkDotNet.Artifacts/**",
+      "**/project.lock.json",
+      "**/project.lock.json/**",
+      "**/project.fragment.lock.json",
+      "**/project.fragment.lock.json/**",
+      "**/artifacts/**",
+      "**/.artifacts/**",
+      "**/ScaffoldingReadMe.txt",
+      "**/ScaffoldingReadMe.txt/**",
+      "**/StyleCopReport.xml",
+      "**/StyleCopReport.xml/**",
+      "**/*_i.c",
+      "**/*_p.c",
+      "**/*_h.h",
+      "**/*.ilk",
+      "**/*.meta",
+      "**/*.obj",
+      "**/*.idb",
+      "**/*.iobj",
+      "**/*.pch",
+      "**/*.pdb",
+      "**/*.ipdb",
+      "**/*.pgc",
+      "**/*.pgd",
+      "**/*.rsp",
+      "**/*.sbr",
+      "**/*.tlb",
+      "**/*.tli",
+      "**/*.tlh",
+      "**/*.tmp",
+      "**/*.tmp_proj",
+      "**/*_wpftmp.csproj",
+      "**/*.log",
+      "**/*.tlog",
+      "**/*.vspscc",
+      "**/*.vssscc",
+      "**/.builds",
+      "**/.builds/**",
+      "**/*.pidb",
+      "**/*.svclog",
+      "**/*.scc",
+      "**/_Chutzpah*",
+      "**/ipch/**",
+      "**/*.aps",
+      "**/*.ncb",
+      "**/*.opendb",
+      "**/*.opensdf",
+      "**/*.sdf",
+      "**/*.cachefile",
+      "**/*.VC.db",
+      "**/*.VC.VC.opendb",
+      "**/*.psess",
+      "**/*.vsp",
+      "**/*.vspx",
+      "**/*.sap",
+      "**/*.e2e",
+      "**/$tf/**",
+      "**/*.gpState",
+      "**/_ReSharper*/**",
+      "**/*.[Rr]e[Ss]harper",
+      "**/*.DotSettings.user",
+      "**/_TeamCity*",
+      "**/*.dotCover",
+      ".axoCover/*",
+      "**/coverage*.json",
+      "**/coverage*.xml",
+      "**/coverage*.info",
+      "**/*.coverage",
+      "**/*.coveragexml",
+      "**/_NCrunch_*",
+      "**/.NCrunch_*",
+      "**/.*crunch*.local.xml",
+      "**/nCrunchTemp_*",
+      "**/*.mm.*",
+      "**/AutoTest.Net/**",
+      "**/.sass-cache/**",
+      "**/[Ee]xpress/**",
+      "DocProject/buildhelp/**",
+      "DocProject/Help/*.HxT",
+      "DocProject/Help/*.HxC",
+      "DocProject/Help/*.hhc",
+      "DocProject/Help/*.hhk",
+      "DocProject/Help/*.hhp",
+      "DocProject/Help/Html2",
+      "DocProject/Help/Html2/**",
+      "DocProject/Help/html",
+      "DocProject/Help/html/**",
+      "**/publish/**",
+      "**/*.[Pp]ublish.xml",
+      "**/*.azurePubxml",
+      "**/*.pubxml",
+      "**/*.publishproj",
+      "**/PublishScripts/**",
+      "**/*.nupkg",
+      "**/*.snupkg",
+      "**/[Pp]ackages/*",
+      "**/*.nuget.props",
+      "**/*.nuget.targets",
+      "**/csx/**",
+      "**/*.build.csdef",
+      "**/ecf/**",
+      "**/rcf/**",
+      "**/AppPackages/**",
+      "**/BundleArtifacts/**",
+      "**/Package.StoreAssociation.xml",
+      "**/Package.StoreAssociation.xml/**",
+      "**/_pkginfo.txt",
+      "**/_pkginfo.txt/**",
+      "**/*.appx",
+      "**/*.appxbundle",
+      "**/*.appxupload",
+      "**/*.[Cc]ache",
+      "**/ClientBin/**",
+      "**/~$*",
+      "**/*~",
+      "**/*.dbmdl",
+      "**/*.dbproj.schemaview",
+      "**/*.jfm",
+      "**/*.pfx",
+      "**/*.publishsettings",
+      "**/orleans.codegen.cs",
+      "**/orleans.codegen.cs/**",
+      "**/Generated_Code/**",
+      "**/_UpgradeReport_Files/**",
+      "**/Backup*/**",
+      "**/UpgradeLog*.XML",
+      "**/UpgradeLog*.htm",
+      "**/ServiceFabricBackup/**",
+      "**/*.rptproj.bak",
+      "**/*.mdf",
+      "**/*.ldf",
+      "**/*.ndf",
+      "**/*.rdl.data",
+      "**/*.bim.layout",
+      "**/*.bim_*.settings",
+      "**/*.rptproj.rsuser",
+      "**/*- [Bb]ackup.rdl",
+      "**/*- [Bb]ackup ([0-9]).rdl",
+      "**/*- [Bb]ackup ([0-9][0-9]).rdl",
+      "**/FakesAssemblies/**",
+      "**/*.GhostDoc.xml",
+      "**/.ntvs_analysis.dat",
+      "**/.ntvs_analysis.dat/**",
+      "**/node_modules/**",
+      "**/*.plg",
+      "**/*.opt",
+      "**/*.vbw",
+      "**/*.dsw",
+      "**/*.dsp",
+      "**/*.HTMLClient/GeneratedArtifacts",
+      "**/*.DesktopClient/GeneratedArtifacts",
+      "**/*.DesktopClient/ModelManifest.xml",
+      "**/*.Server/GeneratedArtifacts",
+      "**/*.Server/ModelManifest.xml",
+      "**/_Pvt_Extensions",
+      "**/_Pvt_Extensions/**",
+      "**/.paket/paket.exe",
+      "**/paket-files/**",
+      "**/.fake/**",
+      "**/.cr/personal",
+      "**/__pycache__/**",
+      "**/*.pyc",
+      "**/*.tss",
+      "**/*.jmconfig",
+      "**/*.btp.cs",
+      "**/*.btm.cs",
+      "**/*.odx.cs",
+      "**/*.xsd.cs",
+      "**/OpenCover/**",
+      "**/ASALocalRun/**",
+      "**/*.binlog",
+      "**/MSBuild_Logs/**",
+      "**/.aws-sam",
+      "**/.aws-sam/**",
+      "**/*.nvuser",
+      "**/.mfractor/**",
+      "**/.localhistory/**",
+      "**/.vshistory/**",
+      "**/healthchecksdb",
+      "**/healthchecksdb/**",
+      "**/MigrationBackup/**",
+      "**/.ionide/**",
+      "**/FodyWeavers.xsd",
+      "**/FodyWeavers.xsd/**",
+      ".vscode/*",
+      "**/.history/**",
+      "**/*.vsix",
+      "**/*.cab",
+      "**/*.msi",
+      "**/*.msix",
+      "**/*.msm",
+      "**/*.msp"
+    ],
+    "WordPress": [
+      "wp-admin/**",
+      "wp-content/index.php",
+      "wp-content/index.php/**",
+      "wp-content/languages",
+      "wp-content/languages/**",
+      "wp-content/plugins/index.php",
+      "wp-content/plugins/index.php/**",
+      "wp-content/themes/index.php",
+      "wp-content/themes/index.php/**",
+      "wp-includes/**",
+      "index.php",
+      "index.php/**",
+      "license.txt",
+      "license.txt/**",
+      "readme.html",
+      "readme.html/**",
+      "wp-*.php",
+      "xmlrpc.php",
+      "xmlrpc.php/**",
+      "**/wp-config.php",
+      "**/wp-config.php/**",
+      "wp-content/themes/twenty*/**",
+      "wp-content/plugins/hello.php",
+      "wp-content/plugins/hello.php/**",
+      "wp-content/uploads/**",
+      "**/*.log",
+      ".htaccess",
+      ".htaccess/**"
+    ],
+    "Xojo": [
+      "**/Builds - */**",
+      "**/*.debug",
+      "**/*.debug.app",
+      "**/Debug*.exe",
+      "Debug*/Debug*.exe",
+      "Debug*/Debug*\\ Libs",
+      "**/*.rbuistate",
+      "**/*.xojo_uistate",
+      "**/*.obsolete*"
+    ],
+    "Yii": [
+      "assets/*",
+      "protected/runtime/*",
+      "protected/data/*.db",
+      "themes/classic/views/**"
+    ],
+    "Zephir": [
+      "**/.temp/**",
+      "**/.libs/**",
+      "**/*.lo",
+      "**/*.la",
+      "**/*.o",
+      "**/*.loT",
+      "ext/build/**",
+      "ext/modules/**",
+      "ext/Makefile*",
+      "ext/config*",
+      "ext/acinclude.m4",
+      "ext/acinclude.m4/**",
+      "ext/aclocal.m4",
+      "ext/aclocal.m4/**",
+      "ext/autom4te*",
+      "ext/install-sh",
+      "ext/install-sh/**",
+      "ext/ltmain.sh",
+      "ext/ltmain.sh/**",
+      "ext/missing",
+      "ext/missing/**",
+      "ext/mkinstalldirs",
+      "ext/mkinstalldirs/**",
+      "ext/run-tests.php",
+      "ext/run-tests.php/**",
+      "ext/.deps",
+      "ext/.deps/**",
+      "ext/libtool",
+      "ext/libtool/**"
+    ],
+    "Zig": [
+      "**/.zig-cache/**",
+      "**/zig-out/**",
+      "**/zig-pkg/**",
+      "**/*.o"
+    ],
+    "bun": [
+      "**/logs",
+      "**/logs/**",
+      "**/*.log",
+      "**/npm-debug.log*",
+      "**/yarn-debug.log*",
+      "**/yarn-error.log*",
+      "**/lerna-debug.log*",
+      "**/*.sqlite",
+      "**/package-json.lock",
+      "**/package-json.lock/**",
+      "**/node_modules.bun",
+      "**/node_modules.bun/**",
+      "**/report.[0-9]*.[0-9]*.[0-9]*.[0-9]*.json",
+      "**/pids",
+      "**/pids/**",
+      "**/*.pid",
+      "**/*.seed",
+      "**/*.pid.lock",
+      "**/lib-cov",
+      "**/lib-cov/**",
+      "**/coverage",
+      "**/coverage/**",
+      "**/*.lcov",
+      "**/.nyc_output",
+      "**/.nyc_output/**",
+      "**/.grunt",
+      "**/.grunt/**",
+      "**/bower_components",
+      "**/bower_components/**",
+      "**/.lock-wscript",
+      "**/.lock-wscript/**",
+      "build/Release",
+      "build/Release/**",
+      "**/node_modules/**",
+      "**/jspm_packages/**",
+      "**/typings/**",
+      "**/*.tsbuildinfo",
+      "**/.npm",
+      "**/.npm/**",
+      "**/.eslintcache",
+      "**/.eslintcache/**",
+      "**/.rpt2_cache/**",
+      "**/.rts2_cache_cjs/**",
+      "**/.rts2_cache_es/**",
+      "**/.rts2_cache_umd/**",
+      "**/.node_repl_history",
+      "**/.node_repl_history/**",
+      "**/*.tgz",
+      "**/.yarn-integrity",
+      "**/.yarn-integrity/**",
+      "**/.env",
+      "**/.env/**",
+      "**/.env.test",
+      "**/.env.test/**",
+      "**/.cache",
+      "**/.cache/**",
+      "**/.next",
+      "**/.next/**",
+      "**/.nuxt",
+      "**/.nuxt/**",
+      "**/dist",
+      "**/dist/**",
+      ".vuepress/dist",
+      ".vuepress/dist/**",
+      "**/.serverless/**",
+      "**/.fusebox/**",
+      "**/.dynamodb/**",
+      "**/.tern-port",
+      "**/.tern-port/**"
+    ],
+    "community/AWS/CDK": [
+      "**/.cdk.staging/**",
+      "**/cdk.out/**"
+    ],
+    "community/AWS/SAM": [
+      "**/.aws-sam/**"
+    ],
+    "community/Elixir/Phoenix": [
+      "tmp",
+      "tmp/**",
+      "node_modules",
+      "node_modules/**",
+      "assets/node_modules",
+      "assets/node_modules/**",
+      "priv/static/**",
+      "installer/_build",
+      "installer/_build/**",
+      "installer/tmp",
+      "installer/tmp/**",
+      "installer/doc",
+      "installer/doc/**",
+      "installer/deps",
+      "installer/deps/**"
+    ],
+    "community/Golang/Hugo": [
+      "public/**",
+      "resources/_gen/**",
+      "assets/jsconfig.json",
+      "assets/jsconfig.json/**",
+      "**/hugo_stats.json",
+      "**/hugo_stats.json/**",
+      "**/hugo.exe",
+      "**/hugo.exe/**",
+      "**/hugo.darwin",
+      "**/hugo.darwin/**",
+      "**/hugo.linux",
+      "**/hugo.linux/**",
+      ".hugo_build.lock",
+      ".hugo_build.lock/**"
+    ],
+    "community/JavaScript/Expo": [
+      "**/node_modules/**",
+      "**/.expo/**",
+      "**/.expo-shared/**",
+      "**/*.expo",
+      "**/*.tunnel",
+      "**/*.cache",
+      "**/*.tmp",
+      "**/*.log",
+      "**/.env",
+      "**/.env/**",
+      "**/.env.local",
+      "**/.env.local/**",
+      "**/.env.*.local",
+      "**/npm-debug.log*",
+      "**/yarn-debug.log*",
+      "**/yarn-error.log*"
+    ],
+    "community/JavaScript/Vue": [
+      "docs/_book",
+      "docs/_book/**",
+      "**/test/**"
+    ],
+    "community/Python/JupyterNotebooks": [
+      "**/.ipynb_checkpoints",
+      "**/.ipynb_checkpoints/**",
+      "*/.ipynb_checkpoints/*",
+      "**/profile_default/**",
+      "**/ipython_config.py",
+      "**/ipython_config.py/**",
+      "**/.virtual_documents/**"
+    ],
+    "community/Strapi": [
+      "**/.DS_Store",
+      "**/.DS_Store/**",
+      "**/.AppleDouble",
+      "**/.AppleDouble/**",
+      "**/.LSOverride",
+      "**/.LSOverride/**",
+      "**/Icon",
+      "**/Icon/**",
+      "**/.Spotlight-V100",
+      "**/.Spotlight-V100/**",
+      "**/.Trashes",
+      "**/.Trashes/**",
+      "**/._*",
+      "**/*~",
+      "**/Thumbs.db",
+      "**/Thumbs.db/**",
+      "**/ehthumbs.db",
+      "**/ehthumbs.db/**",
+      "**/Desktop.ini",
+      "**/Desktop.ini/**",
+      "**/$RECYCLE.BIN/**",
+      "**/*.cab",
+      "**/*.msi",
+      "**/*.msm",
+      "**/*.msp",
+      "**/*.7z",
+      "**/*.csv",
+      "**/*.dat",
+      "**/*.dmg",
+      "**/*.gz",
+      "**/*.iso",
+      "**/*.jar",
+      "**/*.rar",
+      "**/*.tar",
+      "**/*.zip",
+      "**/*.com",
+      "**/*.class",
+      "**/*.dll",
+      "**/*.exe",
+      "**/*.o",
+      "**/*.seed",
+      "**/*.so",
+      "**/*.swo",
+      "**/*.swp",
+      "**/*.swn",
+      "**/*.swm",
+      "**/*.out",
+      "**/*.pid",
+      "**/.tmp",
+      "**/.tmp/**",
+      "**/*.log",
+      "**/*.sql",
+      "**/*.sqlite",
+      "**/*#",
+      "**/.idea",
+      "**/.idea/**",
+      "**/nbproject",
+      "**/nbproject/**",
+      "**/.vscode/**",
+      "**/lib-cov",
+      "**/lib-cov/**",
+      "**/lcov.info",
+      "**/lcov.info/**",
+      "**/pids",
+      "**/pids/**",
+      "**/logs",
+      "**/logs/**",
+      "**/results",
+      "**/results/**",
+      "**/build",
+      "**/build/**",
+      "**/node_modules",
+      "**/node_modules/**",
+      "**/.node_history",
+      "**/.node_history/**",
+      "**/package-lock.json",
+      "**/package-lock.json/**",
+      "**/*.heapsnapshot",
+      "**/testApp",
+      "**/testApp/**",
+      "**/coverage",
+      "**/coverage/**",
+      "cypress/screenshots",
+      "cypress/screenshots/**",
+      "cypress/videos",
+      "cypress/videos/**",
+      "**/dist",
+      "**/dist/**",
+      "packages/strapi-generate-new/files/public/**",
+      "**/.dev",
+      "**/.dev/**",
+      "**/front-workspace.code-workspace",
+      "**/front-workspace.code-workspace/**"
+    ],
+    "community/Tauri": [
+      "**/target/**",
+      "**/WixTools/**"
+    ]
+  }
+}

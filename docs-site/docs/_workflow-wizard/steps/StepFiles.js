@@ -1,26 +1,11 @@
 import React from 'react';
 import styles from '../styles.module.css';
+import ExcludeListsDisclosure from './ExcludeListsDisclosure';
 
 export default function StepFiles({ cfg, onChange }) {
   return (
     <div>
-      <div className={styles.notice}>
-        <strong>Binary files are never assessed</strong> regardless of include/exclude settings.
-        Any file whose content contains a null byte is automatically skipped before being sent to
-        the AI. Only text-based source files are eligible.
-      </div>
-
-      <div className={styles.notice} style={{ marginTop: '0.75rem', borderColor: 'var(--ifm-color-primary-light)' }}>
-        <strong>Exclude patterns are auto-detected.</strong> When the action runs it queries the
-        GitHub Languages API to identify your repository&apos;s stack and automatically applies the
-        relevant{' '}
-        <a href="https://github.com/github/gitignore" target="_blank" rel="noopener noreferrer">
-          github/gitignore
-        </a>{' '}
-        templates — covering build artifacts, dependency directories, IDE files, and more for every
-        detected language and framework. You only need to add patterns below for files specific to
-        your assignment.
-      </div>
+      <ExcludeListsDisclosure />
 
       <div className={styles.fieldGroup}>
         <label className={styles.label}>
@@ -33,7 +18,7 @@ export default function StepFiles({ cfg, onChange }) {
         </span>
         <textarea
           className={styles.input}
-          style={{ resize: 'vertical', minHeight: '4rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
+          style={{ resize: 'vertical', minHeight: '8rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
           value={cfg.additionalExcludePatterns}
           onChange={(e) => onChange({ additionalExcludePatterns: e.target.value })}
           placeholder="e.g. data/**, tests/fixtures/**, provided_starter/**"
@@ -45,15 +30,15 @@ export default function StepFiles({ cfg, onChange }) {
           Exclude pattern overrides <span className={styles.optionalBadge}>optional</span>
         </label>
         <span className={styles.hint}>
-          Comma-separated entries to allow specific files through the auto-detected exclude
-          patterns. Each entry can be an <strong>exact pattern</strong> (e.g.{' '}
-          <code>**/*.md</code> — re-includes all Markdown files) or a{' '}
-          <strong>specific file path</strong> (e.g. <code>README.md</code> — only that file passes
-          through while <code>**/*.md</code> still excludes everything else).
+          Entries to allow specific files through the auto-detected exclude patterns. Each entry
+          can be an <strong>exact pattern</strong> (e.g. <code>**/*.md</code> — re-includes all
+          Markdown files) or a <strong>specific file path</strong> (e.g. <code>README.md</code> —
+          only that file passes through while <code>**/*.md</code> still excludes everything
+          else). Enter one entry per line, comma-separated, or a mix of both.
         </span>
-        <input
-          type="text"
+        <textarea
           className={styles.input}
+          style={{ resize: 'vertical', minHeight: '8rem', fontFamily: 'var(--ifm-font-family-monospace)', fontSize: '0.82rem' }}
           value={cfg.excludePatternOverrides}
           onChange={(e) => onChange({ excludePatternOverrides: e.target.value })}
           placeholder="e.g. README.md, **/*.md"

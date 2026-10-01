@@ -67,3 +67,27 @@ describe('detectExcludePatterns always-excluded editor and asset patterns', () =
     );
   });
 });
+
+describe('detectExcludePatterns fallback', () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  it('keeps the always-excluded patterns when nothing is detected', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => new Response('{}', { status: 500 })),
+    );
+    const patterns = await detectExcludePatterns('token', 'org', 'repo');
+    expect(patterns).toEqual(
+      expect.arrayContaining([
+        '**/node_modules/**',
+        '**/.gitattributes',
+        '**/.gitmodules',
+        '**/.mailmap',
+        '**/.git-blame-ignore-revs',
+        '**/.gradio/**',
+        '**/.dvc/cache/**',
+      ]),
+    );
+    expect(new Set(patterns).size).toBe(patterns.length);
+  });
+});

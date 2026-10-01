@@ -112,6 +112,13 @@ function describeDefault(reasoning) {
   return 'the model decides';
 }
 
+// A level as the reasoning dropdown shows it: "Off", or "Low Effort" and so on.
+function effortLabel(level) {
+  return level.value === 'none'
+    ? level.label
+    : `${level.label.replace(/\b\w/g, (c) => c.toUpperCase())} Effort`;
+}
+
 /**
  * The reasoning levels to offer for a catalogue record.
  *
@@ -119,7 +126,8 @@ function describeDefault(reasoning) {
  * dropdown, `known` false when there is no record to go by (every level is then
  * offered), `reasons` false for a model that does not reason at all, and
  * `defaultEffort` the level the model uses when none is sent, if the catalogue
- * says.
+ * says. That level is listed as "… — Model Default" with the value 'default', so it is
+ * preselected and choosing it sends nothing.
  *
  * "Off" is offered unless reasoning is mandatory — OpenRouter rejects it for
  * such a model — even when `none` is missing from the model's efforts: it is
@@ -128,7 +136,13 @@ function describeDefault(reasoning) {
  */
 export function reasoningOptions(model) {
   if (!model) {
-    return { options: REASONING_LEVELS, known: false, reasons: true, defaultEffort: null, note: '' };
+    return {
+      options: [REASONING_LEVELS[0], ...REASONING_LEVELS.slice(1).map((l) => ({ ...l, label: effortLabel(l) }))],
+      known: false,
+      reasons: true,
+      defaultEffort: null,
+      note: '',
+    };
   }
   const reasoning = model.reasoning;
   if (!reasoning) {
@@ -142,11 +156,25 @@ export function reasoningOptions(model) {
   }
 
   const efforts = Array.isArray(reasoning.supported_efforts) ? reasoning.supported_efforts : [];
-  const options = [
-    { value: 'default', label: `Model default — ${describeDefault(reasoning)}` },
+  const defaultEffort =
+    reasoning.default_enabled === false ? 'none' : (reasoning.default_effort ?? null);
+  const levels = [
     ...(reasoning.mandatory ? [] : [REASONING_LEVELS[1]]),
-    ...REASONING_LEVELS.slice(2).filter((l) => efforts.includes(l.value)),
+    ...REASONING_LEVELS.slice(2).filter(
+      (l) => efforts.includes(l.value) || l.value === defaultEffort,
+    ),
   ];
+  // The model's own default level stands in for 'default', marked as such and
+  // preselected: choosing it sends nothing, so the model keeps its default.
+  const options = levels.map((l) =>
+    l.value === defaultEffort
+      ? { value: 'default', label: `${effortLabel(l)} — Model Default` }
+      : { value: l.value, label: effortLabel(l) },
+  );
+  // A default the catalogue doesn't name as a level keeps its own option.
+  if (!levels.some((l) => l.value === defaultEffort)) {
+    options.unshift({ value: 'default', label: `Model default — ${describeDefault(reasoning)}` });
+  }
 
   const notes = [];
   if (reasoning.mandatory) notes.push("This model always reasons, so it can't be switched off.");
@@ -162,7 +190,7 @@ export function reasoningOptions(model) {
     options,
     known: true,
     reasons: true,
-    defaultEffort: reasoning.default_enabled === false ? 'none' : (reasoning.default_effort ?? null),
+    defaultEffort,
     note: notes.join(' '),
   };
 }
