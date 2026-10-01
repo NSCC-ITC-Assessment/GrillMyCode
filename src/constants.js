@@ -15,57 +15,76 @@
  * code. Listed here rather than per-editor so a project nested one directory
  * down, or a run on the fallback list, is covered the same way.
  */
-export const EDITOR_CONFIG_EXCLUDE_PATTERNS = [
-  // VS Code and its forks
-  '**/.vscode/**',
-  '**/.vscode-test/**',
-  '**/*.code-workspace',
-  '**/.history/**',
-  // Visual Studio
-  '**/.vs/**',
-  // JetBrains IDEs and Fleet
-  '**/.idea/**',
-  '**/*.iml',
-  '**/*.ipr',
-  '**/*.iws',
-  '**/.fleet/**',
-  // Eclipse
-  '**/.project',
-  '**/.classpath',
-  '**/.factorypath',
-  '**/.settings/**',
-  // NetBeans
-  '**/nbproject/**',
-  // Xcode project bundles (generated project settings, not source)
-  '**/*.xcodeproj/**',
-  '**/*.xcworkspace/**',
-  '**/xcuserdata/**',
-  // Sublime Text, Zed, Nova, Theia
-  '**/*.sublime-project',
-  '**/*.sublime-workspace',
-  '**/.zed/**',
-  '**/.nova/**',
-  '**/.theia/**',
-  // Vim and Emacs swap, backup and session files
-  '**/*.swp',
-  '**/*.swo',
-  '**/*~',
-  '**/.#*',
-  '**/#*#',
-  '**/.netrwhist',
-  '**/Session.vim',
-  // AI coding assistants
-  '**/.cursor/**',
-  '**/.cursorrules',
-  '**/.cursorignore',
-  '**/.windsurf/**',
-  '**/.windsurfrules',
-  '**/.claude/**',
-  '**/.continue/**',
-  // Editor-agnostic settings and dev container definitions
-  '**/.editorconfig',
-  '**/.devcontainer/**',
+export const EDITOR_CONFIG_EXCLUDE_GROUPS = [
+  {
+    label: 'VS Code and its forks',
+    patterns: ['**/.vscode/**', '**/.vscode-test/**', '**/*.code-workspace', '**/.history/**'],
+  },
+  {
+    label: 'Visual Studio',
+    patterns: ['**/.vs/**'],
+  },
+  {
+    label: 'JetBrains IDEs and Fleet',
+    patterns: ['**/.idea/**', '**/*.iml', '**/*.ipr', '**/*.iws', '**/.fleet/**'],
+  },
+  {
+    label: 'Eclipse',
+    patterns: ['**/.project', '**/.classpath', '**/.factorypath', '**/.settings/**'],
+  },
+  {
+    label: 'NetBeans',
+    patterns: ['**/nbproject/**'],
+  },
+  {
+    // Generated project settings, not source.
+    label: 'Xcode project bundles',
+    patterns: ['**/*.xcodeproj/**', '**/*.xcworkspace/**', '**/xcuserdata/**'],
+  },
+  {
+    label: 'Sublime Text, Zed, Nova, Theia',
+    patterns: [
+      '**/*.sublime-project',
+      '**/*.sublime-workspace',
+      '**/.zed/**',
+      '**/.nova/**',
+      '**/.theia/**',
+    ],
+  },
+  {
+    label: 'Vim and Emacs swap, backup and session files',
+    patterns: [
+      '**/*.swp',
+      '**/*.swo',
+      '**/*~',
+      '**/.#*',
+      '**/#*#',
+      '**/.netrwhist',
+      '**/Session.vim',
+    ],
+  },
+  {
+    label: 'AI coding assistants',
+    patterns: [
+      '**/.cursor/**',
+      '**/.cursorrules',
+      '**/.cursorignore',
+      '**/.windsurf/**',
+      '**/.windsurfrules',
+      '**/.claude/**',
+      '**/.continue/**',
+    ],
+  },
+  {
+    label: 'EditorConfig and dev containers',
+    patterns: ['**/.editorconfig', '**/.devcontainer/**'],
+  },
 ];
+
+/** EDITOR_CONFIG_EXCLUDE_GROUPS as one list, the form the exclude filter takes. */
+export const EDITOR_CONFIG_EXCLUDE_PATTERNS = EDITOR_CONFIG_EXCLUDE_GROUPS.flatMap(
+  (g) => g.patterns,
+);
 
 /**
  * Text files that describe or support a solution without being part of it —
@@ -75,24 +94,42 @@ export const EDITOR_CONFIG_EXCLUDE_PATTERNS = [
  * questions about a diagram's XML. An instructor who wants one assessed
  * re-includes it with exclude_pattern_overrides.
  */
-export const NON_CODE_ASSET_EXCLUDE_PATTERNS = [
-  // Diagrams (draw.io, Excalidraw, BPMN, PlantUML, Mermaid)
-  '**/*.drawio',
-  '**/*.dio',
-  '**/*.excalidraw',
-  '**/*.bpmn',
-  '**/*.puml',
-  '**/*.plantuml',
-  '**/*.mmd',
-  // Tabular data
-  '**/*.csv',
-  '**/*.tsv',
+export const NON_CODE_ASSET_EXCLUDE_GROUPS = [
+  {
+    label: 'Diagrams (draw.io, Excalidraw, BPMN, PlantUML, Mermaid)',
+    patterns: [
+      '**/*.drawio',
+      '**/*.dio',
+      '**/*.excalidraw',
+      '**/*.bpmn',
+      '**/*.puml',
+      '**/*.plantuml',
+      '**/*.mmd',
+    ],
+  },
+  {
+    label: 'Tabular data',
+    patterns: ['**/*.csv', '**/*.tsv'],
+  },
 ];
+
+/** NON_CODE_ASSET_EXCLUDE_GROUPS as one list, the form the exclude filter takes. */
+export const NON_CODE_ASSET_EXCLUDE_PATTERNS = NON_CODE_ASSET_EXCLUDE_GROUPS.flatMap(
+  (g) => g.patterns,
+);
+
+/**
+ * Excluded on every run, on top of the detected or fallback patterns: the
+ * repository's GitHub Actions workflows, including GrillMyCode's own and
+ * Classroom 50's autograder.
+ */
+export const WORKFLOWS_EXCLUDE_PATTERN = '.github/workflows/**';
 
 /**
  * Fallback glob patterns used when automatic stack detection fails or returns
  * no results. Covers the most common languages and build artefacts so that
- * assessments still work if the GitHub API is unreachable.
+ * assessments still work if the GitHub API is unreachable. The always-excluded
+ * patterns in src/stack-detection.js are applied alongside it.
  */
 export const FALLBACK_EXCLUDE_PATTERNS = [
   // Every directory pattern carries an explicit `**/` prefix so it matches at
@@ -520,14 +557,21 @@ export const PREVIOUS_WORK_MODES = ['context', 'ignore'];
 export const DEFAULT_PREVIOUS_WORK = 'context';
 
 /**
- * Under starter_code: ask, the largest share of the questions (rounded down,
- * but at least one once there are two questions) that may be about starter
- * code alone. Starter code is the same in every student's repository, so a
- * question about it can be answered once and passed around; the cap keeps most
- * of the set on the student's own work. Unlike the MIXING RULES quotas, the
- * model is told never to relax it.
+ * Default starter_questions_one_in: under starter_code: ask, up to one in this
+ * many of the questions (rounded down, but at least one once there are two
+ * questions) may be about starter code alone. Starter code is the same in every
+ * student's repository, so a question about it can be answered once and passed
+ * around; the cap keeps most of the set on the student's own work. Unlike the
+ * MIXING RULES quotas, the model is told never to relax it.
  */
-export const STARTER_QUESTION_MAX_SHARE = 1 / 5;
+export const DEFAULT_STARTER_QUESTIONS_ONE_IN = 5;
+
+/**
+ * Smallest starter_questions_one_in. One in two keeps at least half of the
+ * questions on the student's own work; smaller values are clamped to it. The
+ * largest is MAX_QUESTIONS, and any value above num_questions allows one.
+ */
+export const MIN_STARTER_QUESTIONS_ONE_IN = 2;
 
 /**
  * Default maximum total characters of codebase context — unchanged starter

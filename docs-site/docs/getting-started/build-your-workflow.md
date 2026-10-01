@@ -13,12 +13,14 @@ Open the [Workflow Wizard](../workflow-wizard.mdx) and work through its pages. F
 
 | The Wizard asks about… | For a first try |
 |---|---|
-| **Which AI model to use** | Leave the secret name as `OPENROUTER_API_KEY`, which you saved in step 1, and keep the recommended model. Leave **Advanced settings** on this page as they are. |
-| **The questions** | Keep 20 questions, and write a sentence or two about the assignment in the instructor instructions box, for example *"Assignment 3: Python loops. Include at least one question about off-by-one errors."* Leave **Include answers** off. |
-| **Delivery** | Nothing to choose. Students always get an issue and a PDF. |
-| **The instructor repository** | Answer **Yes**: your repositories are created by Classroom 50. The private answer key is on by default. It needs [its own one-time setup](../guides/instructor-setup.md), and until you've done that it quietly does nothing, so it's safe to leave on. |
-| **Which files are assessed** | Keep the defaults. |
+| **Student repositories** | Answer **Yes**: you are using it alongside Classroom 50, which creates your repositories. Then say how they start. If they start empty, choose **Empty**. If they start from your template, choose **From a starter template**, then **Ignore it** for the lowest cost per run; you can change this later. |
+| **Your assignment** | If your template includes the assignment brief or rubric, list where it is, for example `docs/brief.pdf`. Otherwise leave it empty. The Wizard skips this page if your repositories start empty. |
+| **Which files are left out** | Keep the defaults. |
+| **Which AI model to use** | Leave the secret name as `OPENROUTER_API_KEY`, which you saved in step 1, and choose the model marked **Recommended**. Leave **Advanced settings** on this page as they are. |
+| **The questions** | Keep 20 questions and the **Balanced** emphasis. Write a sentence or two about the assignment in the instructor instructions box, for example *"Assignment 3: Python loops. Include at least one question about off-by-one errors."* |
+| **What students and instructors get** | Leave **Include answers** off. The private answer key is on by default. It needs [its own one-time setup](../guides/instructor-setup.md), and until you've done that it quietly does nothing, so it's safe to leave on. |
 | **When it should run** | *Push, PR Merge, or Manual*. Questions are generated every time a student pushes. You can change this later; see [Choosing a trigger](../guides/choosing-a-trigger.md). |
+| **Changing settings for one run** | Answer **Yes**, and keep the settings that are ticked. |
 | **Other advanced settings** | Keep the defaults. |
 
 On the last page, select **Copy workflow YAML to clipboard**.

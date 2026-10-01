@@ -40,6 +40,9 @@ function buildChecklist(cfg, docsBase) {
   {
     const overrides = resolveDispatchOverrides(cfg.dispatchOverrides, {
       tagTrigger: isTagTrigger(cfg),
+      emptyRepo: cfg.repoStart === 'empty',
+      starterAsk: cfg.starterCode === 'ask',
+      enabled: cfg.dispatchOverridesEnabled === true,
     });
     if (overrides.length > 0) {
       items.push({

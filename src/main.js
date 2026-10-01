@@ -24,6 +24,7 @@ import {
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
   ISSUE_BODY_LIMIT,
+  WORKFLOWS_EXCLUDE_PATTERN,
 } from './constants.js';
 import { readInputs } from './inputs.js';
 import {
@@ -513,7 +514,10 @@ function renderStarterCodeSetting(state) {
  * marker it does not explain.
  */
 function asksAboutStarter(inputs) {
-  return inputs.starterCode === 'ask' && maxStarterQuestions(inputs.numQuestions) > 0;
+  return (
+    inputs.starterCode === 'ask' &&
+    maxStarterQuestions(inputs.numQuestions, inputs.starterQuestionsOneIn) > 0
+  );
 }
 
 /** Whether a run's settings send any codebase context: starter code or earlier work. */
@@ -1024,7 +1028,7 @@ async function run() {
       ...new Set([
         ...detectedPatterns,
         ...inputs.additionalExcludePatterns,
-        '.github/workflows/**',
+        WORKFLOWS_EXCLUDE_PATTERN,
       ]),
     ];
     if (inputs.additionalExcludePatterns.length > 0) {
@@ -1247,7 +1251,10 @@ async function run() {
       asksAboutStarter(inputs) &&
       (starterContext || starterLinesMarked || earlierStarterMarked)
     ) {
-      state.starterQuestionLimit = maxStarterQuestions(inputs.numQuestions);
+      state.starterQuestionLimit = maxStarterQuestions(
+        inputs.numQuestions,
+        inputs.starterQuestionsOneIn,
+      );
     }
 
     const messages = buildPrompt({

@@ -6,6 +6,7 @@ const INPUTS = {
   previous_work: 'INPUT_PREVIOUS_WORK',
   include_initial_commit: 'INPUT_INCLUDE_INITIAL_COMMIT',
   include_codebase_context: 'INPUT_INCLUDE_CODEBASE_CONTEXT',
+  starter_questions_one_in: 'INPUT_STARTER_QUESTIONS_ONE_IN',
 };
 const ENV_KEYS = ['INPUT_GITHUB_TOKEN', 'INPUT_API_KEY', ...Object.values(INPUTS)];
 const saved = {};
@@ -69,5 +70,30 @@ describe('the inputs starter_code replaces', () => {
         include_codebase_context: 'false',
       }),
     ).toEqual({ starterCode: 'ask', previousWork: 'context' });
+  });
+});
+
+describe('starter_questions_one_in input', () => {
+  const oneIn = (value) => {
+    if (value !== undefined) process.env.INPUT_STARTER_QUESTIONS_ONE_IN = value;
+    return readInputs().starterQuestionsOneIn;
+  };
+
+  it('defaults to 5', () => {
+    expect(oneIn()).toBe(5);
+    expect(oneIn('not a number')).toBe(5);
+  });
+
+  it('reads a whole number', () => {
+    expect(oneIn('10')).toBe(10);
+  });
+
+  it.each([
+    ['1', 2],
+    ['0', 2],
+    ['-3', 2],
+    ['80', 50],
+  ])('clamps %s to %i', (value, expected) => {
+    expect(oneIn(value)).toBe(expected);
   });
 });

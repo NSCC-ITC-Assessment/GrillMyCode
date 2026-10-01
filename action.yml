@@ -229,7 +229,8 @@ inputs:
       their own.
       "ask" — as context, and some questions may be about the starter code
       itself: the unchanged starter files and the unchanged starter lines of
-      files the student edited, in this submission or an earlier one. At most one in five questions (at least one
+      files the student edited, in this submission or an earlier one. At most
+      one in starter_questions_one_in questions (five by default; at least one
       once there are two) is about starter code alone, and each is worded as
       about the provided code. Starter code is the same for every student, so
       answers to those questions can be shared.
@@ -242,6 +243,17 @@ inputs:
       Replaces include_initial_commit and include_codebase_context.
     required: false
     default: ""
+
+  starter_questions_one_in:
+    description: >
+      Under starter_code ask, up to one in this many questions may be about
+      starter code alone, rounded down but at least one once there are two
+      questions. "5" (the default) allows 4 of 20. Values below 2 are clamped
+      to 2, so at least half the questions stay on the student's own work;
+      values above num_questions allow one. Has no effect under other
+      starter_code values.
+    required: false
+    default: "5"
 
   previous_work:
     description: >
@@ -431,6 +443,7 @@ runs:
     INPUT_ASSIGNMENT_CONTEXT_MAX_CHARS: ${{ inputs.assignment_context_max_chars }}
     INPUT_INSTRUCTOR_CONTEXT: ${{ inputs.instructor_context }}
     INPUT_STARTER_CODE: ${{ inputs.starter_code }}
+    INPUT_STARTER_QUESTIONS_ONE_IN: ${{ inputs.starter_questions_one_in }}
     INPUT_PREVIOUS_WORK: ${{ inputs.previous_work }}
     INPUT_INCLUDE_INITIAL_COMMIT: ${{ inputs.include_initial_commit }}
     INPUT_INCLUDE_CODEBASE_CONTEXT: ${{ inputs.include_codebase_context }}

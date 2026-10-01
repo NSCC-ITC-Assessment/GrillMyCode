@@ -3,41 +3,57 @@ import clsx from 'clsx';
 import useBaseUrl from '@docusaurus/useBaseUrl';
 import styles from './styles.module.css';
 
+import StepAssignment from './steps/StepAssignment';
+import StepRepositories from './steps/StepRepositories';
 import StepTrigger from './steps/StepTrigger';
+import StepFiles from './steps/StepFiles';
 import StepAIProvider from './steps/StepAIProvider';
 import StepQuestions from './steps/StepQuestions';
 import StepDelivery from './steps/StepDelivery';
-import StepInstructorRepo from './steps/StepInstructorRepo';
-import StepFiles from './steps/StepFiles';
-import StepFileOptions from './steps/StepFileOptions';
+import StepManualRuns from './steps/StepManualRuns';
 import StepAdvanced from './steps/StepAdvanced';
 import StepReview from './steps/StepReview';
-import { DEFAULT_DISPATCH_OVERRIDES } from './dispatchInputs';
+import { DEFAULT_DISPATCH_OVERRIDES, resolveDispatchOverrides } from './dispatchInputs';
 import {
   instructorRepoActive,
   invalidSubmissionTags,
   isTagTrigger,
   namedDiffBaseTagError,
   submissionTagList,
+  starterQuestionsOneInError,
+  starterShareDefaultError,
   temperatureError,
 } from './generateYaml';
 
-// Order follows .github/prompts/plan-workflowWizard.prompt.md: the model and
-// questions come first, then the file-handling steps, then the trigger — placed
-// after the steps that set most of the values it can expose as manual run
-// overrides — and finally the edge-case settings most readers can leave at
-// their defaults. getStepError keys on `label`, not position, so reordering
-// this list cannot move a validation check onto the wrong step.
+// Order follows .github/prompts/plan-workflowWizard.prompt.md: the facts
+// about the student repositories first, then what the AI should know about the
+// assignment — both before the model, so everything that sets how much is sent
+// to the AI is decided before choosing one, and the repositories before the
+// Delivery step that depends on them; then which files are assessed; then how
+// questions are made and who receives them; then when the workflow runs, once
+// what it produces is settled; then the manual run overrides — placed after
+// every setting they can expose, so each one ticked is a setting already
+// seen — and finally the edge-case settings most readers can leave at their
+// defaults.
+// getStepError keys on `label`, not position, so reordering this list cannot
+// move a validation check onto the wrong step. A step with `skippedWhen` is
+// passed over by Next and Back while it returns true, and stays on the
+// progress bar, greyed out with `skippedReason` as its tooltip, so the step
+// numbers don't shift.
 const STEPS = [
-  { label: 'AI',         title: 'Which model should GrillMyCode use?',                   subtitle: 'Select the OpenRouter model that will generate the comprehension questions.',                              Component: StepAIProvider },
-  { label: 'Questions',  title: 'Question settings',                    subtitle: 'Configure how many questions GrillMyCode should generate and what context the chosen AI receives.',             Component: StepQuestions },
-  { label: 'Delivery',   title: 'Where is the assessment delivered?',   subtitle: 'Students always get a GitHub issue and a PDF. There is nothing to configure here.',                             Component: StepDelivery },
-  { label: 'Instructor', title: 'Instructor repository',                subtitle: 'Optionally write questions and answers to a private instructor-only repository. Available for Classroom 50 assignment repositories only.', Component: StepInstructorRepo },
-  { label: 'Files',      title: 'Which files are assessed?',            subtitle: 'Control which student files are included in the diff that\'s sent to the AI.',                    Component: StepFiles },
-  { label: 'File opts',  title: 'File handling options',                 subtitle: 'Configure how the diff is built — what to skip, how comments are handled, and which commits count.', Component: StepFileOptions },
-  { label: 'Trigger',    title: 'When should GrillMyCode run?',     subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                              Component: StepTrigger },
-  { label: 'Advanced',   title: 'Other advanced settings',              subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                 Component: StepAdvanced },
-  { label: 'Review',     title: 'Your workflow is ready',               subtitle: 'Copy the generated YAML into your assignment repository.',                                Component: StepReview },
+  { label: 'Repositories', title: 'Student repositories',                  subtitle: 'Say how students\' repositories are created and what they start with.',                            Component: StepRepositories },
+  { label: 'Assignment',   title: 'About your assignment',                 subtitle: 'Point the AI to any assignment documents, if your repositories include one or more.',             Component: StepAssignment,
+    // An empty repository holds only the student's own files, so any brief
+    // listed here would be one the student wrote.
+    skippedWhen: (cfg) => cfg.repoStart === 'empty', skippedReason: 'not needed for empty repositories' },
+  { label: 'Files',        title: 'Which files are left out?',             subtitle: 'Choose which files are left out of what the AI sees, and which are brought back.',            Component: StepFiles },
+  { label: 'AI',           title: 'Which model should GrillMyCode use?',   subtitle: 'Select the model that will generate the comprehension questions.',                            Component: StepAIProvider },
+  { label: 'Questions',    title: 'Question settings',                     subtitle: 'Choose how many questions GrillMyCode should generate, what kind, and what they should focus on.',     Component: StepQuestions },
+  { label: 'Delivery',     title: 'What do students and instructors get?', subtitle: 'Students always get a GitHub issue and a PDF. Choose whether they see answers, and whether you get a private copy.', Component: StepDelivery },
+  { label: 'Trigger',      title: 'When should GrillMyCode run?',          subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                                   Component: StepTrigger },
+  { label: 'Manual runs',  title: 'Manual run overrides',                  subtitle: 'Optionally put chosen settings on the Run workflow form, so you can change them for one run without editing the workflow file.', Component: StepManualRuns },
+  { label: 'Advanced',     title: 'Other advanced settings',               subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                                Component: StepAdvanced },
+  { label: 'Review',       title: 'Your workflow is ready',                subtitle: 'Copy the generated YAML into your assignment repository.',                                              Component: StepReview },
 ];
 
 const INITIAL_CONFIG = {
@@ -52,9 +68,15 @@ const INITIAL_CONFIG = {
   // run can change them from the Actions tab. Copied, not referenced, so the
   // exported default list is never mutated through wizard state.
   dispatchOverrides: [...DEFAULT_DISPATCH_OVERRIDES],
+  // The Manual runs step's Yes/No: null until answered, and the step cannot
+  // be left until it is. No leaves every override out of the workflow without
+  // clearing dispatchOverrides, so Yes brings the ticks back.
+  dispatchOverridesEnabled: null,
 
   aiProvider: 'openrouter',
-  aiModel: 'google/gemini-3.5-flash-lite',
+  // null until a model is chosen, so the AI step can't be passed without one;
+  // '' once "Own Choice" is selected and nothing is picked from its list yet.
+  aiModel: null,
   // OpenRouter routing variant appended to the model ID: '', 'nitro' or 'floor'.
   aiModelVariant: '',
   // ai_reasoning_effort: 'default' leaves reasoning to the model. The AI step
@@ -68,7 +90,7 @@ const INITIAL_CONFIG = {
 
   // Repository label: whether the action writes a topic and a description
   // note to the student repository's own metadata once questions exist.
-  // Shares the instructor PAT, so the Instructor step offers it.
+  // Shares the instructor PAT, so the Delivery step offers it under the token.
   labelRepos: true,
 
   numQuestions: 20,
@@ -79,7 +101,7 @@ const INITIAL_CONFIG = {
   assignmentContextMaxChars: 20000,
 
   // Instructor repository delivery works only in Classroom 50 assignment
-  // repositories, so the Instructor step asks first: null until answered, and the
+  // repositories, so the Repositories step asks first: null until answered, and the
   // step cannot be left until it is. See instructorRepoActive in generateYaml.js.
   usesClassroom50: null,
   instructorRepoEnabled: true,
@@ -88,12 +110,20 @@ const INITIAL_CONFIG = {
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
   keepComments: false,
-  // How students' repositories start, for the File opts step's radios only:
-  // 'empty', 'template' (no starter code) or 'template-code'. It is not an
-  // action input — starterCode is — but 'template' and 'template-code' with
-  // starter code ignored both emit ignore, so the choice is kept separately.
-  repoStart: 'template-code',
-  starterCode: 'ignore',
+  // How students' repositories start, for the Repositories step's radios only:
+  // 'empty' or 'template'. It is not an action input — starterCode is — but
+  // the starter code question needs an answer of its own under 'template', so
+  // the choice is kept separately.
+  // Nothing is preselected: null until answered, and the Repositories step
+  // cannot be left until it is.
+  repoStart: null,
+  // starter_code. "What should the AI do with the starter template?" has no
+  // preselected answer either: null until answered, and the Repositories step
+  // cannot be left until it is. Empty sets it itself.
+  starterCode: null,
+  // starter_questions_one_in. Asked on the Questions step under ask only,
+  // where it can't exceed the number of questions.
+  starterQuestionsOneIn: 5,
   // previous_work. Offered on the Trigger step when a tag run starts after an
   // earlier tag, the only runs besides a base_sha override with earlier work.
   previousWork: 'context',
@@ -110,12 +140,12 @@ const OPENROUTER_MODEL_VALUES = ['google/gemini-3.5-flash-lite', 'openai/gpt-6-l
 function getStepError(stepIndex, cfg) {
   const label = STEPS[stepIndex]?.label;
   if (label === 'AI') {
+    if (cfg.aiModel === null) {
+      return 'Please select a model before continuing.';
+    }
     if (!OPENROUTER_MODEL_VALUES.includes(cfg.aiModel)) {
-      if (!cfg.aiModel || !cfg.aiModel.trim()) {
-        return 'Please enter a model ID for OpenRouter before continuing.';
-      }
-      if (!/^[^/]+\/[^/]+$/.test(cfg.aiModel.trim())) {
-        return 'Model ID must be in provider/model format (e.g. deepseek/deepseek-v4-flash).';
+      if (!cfg.aiModel.trim()) {
+        return 'Please select a model from the list below before continuing.';
       }
     }
     if (!cfg.apiKeySecret || !cfg.apiKeySecret.trim()) {
@@ -135,10 +165,39 @@ function getStepError(stepIndex, cfg) {
     const namedTagError = namedDiffBaseTagError(cfg);
     if (namedTagError) return namedTagError;
   }
-  if (label === 'Instructor') {
+  if (label === 'Questions') {
+    const oneInError = starterQuestionsOneInError(cfg);
+    if (oneInError) return oneInError;
+  }
+  if (label === 'Repositories') {
     if (cfg.usesClassroom50 === null) {
       return 'Please say whether your student repositories are created by Classroom 50 before continuing.';
     }
+    if (!cfg.repoStart) {
+      return "Please say how students' repositories start before continuing.";
+    }
+    if (!cfg.starterCode) {
+      return 'Please choose what the AI should do with the starter template before continuing.';
+    }
+  }
+  if (label === 'Manual runs') {
+    if (cfg.dispatchOverridesEnabled === null) {
+      return 'Please say whether you want to change settings for a single manual run before continuing.';
+    }
+    // The starter code share's run form value, set on this step only when the
+    // starter code answer isn't ask (under ask, the Questions step checks it).
+    const overrides = resolveDispatchOverrides(cfg.dispatchOverrides, {
+      tagTrigger: isTagTrigger(cfg),
+      emptyRepo: cfg.repoStart === 'empty',
+      starterAsk: cfg.starterCode === 'ask',
+      enabled: cfg.dispatchOverridesEnabled === true,
+    });
+    if (overrides.includes('starter_questions_one_in') && cfg.starterCode !== 'ask') {
+      const shareError = starterShareDefaultError(cfg);
+      if (shareError) return shareError;
+    }
+  }
+  if (label === 'Delivery') {
     if (instructorRepoActive(cfg) && (!cfg.instructorRepoTokenSecret || !cfg.instructorRepoTokenSecret.trim())) {
       return 'Please enter a secret name for the instructor repo token before continuing.';
     }
@@ -163,10 +222,12 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
             <strong>GrillMyCode</strong> — without writing a single line of YAML by hand.
           </p>
           <ul className={styles.introFeatures}>
-            <li>Pick your <strong>AI provider</strong> and model</li>
-            <li>Configure <strong>question generation</strong> and delivery destinations</li>
-            <li>Fine-tune <strong>file patterns</strong> and file handling</li>
-            <li>Choose your <strong>trigger event</strong> (manual dispatch, push to default branch, or both)</li>
+            <li>Describe your students' <strong>repositories</strong>: Classroom 50, and any starter code</li>
+            <li>Point the AI to any <strong>assignment</strong> documents</li>
+            <li>Fine-tune which <strong>files</strong> are assessed</li>
+            <li>Pick your <strong>AI model</strong> and configure <strong>question generation</strong></li>
+            <li>Decide what <strong>students and instructors</strong> receive</li>
+            <li>Choose your <strong>trigger</strong>: every push, a submission tag, or manual runs only</li>
             <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
             <li>Adjust <strong>advanced options</strong> if you need to</li>
             <li>Copy the finished <strong>YAML</strong> straight into your repository</li>
@@ -190,13 +251,23 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
     });
   }
 
+  const isSkipped = (i) => Boolean(STEPS[i].skippedWhen?.(cfg));
+
+  // The nearest step in `direction` that isn't skipped. The first and last
+  // steps never are, so there is always one.
+  function nearestStep(from, direction) {
+    let i = from + direction;
+    while (isSkipped(i)) i += direction;
+    return i;
+  }
+
   function handleNext() {
     if (getStepError(step, cfg)) return;
-    setStep((s) => Math.min(STEPS.length - 1, s + 1));
+    setStep((s) => nearestStep(s, 1));
   }
 
   function handleBack() {
-    setStep((s) => Math.max(0, s - 1));
+    setStep((s) => nearestStep(s, -1));
   }
 
   const { title, subtitle, Component } = STEPS[step];
@@ -212,17 +283,20 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
             {i > 0 && (
               <div className={clsx(styles.connector, i <= step && styles.connectorDone)} />
             )}
-            <div className={styles.step}>
-              <div className={styles.stepWrapper}>
+            <div className={clsx(styles.step, isSkipped(i) && styles.stepSkipped)}>
+              <div
+                className={styles.stepWrapper}
+                title={isSkipped(i) ? `Skipped: ${s.skippedReason}` : undefined}
+              >
                 <div
                   className={clsx(
                     styles.stepDot,
                     i === step && styles.stepDotActive,
-                    i < step && styles.stepDotDone,
+                    i < step && !isSkipped(i) && styles.stepDotDone,
                   )}
                   aria-current={i === step ? 'step' : undefined}
                 >
-                  {i < step ? '✓' : i + 1}
+                  {isSkipped(i) ? '–' : i < step ? '✓' : i + 1}
                 </div>
                 <span
                   className={clsx(styles.stepLabel, i === step && styles.stepLabelActive)}

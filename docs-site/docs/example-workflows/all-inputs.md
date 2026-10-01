@@ -205,9 +205,14 @@ jobs:
           #   ignore  — the first commit is your starter code and is left out.
           #   context — as ignore, and unchanged starter files are sent as
           #             background. Questions are never about them alone.
-          #   ask     — as context, and up to one in five questions may be about
-          #             the starter code itself.
+          #   ask     — as context, and up to one in starter_questions_one_in
+          #             questions may be about the starter code itself.
           # starter_code: "ignore"
+
+          # Under starter_code: ask, up to one in this many questions may be
+          # about the starter code alone (default: "5", so 4 of 20). From 2,
+          # which allows half, upward; above num_questions it allows one.
+          # starter_questions_one_in: "5"
 
           # Send the student's earlier work that this submission didn't touch
           # as background (default: "context"), or "ignore" to leave it out.

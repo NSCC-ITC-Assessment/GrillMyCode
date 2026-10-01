@@ -65,7 +65,7 @@ When the token expires, generate a new one and replace the secret's value. Until
 
 ## For each assignment
 
-In the [Workflow Wizard](../workflow-wizard.mdx)'s **Instructor** step, answer **Yes** to the Classroom 50 question and leave **Write to a private instructor repository** and **Label assessed repositories in the organization list** ticked. All three are the defaults. Then commit the workflow to the template as usual.
+In the [Workflow Wizard](../workflow-wizard.mdx)'s **Repositories** step, answer **Yes** to the Classroom 50 question. Then, in its **Delivery** step, leave **A private instructor repository for the assignment** and **Labelled student repositories in the organization list** ticked. Both are ticked by default. Then commit the workflow to the template as usual.
 
 If you already have a workflow file, add these lines under `with:` instead:
 

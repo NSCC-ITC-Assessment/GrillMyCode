@@ -20,62 +20,83 @@ const TEMPLATES_PATH = join(__dirname, 'data', 'gitignore-templates.json');
 // These patterns are always excluded regardless of detected stack. Each one
 // carries an explicit `**/` prefix so it matches at any depth — a bare
 // `node_modules/**` is root-anchored under minimatch and would leave
-// frontend/node_modules in the assessment.
+// frontend/node_modules in the assessment. Grouped under labels the Workflow
+// Wizard shows (see scripts/build-wizard-exclude-lists.js).
+export const ALWAYS_EXCLUDE_GROUPS = [
+  {
+    label: 'Git files',
+    patterns: [
+      '**/.git/**',
+      '**/.gitignore',
+      '**/.gitattributes',
+      '**/.gitmodules',
+      '**/.mailmap',
+      '**/.git-blame-ignore-revs',
+    ],
+  },
+  {
+    // Classroom 50 accept-time metadata, not student-authored.
+    label: 'Classroom 50 setup file',
+    patterns: ['**/.classroom50.yaml'],
+  },
+  {
+    // Always machine-generated, often enormous.
+    label: 'Lock files',
+    patterns: [
+      '**/*.lock',
+      '**/package-lock.json',
+      '**/yarn.lock',
+      '**/pnpm-lock.yaml',
+      '**/Pipfile.lock',
+      '**/poetry.lock',
+    ],
+  },
+  {
+    label: 'Minified files',
+    patterns: ['**/*.min.js', '**/*.min.css'],
+  },
+  {
+    // May contain secrets; never relevant to assessment.
+    label: 'Environment files',
+    patterns: ['**/.env', '**/.env.*'],
+  },
+  {
+    label: 'Generated build metadata',
+    patterns: ['**/*.tsbuildinfo'],
+  },
+  {
+    // Not covered by the bundled Python gitignore template, which already
+    // handles Django, Flask, Scrapy, Celery, etc. artifacts.
+    label: 'Python tool caches',
+    patterns: ['**/.gradio/**', '**/.dvc/cache/**'],
+  },
+  {
+    label: 'Operating system files',
+    patterns: ['**/.DS_Store', '**/Thumbs.db'],
+  },
+  {
+    label: 'Source maps, logs, Markdown and SVG files',
+    patterns: ['**/*.map', '**/*.log', '**/*.md', '**/*.svg'],
+  },
+];
+
 const ALWAYS_EXCLUDE = [
-  // VCS / GrillMyCode internals
-  '**/.git/**',
-  '**/.gitignore',
-  '**/.gitattributes',
-  '**/.gitmodules',
-  '**/.mailmap',
-  '**/.git-blame-ignore-revs',
-
-  // Classroom 50 accept-time metadata (not student-authored)
-  '**/.classroom50.yaml',
-
-  // Lock files — always machine-generated, often enormous
-  '**/*.lock',
-  '**/package-lock.json',
-  '**/yarn.lock',
-  '**/pnpm-lock.yaml',
-  '**/Pipfile.lock',
-  '**/poetry.lock',
-
-  // Minified assets — unreadable by design
-  '**/*.min.js',
-  '**/*.min.css',
-
-  // Environment files — may contain secrets; never relevant to assessment
-  '**/.env',
-  '**/.env.*',
-
-  // Generated build metadata
-  '**/*.tsbuildinfo',
-
-  // Python tool caches not covered by the bundled Python gitignore template
-  // (which already handles Django, Flask, Scrapy, Celery, etc. artifacts).
-  '**/.gradio/**',
-  '**/.dvc/cache/**',
-
-  // OS noise
-  '**/.DS_Store',
-  '**/Thumbs.db',
-
-  // Source maps, logs, docs, and vector assets
-  '**/*.map',
-  '**/*.log',
-  '**/*.md',
-  '**/*.svg',
-
+  ...ALWAYS_EXCLUDE_GROUPS.flatMap((g) => g.patterns),
   ...EDITOR_CONFIG_EXCLUDE_PATTERNS,
   ...NON_CODE_ASSET_EXCLUDE_PATTERNS,
+];
+
+// What a run gets when the stack can't be detected: the fallback list, plus
+// the always-excluded patterns, so "always" holds on that path too.
+const FALLBACK_WITH_ALWAYS_EXCLUDE = [
+  ...new Set([...ALWAYS_EXCLUDE, ...FALLBACK_EXCLUDE_PATTERNS]),
 ];
 
 // Maps GitHub Languages API names to gitignore template keys when the name
 // doesn't directly match a template (e.g. "JavaScript" → "Node").
 // Languages whose names match a template key exactly (Python, Ruby, Go, Rust,
 // PHP, Swift, R, Elixir, etc.) do not need an entry here.
-const LANGUAGE_TO_TEMPLATES = {
+export const LANGUAGE_TO_TEMPLATES = {
   JavaScript: ['Node'],
   TypeScript: ['Node'],
   CoffeeScript: ['Node'],
@@ -95,7 +116,7 @@ const LANGUAGE_TO_TEMPLATES = {
 
 // Maps known root-level config file/directory names to template keys.
 // Supplements language detection with framework and IDE signals.
-const CONFIG_TO_TEMPLATES = {
+export const CONFIG_TO_TEMPLATES = {
   // Language package managers / build tools
   'package.json': ['Node'],
   'requirements.txt': ['Python'],
@@ -169,7 +190,7 @@ const CONFIG_TO_TEMPLATES = {
 
 // Maps root-level config files to exclude patterns directly, for frameworks
 // that have no upstream gitignore template.
-const CONFIG_TO_PATTERNS = {
+export const CONFIG_TO_PATTERNS = {
   'svelte.config.js': ['.svelte-kit/**'],
   'svelte.config.ts': ['.svelte-kit/**'],
   'nuxt.config.js': ['.nuxt/**', '.output/**'],
@@ -178,7 +199,7 @@ const CONFIG_TO_PATTERNS = {
 
 // Maps root-level filename suffixes to template keys, for frameworks where the
 // project file includes a variable component (e.g. MyApp.xcodeproj).
-const ROOT_SUFFIX_TO_TEMPLATES = {
+export const ROOT_SUFFIX_TO_TEMPLATES = {
   '.xcodeproj': ['Global/Xcode'],
   '.xcworkspace': ['Global/Xcode'],
   '.uproject': ['UnrealEngine'],
@@ -189,7 +210,7 @@ const ROOT_SUFFIX_TO_TEMPLATES = {
 // Maps package.json dependency/devDependency names to gitignore template keys.
 // This catches frameworks reliably regardless of which config filename they use,
 // and requires no maintenance as new config filename conventions emerge.
-const PACKAGE_DEP_TO_TEMPLATES = {
+export const PACKAGE_DEP_TO_TEMPLATES = {
   next: ['Nextjs'],
   '@angular/core': ['Angular'],
   '@nestjs/core': ['Nestjs'],
@@ -201,7 +222,7 @@ const PACKAGE_DEP_TO_TEMPLATES = {
 
 // Maps package.json dependency names to exclude patterns for frameworks with
 // no upstream gitignore template.
-const PACKAGE_DEP_TO_PATTERNS = {
+export const PACKAGE_DEP_TO_PATTERNS = {
   svelte: ['.svelte-kit/**'],
   nuxt: ['.nuxt/**', '.output/**'],
   '@nuxt/kit': ['.nuxt/**', '.output/**'],
@@ -210,7 +231,7 @@ const PACKAGE_DEP_TO_PATTERNS = {
 // Maps composer.json require/require-dev package names to gitignore template keys.
 // Catches PHP frameworks reliably even when their config files aren't at the repo
 // root (e.g. Bedrock relocates wp-config.php; Symfony Flex may not commit symfony.lock).
-const COMPOSER_DEP_TO_TEMPLATES = {
+export const COMPOSER_DEP_TO_TEMPLATES = {
   'laravel/framework': ['Laravel'],
   'laravel/lumen-framework': ['Laravel'],
   'symfony/framework-bundle': ['Symfony'],
@@ -229,7 +250,7 @@ const COMPOSER_DEP_TO_TEMPLATES = {
 // framework reliably, unlike the Rakefile heuristic in CONFIG_TO_TEMPLATES —
 // many Ruby projects ship a Rakefile without being Rails apps, and many Rails
 // apps lean on the Gemfile instead.
-const GEMFILE_DEP_TO_TEMPLATES = {
+export const GEMFILE_DEP_TO_TEMPLATES = {
   rails: ['Rails'],
   jekyll: ['Jekyll'],
   nanoc: ['Nanoc'],
@@ -238,7 +259,7 @@ const GEMFILE_DEP_TO_TEMPLATES = {
 // Maps mix.exs dependency atoms to gitignore template keys. The base Elixir
 // template (from the mix.exs config signal) covers _build/, deps/, etc.; the
 // Phoenix template adds web-specific artifacts like priv/static/** and tmp/.
-const MIX_DEP_TO_TEMPLATES = {
+export const MIX_DEP_TO_TEMPLATES = {
   phoenix: ['community/Elixir/Phoenix'],
 };
 
@@ -396,7 +417,7 @@ export async function detectExcludePatterns(token, owner, repo) {
     allTemplates = JSON.parse(readFileSync(TEMPLATES_PATH, 'utf-8'));
   } catch {
     core.warning('Could not load bundled gitignore templates — using fallback exclude patterns.');
-    return FALLBACK_EXCLUDE_PATTERNS;
+    return FALLBACK_WITH_ALWAYS_EXCLUDE;
   }
 
   const headers = {
@@ -475,7 +496,7 @@ export async function detectExcludePatterns(token, owner, repo) {
 
   if (templateKeys.size === 0 && extraPatterns.size === 0) {
     core.info('No matching stack templates found — using fallback exclude patterns.');
-    return FALLBACK_EXCLUDE_PATTERNS;
+    return FALLBACK_WITH_ALWAYS_EXCLUDE;
   }
 
   core.info(`Using gitignore templates: ${[...templateKeys].join(', ')}`);

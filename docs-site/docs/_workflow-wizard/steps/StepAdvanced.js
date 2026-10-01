@@ -1,12 +1,6 @@
 import React from 'react';
 import styles from '../styles.module.css';
-import { sendsCodebaseContext } from '../generateYaml';
-
-const DEFAULTS = {
-  aiRetryMaxAttempts: 5,
-  assignmentContextMaxChars: 20000,
-  codebaseContextMaxChars: 50000,
-};
+import CodebaseContextLimit, { codebaseLimitStep } from './CodebaseContextLimit';
 
 export default function StepAdvanced({ cfg, onChange }) {
   return (
@@ -57,30 +51,28 @@ export default function StepAdvanced({ cfg, onChange }) {
         />
       </div>
 
-      {sendsCodebaseContext(cfg) && (
-        <div className={styles.fieldGroup}>
-          <label className={styles.label}>Codebase context max characters <span className={styles.optionalBadge}>optional</span></label>
-          <span className={styles.hint}>
-            Maximum total characters of project code given to the AI as context: your starter
-            code and the student's earlier work share this limit. Files are added whole, those
-            nearest the assessed files first; any that don't fit are left out and counted in the
-            run summary. Increase for a large project; decrease to limit token usage. Values below 1 are clamped to 1. Default:{' '}
-            <code>50000</code>
-          </span>
-          <input
-            type="number"
-            className={`${styles.input} ${styles.numberInput}`}
-            min={1}
-            step={5000}
-            value={cfg.codebaseContextMaxChars}
-            onChange={(e) =>
-              onChange({
-                codebaseContextMaxChars: Math.max(1, parseInt(e.target.value, 10) || 1),
-              })
-            }
-          />
-        </div>
-      )}
+      {/* Shown here only for earlier work left by a base_sha override; starter
+          code and tag runs show it on their own steps. */}
+      {codebaseLimitStep(cfg) === 'Advanced' && <CodebaseContextLimit cfg={cfg} onChange={onChange} />}
+
+      <div className={styles.fieldGroup}>
+        <label className={styles.label}>Skip committers <span className={styles.optionalBadge}>optional</span></label>
+        <span className={styles.hint}>
+          Comma-separated list of author name or email substrings. A leading run of commits whose
+          author matches any entry is skipped (e.g. bot commits from a template's own CI). Only
+          skips a <em>contiguous leading run</em>, not all matching commits. Set to empty to disable
+          entirely. Classroom 50's own setup commit isn't bot-authored, so this default has no
+          effect on it — its metadata file is excluded by pattern instead. Default:{' '}
+          <code>github-actions[bot]</code>
+        </span>
+        <input
+          type="text"
+          className={styles.input}
+          value={cfg.skipCommitters}
+          onChange={(e) => onChange({ skipCommitters: e.target.value })}
+          placeholder="github-actions[bot]"
+        />
+      </div>
 
       <div className={styles.fieldGroup}>
         <label className={styles.label}>Base SHA override <span className={styles.optionalBadge}>optional</span></label>

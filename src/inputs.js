@@ -31,6 +31,8 @@ import {
   DEFAULT_STARTER_CODE,
   PREVIOUS_WORK_MODES,
   DEFAULT_PREVIOUS_WORK,
+  DEFAULT_STARTER_QUESTIONS_ONE_IN,
+  MIN_STARTER_QUESTIONS_ONE_IN,
 } from './constants.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
@@ -233,6 +235,16 @@ function readStarterCodeInputs() {
   return { starterCode, previousWork };
 }
 
+/**
+ * Reads starter_questions_one_in, clamped to MIN_STARTER_QUESTIONS_ONE_IN and
+ * MAX_QUESTIONS. Only starter_code: ask uses it.
+ */
+function readStarterQuestionsOneIn() {
+  const raw = parseInt(core.getInput('starter_questions_one_in'), 10);
+  if (Number.isNaN(raw)) return DEFAULT_STARTER_QUESTIONS_ONE_IN;
+  return Math.min(MAX_QUESTIONS, Math.max(MIN_STARTER_QUESTIONS_ONE_IN, raw));
+}
+
 export function readInputs() {
   const excludeStr = core.getInput('additional_exclude_patterns');
   const overrideStr = core.getInput('exclude_pattern_overrides');
@@ -307,6 +319,7 @@ export function readInputs() {
     keepComments: core.getInput('keep_comments') === 'true',
     includeAnswers: core.getInput('include_answers') === 'true',
     ...readStarterCodeInputs(),
+    starterQuestionsOneIn: readStarterQuestionsOneIn(),
     codebaseContextMaxChars: Math.max(
       1,
       parseInt(

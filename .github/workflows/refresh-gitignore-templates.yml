@@ -41,6 +41,11 @@ jobs:
       - name: Format output file
         run: pnpm prettier --write src/data/gitignore-templates.json
 
+      # The Workflow Wizard lists every template the action can apply, from
+      # its own copy of these lists, plus Linguist's current language names.
+      - name: Rebuild the Workflow Wizard's exclude lists
+        run: node scripts/build-wizard-exclude-lists.js
+
       - name: Open PR if templates changed
         uses: peter-evans/create-pull-request@v7
         with:
@@ -48,7 +53,7 @@ jobs:
           branch: chore/refresh-gitignore-templates
           title: "chore: refresh gitignore templates"
           body: |
-            Automated refresh of `src/data/gitignore-templates.json` from [github/gitignore](https://github.com/github/gitignore).
+            Automated refresh of `src/data/gitignore-templates.json` from [github/gitignore](https://github.com/github/gitignore), and of the Workflow Wizard's copy in `docs-site/docs/_workflow-wizard/excludeLists.json`.
 
             No changes to the file means this PR will not be created.
           commit-message: "chore: refresh gitignore templates"

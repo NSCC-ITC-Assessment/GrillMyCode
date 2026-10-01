@@ -15,7 +15,7 @@ Each question quotes a short snippet of the student's code.
 The AI can't guarantee every one, so you may choose to read them before relying on them for marks. [Your choice of model](choosing-a-model.md) matters.
 :::
 
-You can steer the questions in six ways, all in the [Workflow Wizard](../workflow-wizard.mdx)'s **Questions** step unless noted.
+You can steer the questions in six ways, all in the [Workflow Wizard](../workflow-wizard.mdx). The first three are in its **Questions** step, and each of the others names its step.
 
 ## How many questions
 
@@ -50,7 +50,7 @@ When you write instructions, the AI adds a one-sentence summary of the question 
 
 GrillMyCode can read the assignment brief, rubric or requirements and use them to pick what to ask about. It reads plain-text files, PDFs and Word documents that are in the student's repository.
 
-In the **Assignment context files** box, list where they are, for example `docs/brief.pdf, docs/rubric.docx`.
+In the **Assignment context files** box, in the Wizard's **Assignment** step, list where they are, for example `docs/brief.pdf, docs/rubric.docx`.
 
 Two things to keep in mind:
 
@@ -61,25 +61,25 @@ Very long documents are cut off after about 20,000 characters (roughly 3,000 wor
 
 ## Let the AI see the rest of the project
 
-If your template includes starter code, the Wizard's **File handling options** step asks **What should the AI do with the starter code?**:
+If students' repositories start from your template, the Wizard's **Repositories** step asks **What should the AI do with the starter template?**:
 
-- **Ignore it** — the AI sees only the student's work. This is the default.
-- **Use it as background** — the AI also sees your starter files, so it can ask how the student's code uses yours. Questions stay on the student's code, but answers may depend on yours.
-- **Ask about it too** — as above, and up to one in five questions may be about your starter code itself. Your code is the same for every student, so answers to those questions can be shared.
+- **Ignore it** — the AI sees only the student's work. This costs the least per run, and suits a template that holds only instructions, such as a README.
+- **Use it as background context** — the AI also sees your starter files, so it can ask how the student's code uses yours. Questions stay on the student's code, but answers may depend on yours.
+- **Allow GrillMyCode to also generate questions about available starter code** — as above, and up to one in five questions may be about your starter code itself. You can change how many on the **Questions** step. Your code is the same for every student, so answers to those questions can be shared.
 
 When each submission tag assesses only the new work, such as phase 2 after phase 1, the AI also sees the student's earlier work as background. Untick **Give the AI the student's earlier work as context** in the **Trigger** step to leave it out.
 
-Sending more code costs more per run. Large projects are trimmed to a limit you can set in the **Advanced** step.
+Sending more code costs more per run. Large projects are trimmed to a size limit, which the Wizard shows beside whichever of these settings sends the extra code.
 
 ## Keep or remove comments
 
 GrillMyCode normally removes code comments before the AI sees the code. That way, the questions are about what the code *does*, not about the student's notes.
 
-When the comments *are* the work, for example in an assignment about documenting code, turn on **Keep code comments** in the Wizard's **File handling options** step.
+When the comments *are* the work, for example in an assignment about documenting code, turn on **Keep code comments** in the Wizard's **Questions** step.
 
 ## Leave "Include answers" off
 
-The **Include answers** option shows the answers to the student, right under each question. That defeats the purpose of the assessment, so leave it off. To see the answers yourself, use the [private answer key](instructor-setup.md) instead (Classroom 50 assignments only).
+The **Include answers** option, in the Wizard's **Delivery** step, shows the answers to the student, right under each question. That defeats the purpose of the assessment, so leave it off. To see the answers yourself, use the [private answer key](instructor-setup.md) instead (Classroom 50 assignments only).
 
 ---
 
