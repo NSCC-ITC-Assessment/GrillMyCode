@@ -1,0 +1,183 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 700" role="img" aria-labelledby="gmc-ext-title">
+  <title id="gmc-ext-title">How the pieces of the student side of the extension relate. On GitHub, nothing changes: the student pushes their code, the GrillMyCode action runs, and it posts an issue of questions in the student's repository, with the file and lines on each snippet. The instructor repository, which holds the answers, is never read. In VS Code, the extension works in order: it takes the folder open in VS Code (the student's clone), signs in to GitHub using VS Code's own sign-in, finds the questions issue by its assessment label, reads out each question with its file, lines and commit, and matches it to lines in the file, spotting code that has moved. The student then sees a questions panel in the side bar, each question pinned to its lines, and a warning when the code has moved on from the reviewed commit. Optionally, later, GrillMyCode could write the same details into the issue as hidden data.</title>
+  <style>
+    .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
+    .ttl{font-size:14px;font-weight:800;fill:#1E293B}
+    .sub{font-size:13px;font-weight:600;fill:#475569}
+    .ink{stroke:#1E293B;stroke-width:3;stroke-linejoin:round;stroke-linecap:round}
+  </style>
+  <defs>
+    <path id="gmc-ext-sparkle" d="M0,-10 C1,-3 3,-1 10,0 C3,1 1,3 0,10 C-1,3 -3,1 -10,0 C-3,-1 -1,-3 0,-10 Z"/>
+    <path id="gmc-ext-r" d="M-5,-7 L3,0 L-5,7" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  </defs>
+
+  <!-- backdrop -->
+  <rect x="0" y="0" width="1000" height="700" rx="32" fill="#FFF7ED"/>
+  <g fill="#FFC53A">
+    <use href="#gmc-ext-sparkle" transform="translate(966,34) scale(.6)"/>
+  </g>
+  <text class="txt" x="24" y="44"><tspan font-size="17" font-weight="800" fill="#1E293B">The student side</tspan><tspan class="sub" dx="14">shows the questions GrillMyCode already posts, beside the code they ask about</tspan></text>
+
+  <!-- lanes -->
+  <rect x="24" y="64" width="952" height="152" rx="18" fill="#FFFFFF" fill-opacity=".7"/>
+  <rect x="24" y="250" width="952" height="152" rx="18" fill="#FFFFFF" fill-opacity=".7"/>
+  <rect x="24" y="436" width="952" height="176" rx="18" fill="#FFFFFF" fill-opacity=".7"/>
+  <!-- ===== on GitHub: what exists today ===== -->
+  <text class="txt" x="44" y="88"><tspan class="ttl">On GitHub</tspan><tspan class="sub" dx="12">nothing here changes</tspan></text>
+  <g class="txt">
+    <clipPath id="gmc-ext-c44-100"><rect x="44" y="100" width="196" height="100" rx="14"/></clipPath>
+    <rect x="44" y="100" width="196" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="44" y="100" width="196" height="10" fill="#64748B" clip-path="url(#gmc-ext-c44-100)"/>
+    <rect x="44" y="100" width="196" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" x="58" y="138">Student pushes</text>
+    <text class="ttl" x="58" y="156">their code</text>
+    <rect x="54" y="168" width="176" height="22" rx="11" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5"/>
+    <text x="142" y="183" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">as they do today</text>
+  </g>
+  <use href="#gmc-ext-r" x="254" y="150"/>
+  <g class="txt">
+    <clipPath id="gmc-ext-c268-100"><rect x="268" y="100" width="196" height="100" rx="14"/></clipPath>
+    <rect x="268" y="100" width="196" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="268" y="100" width="196" height="10" fill="#64748B" clip-path="url(#gmc-ext-c268-100)"/>
+    <rect x="268" y="100" width="196" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" x="282" y="138">GrillMyCode</text>
+    <text class="ttl" x="282" y="156">action runs</text>
+    <rect x="278" y="168" width="176" height="22" rx="11" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5"/>
+    <text x="366" y="183" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">no change needed</text>
+  </g>
+  <use href="#gmc-ext-r" x="478" y="150"/>
+  <g class="txt">
+    <clipPath id="gmc-ext-c492-100"><rect x="492" y="100" width="228" height="100" rx="14"/></clipPath>
+    <rect x="492" y="100" width="228" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="492" y="100" width="228" height="10" fill="#64748B" clip-path="url(#gmc-ext-c492-100)"/>
+    <rect x="492" y="100" width="228" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" x="506" y="138">Issue of questions</text>
+    <text class="ttl" x="506" y="156">in the student’s repo</text>
+    <rect x="502" y="168" width="208" height="22" rx="11" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5"/>
+    <text x="606" y="183" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">file and lines per snippet</text>
+  </g>
+  <g class="txt">
+    <clipPath id="gmc-ext-c760-100"><rect x="760" y="100" width="196" height="100" rx="14"/></clipPath>
+    <rect x="760" y="100" width="196" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="760" y="100" width="196" height="10" fill="#64748B" clip-path="url(#gmc-ext-c760-100)"/>
+    <rect x="760" y="100" width="196" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" x="774" y="138">Instructor repo</text>
+    <text class="ttl" x="774" y="156">with the answers</text>
+    <rect x="770" y="168" width="176" height="22" rx="11" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5"/>
+    <text x="858" y="183" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">never read</text>
+  </g>
+  <!-- padlock -->
+  <g transform="translate(934,132) scale(.7)">
+    <path d="M-10,-4 V-12 A10,10 0 0 1 10,-12 V-4" fill="none" stroke="#1E293B" stroke-width="3"/>
+    <rect class="ink" x="-15" y="-4" width="30" height="24" rx="5" fill="#FFC53A" stroke-width="2.5"/>
+    <circle cx="0" cy="7" r="3" fill="#1E293B"/>
+  </g>
+  <!-- the one link between the two: the extension reads the issue -->
+  <path d="M540,204 V274" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M533,270 L540,278 L547,270" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <g class="txt">
+    <text class="sub" x="522" y="238" text-anchor="end">read over the GitHub API, as the student</text>
+    <rect x="558" y="221" width="352" height="24" rx="12" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5" stroke-dasharray="5 4"/>
+    <text x="734" y="237" text-anchor="middle" font-size="11.5" font-weight="700" fill="#92400E">optional later: the same details as hidden data</text>
+  </g>
+  <!-- ===== in VS Code: what the extension does ===== -->
+  <text class="txt" x="44" y="274"><tspan class="ttl">In VS Code</tspan><tspan class="sub" dx="12">what the extension does, in order</tspan></text>
+  <g class="txt">
+    <clipPath id="gmc-ext-c44-286"><rect x="44" y="286" width="164" height="100" rx="14"/></clipPath>
+    <rect x="44" y="286" width="164" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="44" y="286" width="164" height="10" fill="#64748B" clip-path="url(#gmc-ext-c44-286)"/>
+    <rect x="44" y="286" width="164" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" style="font-size:13px" x="58" y="324">The folder open</text>
+    <text class="ttl" style="font-size:13px" x="58" y="342">in VS Code</text>
+    <rect x="54" y="354" width="144" height="22" rx="11" fill="#E2E8F0" stroke="#64748B" stroke-width="1.5"/>
+    <text x="126" y="369" text-anchor="middle" font-size="11.5" font-weight="700" fill="#334155">the student’s clone</text>
+  </g>
+  <use href="#gmc-ext-r" x="220.5" y="336"/>
+  <g class="txt">
+    <clipPath id="gmc-ext-c231-286"><rect x="231" y="286" width="164" height="100" rx="14"/></clipPath>
+    <rect x="231" y="286" width="164" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="231" y="286" width="164" height="10" fill="#2563EB" clip-path="url(#gmc-ext-c231-286)"/>
+    <rect x="231" y="286" width="164" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" style="font-size:13px" x="245" y="324">Signs in</text>
+    <text class="ttl" style="font-size:13px" x="245" y="342">to GitHub</text>
+    <rect x="241" y="354" width="144" height="22" rx="11" fill="#DBEAFE" stroke="#2563EB" stroke-width="1.5"/>
+    <text x="313" y="369" text-anchor="middle" font-size="11.5" font-weight="700" fill="#1E40AF">VS Code’s sign-in</text>
+  </g>
+  <use href="#gmc-ext-r" x="407.5" y="336"/>
+  <g class="txt">
+    <clipPath id="gmc-ext-c418-286"><rect x="418" y="286" width="164" height="100" rx="14"/></clipPath>
+    <rect x="418" y="286" width="164" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="418" y="286" width="164" height="10" fill="#EA580C" clip-path="url(#gmc-ext-c418-286)"/>
+    <rect x="418" y="286" width="164" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" style="font-size:13px" x="432" y="324">Finds the</text>
+    <text class="ttl" style="font-size:13px" x="432" y="342">questions issue</text>
+    <rect x="428" y="354" width="144" height="22" rx="11" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="500" y="369" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9A3412">label: assessment</text>
+  </g>
+  <use href="#gmc-ext-r" x="594.5" y="336"/>
+  <g class="txt">
+    <clipPath id="gmc-ext-c605-286"><rect x="605" y="286" width="164" height="100" rx="14"/></clipPath>
+    <rect x="605" y="286" width="164" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="605" y="286" width="164" height="10" fill="#EA580C" clip-path="url(#gmc-ext-c605-286)"/>
+    <rect x="605" y="286" width="164" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" style="font-size:13px" x="619" y="324">Reads out each</text>
+    <text class="ttl" style="font-size:13px" x="619" y="342">question</text>
+    <rect x="615" y="354" width="144" height="22" rx="11" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="687" y="369" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9A3412">file, lines, commit</text>
+  </g>
+  <use href="#gmc-ext-r" x="781.5" y="336"/>
+  <g class="txt">
+    <clipPath id="gmc-ext-c792-286"><rect x="792" y="286" width="164" height="100" rx="14"/></clipPath>
+    <rect x="792" y="286" width="164" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="792" y="286" width="164" height="10" fill="#EA580C" clip-path="url(#gmc-ext-c792-286)"/>
+    <rect x="792" y="286" width="164" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" style="font-size:13px" x="806" y="324">Matches it to</text>
+    <text class="ttl" style="font-size:13px" x="806" y="342">lines in the file</text>
+    <rect x="802" y="354" width="144" height="22" rx="11" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="874" y="369" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9A3412">spots moved code</text>
+  </g>
+  <!-- the matched questions feed all three views -->
+  <path d="M874,390 V466 Q874,478 862,478 H200 Q188,478 188,488 M500,478 V488 M812,478 V488" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round"/>
+  <path d="M181,483 L188,491 L195,483" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M493,483 L500,491 L507,483" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M805,483 L812,491 L819,483" fill="none" stroke="#475569" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- ===== what the student sees ===== -->
+  <text class="txt" x="44" y="460"><tspan class="ttl">What the student sees</tspan><tspan class="sub" dx="12">all inside the editor</tspan></text>
+  <g class="txt">
+    <clipPath id="gmc-ext-c44-496"><rect x="44" y="496" width="288" height="100" rx="14"/></clipPath>
+    <rect x="44" y="496" width="288" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="44" y="496" width="288" height="10" fill="#EA580C" clip-path="url(#gmc-ext-c44-496)"/>
+    <rect x="44" y="496" width="288" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" x="58" y="534">Questions panel</text>
+    <text class="ttl" x="58" y="552">in the side bar</text>
+    <rect x="54" y="564" width="268" height="22" rx="11" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="188" y="579" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9A3412">every question, in order</text>
+  </g>
+  <g class="txt">
+    <clipPath id="gmc-ext-c356-496"><rect x="356" y="496" width="288" height="100" rx="14"/></clipPath>
+    <rect x="356" y="496" width="288" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="356" y="496" width="288" height="10" fill="#EA580C" clip-path="url(#gmc-ext-c356-496)"/>
+    <rect x="356" y="496" width="288" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" x="370" y="534">Each question pinned</text>
+    <text class="ttl" x="370" y="552">to its lines</text>
+    <rect x="366" y="564" width="268" height="22" rx="11" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="500" y="579" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9A3412">click one to jump to its code</text>
+  </g>
+  <g class="txt">
+    <clipPath id="gmc-ext-c668-496"><rect x="668" y="496" width="288" height="100" rx="14"/></clipPath>
+    <rect x="668" y="496" width="288" height="100" rx="14" fill="#FFFFFF"/>
+    <rect x="668" y="496" width="288" height="10" fill="#EA580C" clip-path="url(#gmc-ext-c668-496)"/>
+    <rect x="668" y="496" width="288" height="100" rx="14" fill="none" stroke="#1E293B" stroke-width="2.5"/>
+    <text class="ttl" x="682" y="534">A warning when</text>
+    <text class="ttl" x="682" y="552">the code has moved on</text>
+    <rect x="678" y="564" width="268" height="22" rx="11" fill="#FFEDD5" stroke="#EA580C" stroke-width="1.5"/>
+    <text x="812" y="579" text-anchor="middle" font-size="11.5" font-weight="700" fill="#9A3412">folder is past the reviewed commit</text>
+  </g>
+  <!-- ===== legend ===== -->
+  <g class="txt">
+    <rect x="48" y="632" width="16" height="16" rx="4" fill="#64748B"/><text class="sub" x="72" y="645" style="fill:#1E293B">Exists today, unchanged</text>
+    <rect x="270" y="632" width="16" height="16" rx="4" fill="#2563EB"/><text class="sub" x="294" y="645" style="fill:#1E293B">Provided by VS Code</text>
+    <rect x="466" y="632" width="16" height="16" rx="4" fill="#EA580C"/><text class="sub" x="490" y="645" style="fill:#1E293B">New: the extension’s own code</text>
+    <rect x="48" y="660" width="16" height="16" rx="4" fill="#FEF3C7" stroke="#D97706" stroke-width="1.5" stroke-dasharray="3 2.5"/><text class="sub" x="72" y="673" style="fill:#1E293B">Optional later: GrillMyCode writes the same details into the issue as hidden data</text>
+  </g>
+</svg>
