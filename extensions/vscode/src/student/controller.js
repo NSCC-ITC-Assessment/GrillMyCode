@@ -9,6 +9,7 @@
  * `grillmycode.state` context key (see viewsWelcome in package.json):
  *
  *   loading       working
+ *   untrusted     the folder is in Restricted Mode, where VS Code switches Git off
  *   noRepository  no open folder is a clone of a GitHub repository
  *   signedOut     no GitHub session, or one GitHub no longer accepts
  *   noAccess      GitHub answered 404: no such repository for this account
@@ -84,6 +85,11 @@ export class QuestionsController {
       }),
       vscode.workspace.onDidChangeTextDocument(() => this.#folderChanged()),
       vscode.workspace.onDidSaveTextDocument(() => this.#folderChanged()),
+      // Trusting the folder switches Git back on, a moment after the trust is granted.
+      vscode.workspace.onDidGrantWorkspaceTrust(() => this.#loadSoon()),
+      vscode.extensions.onDidChange(() => {
+        if (!this.#api) this.#loadSoon();
+      }),
     );
     return this.load();
   }
@@ -110,6 +116,7 @@ export class QuestionsController {
         );
       }
     }
+    if (!this.#api && !vscode.workspace.isTrusted) return this.#setState('untrusted');
     this.#watch(this.#api && findGitHubRepository(this.#api));
     if (!this.#target) {
       // Git lists a repository before it has read its remotes, so one with no

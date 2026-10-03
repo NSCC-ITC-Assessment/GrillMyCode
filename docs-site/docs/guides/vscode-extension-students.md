@@ -42,10 +42,9 @@ The extension reads your questions through your GitHub account. GitHub offers on
 
 ## If your questions don't appear
 
-**If there is no GrillMyCode icon** after you install the extension, look for **Restricted Mode** in the bar at the bottom of the window. VS Code switches extensions off in a folder you haven't said you trust. Select **Restricted Mode** and choose to trust the folder.
+The GrillMyCode view says what it is waiting for:
 
-Otherwise, the GrillMyCode view says what it is waiting for:
-
+- **"This folder is open in Restricted Mode…"** VS Code holds back some features in a folder you haven't said you trust. Select **Manage Workspace Trust**, then **Trust**.
 - **"Open a folder that is a clone of a GitHub repository…"** Open the assignment's folder itself, not a folder above it or a copy you downloaded as a ZIP file.
 - **"GitHub could not find this repository for the account that is signed in."** You're signed in to VS Code with a different GitHub account from the one that owns the assignment. Sign in with the right one.
 - **"No GrillMyCode questions were found for this repository."** Check that you have pushed, wait a few minutes, then select **Refresh**. If there is no **GrillMyCode Questions** issue in the repository's **Issues** tab on GitHub either, ask your instructor.

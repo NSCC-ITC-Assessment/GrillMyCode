@@ -27,9 +27,12 @@
     "assessment"
   ],
   "main": "./dist/extension.cjs",
-  "extensionDependencies": [
-    "vscode.git"
-  ],
+  "capabilities": {
+    "untrustedWorkspaces": {
+      "supported": "limited",
+      "description": "GrillMyCode finds your questions through VS Code's Git support, which is switched off in Restricted Mode. Trust the folder to see them."
+    }
+  },
   "activationEvents": [],
   "contributes": {
     "viewsContainers": {
@@ -64,6 +67,11 @@
         "view": "grillmycode.questions",
         "contents": "Open a folder that is a clone of a GitHub repository to see its GrillMyCode questions.",
         "when": "grillmycode.state == noRepository"
+      },
+      {
+        "view": "grillmycode.questions",
+        "contents": "This folder is open in Restricted Mode, which switches off the Git support GrillMyCode needs. Trust the folder to see your questions.\n[Manage Workspace Trust](command:workbench.trust.manage)",
+        "when": "grillmycode.state == untrusted"
       },
       {
         "view": "grillmycode.questions",

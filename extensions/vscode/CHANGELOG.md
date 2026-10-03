@@ -2,6 +2,10 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## Unreleased
+
+- In a folder open in Restricted Mode, the GrillMyCode view now says that the folder has to be trusted, and links to where you do that. Before, the extension was switched off there and its icon was missing.
+
 ## 0.1.2 (pre-release), 2026-10-03
 
 - Renamed to **GrillMyCode Companion**. The view in the Activity Bar and the commands are still called GrillMyCode.

@@ -12,7 +12,7 @@ GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketpla
 - **VS Code 1.120 or later**, on the desktop or in a codespace. It is not a web extension, so it does not load in github.dev or vscode.dev.
 - **VS Code's built-in Git support**, switched on. The extension reads the folder's remote, branch and commit from it and never runs `git` itself.
 - **A repository on GitHub.com.** GitHub Enterprise Server is not supported.
-- **A trusted folder.** VS Code switches the extension off while the folder is open in Restricted Mode, and the GrillMyCode icon is not shown.
+- **A trusted folder.** VS Code switches its Git support off while the folder is open in Restricted Mode, so the extension loads no questions there. The GrillMyCode view says so and links to **Manage Workspace Trust**. Once the folder is trusted, the questions load without a restart.
 
 ## How it is installed
 

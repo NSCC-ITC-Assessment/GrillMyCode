@@ -8,7 +8,12 @@
 import * as vscode from 'vscode';
 import { pickGitHubRemote } from '../shared/remote.js';
 
-/** The built-in Git extension's API, or undefined when Git is unavailable or switched off. */
+/**
+ * The built-in Git extension's API, or undefined when Git is unavailable or
+ * switched off. VS Code switches it off in Restricted Mode, which is why Git is
+ * not listed in package.json as an extension this one depends on: VS Code would
+ * switch this extension off with it, and the view could not say why.
+ */
 export async function getGitApi() {
   const extension = vscode.extensions.getExtension('vscode.git');
   if (!extension) return undefined;

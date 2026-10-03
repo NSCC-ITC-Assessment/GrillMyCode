@@ -187,15 +187,39 @@ reads the instructor repository on a student's behalf.
     up "Do you trust the publisher "GrillMyCode"?", which says the publisher
     is not verified, and **Trust Publisher & Install** installed 0.1.0. The
     offer is shown in Restricted Mode as well.
-  - **Restricted Mode switches the extension off.** `package.json` does not
-    say the extension can run in a folder that is not trusted, so VS Code
-    disables it there and the Activity Bar icon is missing. The student guide
-    says how to trust the folder. Whether the extension should declare itself
-    safe to run there is undecided: it runs nothing from the folder, but it
-    does read the folder's Git remote.
+  - **Restricted Mode switches 0.1.0 off**, and the Activity Bar icon is
+    missing. From the next version the view loads there and asks the student
+    to trust the folder. See [Restricted Mode](#restricted-mode).
   - Both routes skip pre-releases. How either treats an extension that has
     only pre-releases was not tested, because 0.1.0 is not one. See
     [Versions](#versions).
+
+### Restricted Mode
+
+VS Code opens a folder the student has not said they trust in Restricted Mode.
+What the extension can do there is set by VS Code's own Git extension, which is
+switched off in Restricted Mode. Without it the extension cannot tell which
+repository the folder is.
+
+- **Saying the extension is safe there is not enough.** Tried 2026-10-03: with
+  that one line added to `package.json`, the extension stayed switched off,
+  because it listed Git as an extension it depends on, and VS Code switches
+  off everything that depends on a disabled extension.
+- **What it does instead.** It no longer lists Git as a dependency and asks
+  for it when it loads, and it declares limited support for folders that are
+  not trusted. In Restricted Mode the view says the folder has to be trusted
+  and links to **Manage Workspace Trust**. After **Trust**, Git comes back and
+  the questions load with no restart. Tried by hand in desktop VS Code 1.140.0
+  on Linux.
+- **What guards it.** `extensions/vscode/test/manifest.test.js` fails if the
+  dependency comes back or the declaration goes. The in-editor tests cannot
+  cover it, because they run in a trusted folder.
+- **A side effect.** A reader who has disabled the Git extension altogether
+  used to have this one disabled with it. Now the view loads and says no
+  folder is a clone of a GitHub repository.
+- **Reading the repository without Git**, from the files in `.git`, would let
+  the questions show in Restricted Mode. Not planned: the remote, the branch,
+  the commit and the changed files would each need their own reader.
 
 Not planned for any phase yet:
 
@@ -576,11 +600,15 @@ Done:
   Restricted Mode, and the reference page describes both routes. Details are
   under [Student side](#student-side).
 
+- **A message in Restricted Mode**, in place of a missing icon. Not published
+  yet: it goes out with 0.2.0. See [Restricted Mode](#restricted-mode).
+
 Left, to be ready for a class:
 
 - **A stable release, 0.2.0.** Until one exists, students get 0.1.0: the same
-  code as 0.1.2, with the old name and README and no screenshot or changelog
-  on its page.
+  code as 0.1.2, with the old name and README, no screenshot or changelog on
+  its page, and no icon in Restricted Mode. The student guide already
+  describes the Restricted Mode message that 0.2.0 brings.
 - **A check on Windows**, which students use. macOS is checked by hand, and
   the in-editor tests are set to run on both in CI. Left: that job passing,
   and one install by hand on Windows, because the tests never sign in to
