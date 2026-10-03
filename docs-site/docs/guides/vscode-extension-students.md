@@ -12,8 +12,10 @@ You don't have to use it. The same questions are always in your repository's **I
 ## Install it
 
 - **In a codespace**, the extension may already be installed. Look for the GrillMyCode icon in the Activity Bar, the strip of icons at the side of the window.
-- **On your own computer**, VS Code may offer to install the extensions your assignment recommends when you open its folder. Accept the offer.
+- **On your own computer**, VS Code may offer to install the extension your assignment recommends when you open its folder. Select **Install**.
 - **Otherwise**, open the **Extensions** view, search for `GrillMyCode Companion`, and select **Install**.
+
+The first time you install an extension from a publisher, VS Code asks whether you trust that publisher. Select **Trust Publisher & Install**.
 
 ## See your questions
 
@@ -40,7 +42,9 @@ The extension reads your questions through your GitHub account. GitHub offers on
 
 ## If your questions don't appear
 
-The GrillMyCode view says what it is waiting for:
+**If there is no GrillMyCode icon** after you install the extension, look for **Restricted Mode** in the bar at the bottom of the window. VS Code switches extensions off in a folder you haven't said you trust. Select **Restricted Mode** and choose to trust the folder.
+
+Otherwise, the GrillMyCode view says what it is waiting for:
 
 - **"Open a folder that is a clone of a GitHub repository…"** Open the assignment's folder itself, not a folder above it or a copy you downloaded as a ZIP file.
 - **"GitHub could not find this repository for the account that is signed in."** You're signed in to VS Code with a different GitHub account from the one that owns the assignment. Sign in with the right one.

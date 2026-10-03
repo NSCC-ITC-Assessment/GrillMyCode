@@ -2,9 +2,10 @@
 
 > **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `20e8ef8`
 > **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
-> GrillMyCode Companion 0.1.2, a pre-release. Phase 2 is under way: publishing
-> works and the guides are written, and a stable release and a class trial
-> remain. Every later phase is a proposal, and so is everything under
+> GrillMyCode Companion: 0.1.0 is what an ordinary install gets, and 0.1.2 is
+> a pre-release with the same code. Phase 2 is under way: publishing works,
+> the guides are written and both install routes are checked, and a stable
+> release and a class trial remain. Every later phase is a proposal, and so is everything under
 > [Further ideas](#further-ideas-to-consider).
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
@@ -16,14 +17,14 @@ disturbing the action's own pipeline.
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                                  | Needs first                                              | Status                             |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published as a pre-release (0.1.2) |
-| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: publishing and guides |
-| 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                        |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Not started                        |
-| 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                        |
-| 6     | Assessed-files preview and local trial runs                                                                                   | The action's core extracted from the Actions toolkit     | Not started                        |
+| Phase | What it adds                                                                                                                  | Needs first                                              | Status                                  |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------- |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published: 0.1.0, and 0.1.2 pre-release |
+| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: publishing and guides      |
+| 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                             |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Not started                             |
+| 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                             |
+| 6     | Assessed-files preview and local trial runs                                                                                   | The action's core extracted from the Actions toolkit     | Not started                             |
 
 Phases 2 to 5 do not depend on one another and can be taken in another order.
 The suggested order is 2, 4, 3, 5, 6:
@@ -175,9 +176,26 @@ reads the instructor repository on a student's behalf.
 - **Getting it to students.** The instructor lists `GrillMyCode.grillmycode`
   in the template repository's dev container configuration (Codespaces
   installs it) and in its recommended extensions (desktop VS Code prompts).
-  This has not been tried. Every published version so far is a pre-release,
-  and how either route treats an extension with no stable version has not
-  been checked.
+  Both were tried on 2026-10-03 with VS Code 1.140.0, and both install 0.1.0:
+  - **Dev container.** Codespaces starts the VS Code server with one
+    `--install-extension` flag for each listed extension, as this
+    repository's own codespace log shows. That command, run by hand against
+    an empty folder, installed 0.1.0 with nothing to confirm. A codespace was
+    not created from a template repository to see it end to end.
+  - **Recommendation.** Opening a folder that holds `.vscode/extensions.json`
+    in desktop VS Code showed the offer to install. **Install** then brought
+    up "Do you trust the publisher "GrillMyCode"?", which says the publisher
+    is not verified, and **Trust Publisher & Install** installed 0.1.0. The
+    offer is shown in Restricted Mode as well.
+  - **Restricted Mode switches the extension off.** `package.json` does not
+    say the extension can run in a folder that is not trusted, so VS Code
+    disables it there and the Activity Bar icon is missing. The student guide
+    says how to trust the folder. Whether the extension should declare itself
+    safe to run there is undecided: it runs nothing from the folder, but it
+    does read the folder's Git remote.
+  - Both routes skip pre-releases. How either treats an extension that has
+    only pre-releases was not tested, because 0.1.0 is not one. See
+    [Versions](#versions).
 
 Not planned for any phase yet:
 
@@ -369,6 +387,10 @@ The workflow has run twice, both on 2026-10-03: `vscode-v0.1.1` and
 `vscode-v0.1.2`, each published as a pre-release with the `VSCE_PAT` secret.
 No other workflow ran on either tag.
 
+**0.1.0 was not published by the workflow.** The Marketplace has held it since
+2026-10-03 at 21:38 UTC, 17 minutes before the workflow's first run, and it
+has no tag. It is not marked as a pre-release.
+
 ### Versions
 
 The extension has its own version numbers, and is at `0.1.2`. The Marketplace
@@ -377,8 +399,15 @@ accepts only `major.minor.patch`, so VS Code's convention marks the channel:
 - **Even minor** (`1.2.x`): stable. This is what students get.
 - **Odd minor** (`1.3.x`): pre-release, for instructors who opt in.
 
+**0.1.0 is the exception.** Its minor number is odd, but the Marketplace
+holds it as a stable version, so it is what both install routes and the
+**Install** button give. It runs the same code as 0.1.2 and differs only in
+its name, "GrillMyCode", its description and its README. The Extensions view
+still shows the listing's current name, GrillMyCode Companion.
+
 Students' installs update on their own, so a stable release mid-term changes
-what every student sees. The first stable release will be `0.2.0`. A version
+what every student sees. The first stable release made on purpose will be
+`0.2.0`, and installs of 0.1.0 will move to it. A version
 number can be published only once, even if it is later removed.
 
 What ties the extension to the action is the report format, not the version
@@ -453,10 +482,6 @@ Written, in `docs-site/docs/`:
 
 Still open:
 
-- **The guide describes the two install routes as working.** Neither has been
-  tried, and both are written for an extension that has a stable version.
-  Check them, under [Student side](#student-side), before the action is next
-  tagged, because that tag publishes these pages as the stable docs.
 - The docs site's stable version is snapshotted only when the action is
   tagged. Until then a new page is under "Next" and unversioned links to it
   return 404, so the Marketplace listing must not link to it. The root
@@ -523,8 +548,9 @@ What was not checked:
 - **Windows by hand.** Everything above ran on Linux. macOS was tried by hand
   on 2026-10-03 and reported working. The checks workflow now runs the
   in-editor tests on Windows and macOS, and that job has not run yet.
-- **An install from the Marketplace.** The listing exists and shows 0.1.2.
-  Nobody has reported installing from it.
+- **An install in a real codespace or on a student's computer.** Both install
+  routes were run from the Marketplace on Linux, under
+  [Student side](#student-side), without signing in to GitHub afterwards.
 
 ### Phase 2: ready for a class
 
@@ -545,10 +571,16 @@ Done:
   the README links the image by its address on the docs site. That address
   works once the docs site has been deployed from main.
 
+- **The two install routes**, tried from the Marketplace. Both work and
+  install 0.1.0. The guides now mention the publisher-trust question and
+  Restricted Mode, and the reference page describes both routes. Details are
+  under [Student side](#student-side).
+
 Left, to be ready for a class:
 
-- **A stable release, 0.2.0.** Until one exists, only someone who chooses a
-  pre-release gets the extension for certain.
+- **A stable release, 0.2.0.** Until one exists, students get 0.1.0: the same
+  code as 0.1.2, with the old name and README and no screenshot or changelog
+  on its page.
 - **A check on Windows**, which students use. macOS is checked by hand, and
   the in-editor tests are set to run on both in CI. Left: that job passing,
   and one install by hand on Windows, because the tests never sign in to

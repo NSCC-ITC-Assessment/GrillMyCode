@@ -50,7 +50,7 @@ Create `.vscode/extensions.json` in the template with this content:
 }
 ```
 
-When a student opens the assignment's folder, VS Code offers to install the extension. The student has to accept the offer.
+When a student opens the assignment's folder, VS Code offers to install the extension. The student has to accept the offer, and confirm that they trust the publisher.
 
 Neither file is assessed. GrillMyCode leaves out editor and codespace settings, like the rest of your template.
 
