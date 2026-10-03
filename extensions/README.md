@@ -41,7 +41,11 @@ The extension has its own version numbers and its own tags, `vscode-v*`. A
 1. Choose the version. An odd minor number (`0.1.x`, `0.3.x`) is a
    pre-release, which only people who opt in receive. An even one (`0.2.x`) is
    a stable release, which every student's install updates to.
-2. Set `version` in `extensions/vscode/package.json` and merge that to main.
+2. Set `version` in `extensions/vscode/package.json`, add the version to
+   `extensions/vscode/CHANGELOG.md`, which the Marketplace shows on the
+   listing's Changelog tab, and merge both to main. If the screenshot in
+   `extensions/vscode/README.md` is new or changed, wait for the docs site to
+   deploy before tagging: the listing loads the image from there.
 3. Tag that commit on main and push the tag:
 
    ```bash
@@ -55,9 +59,15 @@ The extension has its own version numbers and its own tags, `vscode-v*`. A
    required reviewer. Once approved it publishes to the Marketplace and creates
    a GitHub Release with the `.vsix` attached.
 
-The workflow signs in to the Marketplace with the repository's `VSCE_PAT`
-secret. `docs-internal/vscode-extension-plan.md`, under "Accounts and secrets",
-says what that token is and what replaces it.
+The workflow signs in to the Marketplace with a Microsoft Entra identity when
+the `vscode-marketplace` environment names one, and with the `VSCE_PAT` secret
+otherwise. That token stops working on 2026-12-01.
+`docs-internal/vscode-extension-plan.md`, under "Accounts and secrets", has the
+steps for replacing it.
+
+To try the sign-in without publishing, run **VS Code Extension Publisher
+Check** from the Actions tab. Do that after any change to the sign-in, before
+the next tag depends on it.
 
 A version number can be published only once. If the workflow fails after
 publishing, re-run it: it skips the Marketplace and finishes the rest.

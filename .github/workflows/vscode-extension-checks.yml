@@ -62,3 +62,39 @@ jobs:
           name: grillmycode-vscode
           path: extensions/vscode/dist/grillmycode.vsix
           if-no-files-found: error
+
+  # Students use Windows and macOS, so the same tests run there. Nothing is
+  # packaged: the .vsix from the job above is the one every system installs.
+  # A separate job, so the name of the job above, which a branch rule may
+  # require, stays as it is.
+  test-other-systems:
+    name: Test in VS Code (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      # One system failing says nothing about the other, so both finish.
+      fail-fast: false
+      matrix:
+        os: [windows-latest, macos-latest]
+    defaults:
+      run:
+        working-directory: extensions/vscode
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # These runners have a display, so no xvfb.
+      - name: Run tests in VS Code
+        run: pnpm test:host

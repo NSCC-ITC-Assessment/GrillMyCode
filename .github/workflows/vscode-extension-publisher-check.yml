@@ -1,0 +1,94 @@
+name: VS Code Extension Publisher Check
+
+# Tries the Marketplace sign-in that vscode-extension-release.yml uses, without
+# publishing anything. Run it by hand from the Actions tab after changing how
+# that workflow signs in, and before the next tag depends on it: a tag whose
+# publish fails has to be moved or replaced.
+#
+# It also prints the ID the Marketplace knows a Microsoft Entra identity by,
+# which is what gets added to the publisher's members. The steps are in
+# docs-internal/vscode-extension-plan.md, under "Accounts and secrets".
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    name: Check the Marketplace sign-in
+    runs-on: ubuntu-latest
+    # The same environment as the publish job, so the same variables, secret
+    # and Entra federated credential apply.
+    environment: vscode-marketplace
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      # For the packaging tool, at the version the lockfile pins.
+      - name: Install the extension's dependencies
+        working-directory: extensions/vscode
+        run: pnpm install --frozen-lockfile
+
+      - name: Sign in to Microsoft Entra
+        if: vars.AZURE_CLIENT_ID != ''
+        uses: azure/login@v3
+        with:
+          client-id: ${{ vars.AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.AZURE_TENANT_ID }}
+          allow-no-subscriptions: true
+
+      # The resource is the Marketplace's own, the one the packaging tool
+      # asks for a token to.
+      - name: Show the ID to add to the publisher's members
+        if: vars.AZURE_CLIENT_ID != ''
+        run: |
+          id="$(az rest --url https://app.vssps.visualstudio.com/_apis/profile/profiles/me \
+            --resource 499b84ac-1321-427f-aa17-267ca6975798 --query id --output tsv)"
+          echo "::notice::The Marketplace knows the Entra identity as $id. Add that ID to the publisher's members, as a Contributor."
+
+      # Asks the Marketplace which roles the sign-in has on the publisher
+      # named in package.json. It fails when there are none.
+      - name: Check the sign-in can publish
+        working-directory: extensions/vscode
+        env:
+          ENTRA_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+        run: |
+          if [ -n "$ENTRA_CLIENT_ID" ]; then
+            echo "Checking the Microsoft Entra identity."
+            env -u VSCE_PAT pnpm exec vsce verify-pat --azure-credential
+          elif [ -n "$VSCE_PAT" ]; then
+            echo "::warning::Checking the VSCE_PAT secret, which stops working on 2026-12-01."
+            pnpm exec vsce verify-pat
+          else
+            echo "::error::No Entra identity and no VSCE_PAT secret. The release workflow would use trusted publishing, which can only be tried by publishing."
+            exit 1
+          fi
+
+      # A placeholder token is enough to tell: while trusted publishing is
+      # closed the Marketplace says so before it looks at the token.
+      - name: Report whether trusted publishing is open
+        if: always()
+        run: |
+          answer="$(curl --silent --show-error --max-time 30 --request POST \
+            'https://marketplace.visualstudio.com/_apis/gallery/token?api-version=7.2-preview.1' \
+            --header 'Accept: application/json' --header 'Content-Type: application/json' \
+            --header 'Authorization: FederatedToken placeholder' \
+            --data '{"publisherName":"GrillMyCode"}' | jq -r '.message // "no message"')" || answer="no answer"
+          if [ "$answer" = "Trusted Publishing is not supported." ]; then
+            echo "Trusted publishing is still closed."
+          else
+            echo "::notice::The Marketplace no longer says trusted publishing is unsupported. It answered: $answer"
+          fi

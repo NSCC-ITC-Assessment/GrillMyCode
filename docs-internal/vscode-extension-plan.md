@@ -2,9 +2,11 @@
 
 > **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `20e8ef8`
 > **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
-> GrillMyCode Companion 0.1.2, a pre-release. Phase 2 is under way: publishing
-> works, and the guides, a stable release and a class trial remain. Every
-> later phase is a proposal, and so is everything under
+> GrillMyCode Companion: 0.1.0 is what an ordinary install gets, and 0.1.2 is
+> a pre-release with the same code. Phase 2 is under way: publishing works,
+> the guides are written, both install routes are checked, and the stable
+> release 0.2.0 is prepared and goes out when its tag is pushed. A class trial
+> remains. Every later phase is a proposal, and so is everything under
 > [Further ideas](#further-ideas-to-consider).
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
@@ -16,14 +18,14 @@ disturbing the action's own pipeline.
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                                  | Needs first                                              | Status                             |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published as a pre-release (0.1.2) |
-| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: publishing done       |
-| 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                        |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Not started                        |
-| 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                        |
-| 6     | Assessed-files preview and local trial runs                                                                                   | The action's core extracted from the Actions toolkit     | Not started                        |
+| Phase | What it adds                                                                                                                  | Needs first                                              | Status                                  |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------- |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published: 0.1.0, and 0.1.2 pre-release |
+| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: 0.2.0 is ready to tag      |
+| 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                             |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Not started                             |
+| 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                             |
+| 6     | Assessed-files preview and local trial runs                                                                                   | The action's core extracted from the Actions toolkit     | Not started                             |
 
 Phases 2 to 5 do not depend on one another and can be taken in another order.
 The suggested order is 2, 4, 3, 5, 6:
@@ -175,9 +177,50 @@ reads the instructor repository on a student's behalf.
 - **Getting it to students.** The instructor lists `GrillMyCode.grillmycode`
   in the template repository's dev container configuration (Codespaces
   installs it) and in its recommended extensions (desktop VS Code prompts).
-  This has not been tried. Every published version so far is a pre-release,
-  and how either route treats an extension with no stable version has not
-  been checked.
+  Both were tried on 2026-10-03 with VS Code 1.140.0, and both install 0.1.0:
+  - **Dev container.** Codespaces starts the VS Code server with one
+    `--install-extension` flag for each listed extension, as this
+    repository's own codespace log shows. That command, run by hand against
+    an empty folder, installed 0.1.0 with nothing to confirm. A codespace was
+    not created from a template repository to see it end to end.
+  - **Recommendation.** Opening a folder that holds `.vscode/extensions.json`
+    in desktop VS Code showed the offer to install. **Install** then brought
+    up "Do you trust the publisher "GrillMyCode"?", which says the publisher
+    is not verified, and **Trust Publisher & Install** installed 0.1.0. The
+    offer is shown in Restricted Mode as well.
+  - **Restricted Mode switches 0.1.0 off**, and the Activity Bar icon is
+    missing. From 0.2.0 the view loads there and asks the student
+    to trust the folder. See [Restricted Mode](#restricted-mode).
+  - Both routes skip pre-releases. How either treats an extension that has
+    only pre-releases was not tested, because 0.1.0 is not one. See
+    [Versions](#versions).
+
+### Restricted Mode
+
+VS Code opens a folder the student has not said they trust in Restricted Mode.
+What the extension can do there is set by VS Code's own Git extension, which is
+switched off in Restricted Mode. Without it the extension cannot tell which
+repository the folder is.
+
+- **Saying the extension is safe there is not enough.** Tried 2026-10-03: with
+  that one line added to `package.json`, the extension stayed switched off,
+  because it listed Git as an extension it depends on, and VS Code switches
+  off everything that depends on a disabled extension.
+- **What it does instead.** It no longer lists Git as a dependency and asks
+  for it when it loads, and it declares limited support for folders that are
+  not trusted. In Restricted Mode the view says the folder has to be trusted
+  and links to **Manage Workspace Trust**. After **Trust**, Git comes back and
+  the questions load with no restart. Tried by hand in desktop VS Code 1.140.0
+  on Linux.
+- **What guards it.** `extensions/vscode/test/manifest.test.js` fails if the
+  dependency comes back or the declaration goes. The in-editor tests cannot
+  cover it, because they run in a trusted folder.
+- **A side effect.** A reader who has disabled the Git extension altogether
+  used to have this one disabled with it. Now the view loads and says no
+  folder is a clone of a GitHub repository.
+- **Reading the repository without Git**, from the files in `.git`, would let
+  the questions show in Restricted Mode. Not planned: the remote, the branch,
+  the commit and the changed files would each need their own reader.
 
 Not planned for any phase yet:
 
@@ -321,7 +364,8 @@ Each editor gets its own folder, tag prefix and workflows: `extensions/jetbrains
 - **`vscode-extension-checks.yml`** runs for changes under `extensions/`. It
   builds the bundle, runs the `test-host/` tests in a real VS Code, packages a
   `.vsix` and attaches it to the run, on pull requests and on main. Nothing is
-  published from main.
+  published from main. A second job runs the same tests on Windows and macOS,
+  and packages nothing.
 - **The image builds skip `extensions/**`**, so extension-only changes build no
   container image.
 
@@ -358,6 +402,11 @@ wait for approval:
 6. Creates a GitHub Release with the `.vsix` attached, marked as not the
    latest.
 
+`vscode-extension-publisher-check.yml` is run by hand, from the Actions tab.
+It signs in the way the publish job does and asks the Marketplace whether that
+sign-in may publish for the publisher, without publishing anything. It also
+reports whether trusted publishing has opened.
+
 `extensions/README.md` has the steps for making a release.
 
 Both release workflows build their notes with `scripts/release-notes.js`,
@@ -368,16 +417,30 @@ The workflow has run twice, both on 2026-10-03: `vscode-v0.1.1` and
 `vscode-v0.1.2`, each published as a pre-release with the `VSCE_PAT` secret.
 No other workflow ran on either tag.
 
+**0.1.0 was not published by the workflow.** The Marketplace has held it since
+2026-10-03 at 21:38 UTC, 17 minutes before the workflow's first run, and it
+has no tag. It is not marked as a pre-release.
+
 ### Versions
 
-The extension has its own version numbers, and is at `0.1.2`. The Marketplace
+The extension has its own version numbers, and is at `0.2.0` in the
+repository. The Marketplace's newest is still 0.1.2, until the `vscode-v0.2.0`
+tag is pushed. The Marketplace
 accepts only `major.minor.patch`, so VS Code's convention marks the channel:
 
 - **Even minor** (`1.2.x`): stable. This is what students get.
 - **Odd minor** (`1.3.x`): pre-release, for instructors who opt in.
 
+**0.1.0 is the exception.** Its minor number is odd, but the Marketplace
+holds it as a stable version, so it is what both install routes and the
+**Install** button give. It runs the same code as 0.1.2 and differs only in
+its name, "GrillMyCode", its description and its README. The Extensions view
+still shows the listing's current name, GrillMyCode Companion.
+
 Students' installs update on their own, so a stable release mid-term changes
-what every student sees. The first stable release will be `0.2.0`. A version
+what every student sees. The first stable release made on purpose is
+`0.2.0`, and installs of 0.1.0 will move to it. It goes out before the class
+trial, because the trial is of a stable release. A version
 number can be published only once, even if it is later removed.
 
 What ties the extension to the action is the report format, not the version
@@ -397,12 +460,47 @@ number in the hidden data lets an out-of-date extension say so.
 - **Publishing uses a `VSCE_PAT` secret for now.** It holds an Azure DevOps
   personal access token with the Marketplace "Manage" scope. Azure DevOps
   retires those tokens on 2026-12-01, so **publishing stops on that date
-  unless one of the two replacements below is in place.**
-- **Trusted publishing is the replacement, and it is not open yet.** GitHub
-  vouches for which repository and workflow is running, and the Marketplace
-  accepts that in place of a stored token (`vsce publish --oidc`). The
-  workflow uses it whenever there is no `VSCE_PAT` secret. On 2026-10-03 it
-  could not work, for two reasons:
+  unless one of the two replacements below is in place.** Every release run
+  warns about the date while the secret is in use.
+- **A Microsoft Entra identity is the replacement that can be set up today.**
+  GitHub vouches for the job to Entra, Entra hands back a short-lived token,
+  and the packaging tool publishes with it, so nothing is stored. The command
+  is `vsce publish --azure-credential`. The workflow is ready: it uses
+  the identity whenever the `vscode-marketplace` environment names one, ahead
+  of the secret. The account steps are left, and are due by 2026-11-02 unless
+  trusted publishing opens first. They need a Microsoft Entra tenant in which
+  an application can be registered, and no Azure subscription.
+  1. Register an application in the tenant. It needs no secret and no role.
+  2. Give it a federated credential for GitHub Actions, with the issuer
+     `https://token.actions.githubusercontent.com` and the subject
+     `repo:NSCC-ITC-Assessment/GrillMyCode:environment:vscode-marketplace`.
+     Entra compares the subject letter for letter, capitals included.
+  3. On the `vscode-marketplace` environment, set the variables
+     `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` to the application's ID and the
+     tenant's. Neither is a secret.
+  4. Run **VS Code Extension Publisher Check**. It prints the ID the
+     Marketplace knows the identity by, then fails, because the identity is
+     not a member of the publisher yet.
+  5. On the publisher's page in the Marketplace, add that ID as a member with
+     the Contributor role.
+  6. Run the check again. When it passes, delete the `VSCE_PAT` secret.
+
+  Do steps 3 to 6 in one sitting, with no tag pushed in between: from step 3
+  the release workflow signs in with the identity.
+
+  **Not tried end to end**, because it needs those account steps. What was
+  tried on 2026-10-03 is the workflow's choice between the three sign-ins,
+  against a stand-in for the packaging tool. Other public repositories have
+  set their workflows up this way, and none found reports a finished publish.
+  Microsoft's publishing guide describes the Entra route only for Azure
+  Pipelines, with a managed identity, which does need a subscription.
+
+- **Trusted publishing is the simpler replacement, and it is not open yet.**
+  GitHub vouches for which repository and workflow is running, and the
+  Marketplace accepts that in place of a stored token (`vsce publish --oidc`).
+  The workflow uses it when there is neither an Entra identity nor a
+  `VSCE_PAT` secret, and the publisher check reports the Marketplace's answer
+  each time it runs. On 2026-10-03 it could not work, for two reasons:
   - The Marketplace answers the sign-in request with "Trusted Publishing is
     not supported", for every publisher, and the publisher's page has no place
     to add a policy.
@@ -411,12 +509,9 @@ number in the hidden data lets an out-of-date extension say so.
     current form.
 
   When both change: raise `@vscode/vsce`, add a policy naming this repository
-  and `vscode-extension-release.yml`, and delete the secret.
+  and `vscode-extension-release.yml`, and delete the secret or the two
+  variables.
 
-- **If trusted publishing is still closed on 2026-12-01**, the other way in is
-  a Microsoft Entra identity (`vsce publish --azure-credential`), which needs
-  an Azure subscription. It is the only replacement Microsoft's publishing
-  guide describes so far, and it describes it for Azure Pipelines.
 - **The `vscode-marketplace` environment** gates the publish job. It has no
   required reviewer, so a tag publishes as soon as the tests pass. Add one to
   make every publish wait for approval.
@@ -432,15 +527,30 @@ a deliberate decision, since it drops support for older editors.
 
 ### Documentation (phase 2)
 
-Nothing in `docs-site/docs/` or the root `README.md` mentions the extension
-yet.
+Written, in `docs-site/docs/`:
 
-- A guide for instructors on adding the extension to an assignment, and a
-  short page for students, in the gentle layer of `docs-site/docs/`.
-- The slide deck, if what students see changes.
+- **`guides/vscode-extension.md`**, for instructors: what students get, the
+  two files that add the extension to a template repository, and wording for
+  the assignment instructions.
+- **`guides/vscode-extension-students.md`**, for students: installing it,
+  signing in, and what the view says when no questions appear.
+- **`reference/vscode-extension.md`**, the technical layer: how the issue is
+  found and chosen, the moved-code warning, and what the sign-in is used for.
+- One-line mentions in `guides/what-students-see.md`, `how-gmc-works.md`,
+  the FAQ, the root `README.md` and the "What the Student Sees" slide.
+- **One screenshot of the GrillMyCode view**,
+  `static/img/screenshots/vscode-extension-questions.png`, used by both guides
+  and by the Marketplace listing. It was captured from the extension running
+  in VS Code under `xvfb`, on a demo clone holding the `default-branch`
+  fixture's two files, with that fixture loaded the way the in-editor tests
+  load it. Retake it when the view changes.
+
+Still open:
+
 - The docs site's stable version is snapshotted only when the action is
   tagged. Until then a new page is under "Next" and unversioned links to it
-  return 404, so the Marketplace listing must not link to it.
+  return 404, so the Marketplace listing must not link to it. The root
+  `README.md` links the guide this way and returns 404 until that tag.
 
 ---
 
@@ -500,9 +610,12 @@ What was checked:
 What was not checked:
 
 - **The "Run Extension" entry.**
-- **Windows and macOS.** Everything above ran on Linux.
-- **An install from the Marketplace.** The listing exists and shows 0.1.2.
-  Nobody has reported installing from it.
+- **Windows by hand.** Everything above ran on Linux. macOS was tried by hand
+  on 2026-10-03 and reported working. The checks workflow now runs the
+  in-editor tests on Windows and macOS, and that job has not run yet.
+- **An install in a real codespace or on a student's computer.** Both install
+  routes were run from the Marketplace on Linux, under
+  [Student side](#student-side), without signing in to GitHub afterwards.
 
 ### Phase 2: ready for a class
 
@@ -514,17 +627,49 @@ Done:
 - **The Marketplace publisher**, `GrillMyCode`.
 - **The release workflow**, which has published 0.1.1 and 0.1.2.
 - **The name**, GrillMyCode Companion.
+- **The guides**, under [Documentation](#documentation-phase-2).
+- **The listing's screenshot and changelog.** `extensions/vscode/README.md`
+  shows the screenshot and `extensions/vscode/CHANGELOG.md` fills the
+  Changelog tab. Both reach the Marketplace with the next version published,
+  not before. The packaging tool turns a relative image path into an address
+  at the repository's root, ignoring that the extension is in a subfolder, so
+  the README links the image by its address on the docs site. That address
+  works once the docs site has been deployed from main.
+
+- **The two install routes**, tried from the Marketplace. Both work and
+  install 0.1.0. The guides now mention the publisher-trust question and
+  Restricted Mode, and the reference page describes both routes. Details are
+  under [Student side](#student-side).
+
+- **A message in Restricted Mode**, in place of a missing icon. Not published
+  yet: it goes out with 0.2.0. See [Restricted Mode](#restricted-mode).
 
 Left, to be ready for a class:
 
-- **The guides**, under [Documentation](#documentation-phase-2).
-- **A stable release, 0.2.0.** Until one exists, only someone who chooses a
-  pre-release gets the extension for certain.
-- **A listing worth landing on.** The Marketplace page has no screenshot, and
-  there is no changelog for its Changelog tab.
-- **A check on Windows and macOS**, which students use.
-- **A replacement for the publishing token** before 2026-12-01, under
-  [Accounts and secrets](#accounts-and-secrets).
+- **Publishing the stable release, 0.2.0.** The version and the changelog
+  are set, and the package was built and tried in desktop VS Code 1.140.0 on
+  Linux: in a trusted folder, in Restricted Mode, and through **Trust**. In
+  order:
+  1. Merge to main and wait for the docs site to deploy. The listing's
+     screenshot is served from there, and its address answered "not found" on
+     2026-10-03.
+  2. Push the `vscode-v0.2.0` tag from main. Nothing waits for approval, so
+     the Marketplace has it once the tests pass.
+  3. Check the listing: the name, the screenshot and the Changelog tab. Then
+     check that an install of 0.1.0 moves to 0.2.0.
+
+  Until then students get 0.1.0: the same code as 0.1.2, with the old name
+  and README, no screenshot or changelog on its page, and no icon in
+  Restricted Mode. The student guide already describes the Restricted Mode
+  message that 0.2.0 brings.
+
+- **One install by hand on Windows**, which students use, because the tests
+  never sign in to GitHub. macOS is checked by hand, and the in-editor tests
+  pass on Windows and macOS in CI.
+- **A replacement for the publishing token** before 2026-12-01. The workflow
+  is ready for a Microsoft Entra identity. The account steps under
+  [Accounts and secrets](#accounts-and-secrets) are left, and are due by
+  2026-11-02 unless trusted publishing opens first.
 - **A trial with one class**, with the instructor adding the extension to the
   template repository.
 
@@ -656,7 +801,6 @@ phase 5.
 | Idea                     | What it does                                                                   | Needs                                             | Size   |
 | ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------- | ------ |
 | Open VSX                 | Publishes to the registry Cursor, VSCodium and similar editors use             | Its own token, and a step in the release workflow | Small  |
-| Windows and macOS in CI  | Runs the in-editor tests on all three systems                                  | Slower checks                                     | Small  |
 | The browser editor       | Works in github.dev, where there is no local Git                               | Another way to read Git state                     | Medium |
 | GitHub Enterprise Server | Works for schools that host GitHub themselves                                  | A setting for the server's address                | Medium |
 | A JetBrains plugin       | The same student side, under [Room for other editors](#room-for-other-editors) | Phase 4 first                                     | Large  |
@@ -673,10 +817,8 @@ phase 5.
 
 - **Who approves a publish.** The `vscode-marketplace` environment has no
   required reviewer today, so a pushed tag publishes on its own.
-- **What replaces the publishing token** on 2026-12-01: trusted publishing if
-  the Marketplace has opened it, or a Microsoft Entra identity.
-- **When the first stable release goes out**, and whether it waits for the
-  class trial.
+- **Which tenant holds the Entra identity** that replaces the publishing
+  token: the college's, if it allows registering an application, or another.
 - **Whether students may be asked for the `repo` permission.** There is no
   narrower option for private repositories.
 - **A release freeze during term** for stable versions.
