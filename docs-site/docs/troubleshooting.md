@@ -115,7 +115,7 @@ Add them to `additional_exclude_patterns`. See [Choosing which files are assesse
 
 ### The detected language looks wrong
 
-Detection uses GitHub's language statistics for the repository, which are based on file extensions. The `Using gitignore templates:` log line shows what was applied. Use `additional_exclude_patterns` to fill gaps, or `exclude_pattern_overrides` to bring back files a mismatched template excluded.
+Detection uses GitHub's language statistics for the repository, which are based on file extensions, and the project files (such as `package.json` or `artisan`) found in each folder. The `Using gitignore templates` log lines show what was applied, one for the repository root and one for each nested project folder. Use `additional_exclude_patterns` to fill gaps, or `exclude_pattern_overrides` to bring back files a mismatched template excluded.
 
 ### The AI ignores the code comments
 

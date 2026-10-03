@@ -25,19 +25,24 @@ The final exclude list is the **union** of all three. `exclude_pattern_overrides
 
 ## How auto-detection works
 
-When the action runs it performs up to seven lookups using the already-available `github_token`:
+When the action runs it combines two sources:
 
-1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` to identify all languages present in the repository (the same data shown on the repo's language bar).
-2. **Repository root inspection** — checks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `grails-app/`, `project.godot`, `firebase.json`, `angular.json`, `deno.json`, `.vs/`, `.idea/`, etc.) to detect frameworks and editors. Editor settings themselves are always excluded (see below); an editor detected here only adds its template's extra build-output patterns, such as JetBrains' `out/`.
-3. **Root filename suffix scan** — detects frameworks whose project file includes a variable component by checking whether any root entry ends with a known suffix: `.xcodeproj` / `.xcworkspace` → Xcode, `.uproject` → Unreal Engine, `.pro` → Qt, `.ipynb` → Jupyter Notebooks.
-4. **`package.json` dependency scan** _(JS/TS repos only)_ — if a `package.json` is found in the root, its `dependencies` and `devDependencies` are read and matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, `@tauri-apps/api`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
-5. **`composer.json` dependency scan** _(PHP repos only)_ — if a `composer.json` is found in the root, its `require` and `require-dev` entries are read and matched against known framework packages (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `codeigniter4/framework`, `yiisoft/yii2`, `cakephp/cakephp`, WordPress installers like `roots/wordpress`, etc.). Like the `package.json` scan, this identifies the framework even when its config files aren't at the repo root — for example Bedrock relocates `wp-config.php`, and Symfony Flex projects may not commit `symfony.lock`.
-6. **`Gemfile` dependency scan** _(Ruby repos only)_ — if a `Gemfile` is found in the root, its `gem` declarations are read and matched against known framework gems (`rails`, `jekyll`, `nanoc`). This is more reliable than inferring the framework from a `Rakefile`, since many non-Rails projects ship a `Rakefile` and many Rails apps don't.
-7. **`mix.exs` dependency scan** _(Elixir repos only)_ — if a `mix.exs` is found in the root, its dependency tuples (e.g. `{:phoenix, "~> 1.7"}`) are read and matched against known framework packages (`phoenix`). The base `Elixir` template already covers `_build/` and `deps/`; this adds the Phoenix web artifacts (`priv/static/**`, `tmp/`) on top.
+1. **GitHub Languages API** — queries `/repos/{owner}/{repo}/languages` with the already-available `github_token` to identify all languages present in the repository (the same data shown on the repo's language bar). The data covers the whole repository, so the templates it selects apply at the repository root.
+2. **Project folder scan** — lists every file in the commit being assessed and looks for well-known config files and directories (`package.json`, `pom.xml`, `Cargo.toml`, `go.mod`, `artisan`, `wp-config.php`, `grails-app/`, `project.godot`, `ProjectSettings/`, `firebase.json`, `angular.json`, `deno.json`, `.vs/`, `.idea/`, etc.) to detect frameworks and editors. The repository root is always a project folder, and any folder below it that holds one of these files becomes one too (see [Monorepos and nested projects](#monorepos-and-nested-projects)). Editor settings themselves are always excluded (see below); an editor detected here only adds its template's extra build-output patterns, such as JetBrains' `out/`.
+
+Within each project folder, the scan also checks:
+
+3. **Filename suffixes** — detects frameworks whose project file includes a variable component by checking whether any entry ends with a known suffix: `.xcodeproj` / `.xcworkspace` → Xcode, `.uproject` → Unreal Engine, `.pro` → Qt, `.ipynb` → Jupyter Notebooks.
+4. **`package.json` dependencies** — its `dependencies` and `devDependencies` are matched against known framework packages (`next`, `@angular/core`, `svelte`, `vue`, `nuxt`, `@tauri-apps/api`, etc.). This catches the correct framework regardless of which config filename convention the project uses.
+5. **`composer.json` dependencies** — its `require` and `require-dev` entries are matched against known framework packages (`laravel/framework`, `symfony/framework-bundle`, `drupal/core`, `codeigniter4/framework`, `yiisoft/yii2`, `cakephp/cakephp`, WordPress installers like `roots/wordpress`, etc.). Like the `package.json` scan, this identifies the framework even when its config files aren't beside `composer.json` — for example Bedrock relocates `wp-config.php`, and Symfony Flex projects may not commit `symfony.lock`.
+6. **`Gemfile` gems** — its `gem` declarations are matched against known framework gems (`rails`, `jekyll`, `nanoc`). This is more reliable than inferring the framework from a `Rakefile`, since many non-Rails projects ship a `Rakefile` and many Rails apps don't.
+7. **`mix.exs` dependencies** — its dependency tuples (e.g. `{:phoenix, "~> 1.7"}`) are matched against known framework packages (`phoenix`). The base `Elixir` template already covers `_build/` and `deps/`; this adds the Phoenix web artifacts (`priv/static/**`, `tmp/`) on top.
+
+Manifests are read from the commit being assessed, so a framework the student added in this push is detected in the same run.
 
 Each detected signal is mapped to one or more [github/gitignore](https://github.com/github/gitignore) templates, or to a set of known artifact paths for frameworks that have no upstream template (e.g. SvelteKit's `.svelte-kit/`, Nuxt's `.nuxt/` and `.output/`). The action ships with all 300+ templates bundled in the Docker image (kept current via a weekly automated PR).
 
-Template patterns are emitted **depth-independently**: `node_modules/` in the upstream template becomes `**/node_modules/**`, so a nested `frontend/node_modules/` is excluded just as a root-level one is. Only patterns the upstream template anchors with a leading slash (e.g. `/build/`) stay root-anchored. The examples below name each template's patterns in their unprefixed form for brevity.
+Template patterns are emitted **depth-independently**: `node_modules/` in the upstream template becomes `**/node_modules/**`, so a nested `frontend/node_modules/` is excluded just as a root-level one is. Only patterns the upstream template anchors, with a leading slash (`/vendor/`) or a slash in the middle (`build/Release`), stay anchored — to the project folder that turned the template on. The examples below name each template's patterns in their unprefixed form for brevity.
 
 **Examples:**
 
@@ -56,7 +61,7 @@ Template patterns are emitted **depth-independently**: `node_modules/` in the up
 - A **plain Elixir** repo with a `mix.exs` → `Elixir` template: `_build/**`, `deps/**`, `*.beam`, `erl_crash.dump`, etc.
 - A **Phoenix** repo → `Elixir` + `community/Elixir/Phoenix` templates: adds `priv/static/**`, `tmp/**`, `assets/node_modules`, detected from the `mix.exs` dependency scan.
 - A **Python** repo → `Python` template: `__pycache__/**`, `*.pyc`, `.venv/**`, `*.egg-info/**`, etc.
-- A **Jupyter Notebooks** repo (any `.ipynb` in root) → `Python` + `community/Python/JupyterNotebooks` templates.
+- A **Jupyter Notebooks** repo (any `.ipynb` file) → `Python` + `community/Python/JupyterNotebooks` templates.
 - A **Java** repo with a `pom.xml` → `Java` + `Maven` templates: `target/**`, `.gradle/**`, `*.class`, etc.
 - A **Grails** repo (has a `grails-app/` directory) → `Java` + `Gradle` + `Grails` templates: adds `web-app/WEB-INF/classes`, `*Db.*`, `stacktrace.log`, etc.
 - A **mixed JS + Python** repo → gets the union of all matched template sets.
@@ -67,7 +72,22 @@ Unlike JavaScript and PHP — where each framework ships its own gitignore templ
 
 :::
 
-If detection fails (e.g. the GitHub API is unreachable) the action falls back to a broad built-in list covering the most common languages, together with the [patterns always excluded](#patterns-always-excluded).
+If nothing is detected (for example, the GitHub API is unreachable and no project folder holds a known file) the action falls back to a broad built-in list covering the most common languages, together with the [patterns always excluded](#patterns-always-excluded).
+
+### Monorepos and nested projects
+
+The project doesn't have to sit at the repository root. A repository can hold one app in a subfolder, a `frontend/` and a `backend/`, or one folder per lab, and each project folder gets the templates its own files turn on. A template's anchored patterns are applied inside the folder that turned it on — the meaning the upstream template gives them, relative to the project instead of the repository:
+
+| Layout | Patterns applied (examples) |
+|---|---|
+| Laravel at the root (`artisan`) | `vendor/**`, `bootstrap/compiled.php` |
+| Laravel in `myapp/` (`myapp/artisan`) | `myapp/vendor/**`, `myapp/bootstrap/compiled.php` |
+| Next.js in `frontend/`, Laravel in `backend/` | `frontend/.next/**`, `backend/vendor/**` |
+
+- A folder inside a dependency or build folder — `node_modules/`, `vendor/`, `dist/`, `build/`, `target/` and the other dependency and build folders in the built-in fallback list — is never a project folder, so a library's own `package.json` or `composer.json` adds nothing.
+- Templates selected by the Languages API apply at the repository root only, since language data has no folder. Patterns that match at any depth (`**/node_modules/**`, `**/__pycache__/**`) cover every folder however they were selected.
+- Up to 100 project folders are scanned, shallowest first. Beyond that the run logs a warning, and deeper folders get only the patterns that match at any depth; add anything else they commit with `additional_exclude_patterns`.
+- A folder name containing glob characters is escaped in the pattern, e.g. `lab \[1\]/vendor/**`. Pass the pattern exactly as the run log shows it to `exclude_pattern_overrides`.
 
 ## Patterns always excluded
 
@@ -125,18 +145,20 @@ Re-include any of them with `exclude_pattern_overrides` when they are the delive
 
 ## Pattern syntax
 
-This section describes the patterns **you** write in `additional_exclude_patterns` and `exclude_pattern_overrides`. The built-in and auto-detected patterns above already carry explicit `**/` prefixes, so they never depend on the `matchBase` behaviour described here.
+This section describes the patterns **you** write in `additional_exclude_patterns` and `exclude_pattern_overrides`.
 
-Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with two options enabled: `dot: true` (matches dotfiles) and `matchBase: true` (a pattern with no `/` matches against the filename only, regardless of directory depth).
+Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with `dot: true`, so they match dotfiles. A pattern **with no `/`** matches by file name at any depth: the action writes it as `**/` plus the pattern, and that is the form the run log's `Exclude patterns applied` list shows (`starter.py` appears as `**/starter.py`). A pattern **with a `/`** is matched from the repository root.
+
+The built-in and auto-detected patterns are matched exactly as written. A template pattern with no slash, such as WordPress's `index.php`, therefore applies only in the project folder that turned the template on, not to every `index.php` in the repository.
 
 | Pattern | What it matches |
 |---|---|
-| `tests/**` | Everything inside a `tests/` directory at any depth |
-| `*.pyc` | Any file ending in `.pyc` in any directory (matchBase) |
+| `tests/**` | Everything inside the top-level `tests/` directory |
+| `*.pyc` | Any file ending in `.pyc` in any directory (no `/`, so any depth) |
 | `data/*.csv` | `.csv` files directly inside a `data/` directory |
 | `**/*.test.js` | Any `.test.js` file at any depth |
 | `provided_starter/**` | All files inside `provided_starter/` |
-| `config.json` | Any file named exactly `config.json` at any depth (matchBase) |
+| `config.json` | Any file named exactly `config.json` at any depth (no `/`) |
 | `src/config.json` | Only `src/config.json` specifically (has a `/`, so anchored) |
 
 **Worked examples:**
@@ -149,8 +171,8 @@ Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with t
 | `tests/unit/auth.test.js` | `**/*.test.js` | ✅ | `**` matches any prefix path |
 | `tests/fixtures/users.json` | `tests/fixtures/**` | ✅ | anchored subfolder glob |
 | `e2e/fixtures/users.json` | `tests/fixtures/**` | ❌ | anchored — wrong top-level dir |
-| `config.json` | `config.json` | ✅ | matchBase — no slash, matches filename anywhere |
-| `src/config.json` | `config.json` | ✅ | matchBase applies at any depth |
+| `config.json` | `config.json` | ✅ | no slash — matches the file name anywhere |
+| `src/config.json` | `config.json` | ✅ | no slash — any depth |
 | `src/config.json` | `src/config.json` | ✅ | anchored exact path |
 | `lib/config.json` | `src/config.json` | ❌ | anchored — path doesn't match |
 | `provided_code/solution.py` | `provided_code/**` | ✅ | everything under the dir |
@@ -212,9 +234,11 @@ Use `exclude_pattern_overrides` to widen what gets assessed (re-include somethin
 The action logs the full exclude list on every run. Look for these lines in the workflow step output:
 
 ```
-Detected languages: JavaScript, TypeScript
+Detected languages: JavaScript, TypeScript, PHP
 Scanned package.json — 42 deps
+Scanned api/composer.json — 6 deps
 Using gitignore templates: Node, Nextjs, Global/VisualStudioCode
+Using gitignore templates in api/: Composer, Laravel
 Additional exclude patterns (from input): data/**, tests/fixtures/**
 Exclude pattern overrides (re-included): README.md
 Exclude patterns applied (94):
@@ -228,7 +252,7 @@ Excluded 2 file(s):
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 ```
 
-The `Scanned …` line reflects whichever manifest matched your stack — `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — and `Using gitignore templates:` lists the resolved templates accordingly (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`).
+There is one `Scanned …` line per manifest read — `package.json`, `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — named by its path. `Using gitignore templates:` lists the templates applied at the repository root (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`), and each `Using gitignore templates in <folder>/:` line lists those of a [nested project folder](#monorepos-and-nested-projects).
 
 If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern.
 

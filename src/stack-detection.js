@@ -1,18 +1,29 @@
 // Stack detection — identifies the languages, frameworks, and IDEs in use by
-// querying the GitHub Languages API and inspecting the repository root, then
-// maps those signals to gitignore template keys and assembles an exclude list.
+// querying the GitHub Languages API and scanning the commit's tree for project
+// folders, then maps those signals to gitignore template keys and assembles an
+// exclude list.
+//
+// A project folder is the repository root, or any folder holding one of the
+// files or folders the maps below look for (package.json, artisan, pom.xml…).
+// A template's root-anchored patterns are applied inside each project folder
+// that turned it on, so a Laravel app in myapp/ gets myapp/vendor/** — the
+// meaning the upstream template gives /vendor/, relative to the project rather
+// than the repository. Patterns that already match at any depth (`**/…`) are
+// unaffected.
 
-import { Buffer } from 'node:buffer';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import * as core from '@actions/core';
+import { Minimatch } from 'minimatch';
 import {
   EDITOR_CONFIG_EXCLUDE_PATTERNS,
   FALLBACK_EXCLUDE_PATTERNS,
   GITHUB_API_VERSION,
+  MAX_PROJECT_FOLDERS,
   NON_CODE_ASSET_EXCLUDE_PATTERNS,
 } from './constants.js';
+import { listTreeFiles, readFileAt } from './git.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_PATH = join(__dirname, 'data', 'gitignore-templates.json');
@@ -114,8 +125,9 @@ export const LANGUAGE_TO_TEMPLATES = {
   Zsh: ['Global/Linux'],
 };
 
-// Maps known root-level config file/directory names to template keys.
-// Supplements language detection with framework and IDE signals.
+// Maps known config file/directory names to template keys. Each one found
+// marks the folder holding it as a project folder. Supplements language
+// detection with framework and IDE signals.
 export const CONFIG_TO_TEMPLATES = {
   // Language package managers / build tools
   'package.json': ['Node'],
@@ -188,8 +200,8 @@ export const CONFIG_TO_TEMPLATES = {
   '.vs': ['VisualStudio'],
 };
 
-// Maps root-level config files to exclude patterns directly, for frameworks
-// that have no upstream gitignore template.
+// Maps config files to exclude patterns directly, for frameworks that have no
+// upstream gitignore template. Applied inside the project folder holding them.
 export const CONFIG_TO_PATTERNS = {
   'svelte.config.js': ['.svelte-kit/**'],
   'svelte.config.ts': ['.svelte-kit/**'],
@@ -197,8 +209,8 @@ export const CONFIG_TO_PATTERNS = {
   'nuxt.config.ts': ['.nuxt/**', '.output/**'],
 };
 
-// Maps root-level filename suffixes to template keys, for frameworks where the
-// project file includes a variable component (e.g. MyApp.xcodeproj).
+// Maps filename suffixes to template keys, for frameworks where the project
+// file includes a variable component (e.g. MyApp.xcodeproj).
 export const ROOT_SUFFIX_TO_TEMPLATES = {
   '.xcodeproj': ['Global/Xcode'],
   '.xcworkspace': ['Global/Xcode'],
@@ -229,8 +241,9 @@ export const PACKAGE_DEP_TO_PATTERNS = {
 };
 
 // Maps composer.json require/require-dev package names to gitignore template keys.
-// Catches PHP frameworks reliably even when their config files aren't at the repo
-// root (e.g. Bedrock relocates wp-config.php; Symfony Flex may not commit symfony.lock).
+// Catches PHP frameworks reliably even when their config files aren't beside
+// composer.json (e.g. Bedrock relocates wp-config.php; Symfony Flex may not
+// commit symfony.lock).
 export const COMPOSER_DEP_TO_TEMPLATES = {
   'laravel/framework': ['Laravel'],
   'laravel/lumen-framework': ['Laravel'],
@@ -263,18 +276,73 @@ export const MIX_DEP_TO_TEMPLATES = {
   phoenix: ['community/Elixir/Phoenix'],
 };
 
-function resolveStack(
-  detectedLanguages,
-  rootNames,
-  packageDeps,
-  composerDeps,
-  gemfileDeps,
-  mixDeps,
-  allTemplates,
-) {
-  const keys = new Set();
-  const extraPatterns = new Set();
+// A folder inside one of these is a dependency or build output, not a project:
+// node_modules/ and vendor/ hold a package.json or composer.json per package,
+// and treating each as a project would only add noise. These are the directory
+// patterns of the fallback list and the always-excluded list.
+const NOT_A_PROJECT_FOLDER = FALLBACK_WITH_ALWAYS_EXCLUDE.filter((p) => p.endsWith('/**')).map(
+  (p) => new Minimatch(p, { dot: true }),
+);
 
+const MARKER_SUFFIXES = Object.keys(ROOT_SUFFIX_TO_TEMPLATES);
+
+/** Whether a file or folder name is one the detection maps look for. */
+function isMarker(name) {
+  return (
+    Object.hasOwn(CONFIG_TO_TEMPLATES, name) ||
+    Object.hasOwn(CONFIG_TO_PATTERNS, name) ||
+    MARKER_SUFFIXES.some((suffix) => name.endsWith(suffix))
+  );
+}
+
+/**
+ * The project folders in a tree, as a Map from folder ('' for the repository
+ * root) to the marker names found directly in it. The root is always present,
+ * since language detection applies there. Folders are ordered shallowest
+ * first, then by name, and capped at MAX_PROJECT_FOLDERS.
+ */
+export function findProjectFolders(paths) {
+  const folders = new Map([['', new Set()]]);
+  const skipped = new Map();
+  const isSkipped = (folder) => {
+    if (!skipped.has(folder)) {
+      // Any child name will do: a directory pattern matches on the folder part.
+      skipped.set(
+        folder,
+        NOT_A_PROJECT_FOLDER.some((m) => m.match(`${folder}/x`)),
+      );
+    }
+    return skipped.get(folder);
+  };
+
+  for (const path of paths) {
+    const parts = path.split('/');
+    for (let i = 0; i < parts.length; i++) {
+      if (!isMarker(parts[i])) continue;
+      const folder = parts.slice(0, i).join('/');
+      if (folder && isSkipped(folder)) continue;
+      if (!folders.has(folder)) folders.set(folder, new Set());
+      folders.get(folder).add(parts[i]);
+    }
+  }
+
+  const depth = (folder) => (folder ? folder.split('/').length : 0);
+  const ordered = [...folders.keys()].sort(
+    (a, b) => depth(a) - depth(b) || (a < b ? -1 : a > b ? 1 : 0),
+  );
+  if (ordered.length > MAX_PROJECT_FOLDERS) {
+    core.warning(
+      `Found ${ordered.length} project folders; scanning the ${MAX_PROJECT_FOLDERS} shallowest. ` +
+        `Deeper folders get only the patterns that apply at any depth — add any build output ` +
+        `they commit with additional_exclude_patterns.`,
+    );
+  }
+  return new Map(ordered.slice(0, MAX_PROJECT_FOLDERS).map((f) => [f, folders.get(f)]));
+}
+
+/** Templates reached through the GitHub Languages API, which apply at the root. */
+function templatesForLanguages(detectedLanguages, allTemplates) {
+  const keys = new Set();
   for (const lang of detectedLanguages) {
     const mapped = LANGUAGE_TO_TEMPLATES[lang];
     if (mapped) {
@@ -283,21 +351,28 @@ function resolveStack(
       keys.add(lang);
     }
   }
+  return keys;
+}
+
+/** Templates and extra patterns one project folder's markers and manifests turn on. */
+function templatesForFolder(names, { packageDeps, composerDeps, gemfileDeps, mixDeps }) {
+  const keys = new Set();
+  const extraPatterns = new Set();
 
   for (const [name, templates] of Object.entries(CONFIG_TO_TEMPLATES)) {
-    if (rootNames.has(name)) {
+    if (names.has(name)) {
       templates.forEach((k) => keys.add(k));
     }
   }
 
   for (const [name, patterns] of Object.entries(CONFIG_TO_PATTERNS)) {
-    if (rootNames.has(name)) {
+    if (names.has(name)) {
       patterns.forEach((p) => extraPatterns.add(p));
     }
   }
 
   for (const [suffix, templates] of Object.entries(ROOT_SUFFIX_TO_TEMPLATES)) {
-    if ([...rootNames].some((name) => name.endsWith(suffix))) {
+    if ([...names].some((name) => name.endsWith(suffix))) {
       templates.forEach((k) => keys.add(k));
     }
   }
@@ -328,82 +403,28 @@ function resolveStack(
   return { keys, extraPatterns };
 }
 
-async function fetchJson(url, headers) {
-  const res = await fetch(url, { headers });
-  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
-  return res.json();
+/**
+ * A folder path as a literal glob prefix. Every character minimatch would
+ * read as syntax is backslash-escaped — minimatch's own escape() leaves
+ * braces and a leading `!` or `#` alone, which would expand, negate or
+ * comment out the pattern.
+ */
+function escapeGlob(text) {
+  return text.replace(/[\\*?[\](){}!+@#,]/g, '\\$&');
 }
 
 /**
- * Decodes a GitHub contents-API payload as UTF-8. A leading byte-order mark,
- * which some Windows editors write, is dropped: JSON.parse rejects it, and the
- * scanners' catch would otherwise return no deps and hide the framework.
+ * A pattern applied inside a project folder. Root-anchored patterns are
+ * prefixed with the folder; patterns that already match at any depth, and
+ * every pattern of the root folder, are returned unchanged.
  */
-function decodeContent(data) {
-  return Buffer.from(data.content, 'base64')
-    .toString('utf-8')
-    .replace(/^\uFEFF/, '');
+export function underFolder(folder, pattern) {
+  if (!folder || pattern.startsWith('**/')) return pattern;
+  return `${escapeGlob(folder)}/${pattern}`;
 }
 
-async function fetchComposerDeps(owner, repo, headers) {
+function parsePackageDeps(text) {
   try {
-    const data = await fetchJson(
-      `https://api.github.com/repos/${owner}/${repo}/contents/composer.json`,
-      headers,
-    );
-    const text = decodeContent(data);
-    const pkg = JSON.parse(text);
-    return Object.keys({ ...pkg.require, ...pkg['require-dev'] });
-  } catch {
-    return [];
-  }
-}
-
-async function fetchGemfileDeps(owner, repo, headers) {
-  try {
-    const data = await fetchJson(
-      `https://api.github.com/repos/${owner}/${repo}/contents/Gemfile`,
-      headers,
-    );
-    const text = decodeContent(data);
-    // Gemfile is a Ruby DSL, not structured data — match `gem 'name'` / `gem "name"`
-    // declarations. The leading `\s*` (no `#`) skips commented-out lines.
-    const deps = [];
-    for (const m of text.matchAll(/^\s*gem\s+['"]([^'"]+)['"]/gm)) {
-      deps.push(m[1]);
-    }
-    return deps;
-  } catch {
-    return [];
-  }
-}
-
-async function fetchMixDeps(owner, repo, headers) {
-  try {
-    const data = await fetchJson(
-      `https://api.github.com/repos/${owner}/${repo}/contents/mix.exs`,
-      headers,
-    );
-    const text = decodeContent(data);
-    // mix.exs is Elixir code — deps are tuples like `{:phoenix, "~> 1.7"}`.
-    // Match the leading atom of each tuple; unknown atoms are simply ignored.
-    const deps = [];
-    for (const m of text.matchAll(/\{\s*:([a-z_][a-zA-Z0-9_]*)\s*,/g)) {
-      deps.push(m[1]);
-    }
-    return deps;
-  } catch {
-    return [];
-  }
-}
-
-async function fetchPackageDeps(owner, repo, headers) {
-  try {
-    const data = await fetchJson(
-      `https://api.github.com/repos/${owner}/${repo}/contents/package.json`,
-      headers,
-    );
-    const text = decodeContent(data);
     const pkg = JSON.parse(text);
     return Object.keys({ ...pkg.dependencies, ...pkg.devDependencies });
   } catch {
@@ -411,7 +432,73 @@ async function fetchPackageDeps(owner, repo, headers) {
   }
 }
 
-export async function detectExcludePatterns(token, owner, repo) {
+function parseComposerDeps(text) {
+  try {
+    const pkg = JSON.parse(text);
+    return Object.keys({ ...pkg.require, ...pkg['require-dev'] });
+  } catch {
+    return [];
+  }
+}
+
+function parseGemfileDeps(text) {
+  // Gemfile is a Ruby DSL, not structured data — match `gem 'name'` / `gem "name"`
+  // declarations. The leading `\s*` (no `#`) skips commented-out lines.
+  const deps = [];
+  for (const m of text.matchAll(/^\s*gem\s+['"]([^'"]+)['"]/gm)) {
+    deps.push(m[1]);
+  }
+  return deps;
+}
+
+function parseMixDeps(text) {
+  // mix.exs is Elixir code — deps are tuples like `{:phoenix, "~> 1.7"}`.
+  // Match the leading atom of each tuple; unknown atoms are simply ignored.
+  const deps = [];
+  for (const m of text.matchAll(/\{\s*:([a-z_][a-zA-Z0-9_]*)\s*,/g)) {
+    deps.push(m[1]);
+  }
+  return deps;
+}
+
+const MANIFESTS = [
+  ['package.json', 'packageDeps', parsePackageDeps, 'deps'],
+  ['composer.json', 'composerDeps', parseComposerDeps, 'deps'],
+  ['Gemfile', 'gemfileDeps', parseGemfileDeps, 'gems'],
+  ['mix.exs', 'mixDeps', parseMixDeps, 'deps'],
+];
+
+/**
+ * Reads the dependency manifests in a project folder at headSha. A leading
+ * byte-order mark, which some Windows editors write, is dropped: JSON.parse
+ * rejects it, and the parsers' catch would otherwise return no deps and hide
+ * the framework.
+ */
+function readFolderDeps(headSha, folder, names) {
+  const deps = { packageDeps: [], composerDeps: [], gemfileDeps: [], mixDeps: [] };
+  for (const [file, key, parse, noun] of MANIFESTS) {
+    if (!names.has(file)) continue;
+    const path = folder ? `${folder}/${file}` : file;
+    let text = null;
+    try {
+      text = readFileAt(headSha, path);
+    } catch {
+      // Unreadable — treated as no deps, like a manifest that fails to parse.
+    }
+    if (text === null) continue;
+    deps[key] = parse(text.replace(/^\uFEFF/, ''));
+    if (deps[key].length > 0) core.info(`Scanned ${path} — ${deps[key].length} ${noun}`);
+  }
+  return deps;
+}
+
+async function fetchJson(url, headers) {
+  const res = await fetch(url, { headers });
+  if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
+  return res.json();
+}
+
+export async function detectExcludePatterns(token, owner, repo, headSha) {
   let allTemplates;
   try {
     allTemplates = JSON.parse(readFileSync(TEMPLATES_PATH, 'utf-8'));
@@ -427,8 +514,6 @@ export async function detectExcludePatterns(token, owner, repo) {
   };
 
   let detectedLanguages = [];
-  let rootNames = new Set();
-
   try {
     const langData = await fetchJson(
       `https://api.github.com/repos/${owner}/${repo}/languages`,
@@ -440,75 +525,45 @@ export async function detectExcludePatterns(token, owner, repo) {
     core.warning(`Could not fetch languages for ${owner}/${repo}: ${err.message}`);
   }
 
+  let paths = [];
   try {
-    const contentsData = await fetchJson(
-      `https://api.github.com/repos/${owner}/${repo}/contents/`,
-      headers,
-    );
-    if (Array.isArray(contentsData)) {
-      rootNames = new Set(contentsData.map((e) => e.name));
-    }
+    paths = listTreeFiles(headSha);
   } catch (err) {
-    core.warning(`Could not fetch root contents for ${owner}/${repo}: ${err.message}`);
+    core.warning(`Could not list the files at ${headSha}: ${err.message}`);
   }
+  const folders = findProjectFolders(paths);
 
-  let packageDeps = [];
-  if (rootNames.has('package.json')) {
-    packageDeps = await fetchPackageDeps(owner, repo, headers);
-    if (packageDeps.length > 0) {
-      core.info(`Scanned package.json — ${packageDeps.length} deps`);
+  // folder → { keys, extraPatterns }; languages apply at the repository root.
+  const detected = new Map();
+  for (const [folder, names] of folders) {
+    const found = templatesForFolder(names, readFolderDeps(headSha, folder, names));
+    if (folder === '') {
+      templatesForLanguages(detectedLanguages, allTemplates).forEach((k) => found.keys.add(k));
     }
+    if (found.keys.size > 0 || found.extraPatterns.size > 0) detected.set(folder, found);
   }
 
-  let composerDeps = [];
-  if (rootNames.has('composer.json')) {
-    composerDeps = await fetchComposerDeps(owner, repo, headers);
-    if (composerDeps.length > 0) {
-      core.info(`Scanned composer.json — ${composerDeps.length} deps`);
-    }
-  }
-
-  let gemfileDeps = [];
-  if (rootNames.has('Gemfile')) {
-    gemfileDeps = await fetchGemfileDeps(owner, repo, headers);
-    if (gemfileDeps.length > 0) {
-      core.info(`Scanned Gemfile — ${gemfileDeps.length} gems`);
-    }
-  }
-
-  let mixDeps = [];
-  if (rootNames.has('mix.exs')) {
-    mixDeps = await fetchMixDeps(owner, repo, headers);
-    if (mixDeps.length > 0) {
-      core.info(`Scanned mix.exs — ${mixDeps.length} deps`);
-    }
-  }
-
-  const { keys: templateKeys, extraPatterns } = resolveStack(
-    detectedLanguages,
-    rootNames,
-    packageDeps,
-    composerDeps,
-    gemfileDeps,
-    mixDeps,
-    allTemplates,
-  );
-
-  if (templateKeys.size === 0 && extraPatterns.size === 0) {
+  if (detected.size === 0) {
     core.info('No matching stack templates found — using fallback exclude patterns.');
     return FALLBACK_WITH_ALWAYS_EXCLUDE;
   }
 
-  core.info(`Using gitignore templates: ${[...templateKeys].join(', ')}`);
+  for (const [folder, { keys }] of detected) {
+    const list = [...keys].join(', ') || '(none)';
+    core.info(
+      folder === ''
+        ? `Using gitignore templates: ${list}`
+        : `Using gitignore templates in ${folder}/: ${list}`,
+    );
+  }
 
   const patterns = new Set(ALWAYS_EXCLUDE);
-  for (const key of templateKeys) {
-    const tplPatterns = allTemplates[key];
-    if (tplPatterns) {
-      for (const p of tplPatterns) patterns.add(p);
+  for (const [folder, { keys, extraPatterns }] of detected) {
+    for (const key of keys) {
+      for (const p of allTemplates[key] ?? []) patterns.add(underFolder(folder, p));
     }
+    for (const p of extraPatterns) patterns.add(underFolder(folder, p));
   }
-  for (const p of extraPatterns) patterns.add(p);
 
   return [...patterns];
 }

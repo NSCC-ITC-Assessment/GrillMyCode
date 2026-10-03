@@ -11,7 +11,7 @@ import * as core from '@actions/core';
 import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { minimatch } from 'minimatch';
+import { braceExpand, minimatch } from 'minimatch';
 import { extractText, getDocumentProxy } from 'unpdf';
 import mammoth from 'mammoth';
 import {
@@ -23,25 +23,51 @@ import {
 import { diffLines, git, listChangedPaths, listTreeFiles, readFileAt } from './git.js';
 
 /**
+ * Options for every exclude and override match. matchBase is deliberately
+ * off: under it a pattern with no slash matches on the file name at any
+ * depth, which turned a template's root-anchored `index.php` (WordPress) or
+ * `Makefile` (Perl) into every index.php or Makefile in the repository.
+ * Instructor patterns keep that any-depth meaning through instructorPattern.
+ */
+export const PATTERN_MATCH_OPTIONS = { dot: true };
+
+/**
+ * An exclude or override pattern the instructor wrote, in the form it is
+ * matched. One with no slash matches by file name at any depth, so it is
+ * written as `**\/pattern` (`starter.py` → `**\/starter.py`); one with a slash
+ * is anchored at the repository root and returned as it is. Brace
+ * alternatives are judged one by one, so `{*.sql,data/**}` still matches
+ * `.sql` files anywhere. A leading `!` stays in front.
+ */
+export function instructorPattern(pattern) {
+  const negation = pattern.match(/^!*/)[0];
+  const body = pattern.slice(negation.length);
+  const alternatives = braceExpand(body);
+  if (alternatives.every((a) => a.includes('/'))) return pattern;
+  if (alternatives.every((a) => !a.includes('/'))) return `${negation}**/${body}`;
+  const anchored = alternatives.map((a) => (a.includes('/') ? a : `**/${a}`));
+  return `${negation}{${anchored.join(',')}}`;
+}
+
+/**
  * Filters a list of file paths against exclude glob patterns.
  * Any file that would be excluded but matches an override pattern is re-included.
  * Overrides accept either an exact pattern from the exclude list (e.g. **\/*.md)
  * or a specific file path that would otherwise be excluded (e.g. README.md).
  *
- * matchBase makes a slash-free pattern match on basename alone, at any depth.
- * The built-in patterns no longer rely on it — they carry explicit `**\/`
- * prefixes — but it is what lets an instructor write
- * `additional_exclude_patterns: starter.py` and have it match wherever the file
- * sits. Patterns containing a slash are unaffected by it.
+ * Exclude patterns are matched as written — the caller passes instructor
+ * patterns through instructorPattern. Overrides are always the instructor's,
+ * so they are converted here.
  */
 export function filterFiles(files, excludePatterns, overridePatterns = []) {
-  const opts = { dot: true, matchBase: true };
+  const opts = PATTERN_MATCH_OPTIONS;
+  const overrides = overridePatterns.map(instructorPattern);
 
   return files.filter((f) => {
     const excluded = excludePatterns.some((p) => minimatch(f, p, opts));
     if (!excluded) return true;
-    if (overridePatterns.length === 0) return false;
-    return overridePatterns.some((p) => minimatch(f, p, opts));
+    if (overrides.length === 0) return false;
+    return overrides.some((p) => minimatch(f, p, opts));
   });
 }
 

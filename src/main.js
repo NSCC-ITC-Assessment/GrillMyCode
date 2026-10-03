@@ -39,6 +39,8 @@ import { resolveSubmissionIdentity } from './submission-identity.js';
 import { getChangedFiles, getDiff, getDiffStat, getFirstCommit } from './git.js';
 import {
   filterFiles,
+  instructorPattern,
+  PATTERN_MATCH_OPTIONS,
   collectFilesAt,
   collectRawFiles,
   stripCommentsFromFiles,
@@ -239,8 +241,7 @@ function overflowNote(total, shown) {
  * can run to thousands of paths against a hundred or more patterns.
  */
 function findExcludedFiles(allFiles, assessedFiles, excludePatterns) {
-  const opts = { dot: true, matchBase: true };
-  const matchers = excludePatterns.map((p) => new Minimatch(p, opts));
+  const matchers = excludePatterns.map((p) => new Minimatch(p, PATTERN_MATCH_OPTIONS));
   const assessed = new Set(assessedFiles);
   return allFiles
     .filter((f) => !assessed.has(f))
@@ -1023,11 +1024,12 @@ async function run() {
       inputs.githubToken,
       ctx.repo.owner,
       ctx.repo.repo,
+      headSha,
     );
     const excludePatterns = [
       ...new Set([
         ...detectedPatterns,
-        ...inputs.additionalExcludePatterns,
+        ...inputs.additionalExcludePatterns.map(instructorPattern),
         WORKFLOWS_EXCLUDE_PATTERN,
       ]),
     ];
