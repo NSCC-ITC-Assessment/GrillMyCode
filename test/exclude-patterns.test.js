@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { filterFiles } from '../src/files.js';
+import { filterFiles, instructorPattern } from '../src/files.js';
 import {
   EDITOR_CONFIG_EXCLUDE_PATTERNS,
   FALLBACK_EXCLUDE_PATTERNS,
@@ -148,5 +148,49 @@ describe('editor configuration and non-code assets', () => {
     expect(filterFiles(['data/grades.csv'], NON_CODE_ASSET_EXCLUDE_PATTERNS, ['**/*.csv'])).toEqual(
       ['data/grades.csv'],
     );
+  });
+});
+
+describe('root-anchored template patterns without a slash', () => {
+  it('match only at the root, not by file name at any depth', () => {
+    expect(filterFiles(['index.php', 'blog/index.php'], templates.WordPress)).toEqual([
+      'blog/index.php',
+    ]);
+    expect(filterFiles(['Makefile', 'lab1/Makefile'], templates.Perl)).toEqual(['lab1/Makefile']);
+    expect(filterFiles(['site', 'src/site'], templates.Python)).toEqual(['src/site']);
+  });
+});
+
+describe('instructorPattern', () => {
+  it('makes a pattern with no slash match by file name at any depth', () => {
+    expect(instructorPattern('starter.py')).toBe('**/starter.py');
+    expect(instructorPattern('*.{md,txt}')).toBe('**/*.{md,txt}');
+    expect(
+      filterFiles(['starter.py', 'lab/starter.py'], [instructorPattern('starter.py')]),
+    ).toEqual([]);
+  });
+
+  it('leaves a pattern with a slash anchored at the root', () => {
+    expect(instructorPattern('tests/**')).toBe('tests/**');
+    expect(instructorPattern('src/*.{js,ts}')).toBe('src/*.{js,ts}');
+  });
+
+  it('judges brace alternatives one by one', () => {
+    expect(instructorPattern('{*.sql,data/**}')).toBe('{**/*.sql,data/**}');
+    const kept = filterFiles(
+      ['db/q.sql', 'data/raw/a.bin', 'x/data/a.bin'],
+      [instructorPattern('{*.sql,data/**}')],
+    );
+    expect(kept).toEqual(['x/data/a.bin']);
+  });
+
+  it('keeps a leading ! in front', () => {
+    expect(instructorPattern('!README.md')).toBe('!**/README.md');
+  });
+
+  it('is applied to overrides, so a file name re-includes it at any depth', () => {
+    expect(filterFiles(['docs/README.md', 'notes.md'], ['**/*.md'], ['README.md'])).toEqual([
+      'docs/README.md',
+    ]);
   });
 });

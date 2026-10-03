@@ -145,18 +145,20 @@ Re-include any of them with `exclude_pattern_overrides` when they are the delive
 
 ## Pattern syntax
 
-This section describes the patterns **you** write in `additional_exclude_patterns` and `exclude_pattern_overrides`. The built-in and auto-detected patterns above already carry explicit `**/` prefixes, so they never depend on the `matchBase` behaviour described here.
+This section describes the patterns **you** write in `additional_exclude_patterns` and `exclude_pattern_overrides`.
 
-Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with two options enabled: `dot: true` (matches dotfiles) and `matchBase: true` (a pattern with no `/` matches against the filename only, regardless of directory depth).
+Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with `dot: true`, so they match dotfiles. A pattern **with no `/`** matches by file name at any depth: the action writes it as `**/` plus the pattern, and that is the form the run log's `Exclude patterns applied` list shows (`starter.py` appears as `**/starter.py`). A pattern **with a `/`** is matched from the repository root.
+
+The built-in and auto-detected patterns are matched exactly as written. A template pattern with no slash, such as WordPress's `index.php`, therefore applies only in the project folder that turned the template on, not to every `index.php` in the repository.
 
 | Pattern | What it matches |
 |---|---|
-| `tests/**` | Everything inside a `tests/` directory at any depth |
-| `*.pyc` | Any file ending in `.pyc` in any directory (matchBase) |
+| `tests/**` | Everything inside the top-level `tests/` directory |
+| `*.pyc` | Any file ending in `.pyc` in any directory (no `/`, so any depth) |
 | `data/*.csv` | `.csv` files directly inside a `data/` directory |
 | `**/*.test.js` | Any `.test.js` file at any depth |
 | `provided_starter/**` | All files inside `provided_starter/` |
-| `config.json` | Any file named exactly `config.json` at any depth (matchBase) |
+| `config.json` | Any file named exactly `config.json` at any depth (no `/`) |
 | `src/config.json` | Only `src/config.json` specifically (has a `/`, so anchored) |
 
 **Worked examples:**
@@ -169,8 +171,8 @@ Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with t
 | `tests/unit/auth.test.js` | `**/*.test.js` | ✅ | `**` matches any prefix path |
 | `tests/fixtures/users.json` | `tests/fixtures/**` | ✅ | anchored subfolder glob |
 | `e2e/fixtures/users.json` | `tests/fixtures/**` | ❌ | anchored — wrong top-level dir |
-| `config.json` | `config.json` | ✅ | matchBase — no slash, matches filename anywhere |
-| `src/config.json` | `config.json` | ✅ | matchBase applies at any depth |
+| `config.json` | `config.json` | ✅ | no slash — matches the file name anywhere |
+| `src/config.json` | `config.json` | ✅ | no slash — any depth |
 | `src/config.json` | `src/config.json` | ✅ | anchored exact path |
 | `lib/config.json` | `src/config.json` | ❌ | anchored — path doesn't match |
 | `provided_code/solution.py` | `provided_code/**` | ✅ | everything under the dir |
