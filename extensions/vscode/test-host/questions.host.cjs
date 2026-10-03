@@ -36,7 +36,7 @@ describe('GrillMyCode', () => {
   let controller;
 
   before(async () => {
-    const extension = vscode.extensions.getExtension('grillmycode.grillmycode');
+    const extension = vscode.extensions.getExtension('GrillMyCode.grillmycode');
     assert.ok(extension, 'the extension is installed');
     ({ controller } = await extension.activate());
   });

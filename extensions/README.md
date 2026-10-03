@@ -21,6 +21,7 @@ pnpm install          # once
 pnpm build            # bundle to dist/extension.cjs
 pnpm test:host        # the tests that need a running VS Code
 pnpm package          # dist/grillmycode.vsix, installable by hand
+pnpm package:pre-release   # the same, marked as a pre-release for the Marketplace
 ```
 
 `pnpm test:host` downloads a copy of VS Code the first time. It needs a
@@ -31,3 +32,32 @@ open an assignment's folder in the window that appears.
 
 Lint, formatting and the unit tests in `vscode/test/` run from the repository
 root with everything else: `pnpm lint`, `pnpm format:check` and `pnpm test`.
+
+## Releasing the VS Code extension
+
+The extension has its own version numbers and its own tags, `vscode-v*`. A
+`v*` tag releases the action and must not be used here.
+
+1. Choose the version. An odd minor number (`0.1.x`, `0.3.x`) is a
+   pre-release, which only people who opt in receive. An even one (`0.2.x`) is
+   a stable release, which every student's install updates to.
+2. Set `version` in `extensions/vscode/package.json` and merge that to main.
+3. Tag that commit on main and push the tag:
+
+   ```bash
+   git checkout main && git pull
+   git tag vscode-v0.2.0
+   git push origin vscode-v0.2.0
+   ```
+
+4. `vscode-extension-release.yml` builds, tests and packages the extension,
+   then waits for approval if the `vscode-marketplace` environment has a
+   required reviewer. Once approved it publishes to the Marketplace and creates
+   a GitHub Release with the `.vsix` attached.
+
+The workflow signs in to the Marketplace with the repository's `VSCE_PAT`
+secret. `docs-internal/vscode-extension-plan.md`, under "Accounts and secrets",
+says what that token is and what replaces it.
+
+A version number can be published only once. If the workflow fails after
+publishing, re-run it: it skips the Marketplace and finishes the rest.

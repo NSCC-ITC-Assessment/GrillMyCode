@@ -33,6 +33,7 @@ on:
       - ".github/workflows/pr-checks-docs.yml"
       - ".github/workflows/pr-checks.yml"
       - ".github/workflows/vscode-extension-checks.yml"
+      - ".github/workflows/vscode-extension-release.yml"
       - ".github/workflows/refresh-gitignore-templates.yml"
       - ".github/workflows/release.yml"
       - ".github/workflows/renovate.yml"
