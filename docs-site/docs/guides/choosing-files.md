@@ -12,7 +12,7 @@ GrillMyCode only asks about code the student wrote. Most of the time you don't n
 
 - **Your starter code.** Everything that was in the template when the student accepted the assignment. If a student edits one of your files, the questions cover only the lines they added or changed. The AI can still see the rest of that file, so it understands what their lines do. You can choose to have a few questions asked about your starter code; see [Tailoring the questions](tailoring-questions.md#let-the-ai-see-the-rest-of-the-project).
 - **Setup files.** Classroom 50's files, GitHub workflow files and Git settings files.
-- **Anything generated or installed.** GrillMyCode recognizes the languages and frameworks in the repository (Python, Java, JavaScript, React, Laravel, Unity and many more) and leaves out what they produce: installed libraries, build output and caches.
+- **Anything generated or installed.** GrillMyCode recognizes the languages and frameworks in the repository (Python, Java, JavaScript, React, Laravel, Unity and many more) and leaves out what they produce: installed libraries, build output and caches. This works wherever the project sits: at the top of the repository, in a subfolder, or as several projects side by side (a monorepo).
 - **Files nobody writes by hand.** Lock files, minified files and logs.
 - **Environment files** such as `.env`, which can contain passwords.
 - **Documentation.** Markdown files such as `README.md`. To give the AI your assignment brief, use [assignment context](tailoring-questions.md#share-the-assignment-brief-or-rubric) instead.

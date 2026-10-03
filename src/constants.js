@@ -223,6 +223,15 @@ export const FALLBACK_EXCLUDE_PATTERNS = [
 ];
 
 /**
+ * Maximum number of project folders stack detection scans (see
+ * src/stack-detection.js), the repository root included. Shallower folders
+ * are kept first; beyond the cap a warning is logged and the deeper folders
+ * get only the repository-wide patterns. Bounds the manifests read and the
+ * size of the exclude list in a repository with many small projects.
+ */
+export const MAX_PROJECT_FOLDERS = 100;
+
+/**
  * Maximum number of questions that can be generated in a single run.
  * Values supplied via num_questions above this limit are silently capped.
  */

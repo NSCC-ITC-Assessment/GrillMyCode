@@ -1023,6 +1023,7 @@ async function run() {
       inputs.githubToken,
       ctx.repo.owner,
       ctx.repo.repo,
+      headSha,
     );
     const excludePatterns = [
       ...new Set([

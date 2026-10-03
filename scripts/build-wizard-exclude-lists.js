@@ -94,9 +94,10 @@ export function buildExcludeLists(languageNames, allTemplates) {
     .sort((a, b) => a.template.localeCompare(b.template));
 
   // template (or a fixed pattern set) → the project files that turn it on.
-  // Each signal is { name, in }: a file or folder at the repository root
-  // (in: 'root', with a name ending such as *.ipynb written as a glob), or a
-  // dependency listed in a manifest (in: 'package.json' and so on).
+  // Each signal is { name, in }: a file or folder in a project folder — the
+  // repository root or any folder below it (in: 'folder', with a name ending
+  // such as *.ipynb written as a glob) — or a dependency listed in a manifest
+  // (in: 'package.json' and so on).
   const bySignal = new Map();
   const signal = (key, sig, patterns) => {
     if (!bySignal.has(key)) bySignal.set(key, { signals: [], patterns });
@@ -114,13 +115,13 @@ export function buildExcludeLists(languageNames, allTemplates) {
       signal(`p:${patterns.join(',')}`, { name, in: where }, patterns);
     }
   };
-  viaTemplates(CONFIG_TO_TEMPLATES, 'root');
-  viaTemplates(ROOT_SUFFIX_TO_TEMPLATES, 'root', (suffix) => `*${suffix}`);
+  viaTemplates(CONFIG_TO_TEMPLATES, 'folder');
+  viaTemplates(ROOT_SUFFIX_TO_TEMPLATES, 'folder', (suffix) => `*${suffix}`);
   viaTemplates(PACKAGE_DEP_TO_TEMPLATES, 'package.json');
   viaTemplates(COMPOSER_DEP_TO_TEMPLATES, 'composer.json');
   viaTemplates(GEMFILE_DEP_TO_TEMPLATES, 'Gemfile');
   viaTemplates(MIX_DEP_TO_TEMPLATES, 'mix.exs');
-  viaPatterns(CONFIG_TO_PATTERNS, 'root');
+  viaPatterns(CONFIG_TO_PATTERNS, 'folder');
   viaPatterns(PACKAGE_DEP_TO_PATTERNS, 'package.json');
 
   const projectFiles = [];
