@@ -7,7 +7,7 @@ image.
 
 | Folder      | What it is                                                            |
 | ----------- | --------------------------------------------------------------------- |
-| `vscode/`   | The VS Code extension                                                 |
+| `vscode/`   | GrillMyCode Companion, the VS Code extension                          |
 | `fixtures/` | Sample questions issues that every extension tests its reader against |
 
 The plan these follow is in `docs-internal/vscode-extension-plan.md`.

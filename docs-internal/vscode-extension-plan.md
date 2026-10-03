@@ -1,9 +1,10 @@
 # VS Code extension — plan
 
 > **Recorded:** 2026-10-03 (`ff56b1d`)
-> **Status:** Phase 1 is built, in `extensions/`. Phase 2 is under way: the
-> release workflow is written and nothing is published yet. Every later phase
-> is a proposal.
+> **Status:** Phase 1 is built, in `extensions/`, and published as a
+> pre-release named GrillMyCode Companion. Phase 2 is under way: the release
+> workflow has published once, and the guides and the class trial remain.
+> Every later phase is a proposal.
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
 that code is open. This note records what an extension does with that, how it
@@ -14,14 +15,14 @@ disturbing the action's own pipeline.
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                        | Needs first                                          | Status               |
-| ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                              | Built, not published |
-| 2     | Ready for a class: Marketplace listing, release workflow, questions pinned to lines, "studied" ticks, guides        | A Marketplace publishing token, stored as a secret   | In progress          |
-| 3     | Instructor view: the viva companion and the view switch                                                             | A decision on where marks are stored                 | Not started          |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                    | Not started          |
-| 5     | Workflow help                                                                                                       | Nothing                                              | Not started          |
-| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit | Not started          |
+| Phase | What it adds                                                                                                        | Needs first                                          | Status            |
+| ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ----------------- |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                              | Published (0.1.1) |
+| 2     | Ready for a class: Marketplace listing, release workflow, questions pinned to lines, "studied" ticks, guides        | Nothing                                              | In progress       |
+| 3     | Instructor view: the viva companion and the view switch                                                             | A decision on where marks are stored                 | Not started       |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                    | Not started       |
+| 5     | Workflow help                                                                                                       | Nothing                                              | Not started       |
+| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit | Not started       |
 
 Phases 2 to 5 do not depend on one another and can be taken in another order.
 Phase 4 should come before an extension for a second editor is started.
@@ -343,8 +344,9 @@ Both release workflows build their notes with `scripts/release-notes.js`,
 which takes a tag pattern and path filters. It was moved out of `release.yml`
 and reproduces the published notes of five past action releases exactly.
 
-The workflow has not run on GitHub. Its tag check and notes step were run
-locally.
+The workflow first ran on 2026-10-03, for `vscode-v0.1.1`, and published that
+version as a pre-release with the `VSCE_PAT` secret. No other workflow ran on
+that tag.
 
 ### Versions
 
@@ -392,8 +394,9 @@ number in the hidden data lets an out-of-date extension say so.
   a Microsoft Entra identity (`vsce publish --azure-credential`), which needs
   an Azure subscription. It is the only replacement Microsoft's publishing
   guide describes so far, and it describes it for Azure Pipelines.
-- **The `vscode-marketplace` environment** gates the publish job. Add a
-  required reviewer to make every publish wait for approval.
+- **The `vscode-marketplace` environment** gates the publish job. It has no
+  required reviewer, so a tag publishes as soon as the tests pass. Add one to
+  make every publish wait for approval.
 - **Open VSX** is a second registry, for editors built on VS Code that cannot
   use Microsoft's Marketplace. It is optional and needs its own token.
 
@@ -441,9 +444,13 @@ What it does:
 Details settled while building:
 
 - **The minimum VS Code version is 1.120.**
-- **The extension's identifier is `GrillMyCode.grillmycode`.** The Marketplace
-  publisher `GrillMyCode` was created on 2026-10-03. The identifier becomes
-  permanent with the first upload. Nothing has been uploaded yet.
+- **The extension's identifier is `GrillMyCode.grillmycode`**, and it is now
+  permanent: version 0.1.1 was published on 2026-10-03.
+- **Its name is GrillMyCode Companion**, from version 0.1.2. It does not write
+  questions; it sits beside the action for whoever is working with its output,
+  which stays true for the instructor view, workflow help and trial runs. The
+  Activity Bar view and the commands stay "GrillMyCode". The name can change;
+  the identifier cannot.
 - **Answers are read but not shown.** With `include_answers` on, the issue
   carries them. The panel leaves them out until the instructor view exists.
 - **A report cut short for length** drops the question the cut landed in, and
@@ -467,14 +474,13 @@ What was checked:
 What was not checked:
 
 - **The "Run Extension" entry.**
-- **`vscode-extension-checks.yml` on GitHub.** Its steps were run locally.
 - **Windows and macOS.** Everything above ran on Linux.
 
 ### Phase 2: ready for a class
 
-Done: the Marketplace publisher and `vscode-extension-release.yml`. Still to
-do: store a publishing token, publish a pre-release, write the guides, and
-try it with one class. It also adds:
+Done: the Marketplace publisher, `vscode-extension-release.yml`, the
+publishing token and a first pre-release (0.1.1). Still to do: write the
+guides and try it with one class. It also adds:
 
 - **Questions pinned to lines**, as read-only comment threads beside the code.
   This waited because a pinned note on the wrong lines misleads for as long as

@@ -1,8 +1,8 @@
 {
   "name": "grillmycode",
-  "displayName": "GrillMyCode",
-  "description": "Shows the questions GrillMyCode wrote about your code, beside the code they ask about.",
-  "version": "0.1.1",
+  "displayName": "GrillMyCode Companion",
+  "description": "The companion to the GrillMyCode GitHub Action. Shows the questions it wrote about your code, beside the code they ask about.",
+  "version": "0.1.2",
   "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
