@@ -18,9 +18,7 @@ It's optional. The [issue and PDF](what-students-see.md) work the same with or w
 
 The extension doesn't write questions and doesn't show answers.
 
-:::note[Screenshot needed]
-VS Code with the GrillMyCode view open: the questions list grouped by file, one question selected, its lines highlighted in the editor, and the full question under the list. Use the fictional repository `cs-principles-lab-3-jsmith`.
-:::
+![VS Code with the GrillMyCode view open. The questions list is grouped by file, with question 1 selected. The editor shows cart.js with lines 1 to 9 highlighted, and the whole question is shown under the list with its code.](/img/screenshots/vscode-extension-questions.png)
 
 ## Add it to an assignment
 

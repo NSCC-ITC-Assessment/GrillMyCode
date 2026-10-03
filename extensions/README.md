@@ -41,7 +41,9 @@ The extension has its own version numbers and its own tags, `vscode-v*`. A
 1. Choose the version. An odd minor number (`0.1.x`, `0.3.x`) is a
    pre-release, which only people who opt in receive. An even one (`0.2.x`) is
    a stable release, which every student's install updates to.
-2. Set `version` in `extensions/vscode/package.json` and merge that to main.
+2. Set `version` in `extensions/vscode/package.json`, add the version to
+   `extensions/vscode/CHANGELOG.md`, which the Marketplace shows on the
+   listing's Changelog tab, and merge both to main.
 3. Tag that commit on main and push the tag:
 
    ```bash

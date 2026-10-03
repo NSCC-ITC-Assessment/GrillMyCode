@@ -23,9 +23,7 @@ You don't have to use it. The same questions are always in your repository's **I
 
 Your questions appear once you have pushed your work and GrillMyCode has finished, which takes a few minutes.
 
-:::note[Screenshot needed]
-The GrillMyCode view with the questions list grouped by file, one question selected and its lines highlighted in the editor. Use the fictional repository `cs-principles-lab-3-jsmith`.
-:::
+![VS Code with the GrillMyCode view open. The questions list is grouped by file, with question 1 selected. The editor shows cart.js with lines 1 to 9 highlighted, and the whole question is shown under the list with its code.](/img/screenshots/vscode-extension-questions.png)
 
 - **Select a question** to open its file with the lines it asks about highlighted. The whole question is shown under the list, with the code as it was when the question was written.
 - **Broader questions**, at the end of the list, are about your work as a whole and don't point at particular lines.

@@ -4,6 +4,8 @@ The companion to [GrillMyCode](https://grillmycode.org) in VS Code. See the ques
 
 GrillMyCode is a GitHub Action your instructor adds to an assignment. Each time you push, it reads what you changed and posts a set of comprehension questions as an issue in your repository. GrillMyCode Companion brings those questions into the editor.
 
+![VS Code with the GrillMyCode view open. The questions list is grouped by file, with question 1 selected. The editor shows cart.js with lines 1 to 9 highlighted, and the whole question is shown under the list with its code.](https://grillmycode.org/img/screenshots/vscode-extension-questions.png)
+
 ## What it does
 
 - **Lists your questions** in the GrillMyCode view, grouped by file.

@@ -444,11 +444,15 @@ Written, in `docs-site/docs/`:
   found and chosen, the moved-code warning, and what the sign-in is used for.
 - One-line mentions in `guides/what-students-see.md`, `how-gmc-works.md`,
   the FAQ, the root `README.md` and the "What the Student Sees" slide.
+- **One screenshot of the GrillMyCode view**,
+  `static/img/screenshots/vscode-extension-questions.png`, used by both guides
+  and by the Marketplace listing. It was captured from the extension running
+  in VS Code under `xvfb`, on a demo clone holding the `default-branch`
+  fixture's two files, with that fixture loaded the way the in-editor tests
+  load it. Retake it when the view changes.
 
 Still open:
 
-- **Both pages need a screenshot** of the GrillMyCode view. Each carries a
-  "Screenshot needed" note. The same shot serves the Marketplace listing.
 - **The guide describes the two install routes as working.** Neither has been
   tried, and both are written for an extension that has a stable version.
   Check them, under [Student side](#student-side), before the action is next
@@ -532,15 +536,19 @@ Done:
 - **The Marketplace publisher**, `GrillMyCode`.
 - **The release workflow**, which has published 0.1.1 and 0.1.2.
 - **The name**, GrillMyCode Companion.
-- **The guides**, under [Documentation](#documentation-phase-2), apart from
-  their screenshots.
+- **The guides**, under [Documentation](#documentation-phase-2).
+- **The listing's screenshot and changelog.** `extensions/vscode/README.md`
+  shows the screenshot and `extensions/vscode/CHANGELOG.md` fills the
+  Changelog tab. Both reach the Marketplace with the next version published,
+  not before. The packaging tool turns a relative image path into an address
+  at the repository's root, ignoring that the extension is in a subfolder, so
+  the README links the image by its address on the docs site. That address
+  works once the docs site has been deployed from main.
 
 Left, to be ready for a class:
 
 - **A stable release, 0.2.0.** Until one exists, only someone who chooses a
   pre-release gets the extension for certain.
-- **A listing worth landing on.** The Marketplace page has no screenshot, and
-  there is no changelog for its Changelog tab.
 - **A check on Windows**, which students use. macOS is checked by hand, and
   the in-editor tests are set to run on both in CI. Left: that job passing,
   and one install by hand on Windows, because the tests never sign in to
