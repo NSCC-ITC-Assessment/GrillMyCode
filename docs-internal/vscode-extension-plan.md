@@ -321,7 +321,8 @@ Each editor gets its own folder, tag prefix and workflows: `extensions/jetbrains
 - **`vscode-extension-checks.yml`** runs for changes under `extensions/`. It
   builds the bundle, runs the `test-host/` tests in a real VS Code, packages a
   `.vsix` and attaches it to the run, on pull requests and on main. Nothing is
-  published from main.
+  published from main. A second job runs the same tests on Windows and macOS,
+  and packages nothing.
 - **The image builds skip `extensions/**`**, so extension-only changes build no
   container image.
 
@@ -515,7 +516,9 @@ What was checked:
 What was not checked:
 
 - **The "Run Extension" entry.**
-- **Windows and macOS.** Everything above ran on Linux.
+- **Windows by hand.** Everything above ran on Linux. macOS was tried by hand
+  on 2026-10-03 and reported working. The checks workflow now runs the
+  in-editor tests on Windows and macOS, and that job has not run yet.
 - **An install from the Marketplace.** The listing exists and shows 0.1.2.
   Nobody has reported installing from it.
 
@@ -538,7 +541,10 @@ Left, to be ready for a class:
   pre-release gets the extension for certain.
 - **A listing worth landing on.** The Marketplace page has no screenshot, and
   there is no changelog for its Changelog tab.
-- **A check on Windows and macOS**, which students use.
+- **A check on Windows**, which students use. macOS is checked by hand, and
+  the in-editor tests are set to run on both in CI. Left: that job passing,
+  and one install by hand on Windows, because the tests never sign in to
+  GitHub.
 - **A replacement for the publishing token** before 2026-12-01, under
   [Accounts and secrets](#accounts-and-secrets).
 - **A trial with one class**, with the instructor adding the extension to the
@@ -672,7 +678,6 @@ phase 5.
 | Idea                     | What it does                                                                   | Needs                                             | Size   |
 | ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------- | ------ |
 | Open VSX                 | Publishes to the registry Cursor, VSCodium and similar editors use             | Its own token, and a step in the release workflow | Small  |
-| Windows and macOS in CI  | Runs the in-editor tests on all three systems                                  | Slower checks                                     | Small  |
 | The browser editor       | Works in github.dev, where there is no local Git                               | Another way to read Git state                     | Medium |
 | GitHub Enterprise Server | Works for schools that host GitHub themselves                                  | A setting for the server's address                | Medium |
 | A JetBrains plugin       | The same student side, under [Room for other editors](#room-for-other-editors) | Phase 4 first                                     | Large  |
