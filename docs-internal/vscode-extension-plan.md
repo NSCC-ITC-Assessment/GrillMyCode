@@ -1,10 +1,11 @@
 # VS Code extension — plan
 
-> **Recorded:** 2026-10-03 (`ff56b1d`)
-> **Status:** Phase 1 is built, in `extensions/`, and published as a
-> pre-release named GrillMyCode Companion. Phase 2 is under way: the release
-> workflow has published once, and the guides and the class trial remain.
-> Every later phase is a proposal.
+> **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `20e8ef8`
+> **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
+> GrillMyCode Companion 0.1.2, a pre-release. Phase 2 is under way: publishing
+> works, and the guides, a stable release and a class trial remain. Every
+> later phase is a proposal, and so is everything under
+> [Further ideas](#further-ideas-to-consider).
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
 that code is open. This note records what an extension does with that, how it
@@ -15,17 +16,28 @@ disturbing the action's own pipeline.
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                        | Needs first                                          | Status            |
-| ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ----------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                              | Published (0.1.1) |
-| 2     | Ready for a class: Marketplace listing, release workflow, questions pinned to lines, "studied" ticks, guides        | Nothing                                              | In progress       |
-| 3     | Instructor view: the viva companion and the view switch                                                             | A decision on where marks are stored                 | Not started       |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                    | Not started       |
-| 5     | Workflow help                                                                                                       | Nothing                                              | Not started       |
-| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit | Not started       |
+| Phase | What it adds                                                                                                                  | Needs first                                              | Status                             |
+| ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published as a pre-release (0.1.2) |
+| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: publishing done       |
+| 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                        |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Not started                        |
+| 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                        |
+| 6     | Assessed-files preview and local trial runs                                                                                   | The action's core extracted from the Actions toolkit     | Not started                        |
 
 Phases 2 to 5 do not depend on one another and can be taken in another order.
-Phase 4 should come before an extension for a second editor is started.
+The suggested order is 2, 4, 3, 5, 6:
+
+- **Finish phase 2's class-ready half first.** Nothing else matters until a
+  class can install it.
+- **Then phase 4.** It is small, the marker check fixes a real fault in the
+  action, and every report layout change before it is one more layout the
+  extension has to read from Markdown. It must come before an extension for a
+  second editor.
+- **Then phase 3**, the largest gain for instructors.
+
+Ideas that belong to no phase yet are under
+[Further ideas](#further-ideas-to-consider).
 
 Keep this table current: change a row's status when work on that phase starts
 or finishes, and add or reword a row when a phase's scope changes. The detail
@@ -39,6 +51,8 @@ for each phase is under [Phases](#phases).
   code. An account that can read the answer key also sees answers and
   instructor tools. GitHub's permissions decide which side appears, not a
   setting.
+- **It is called GrillMyCode Companion**, identifier
+  `GrillMyCode.grillmycode`, and it is on the Marketplace.
 - **Neither side needs a change to the action to start.** The student side
   reads the issue, and the instructor side reads the instructor repository's
   `questions.json`.
@@ -158,10 +172,12 @@ reads the instructor repository on a student's behalf.
 - **Sign-in.** VS Code's built-in GitHub sign-in, with the `repo` permission.
   It is broad, but it is the only one GitHub offers for reading a private
   repository this way.
-- **Getting it to students.** The instructor lists the extension in the
-  template repository's dev container configuration (Codespaces installs it)
-  and in its recommended extensions (desktop VS Code prompts). Both need the
-  extension on the Marketplace. Until then it is a `.vsix` installed by hand.
+- **Getting it to students.** The instructor lists `GrillMyCode.grillmycode`
+  in the template repository's dev container configuration (Codespaces
+  installs it) and in its recommended extensions (desktop VS Code prompts).
+  This has not been tried. Every published version so far is a pre-release,
+  and how either route treats an extension with no stable version has not
+  been checked.
 
 Not planned for any phase yet:
 
@@ -173,6 +189,9 @@ Not planned for any phase yet:
   a product decision.
 - **The browser editor (github.dev).** It needs another way to read Git state.
   Codespaces behaves like the desktop and is covered.
+
+More that is not planned is under
+[Further ideas](#further-ideas-to-consider).
 
 ---
 
@@ -217,8 +236,9 @@ Phase 6 reuses the action's modules, which are tied to GitHub Actions today:
 
 ## Changes to GrillMyCode itself
 
-None so far. Two are planned for phase 4, and the usual rules in `AGENTS.md`
-apply to both.
+None so far to what the action does. Its release workflow was changed, under
+[How tags are kept apart](#how-tags-are-kept-apart). Two changes are planned
+for phase 4, and the usual rules in `AGENTS.md` apply to both.
 
 1. **Hidden data in the issue.** A comment in the issue body, in the style of
    the existing `gmc:provenance` comment:
@@ -344,20 +364,21 @@ Both release workflows build their notes with `scripts/release-notes.js`,
 which takes a tag pattern and path filters. It was moved out of `release.yml`
 and reproduces the published notes of five past action releases exactly.
 
-The workflow first ran on 2026-10-03, for `vscode-v0.1.1`, and published that
-version as a pre-release with the `VSCE_PAT` secret. No other workflow ran on
-that tag.
+The workflow has run twice, both on 2026-10-03: `vscode-v0.1.1` and
+`vscode-v0.1.2`, each published as a pre-release with the `VSCE_PAT` secret.
+No other workflow ran on either tag.
 
 ### Versions
 
-The extension has its own version numbers, starting at `0.x`. The Marketplace
+The extension has its own version numbers, and is at `0.1.2`. The Marketplace
 accepts only `major.minor.patch`, so VS Code's convention marks the channel:
 
 - **Even minor** (`1.2.x`): stable. This is what students get.
 - **Odd minor** (`1.3.x`): pre-release, for instructors who opt in.
 
 Students' installs update on their own, so a stable release mid-term changes
-what every student sees.
+what every student sees. The first stable release will be `0.2.0`. A version
+number can be published only once, even if it is later removed.
 
 What ties the extension to the action is the report format, not the version
 number. Most workflows float on `@v0`, so the format changes for everyone on
@@ -371,10 +392,12 @@ number in the hidden data lets an out-of-date extension say so.
 
 - **The Marketplace publisher is `GrillMyCode`**, shown as "GrillMyCode". A
   publisher's identifier is permanent and is part of the extension's
-  identifier.
-- **Publishing needs a `VSCE_PAT` secret for now.** It holds an Azure DevOps
+  identifier. Verification of `grillmycode.org` as its domain was requested
+  on 2026-10-03, which is what earns the verified badge.
+- **Publishing uses a `VSCE_PAT` secret for now.** It holds an Azure DevOps
   personal access token with the Marketplace "Manage" scope. Azure DevOps
-  retires those tokens on 2026-12-01, so this is a stopgap.
+  retires those tokens on 2026-12-01, so **publishing stops on that date
+  unless one of the two replacements below is in place.**
 - **Trusted publishing is the replacement, and it is not open yet.** GitHub
   vouches for which repository and workflow is running, and the Marketplace
   accepts that in place of a stored token (`vsce publish --oidc`). The
@@ -409,6 +432,9 @@ a deliberate decision, since it drops support for older editors.
 
 ### Documentation (phase 2)
 
+Nothing in `docs-site/docs/` or the root `README.md` mentions the extension
+yet.
+
 - A guide for instructors on adding the extension to an assignment, and a
   short page for students, in the gentle layer of `docs-site/docs/`.
 - The slide deck, if what students see changes.
@@ -420,12 +446,11 @@ a deliberate decision, since it drops support for older editors.
 
 ## Phases
 
-### Phase 1: from a question to its code (built)
+### Phase 1: from a question to its code (published)
 
 Someone opens a repository GrillMyCode has posted questions to, sees the
 questions in the editor, and selects one to land on the lines it asks about.
-Student side only, read-only, with no change to the action and nothing
-published.
+Student side only, read-only, with no change to the action.
 
 What it does:
 
@@ -446,6 +471,7 @@ Details settled while building:
 - **The minimum VS Code version is 1.120.**
 - **The extension's identifier is `GrillMyCode.grillmycode`**, and it is now
   permanent: version 0.1.1 was published on 2026-10-03.
+- **No usage data is collected.** The extension talks only to GitHub.
 - **Its name is GrillMyCode Companion**, from version 0.1.2. It does not write
   questions; it sits beside the action for whoever is working with its output,
   which stays true for the instructor view, workflow help and trial runs. The
@@ -475,47 +501,182 @@ What was not checked:
 
 - **The "Run Extension" entry.**
 - **Windows and macOS.** Everything above ran on Linux.
+- **An install from the Marketplace.** The listing exists and shows 0.1.2.
+  Nobody has reported installing from it.
 
 ### Phase 2: ready for a class
 
-Done: the Marketplace publisher, `vscode-extension-release.yml`, the
-publishing token and a first pre-release (0.1.1). Still to do: write the
-guides and try it with one class. It also adds:
+In two halves. The first makes the extension something a class can install,
+and the second adds what makes it worth keeping open.
+
+Done:
+
+- **The Marketplace publisher**, `GrillMyCode`.
+- **The release workflow**, which has published 0.1.1 and 0.1.2.
+- **The name**, GrillMyCode Companion.
+
+Left, to be ready for a class:
+
+- **The guides**, under [Documentation](#documentation-phase-2).
+- **A stable release, 0.2.0.** Until one exists, only someone who chooses a
+  pre-release gets the extension for certain.
+- **A listing worth landing on.** The Marketplace page has no screenshot, and
+  there is no changelog for its Changelog tab.
+- **A check on Windows and macOS**, which students use.
+- **A replacement for the publishing token** before 2026-12-01, under
+  [Accounts and secrets](#accounts-and-secrets).
+- **A trial with one class**, with the instructor adding the extension to the
+  template repository.
+
+Left, features:
 
 - **Questions pinned to lines**, as read-only comment threads beside the code.
   This waited because a pinned note on the wrong lines misleads for as long as
   the file is open, while a jump to the wrong lines is seen once and passed.
   It should follow real use of the moved-code warning.
-- **"Studied" ticks**, stored locally, and **refreshing when the window
-  regains focus**.
+- **"Studied" ticks**, stored locally.
+- **Refreshing when the window regains focus.**
+
+Done when a class has used a stable release for one assignment, installed by
+the template repository and not by hand.
 
 ### Phase 3: instructor view
 
-The viva companion, the view switch and the rules in
-[One extension, two sides](#one-extension-two-sides). It reuses the question
-viewer and adds one read from the instructor repository.
+The viva companion and the view switch, by the rules in
+[One extension, two sides](#one-extension-two-sides).
+
+- **Adds:** the check for a readable answer key, the instructor view with
+  each question's answer and distractors, a mark or note per question, and
+  the switch between views.
+- **Builds on:** the question viewer from phase 1, plus one read from the
+  instructor repository. The sign-in students already use is enough for it.
+- **Needs first:** where marks are stored, how the student's login is found,
+  and what a team repository opens as. All three are under
+  [Open decisions](#open-decisions).
+- **Size:** medium. Most of it is the view rules and their tests.
+- **Done when** an instructor runs a viva from the student's repository
+  without leaving the editor, and a student account on the same repository
+  sees no sign of the instructor view.
 
 ### Phase 4: action changes
 
 The hidden data in the issue and the marker check, in
 [Changes to GrillMyCode itself](#changes-to-grillmycode-itself).
 
+- **Adds, in the action:** the `gmc:questions` comment, and the check that an
+  issue carries GrillMyCode's marker before it is overwritten or deleted.
+- **Adds, in the extension:** reading the hidden data when it is there and
+  the Markdown when it is not, and a message asking for an update when the
+  data's version is newer than the extension knows.
+- **Needs first:** an action release, with the docs changes `AGENTS.md` asks
+  for. The fixtures keep today's layout in its own folder beside the new one.
+- **Size:** small in code. It is the only phase that changes what the action
+  writes into students' repositories.
+- **Done when** a test asserts the comment never carries an answer or a
+  distractor, and the extension reads issues in both layouts.
+
 ### Phase 5: workflow help
 
-Described under [Instructor side](#instructor-side). It needs nothing from the
-other phases.
+Help with the action's inputs while writing a workflow file, generated from
+`action.yml` when the extension is built.
+
+- **Check first what the GitHub Actions extension already does.** It is in
+  this repository's dev container. Whether it already completes and describes
+  an action's input names has not been checked. If it does, this phase should
+  be only what it cannot do.
+- **Likely to be worth building either way:** checks on values (a
+  `starter_code` setting that does not exist, a model identifier that is not
+  in the catalogue) and on inputs that depend on one another.
+- **Needs first:** nothing from the other phases.
+- **Size:** small to medium, depending on that check.
+- **Done when** a mistake in a GrillMyCode step is underlined before the
+  workflow is pushed.
 
 ### Phase 6: assessed-files preview and local trial runs
 
-Also under [Instructor side](#instructor-side), with what the action's modules
-need first.
+Described under [Instructor side](#instructor-side), with what the action's
+modules need first.
+
+- **Adds:** each file marked as assessed, excluded or starter code, and a
+  trial run against a sample repository that shows the questions with token
+  use and cost.
+- **Needs first:** the action's core separated from the Actions toolkit. It
+  is a refactor of eleven modules in `src/` with no change in behaviour, and
+  can be released on its own before any extension work.
+- **Also needs:** somewhere safe for the instructor's API key (VS Code's
+  secret storage), and an answer for the comment stripper on Windows and
+  macOS.
+- **Size:** large. It is the only phase that puts the action's code inside
+  the extension.
+- **Done when** an instructor sees what a workflow would assess, and what a
+  run would cost, without pushing.
+
+---
+
+## Further ideas to consider
+
+None of these is planned, and none is in a phase. They are listed so they are
+weighed when a phase is scoped. The sizes are rough guesses: "small" is days
+and "medium" a week or two.
+
+### For students
+
+| Idea                      | What it does                                                                                                        | Needs                                                      | Size   |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------- | ------ |
+| The code as it was        | Opens the file at the commit the questions were written about, read-only, so the lines always match                 | Nothing: Git already has the commit                        | Small  |
+| New-questions notice      | A badge on the Activity Bar icon and a notification when a newer set of questions arrives                           | Nothing                                                    | Small  |
+| Run status                | After a push, shows that the GrillMyCode workflow is running and loads the questions when it finishes               | Reading the repository's workflow runs                     | Small  |
+| Next and previous         | Commands and keyboard shortcuts to step through the questions, and a count in the status bar                        | Nothing                                                    | Small  |
+| First-run walkthrough     | VS Code's "Get Started" page, covering sign-in and where questions come from                                        | Nothing                                                    | Small  |
+| Open from the issue       | A link on each question in the issue that opens it in VS Code                                                       | An action change, and probably a redirect page on the site | Medium |
+| Other interface languages | The extension's own text in French and other languages. The questions stay in the language the action wrote them in | Translations                                               | Small  |
+
+"The code as it was" deserves a look before questions are pinned to lines in
+phase 2. It answers the moved-code problem directly, where the warning only
+reports it.
+
+### For instructors
+
+All of these build on phase 3, except the Workflow Wizard, which sits with
+phase 5.
+
+| Idea                 | What it does                                                                                                 | Needs                                                                                      | Size   |
+| -------------------- | ------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------ | ------ |
+| Class list           | Every student in the assignment, from the instructor repository's folders, with who has questions yet        | Nothing more                                                                               | Medium |
+| Resubmission history | For submission tags, the earlier question sets and the log of runs the instructor repository already keeps   | Nothing more                                                                               | Small  |
+| Viva helpers         | A random pick of questions, answers hidden until revealed, a timer, and the class's marks exported as a file | The decision on where marks are stored                                                     | Medium |
+| Starter-code markers | Shows which questions are about starter code alone, which `questions.json` already records                   | Nothing more                                                                               | Small  |
+| Flag a poor question | Records that a question was unclear or wrong, as evidence for tuning the prompt                              | Somewhere to keep the flags                                                                | Small  |
+| Build the quiz       | Starts the instructor repository's quiz workflow from the editor                                             | Nothing more: it can be started by hand                                                    | Small  |
+| Workflow Wizard      | The docs site's wizard inside the editor, writing the workflow file into the open repository                 | The wizard's generator shared with the extension                                           | Medium |
+| Cost of each run     | Token use and cost per student and per assignment                                                            | The action to record them as data: today only token counts, as text in the raw output file | Medium |
+
+### Reach and upkeep
+
+| Idea                     | What it does                                                                   | Needs                                             | Size   |
+| ------------------------ | ------------------------------------------------------------------------------ | ------------------------------------------------- | ------ |
+| Open VSX                 | Publishes to the registry Cursor, VSCodium and similar editors use             | Its own token, and a step in the release workflow | Small  |
+| Windows and macOS in CI  | Runs the in-editor tests on all three systems                                  | Slower checks                                     | Small  |
+| The browser editor       | Works in github.dev, where there is no local Git                               | Another way to read Git state                     | Medium |
+| GitHub Enterprise Server | Works for schools that host GitHub themselves                                  | A setting for the server's address                | Medium |
+| A JetBrains plugin       | The same student side, under [Room for other editors](#room-for-other-editors) | Phase 4 first                                     | Large  |
+
+### Considered and set aside
+
+- **An AI helper that answers the questions.** The questions are study
+  prompts, and an answer on demand removes the reason to study.
+- **Recording how code was written**, under [The ideas](#the-ideas).
 
 ---
 
 ## Open decisions
 
-- **Who approves a publish**, as the reviewer on the `vscode-marketplace`
-  environment.
+- **Who approves a publish.** The `vscode-marketplace` environment has no
+  required reviewer today, so a pushed tag publishes on its own.
+- **What replaces the publishing token** on 2026-12-01: trusted publishing if
+  the Marketplace has opened it, or a Microsoft Entra identity.
+- **When the first stable release goes out**, and whether it waits for the
+  class trial.
 - **Whether students may be asked for the `repo` permission.** There is no
   narrower option for private repositories.
 - **A release freeze during term** for stable versions.
@@ -530,3 +691,5 @@ need first.
 - **How the extension tells that an account administers a repository.** Which
   permission Classroom 50 gives students and instructors has not been checked.
 - **Whether self-practice (idea 6) is wanted at all.**
+- **Whether the extension stays free of usage data.** It collects none today,
+  and students are the main users.
