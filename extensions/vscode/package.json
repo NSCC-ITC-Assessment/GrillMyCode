@@ -2,8 +2,8 @@
   "name": "grillmycode",
   "displayName": "GrillMyCode",
   "description": "Shows the questions GrillMyCode wrote about your code, beside the code they ask about.",
-  "version": "0.1.0",
-  "publisher": "grillmycode",
+  "version": "0.1.1",
+  "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
   "repository": {
@@ -156,6 +156,7 @@
     "watch": "node esbuild.js --watch",
     "vscode:prepublish": "node esbuild.js --production",
     "package": "vsce package --no-dependencies --out dist/grillmycode.vsix",
+    "package:pre-release": "vsce package --pre-release --no-dependencies --out dist/grillmycode.vsix",
     "test:host": "vscode-test"
   },
   "devDependencies": {

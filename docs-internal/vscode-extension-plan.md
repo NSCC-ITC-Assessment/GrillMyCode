@@ -1,8 +1,9 @@
 # VS Code extension — plan
 
 > **Recorded:** 2026-10-03 (`ff56b1d`)
-> **Status:** Phase 1 is built, in `extensions/`, and not published. Every
-> later phase is a proposal.
+> **Status:** Phase 1 is built, in `extensions/`. Phase 2 is under way: the
+> release workflow is written and nothing is published yet. Every later phase
+> is a proposal.
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
 that code is open. This note records what an extension does with that, how it
@@ -16,7 +17,7 @@ disturbing the action's own pipeline.
 | Phase | What it adds                                                                                                        | Needs first                                          | Status               |
 | ----- | ------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | -------------------- |
 | 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                              | Built, not published |
-| 2     | Ready for a class: Marketplace listing, release workflow, questions pinned to lines, "studied" ticks, guides        | The Marketplace publisher and its token              | Not started          |
+| 2     | Ready for a class: Marketplace listing, release workflow, questions pinned to lines, "studied" ticks, guides        | A Marketplace publishing token, stored as a secret   | In progress          |
 | 3     | Instructor view: the viva companion and the view switch                                                             | A decision on where marks are stored                 | Not started          |
 | 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                    | Not started          |
 | 5     | Workflow help                                                                                                       | Nothing                                              | Not started          |
@@ -305,32 +306,45 @@ Each editor gets its own folder, tag prefix and workflows: `extensions/jetbrains
 
 ### How tags are kept apart
 
-Phase 1 changed two workflows so that an extension tag cannot disturb the
+Two workflows were changed so that an extension tag cannot disturb the
 action:
 
+- **`release.yml` runs on `v[0-9]*` tags, not `v*`.** `v*` matches every tag
+  that starts with "v", and `vscode-v0.1.0` does. Until this was caught, while
+  phase 2 was being built, an extension tag would have released the action:
+  an image, a GitHub Release and a docs snapshot committed to main.
 - **`branch-build.yml` ignores every tag.** It used to ignore only `v*`, and
   GitHub does not apply path filters to tag pushes, so `vscode-v1.0.0` would
   have built a container image.
 - **`release.yml` looks for the previous release among the action's own tags**
   and leaves commits that touch only `extensions/` out of the release notes.
 
-### Releasing (phase 2)
+### Releasing
 
-A release is a tag, `vscode-v1.2.0`. A new `vscode-extension-release.yml` runs
-on `vscode-v*` tags and:
+A release is a tag, `vscode-v1.2.0`. `vscode-extension-release.yml` runs on
+`vscode-v*` tags, in two jobs. The first has no access to the Marketplace:
 
 1. Fails if the tag's version differs from `extensions/vscode/package.json`.
 2. Installs, builds and runs every test.
-3. Packages the `.vsix`.
-4. Publishes it to the Marketplace, as a pre-release if the minor number is
-   odd.
-5. Creates a GitHub Release with the `.vsix` attached, marked as not the
-   latest, with notes from the commits that touched `extensions/vscode/` since
-   the previous `vscode-v*` tag.
+3. Packages the `.vsix`, as a pre-release if the minor number is odd.
+4. Writes notes from the commits that touched `extensions/vscode/` since the
+   previous `vscode-v*` tag.
 
-The release-notes script is inline in `release.yml` today. Move it to
-`scripts/`, taking a tag pattern and a path filter, so both release workflows
-call one copy.
+The second runs in the `vscode-marketplace` environment, so it can be made to
+wait for approval:
+
+5. Publishes the `.vsix` to the Marketplace.
+6. Creates a GitHub Release with the `.vsix` attached, marked as not the
+   latest.
+
+`extensions/README.md` has the steps for making a release.
+
+Both release workflows build their notes with `scripts/release-notes.js`,
+which takes a tag pattern and path filters. It was moved out of `release.yml`
+and reproduces the published notes of five past action releases exactly.
+
+The workflow has not run on GitHub. Its tag check and notes step were run
+locally.
 
 ### Versions
 
@@ -353,12 +367,33 @@ number in the hidden data lets an out-of-date extension say so.
 
 ### Accounts and secrets
 
-- **A Marketplace publisher** is created by hand, once, with a Microsoft
-  account. Its identifier is permanent and becomes part of the extension's
+- **The Marketplace publisher is `GrillMyCode`**, shown as "GrillMyCode". A
+  publisher's identifier is permanent and is part of the extension's
   identifier.
-- **A publishing token** is stored as a GitHub secret (`VSCE_PAT`), in a
-  protected environment with a required reviewer. It expires, so someone must
-  own renewing it.
+- **Publishing needs a `VSCE_PAT` secret for now.** It holds an Azure DevOps
+  personal access token with the Marketplace "Manage" scope. Azure DevOps
+  retires those tokens on 2026-12-01, so this is a stopgap.
+- **Trusted publishing is the replacement, and it is not open yet.** GitHub
+  vouches for which repository and workflow is running, and the Marketplace
+  accepts that in place of a stored token (`vsce publish --oidc`). The
+  workflow uses it whenever there is no `VSCE_PAT` secret. On 2026-10-03 it
+  could not work, for two reasons:
+  - The Marketplace answers the sign-in request with "Trusted Publishing is
+    not supported", for every publisher, and the publisher's page has no place
+    to add a policy.
+  - The packaging tool's stable release (4.0.0) sends that request in an older
+    form, which the Marketplace rejects. The 4.0.1 pre-releases send the
+    current form.
+
+  When both change: raise `@vscode/vsce`, add a policy naming this repository
+  and `vscode-extension-release.yml`, and delete the secret.
+
+- **If trusted publishing is still closed on 2026-12-01**, the other way in is
+  a Microsoft Entra identity (`vsce publish --azure-credential`), which needs
+  an Azure subscription. It is the only replacement Microsoft's publishing
+  guide describes so far, and it describes it for Azure Pipelines.
+- **The `vscode-marketplace` environment** gates the publish job. Add a
+  required reviewer to make every publish wait for approval.
 - **Open VSX** is a second registry, for editors built on VS Code that cannot
   use Microsoft's Marketplace. It is optional and needs its own token.
 
@@ -406,8 +441,9 @@ What it does:
 Details settled while building:
 
 - **The minimum VS Code version is 1.120.**
-- **The publisher in `package.json` is a placeholder**, `grillmycode`, which
-  is enough for a `.vsix` installed by hand.
+- **The extension's identifier is `GrillMyCode.grillmycode`.** The Marketplace
+  publisher `GrillMyCode` was created on 2026-10-03. The identifier becomes
+  permanent with the first upload. Nothing has been uploaded yet.
 - **Answers are read but not shown.** With `include_answers` on, the issue
   carries them. The panel leaves them out until the instructor view exists.
 - **A report cut short for length** drops the question the cut landed in, and
@@ -436,8 +472,9 @@ What was not checked:
 
 ### Phase 2: ready for a class
 
-Create the Marketplace publisher, add `vscode-extension-release.yml`, and
-publish a pre-release. Write the guides. Try it with one class. It also adds:
+Done: the Marketplace publisher and `vscode-extension-release.yml`. Still to
+do: store a publishing token, publish a pre-release, write the guides, and
+try it with one class. It also adds:
 
 - **Questions pinned to lines**, as read-only comment threads beside the code.
   This waited because a pinned note on the wrong lines misleads for as long as
@@ -471,10 +508,8 @@ need first.
 
 ## Open decisions
 
-- **Publisher identifier and extension name.** Permanent once chosen. Blocks
-  phase 2.
-- **Who renews the publishing token**, and who approves a publish. Blocks
-  phase 2.
+- **Who approves a publish**, as the reviewer on the `vscode-marketplace`
+  environment.
 - **Whether students may be asked for the `repo` permission.** There is no
   narrower option for private repositories.
 - **A release freeze during term** for stable versions.

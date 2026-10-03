@@ -1,0 +1,182 @@
+name: VS Code Extension Release
+
+# Publishes the VS Code extension in extensions/vscode/ when a vscode-v* tag is
+# pushed, for example vscode-v0.2.0. The action is released separately, by
+# release.yml on v* tags; neither workflow acts on the other's tags.
+#
+# The tag must match the version in extensions/vscode/package.json. An odd
+# minor number (0.1.x, 0.3.x) is published as a pre-release and an even one
+# (0.2.x) as a stable release, which is VS Code's own convention.
+#
+# Signing in to the Marketplace uses the VSCE_PAT secret, an Azure DevOps
+# personal access token with the Marketplace "Manage" scope. Azure DevOps
+# retires those tokens on 2026-12-01.
+#
+# Without that secret the workflow uses trusted publishing: GitHub vouches for
+# which repository and workflow is running, and the Marketplace accepts that
+# in place of a stored token. On 2026-10-03 the Marketplace did not offer it
+# yet, and it needs a newer @vscode/vsce than 4.0.0. Once it does: raise
+# @vscode/vsce, add a trusted publishing policy for this repository and this
+# workflow file on the publisher's Marketplace page, and delete the secret.
+#
+# The publish job runs in the vscode-marketplace environment. Give that
+# environment a required reviewer and every publish waits for approval.
+
+on:
+  push:
+    tags:
+      - "vscode-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build, test and package
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # The release notes read the history back to the previous release.
+          fetch-depth: 0
+
+      - name: Check the tag against package.json
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#vscode-v}"
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+$'; then
+            echo "::error::The tag must be vscode-v<major>.<minor>.<patch>, for example vscode-v0.2.0."
+            exit 1
+          fi
+          DECLARED="$(jq -r .version extensions/vscode/package.json)"
+          if [ "$VERSION" != "$DECLARED" ]; then
+            echo "::error::The tag says $VERSION but extensions/vscode/package.json says $DECLARED. Change the version there, merge it, and tag that commit."
+            exit 1
+          fi
+          MINOR="$(printf '%s' "$VERSION" | cut -d. -f2)"
+          if [ $((MINOR % 2)) -eq 1 ]; then PRERELEASE=true; else PRERELEASE=false; fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "Releasing $VERSION (pre-release: $PRERELEASE)"
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: |
+            pnpm-lock.yaml
+            extensions/vscode/pnpm-lock.yaml
+
+      # The extension's unit tests and the fixtures check run from the root.
+      - name: Install the repository's dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run the unit tests
+        run: pnpm exec vitest run extensions test/extension-fixtures.test.js
+
+      - name: Install the extension's dependencies
+        working-directory: extensions/vscode
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        working-directory: extensions/vscode
+        run: pnpm build
+
+      # VS Code needs a display, which the runner does not have.
+      - name: Run tests in VS Code
+        working-directory: extensions/vscode
+        run: xvfb-run -a pnpm test:host
+
+      - name: Package
+        working-directory: extensions/vscode
+        env:
+          PRERELEASE: ${{ steps.version.outputs.prerelease }}
+        run: |
+          if [ "$PRERELEASE" = "true" ]; then pnpm package:pre-release; else pnpm package; fi
+
+      # Only commits that touched the extension, since its previous release.
+      - name: Write the release notes
+        run: |
+          node scripts/release-notes.js --tag "$GITHUB_REF_NAME" --match "vscode-v*" \
+            --path extensions/vscode --out extensions/vscode/dist/release-notes.md
+
+      - name: Keep the package for the publish job
+        uses: actions/upload-artifact@v7
+        with:
+          name: grillmycode-vscode
+          path: |
+            extensions/vscode/dist/grillmycode.vsix
+            extensions/vscode/dist/release-notes.md
+          if-no-files-found: error
+
+  publish:
+    name: Publish to the Marketplace
+    needs: build
+    runs-on: ubuntu-latest
+    environment: vscode-marketplace
+    permissions:
+      # Create the GitHub Release.
+      contents: write
+      # Trusted publishing, used when there is no VSCE_PAT secret: lets this
+      # job prove to the Marketplace which repository and workflow it is.
+      id-token: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      # For the packaging tool, at the version the lockfile pins.
+      - name: Install the extension's dependencies
+        working-directory: extensions/vscode
+        run: pnpm install --frozen-lockfile
+
+      - name: Fetch the package
+        uses: actions/download-artifact@v8
+        with:
+          name: grillmycode-vscode
+          path: extensions/vscode/dist
+
+      # --skip-duplicate lets a re-run carry on to the GitHub Release when the
+      # Marketplace already has this version. --pre-release makes the tool
+      # refuse a package that was not built as one.
+      - name: Publish to the Visual Studio Marketplace
+        working-directory: extensions/vscode
+        env:
+          VSCE_PAT: ${{ secrets.VSCE_PAT }}
+          PRERELEASE: ${{ needs.build.outputs.prerelease }}
+        run: |
+          set -- --skip-duplicate --packagePath dist/grillmycode.vsix
+          if [ "$PRERELEASE" = "true" ]; then set -- --pre-release "$@"; fi
+          if [ -n "$VSCE_PAT" ]; then
+            echo "Signing in with the VSCE_PAT secret."
+            pnpm exec vsce publish "$@"
+          else
+            echo "No VSCE_PAT secret. Signing in with trusted publishing."
+            pnpm exec vsce publish --oidc "$@" || {
+              echo "::error::Trusted publishing failed. Until the Marketplace offers it, store a token as the VSCE_PAT secret of the vscode-marketplace environment."
+              exit 1
+            }
+          fi
+
+      # Not marked as the latest release: the repository's "Latest release"
+      # stays on the action.
+      - name: Create the GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: VS Code extension ${{ needs.build.outputs.version }}
+          body_path: extensions/vscode/dist/release-notes.md
+          files: extensions/vscode/dist/grillmycode.vsix
+          prerelease: ${{ needs.build.outputs.prerelease }}
+          make_latest: "false"

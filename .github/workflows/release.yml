@@ -3,7 +3,9 @@ name: Release
 on:
   push:
     tags:
-      - "v*"
+      # "v" then a digit. A plain "v*" matches every tag that starts with "v",
+      # which includes the VS Code extension's vscode-v* tags.
+      - "v[0-9]*"
 
 jobs:
   snapshot-docs:
@@ -165,93 +167,13 @@ jobs:
       - name: Generate categorized release notes
         env:
           TAG: ${{ steps.version.outputs.tag }}
+        # Limited to the action's own tags and files. The editor extensions are
+        # released from this repository under other tag prefixes (vscode-v*),
+        # so the nearest tag of any name could be one of theirs, and a commit
+        # that touches only extensions/ belongs in their notes, not these.
         run: |
-          node << 'EOF'
-          const { execSync } = require('child_process');
-          const fs = require('fs');
-          const tag = process.env.TAG;
-
-          // --match keeps this to the action's own tags. The editor extensions
-          // are released from this repository under other prefixes (vscode-v*),
-          // and the nearest tag of any name could be one of theirs.
-          let prevTag = '';
-          try {
-            prevTag = execSync(`git describe --tags --abbrev=0 --match "v[0-9]*" "${tag}^"`, { encoding: 'utf8' }).trim();
-          } catch {}
-
-          const range = prevTag ? `${prevTag}..${tag}` : tag;
-          // %B (the raw message), not %s: git defines the subject as the first
-          // *paragraph* with its newlines folded to spaces, so a commit whose
-          // subject is not followed by a blank line arrives as one run-on line
-          // carrying every following line with it. Records are separated by RS
-          // (0x1e), which cannot occur in a commit message.
-          const RS = String.fromCharCode(30);
-          // extensions/ is left out: a commit that touches nothing else changed
-          // an editor extension, not the action, and belongs in its release notes.
-          const log = execSync(`git log ${range} --pretty=format:%B%x1e --no-merges -- . ":(exclude)extensions"`, { encoding: 'utf8' }).trim();
-
-          if (!log) {
-            fs.writeFileSync('/tmp/release-body.txt', '');
-            process.exit(0);
-          }
-
-          const order = ['feat', 'fix', 'docs', 'perf', 'refactor', 'test', 'chore'];
-          const labels = {
-            feat: 'Features',
-            fix: 'Bug Fixes',
-            docs: 'Documentation',
-            perf: 'Performance',
-            refactor: 'Refactoring',
-            test: 'Tests',
-            chore: 'Chores & Maintenance',
-          };
-          const buckets = Object.fromEntries(order.map(k => [k, []]));
-          const other = [];
-          // Types accepted from a line after the header. Restricted to the known
-          // set so trailers (Refs:, Closes:, Signed-off-by:) can never turn into
-          // release-note entries.
-          const known = new Set([...order, 'build', 'ci', 'style', 'revert']);
-
-          const re = /^(\w+)(\([\w\-./ ]+\))?: (.+)$/;
-          // The snapshot-docs job commits "docs: update vN snapshot" after every
-          // release, so that commit lands in the *next* release's range. It is
-          // release plumbing, not a change worth listing, so drop it entirely.
-          const excluded = /^docs: update v\d+ snapshot$/;
-
-          function push(type, scope, desc) {
-            const prefix = scope ? `**${scope.slice(1, -1)}:** ` : '';
-            const key = ['build', 'ci'].includes(type) ? 'chore' : type;
-            (buckets[key] ?? other).push(`- ${prefix}${desc.trim()}`);
-          }
-
-          for (const record of log.split(RS)) {
-            const message = record.trim();
-            if (!message) continue;
-            const [header, ...rest] = message.split('\n');
-            if (excluded.test(header.trim())) continue;
-            const m = header.trim().match(re);
-            if (m) push(m[1], m[2], m[3]);
-            else other.push(`- ${header.trim()}`);
-
-            // Pick any further conventional-commit lines out of the remainder, so
-            // a commit that states more than one change is filed under each type
-            // rather than landing whole in the header's category.
-            for (const line of rest) {
-              const bm = line.trim().match(re);
-              if (bm && known.has(bm[1])) push(bm[1], bm[2], bm[3]);
-            }
-          }
-
-          const sections = [];
-          for (const key of order) {
-            if (buckets[key].length > 0)
-              sections.push(`### ${labels[key]}\n\n${buckets[key].join('\n')}`);
-          }
-          if (other.length > 0)
-            sections.push(`### Other\n\n${other.join('\n')}`);
-
-          fs.writeFileSync('/tmp/release-body.txt', `### What's Changed\n\n${sections.join('\n\n')}\n`);
-          EOF
+          node scripts/release-notes.js --tag "$TAG" --match "v[0-9]*" \
+            --path . --path ":(exclude)extensions" --out /tmp/release-body.txt
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v3
