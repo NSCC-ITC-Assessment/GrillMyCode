@@ -3,8 +3,8 @@
 > **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `20e8ef8`
 > **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
 > GrillMyCode Companion 0.1.2, a pre-release. Phase 2 is under way: publishing
-> works, and the guides, a stable release and a class trial remain. Every
-> later phase is a proposal, and so is everything under
+> works and the guides are written, and a stable release and a class trial
+> remain. Every later phase is a proposal, and so is everything under
 > [Further ideas](#further-ideas-to-consider).
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
@@ -19,7 +19,7 @@ disturbing the action's own pipeline.
 | Phase | What it adds                                                                                                                  | Needs first                                              | Status                             |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------- |
 | 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published as a pre-release (0.1.2) |
-| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: publishing done       |
+| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: publishing and guides |
 | 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                        |
 | 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Not started                        |
 | 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                        |
@@ -432,15 +432,30 @@ a deliberate decision, since it drops support for older editors.
 
 ### Documentation (phase 2)
 
-Nothing in `docs-site/docs/` or the root `README.md` mentions the extension
-yet.
+Written, in `docs-site/docs/`:
 
-- A guide for instructors on adding the extension to an assignment, and a
-  short page for students, in the gentle layer of `docs-site/docs/`.
-- The slide deck, if what students see changes.
+- **`guides/vscode-extension.md`**, for instructors: what students get, the
+  two files that add the extension to a template repository, and wording for
+  the assignment instructions.
+- **`guides/vscode-extension-students.md`**, for students: installing it,
+  signing in, and what the view says when no questions appear.
+- **`reference/vscode-extension.md`**, the technical layer: how the issue is
+  found and chosen, the moved-code warning, and what the sign-in is used for.
+- One-line mentions in `guides/what-students-see.md`, `how-gmc-works.md`,
+  the FAQ, the root `README.md` and the "What the Student Sees" slide.
+
+Still open:
+
+- **Both pages need a screenshot** of the GrillMyCode view. Each carries a
+  "Screenshot needed" note. The same shot serves the Marketplace listing.
+- **The guide describes the two install routes as working.** Neither has been
+  tried, and both are written for an extension that has a stable version.
+  Check them, under [Student side](#student-side), before the action is next
+  tagged, because that tag publishes these pages as the stable docs.
 - The docs site's stable version is snapshotted only when the action is
   tagged. Until then a new page is under "Next" and unversioned links to it
-  return 404, so the Marketplace listing must not link to it.
+  return 404, so the Marketplace listing must not link to it. The root
+  `README.md` links the guide this way and returns 404 until that tag.
 
 ---
 
@@ -514,10 +529,11 @@ Done:
 - **The Marketplace publisher**, `GrillMyCode`.
 - **The release workflow**, which has published 0.1.1 and 0.1.2.
 - **The name**, GrillMyCode Companion.
+- **The guides**, under [Documentation](#documentation-phase-2), apart from
+  their screenshots.
 
 Left, to be ready for a class:
 
-- **The guides**, under [Documentation](#documentation-phase-2).
 - **A stable release, 0.2.0.** Until one exists, only someone who chooses a
   pre-release gets the extension for certain.
 - **A listing worth landing on.** The Marketplace page has no screenshot, and

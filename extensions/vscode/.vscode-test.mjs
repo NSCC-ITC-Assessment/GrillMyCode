@@ -8,7 +8,7 @@
 
 import { spawnSync } from 'child_process';
 import { setDefaultResultOrder } from 'dns';
-import { mkdirSync, mkdtempSync, writeFileSync } from 'fs';
+import { mkdirSync, mkdtempSync, realpathSync, writeFileSync } from 'fs';
 import { setDefaultAutoSelectFamilyAttemptTimeout } from 'net';
 import { tmpdir } from 'os';
 import { join } from 'path';
@@ -48,7 +48,11 @@ for (let attempt = 1; ; attempt++) {
 
 // ── The folder the tests open ───────────────────────────────────────────────
 
-const workspace = mkdtempSync(join(tmpdir(), 'grillmycode-host-'));
+// The temporary folder's real path. On a Windows runner tmpdir() is a short
+// name (C:\Users\RUNNER~1\…), and on macOS it is a link into /private. Git
+// reports the real path either way, and a repository whose root is not the
+// folder VS Code opened is not picked up.
+const workspace = mkdtempSync(join(realpathSync.native(tmpdir()), 'grillmycode-host-'));
 
 function git(...args) {
   const result = spawnSync('git', args, { cwd: workspace, encoding: 'utf-8' });
