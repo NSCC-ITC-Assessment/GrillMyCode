@@ -59,9 +59,15 @@ The extension has its own version numbers and its own tags, `vscode-v*`. A
    required reviewer. Once approved it publishes to the Marketplace and creates
    a GitHub Release with the `.vsix` attached.
 
-The workflow signs in to the Marketplace with the repository's `VSCE_PAT`
-secret. `docs-internal/vscode-extension-plan.md`, under "Accounts and secrets",
-says what that token is and what replaces it.
+The workflow signs in to the Marketplace with a Microsoft Entra identity when
+the `vscode-marketplace` environment names one, and with the `VSCE_PAT` secret
+otherwise. That token stops working on 2026-12-01.
+`docs-internal/vscode-extension-plan.md`, under "Accounts and secrets", has the
+steps for replacing it.
+
+To try the sign-in without publishing, run **VS Code Extension Publisher
+Check** from the Actions tab. Do that after any change to the sign-in, before
+the next tag depends on it.
 
 A version number can be published only once. If the workflow fails after
 publishing, re-run it: it skips the Marketplace and finishes the rest.

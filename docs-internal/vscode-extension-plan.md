@@ -402,6 +402,11 @@ wait for approval:
 6. Creates a GitHub Release with the `.vsix` attached, marked as not the
    latest.
 
+`vscode-extension-publisher-check.yml` is run by hand, from the Actions tab.
+It signs in the way the publish job does and asks the Marketplace whether that
+sign-in may publish for the publisher, without publishing anything. It also
+reports whether trusted publishing has opened.
+
 `extensions/README.md` has the steps for making a release.
 
 Both release workflows build their notes with `scripts/release-notes.js`,
@@ -455,12 +460,47 @@ number in the hidden data lets an out-of-date extension say so.
 - **Publishing uses a `VSCE_PAT` secret for now.** It holds an Azure DevOps
   personal access token with the Marketplace "Manage" scope. Azure DevOps
   retires those tokens on 2026-12-01, so **publishing stops on that date
-  unless one of the two replacements below is in place.**
-- **Trusted publishing is the replacement, and it is not open yet.** GitHub
-  vouches for which repository and workflow is running, and the Marketplace
-  accepts that in place of a stored token (`vsce publish --oidc`). The
-  workflow uses it whenever there is no `VSCE_PAT` secret. On 2026-10-03 it
-  could not work, for two reasons:
+  unless one of the two replacements below is in place.** Every release run
+  warns about the date while the secret is in use.
+- **A Microsoft Entra identity is the replacement that can be set up today.**
+  GitHub vouches for the job to Entra, Entra hands back a short-lived token,
+  and the packaging tool publishes with it, so nothing is stored. The command
+  is `vsce publish --azure-credential`. The workflow is ready: it uses
+  the identity whenever the `vscode-marketplace` environment names one, ahead
+  of the secret. The account steps are left, and are due by 2026-11-02 unless
+  trusted publishing opens first. They need a Microsoft Entra tenant in which
+  an application can be registered, and no Azure subscription.
+  1. Register an application in the tenant. It needs no secret and no role.
+  2. Give it a federated credential for GitHub Actions, with the issuer
+     `https://token.actions.githubusercontent.com` and the subject
+     `repo:NSCC-ITC-Assessment/GrillMyCode:environment:vscode-marketplace`.
+     Entra compares the subject letter for letter, capitals included.
+  3. On the `vscode-marketplace` environment, set the variables
+     `AZURE_CLIENT_ID` and `AZURE_TENANT_ID` to the application's ID and the
+     tenant's. Neither is a secret.
+  4. Run **VS Code Extension Publisher Check**. It prints the ID the
+     Marketplace knows the identity by, then fails, because the identity is
+     not a member of the publisher yet.
+  5. On the publisher's page in the Marketplace, add that ID as a member with
+     the Contributor role.
+  6. Run the check again. When it passes, delete the `VSCE_PAT` secret.
+
+  Do steps 3 to 6 in one sitting, with no tag pushed in between: from step 3
+  the release workflow signs in with the identity.
+
+  **Not tried end to end**, because it needs those account steps. What was
+  tried on 2026-10-03 is the workflow's choice between the three sign-ins,
+  against a stand-in for the packaging tool. Other public repositories have
+  set their workflows up this way, and none found reports a finished publish.
+  Microsoft's publishing guide describes the Entra route only for Azure
+  Pipelines, with a managed identity, which does need a subscription.
+
+- **Trusted publishing is the simpler replacement, and it is not open yet.**
+  GitHub vouches for which repository and workflow is running, and the
+  Marketplace accepts that in place of a stored token (`vsce publish --oidc`).
+  The workflow uses it when there is neither an Entra identity nor a
+  `VSCE_PAT` secret, and the publisher check reports the Marketplace's answer
+  each time it runs. On 2026-10-03 it could not work, for two reasons:
   - The Marketplace answers the sign-in request with "Trusted Publishing is
     not supported", for every publisher, and the publisher's page has no place
     to add a policy.
@@ -469,12 +509,9 @@ number in the hidden data lets an out-of-date extension say so.
     current form.
 
   When both change: raise `@vscode/vsce`, add a policy naming this repository
-  and `vscode-extension-release.yml`, and delete the secret.
+  and `vscode-extension-release.yml`, and delete the secret or the two
+  variables.
 
-- **If trusted publishing is still closed on 2026-12-01**, the other way in is
-  a Microsoft Entra identity (`vsce publish --azure-credential`), which needs
-  an Azure subscription. It is the only replacement Microsoft's publishing
-  guide describes so far, and it describes it for Azure Pipelines.
 - **The `vscode-marketplace` environment** gates the publish job. It has no
   required reviewer, so a tag publishes as soon as the tests pass. Add one to
   make every publish wait for approval.
@@ -629,8 +666,10 @@ Left, to be ready for a class:
 - **One install by hand on Windows**, which students use, because the tests
   never sign in to GitHub. macOS is checked by hand, and the in-editor tests
   pass on Windows and macOS in CI.
-- **A replacement for the publishing token** before 2026-12-01, under
-  [Accounts and secrets](#accounts-and-secrets).
+- **A replacement for the publishing token** before 2026-12-01. The workflow
+  is ready for a Microsoft Entra identity. The account steps under
+  [Accounts and secrets](#accounts-and-secrets) are left, and are due by
+  2026-11-02 unless trusted publishing opens first.
 - **A trial with one class**, with the instructor adding the extension to the
   template repository.
 
@@ -778,8 +817,8 @@ phase 5.
 
 - **Who approves a publish.** The `vscode-marketplace` environment has no
   required reviewer today, so a pushed tag publishes on its own.
-- **What replaces the publishing token** on 2026-12-01: trusted publishing if
-  the Marketplace has opened it, or a Microsoft Entra identity.
+- **Which tenant holds the Entra identity** that replaces the publishing
+  token: the college's, if it allows registering an application, or another.
 - **Whether students may be asked for the `repo` permission.** There is no
   narrower option for private repositories.
 - **A release freeze during term** for stable versions.
