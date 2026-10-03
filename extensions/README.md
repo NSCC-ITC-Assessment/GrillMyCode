@@ -43,7 +43,9 @@ The extension has its own version numbers and its own tags, `vscode-v*`. A
    a stable release, which every student's install updates to.
 2. Set `version` in `extensions/vscode/package.json`, add the version to
    `extensions/vscode/CHANGELOG.md`, which the Marketplace shows on the
-   listing's Changelog tab, and merge both to main.
+   listing's Changelog tab, and merge both to main. If the screenshot in
+   `extensions/vscode/README.md` is new or changed, wait for the docs site to
+   deploy before tagging: the listing loads the image from there.
 3. Tag that commit on main and push the tag:
 
    ```bash

@@ -4,8 +4,9 @@
 > **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
 > GrillMyCode Companion: 0.1.0 is what an ordinary install gets, and 0.1.2 is
 > a pre-release with the same code. Phase 2 is under way: publishing works,
-> the guides are written and both install routes are checked, and a stable
-> release and a class trial remain. Every later phase is a proposal, and so is everything under
+> the guides are written, both install routes are checked, and the stable
+> release 0.2.0 is prepared and goes out when its tag is pushed. A class trial
+> remains. Every later phase is a proposal, and so is everything under
 > [Further ideas](#further-ideas-to-consider).
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
@@ -20,7 +21,7 @@ disturbing the action's own pipeline.
 | Phase | What it adds                                                                                                                  | Needs first                                              | Status                                  |
 | ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | --------------------------------------- |
 | 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published: 0.1.0, and 0.1.2 pre-release |
-| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: publishing and guides      |
+| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: 0.2.0 is ready to tag      |
 | 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                             |
 | 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Not started                             |
 | 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                             |
@@ -188,7 +189,7 @@ reads the instructor repository on a student's behalf.
     is not verified, and **Trust Publisher & Install** installed 0.1.0. The
     offer is shown in Restricted Mode as well.
   - **Restricted Mode switches 0.1.0 off**, and the Activity Bar icon is
-    missing. From the next version the view loads there and asks the student
+    missing. From 0.2.0 the view loads there and asks the student
     to trust the folder. See [Restricted Mode](#restricted-mode).
   - Both routes skip pre-releases. How either treats an extension that has
     only pre-releases was not tested, because 0.1.0 is not one. See
@@ -417,7 +418,9 @@ has no tag. It is not marked as a pre-release.
 
 ### Versions
 
-The extension has its own version numbers, and is at `0.1.2`. The Marketplace
+The extension has its own version numbers, and is at `0.2.0` in the
+repository. The Marketplace's newest is still 0.1.2, until the `vscode-v0.2.0`
+tag is pushed. The Marketplace
 accepts only `major.minor.patch`, so VS Code's convention marks the channel:
 
 - **Even minor** (`1.2.x`): stable. This is what students get.
@@ -430,8 +433,9 @@ its name, "GrillMyCode", its description and its README. The Extensions view
 still shows the listing's current name, GrillMyCode Companion.
 
 Students' installs update on their own, so a stable release mid-term changes
-what every student sees. The first stable release made on purpose will be
-`0.2.0`, and installs of 0.1.0 will move to it. A version
+what every student sees. The first stable release made on purpose is
+`0.2.0`, and installs of 0.1.0 will move to it. It goes out before the class
+trial, because the trial is of a stable release. A version
 number can be published only once, even if it is later removed.
 
 What ties the extension to the action is the report format, not the version
@@ -605,14 +609,26 @@ Done:
 
 Left, to be ready for a class:
 
-- **A stable release, 0.2.0.** Until one exists, students get 0.1.0: the same
-  code as 0.1.2, with the old name and README, no screenshot or changelog on
-  its page, and no icon in Restricted Mode. The student guide already
-  describes the Restricted Mode message that 0.2.0 brings.
-- **A check on Windows**, which students use. macOS is checked by hand, and
-  the in-editor tests are set to run on both in CI. Left: that job passing,
-  and one install by hand on Windows, because the tests never sign in to
-  GitHub.
+- **Publishing the stable release, 0.2.0.** The version and the changelog
+  are set, and the package was built and tried in desktop VS Code 1.140.0 on
+  Linux: in a trusted folder, in Restricted Mode, and through **Trust**. In
+  order:
+  1. Merge to main and wait for the docs site to deploy. The listing's
+     screenshot is served from there, and its address answered "not found" on
+     2026-10-03.
+  2. Push the `vscode-v0.2.0` tag from main. Nothing waits for approval, so
+     the Marketplace has it once the tests pass.
+  3. Check the listing: the name, the screenshot and the Changelog tab. Then
+     check that an install of 0.1.0 moves to 0.2.0.
+
+  Until then students get 0.1.0: the same code as 0.1.2, with the old name
+  and README, no screenshot or changelog on its page, and no icon in
+  Restricted Mode. The student guide already describes the Restricted Mode
+  message that 0.2.0 brings.
+
+- **One install by hand on Windows**, which students use, because the tests
+  never sign in to GitHub. macOS is checked by hand, and the in-editor tests
+  pass on Windows and macOS in CI.
 - **A replacement for the publishing token** before 2026-12-01, under
   [Accounts and secrets](#accounts-and-secrets).
 - **A trial with one class**, with the instructor adding the extension to the
@@ -764,8 +780,6 @@ phase 5.
   required reviewer today, so a pushed tag publishes on its own.
 - **What replaces the publishing token** on 2026-12-01: trusted publishing if
   the Marketplace has opened it, or a Microsoft Entra identity.
-- **When the first stable release goes out**, and whether it waits for the
-  class trial.
 - **Whether students may be asked for the `repo` permission.** There is no
   narrower option for private repositories.
 - **A release freeze during term** for stable versions.
