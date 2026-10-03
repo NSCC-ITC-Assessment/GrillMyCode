@@ -7,7 +7,11 @@ on:
     paths-ignore:
       - "docs-site/**"
       - "docs/**"
+      - "docs-internal/**"
       - "extensions/**"
+      # Never copied into the image (see the COPY lines in the Dockerfile).
+      - "scripts/**"
+      - "test/**"
       - "README.md"
       - "AGENTS.md"
       - "LICENSE"
