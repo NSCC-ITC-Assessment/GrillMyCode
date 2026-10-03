@@ -3,3 +3,8 @@ pnpm-lock.yaml
 *.min.js
 *.sh
 docs-site/
+# The extension fixtures are the action's output byte for byte (see
+# extensions/fixtures/README.md); reformatting them would make them untrue.
+extensions/fixtures/*/
+extensions/vscode/dist/
+extensions/vscode/.vscode-test/

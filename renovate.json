@@ -5,9 +5,14 @@
   "minimumReleaseAge": "2 days",
   "packageRules": [
     {
-      "description": "Self-managed image pinned by release workflow — do not auto-update",
+      "description": "Self-managed image pinned by release workflow \u2014 do not auto-update",
       "matchManagers": ["dockerfile"],
       "matchPackageNames": ["ghcr.io/nscc-itc-assessment/grillmycode"],
+      "enabled": false
+    },
+    {
+      "description": "Must not pass engines.vscode in extensions/vscode/package.json, or the extension will not package \u2014 raised by hand, together with that minimum",
+      "matchPackageNames": ["@types/vscode"],
       "enabled": false
     }
   ]

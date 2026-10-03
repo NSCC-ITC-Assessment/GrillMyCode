@@ -1,0 +1,64 @@
+name: VS Code Extension Checks
+
+# Builds the extension in extensions/vscode/, runs the tests that need a real
+# VS Code, and packages it. The .vsix is attached to the run, so a reviewer can
+# install it by hand ("Extensions: Install from VSIX…").
+#
+# Lint, formatting and the extension's unit tests are not run here: they run
+# from the repository root, in pr-checks.yml, with the action's own.
+#
+# Nothing is published. Releases will get their own workflow, on vscode-v* tags.
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - "extensions/**"
+      - ".github/workflows/vscode-extension-checks.yml"
+  # On main too, so the latest merged build is always there to download.
+  push:
+    branches: [main]
+    paths:
+      - "extensions/**"
+      - ".github/workflows/vscode-extension-checks.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Build, test in VS Code and package
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: extensions/vscode
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build
+        run: pnpm build
+
+      # VS Code needs a display, which the runner does not have.
+      - name: Run tests in VS Code
+        run: xvfb-run -a pnpm test:host
+
+      - name: Package
+        run: pnpm package
+
+      - name: Attach the packaged extension
+        uses: actions/upload-artifact@v7
+        with:
+          name: grillmycode-vscode
+          path: extensions/vscode/dist/grillmycode.vsix
+          if-no-files-found: error

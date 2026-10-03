@@ -1,0 +1,168 @@
+{
+  "name": "grillmycode",
+  "displayName": "GrillMyCode",
+  "description": "Shows the questions GrillMyCode wrote about your code, beside the code they ask about.",
+  "version": "0.1.0",
+  "publisher": "grillmycode",
+  "private": true,
+  "license": "BSD-3-Clause",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/NSCC-ITC-Assessment/GrillMyCode.git",
+    "directory": "extensions/vscode"
+  },
+  "homepage": "https://grillmycode.org",
+  "icon": "media/logo.png",
+  "packageManager": "pnpm@12.6.0",
+  "type": "module",
+  "engines": {
+    "vscode": "^1.120.0"
+  },
+  "categories": [
+    "Education"
+  ],
+  "keywords": [
+    "grillmycode",
+    "classroom",
+    "assessment"
+  ],
+  "main": "./dist/extension.cjs",
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "activationEvents": [],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "grillmycode",
+          "title": "GrillMyCode",
+          "icon": "media/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "grillmycode": [
+        {
+          "id": "grillmycode.questions",
+          "name": "Questions"
+        },
+        {
+          "id": "grillmycode.question",
+          "name": "Selected Question",
+          "type": "webview"
+        }
+      ]
+    },
+    "viewsWelcome": [
+      {
+        "view": "grillmycode.questions",
+        "contents": "Loading questions…",
+        "when": "!grillmycode.state || grillmycode.state == loading"
+      },
+      {
+        "view": "grillmycode.questions",
+        "contents": "Open a folder that is a clone of a GitHub repository to see its GrillMyCode questions.",
+        "when": "grillmycode.state == noRepository"
+      },
+      {
+        "view": "grillmycode.questions",
+        "contents": "Sign in to GitHub to load the questions for this repository.\n[Sign in to GitHub](command:grillmycode.signIn)",
+        "when": "grillmycode.state == signedOut"
+      },
+      {
+        "view": "grillmycode.questions",
+        "contents": "GitHub could not find this repository for the account that is signed in. Check that you are signed in with the account that owns the assignment.\n[Try Again](command:grillmycode.refresh)",
+        "when": "grillmycode.state == noAccess"
+      },
+      {
+        "view": "grillmycode.questions",
+        "contents": "No GrillMyCode questions were found for this repository. They appear after you push and the GrillMyCode workflow finishes.\n[Refresh](command:grillmycode.refresh)",
+        "when": "grillmycode.state == noIssue"
+      },
+      {
+        "view": "grillmycode.questions",
+        "contents": "The questions could not be loaded. The GrillMyCode output channel has the details.\n[Try Again](command:grillmycode.refresh)",
+        "when": "grillmycode.state == error"
+      }
+    ],
+    "commands": [
+      {
+        "command": "grillmycode.refresh",
+        "title": "Refresh Questions",
+        "category": "GrillMyCode",
+        "icon": "$(refresh)"
+      },
+      {
+        "command": "grillmycode.signIn",
+        "title": "Sign In to GitHub",
+        "category": "GrillMyCode"
+      },
+      {
+        "command": "grillmycode.selectIssue",
+        "title": "Choose Which Questions to Show",
+        "category": "GrillMyCode",
+        "icon": "$(list-selection)"
+      },
+      {
+        "command": "grillmycode.openIssue",
+        "title": "Open the Questions on GitHub",
+        "category": "GrillMyCode",
+        "icon": "$(link-external)"
+      },
+      {
+        "command": "grillmycode.openQuestion",
+        "title": "Open Question",
+        "category": "GrillMyCode"
+      }
+    ],
+    "menus": {
+      "view/title": [
+        {
+          "command": "grillmycode.refresh",
+          "when": "view == grillmycode.questions",
+          "group": "navigation@1"
+        },
+        {
+          "command": "grillmycode.selectIssue",
+          "when": "view == grillmycode.questions && grillmycode.severalIssues",
+          "group": "navigation@2"
+        },
+        {
+          "command": "grillmycode.openIssue",
+          "when": "view == grillmycode.questions && grillmycode.state == ready",
+          "group": "navigation@3"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "grillmycode.openQuestion",
+          "when": "false"
+        },
+        {
+          "command": "grillmycode.selectIssue",
+          "when": "grillmycode.state == ready"
+        },
+        {
+          "command": "grillmycode.openIssue",
+          "when": "grillmycode.state == ready"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "preinstall": "npx only-allow pnpm",
+    "build": "node esbuild.js",
+    "watch": "node esbuild.js --watch",
+    "vscode:prepublish": "node esbuild.js --production",
+    "package": "vsce package --no-dependencies --out dist/grillmycode.vsix",
+    "test:host": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/vscode": "1.120.0",
+    "@vscode/test-cli": "^0.0.15",
+    "@vscode/test-electron": "^3.1.0",
+    "@vscode/vsce": "^4.0.0",
+    "esbuild": "^0.28.2"
+  }
+}

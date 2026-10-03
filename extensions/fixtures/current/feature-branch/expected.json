@@ -1,0 +1,54 @@
+{
+  "group": {
+    "kind": "branch",
+    "name": "feature/checkout"
+  },
+  "report": {
+    "baseSha": "4f1c9a2",
+    "headSha": "9b8e7d6",
+    "branch": "feature/checkout",
+    "tag": null,
+    "files": [
+      "scripts/help.js",
+      "src/pricing/tax.js"
+    ],
+    "truncated": false
+  },
+  "questions": [
+    {
+      "number": 1,
+      "broader": false,
+      "snippets": [
+        {
+          "file": "scripts/help.js",
+          "start_line": 1,
+          "end_line": 14,
+          "language": "js",
+          "code": "export const HELP = `\n# Checkout\n\n```bash\nnpm run checkout -- --province NS\n```\n\n---\nPrices include tax.\n`;\n\nexport function printHelp(log = console.log) {\n  log(HELP.trim());\n}"
+        }
+      ],
+      "question": "What does `printHelp` write when it is called with no argument?"
+    },
+    {
+      "number": 2,
+      "broader": false,
+      "snippets": [
+        {
+          "file": "src/pricing/tax.js",
+          "start_line": 3,
+          "end_line": 6,
+          "language": "js",
+          "code": "export function taxFor(amount, province) {\n  const rate = RATES[province] ?? 0;\n  return Number((amount * rate).toFixed(2));\n}"
+        },
+        {
+          "file": "src/format.js",
+          "start_line": 1,
+          "end_line": 3,
+          "language": "js",
+          "code": "export function money(amount) {\n  return `$${amount.toFixed(2)}`;\n}"
+        }
+      ],
+      "question": "What would `money(taxFor(10, \"NS\"))` return?"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+# pnpm project settings for the VS Code extension.
+#
+# This file makes extensions/vscode/ its own pnpm project, with its own
+# lockfile, the way docs-site/ is. Without it pnpm would climb to the
+# repository root and install the action's dependencies instead.
+#
+# allowBuilds is an explicit decision map for dependency build scripts.
+allowBuilds:
+  esbuild: true
+  '@vscode/vsce-sign': false
+  keytar: false

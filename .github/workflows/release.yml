@@ -171,9 +171,12 @@ jobs:
           const fs = require('fs');
           const tag = process.env.TAG;
 
+          // --match keeps this to the action's own tags. The editor extensions
+          // are released from this repository under other prefixes (vscode-v*),
+          // and the nearest tag of any name could be one of theirs.
           let prevTag = '';
           try {
-            prevTag = execSync(`git describe --tags --abbrev=0 "${tag}^"`, { encoding: 'utf8' }).trim();
+            prevTag = execSync(`git describe --tags --abbrev=0 --match "v[0-9]*" "${tag}^"`, { encoding: 'utf8' }).trim();
           } catch {}
 
           const range = prevTag ? `${prevTag}..${tag}` : tag;
@@ -183,7 +186,9 @@ jobs:
           // carrying every following line with it. Records are separated by RS
           // (0x1e), which cannot occur in a commit message.
           const RS = String.fromCharCode(30);
-          const log = execSync(`git log ${range} --pretty=format:%B%x1e --no-merges`, { encoding: 'utf8' }).trim();
+          // extensions/ is left out: a commit that touches nothing else changed
+          // an editor extension, not the action, and belongs in its release notes.
+          const log = execSync(`git log ${range} --pretty=format:%B%x1e --no-merges -- . ":(exclude)extensions"`, { encoding: 'utf8' }).trim();
 
           if (!log) {
             fs.writeFileSync('/tmp/release-body.txt', '');

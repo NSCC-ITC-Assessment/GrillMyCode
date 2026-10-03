@@ -7,6 +7,11 @@ on:
     paths-ignore:
       - "docs-site/**"
       - "docs/**"
+      - "docs-internal/**"
+      - "extensions/**"
+      # Never copied into the image (see the COPY lines in the Dockerfile).
+      - "scripts/**"
+      - "test/**"
       - "README.md"
       - "AGENTS.md"
       - "LICENSE"
@@ -22,6 +27,7 @@ on:
       - ".github/workflows/deploy-docs.yml"
       - ".github/workflows/pr-checks-docs.yml"
       - ".github/workflows/pr-checks.yml"
+      - ".github/workflows/vscode-extension-checks.yml"
       - ".github/workflows/refresh-gitignore-templates.yml"
       - ".github/workflows/release.yml"
       - ".github/workflows/renovate.yml"

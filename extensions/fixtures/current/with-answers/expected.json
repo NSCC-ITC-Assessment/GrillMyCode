@@ -1,0 +1,40 @@
+{
+  "group": {
+    "kind": "branch",
+    "name": "main"
+  },
+  "report": {
+    "baseSha": "4f1c9a2",
+    "headSha": "9b8e7d6",
+    "branch": null,
+    "tag": null,
+    "files": [
+      "src/pricing/tax.js"
+    ],
+    "truncated": false
+  },
+  "questions": [
+    {
+      "number": 1,
+      "broader": false,
+      "snippets": [
+        {
+          "file": "src/pricing/tax.js",
+          "start_line": 5,
+          "end_line": 5,
+          "language": "js",
+          "code": "  return Number((amount * rate).toFixed(2));"
+        }
+      ],
+      "question": "What does `toFixed(2)` return, and why is the result passed to `Number`?",
+      "answer": "It returns a string, and `Number` turns it back into a number."
+    },
+    {
+      "number": 2,
+      "broader": true,
+      "snippets": [],
+      "question": "What would change if `RATES` were declared with `let`?",
+      "answer": "Nothing in this file, since `RATES` is never reassigned."
+    }
+  ]
+}

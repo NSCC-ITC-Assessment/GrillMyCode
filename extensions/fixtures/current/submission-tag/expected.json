@@ -1,0 +1,32 @@
+{
+  "group": {
+    "kind": "tag",
+    "name": "submit/*"
+  },
+  "report": {
+    "baseSha": "4f1c9a2",
+    "headSha": "9b8e7d6",
+    "branch": null,
+    "tag": "submit/2026-01-15",
+    "files": [
+      "src/cart.js"
+    ],
+    "truncated": false
+  },
+  "questions": [
+    {
+      "number": 1,
+      "broader": false,
+      "snippets": [
+        {
+          "file": "src/cart.js",
+          "start_line": 19,
+          "end_line": 22,
+          "language": "js",
+          "code": "export function removeItem(cart, sku) {\n  cart.items = cart.items.filter((entry) => entry.sku !== sku);\n  return cart;\n}"
+        }
+      ],
+      "question": "What is `cart.items` after `removeItem` is called with a SKU that is not in the cart?"
+    }
+  ]
+}
