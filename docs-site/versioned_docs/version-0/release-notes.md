@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.24.0 — 2026-10-03
+
+### What's Changed
+
+### Features
+
+- **exclude:** apply detected patterns inside each project folder
+
+### Bug Fixes
+
+- **exclude:** match detected patterns as written, without matchBase
+
 ## v0.23.0 — 2026-10-01
 
 ### What's Changed

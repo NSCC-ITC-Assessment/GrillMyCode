@@ -81,7 +81,13 @@ function Signals({ signals }) {
   return signals.map((s, i) => (
     <React.Fragment key={`${s.in}:${s.name}`}>
       {i > 0 && ', '}
-      <code>{s.name}</code> {s.in === 'root' ? 'at the root' : <>in <code>{s.in}</code></>}
+      <code>{s.name}</code>
+      {s.in !== 'folder' && (
+        <>
+          {' '}
+          in <code>{s.in}</code>
+        </>
+      )}
     </React.Fragment>
   ));
 }
@@ -141,7 +147,7 @@ function Lists({ lists }) {
       ? { ...fromTemplate(e, signalWords(e.signals)), signals: e.signals }
       : {
           id: e.signals[0].name,
-          name: e.signals.find((sig) => sig.in !== 'root')?.name ?? e.signals[0].name,
+          name: e.signals.find((sig) => sig.in !== 'folder')?.name ?? e.signals[0].name,
           all: e.patterns,
           words: signalWords(e.signals),
           signals: e.signals,
@@ -226,8 +232,10 @@ function Lists({ lists }) {
       body: (
         <>
           <span className={styles.hint}>
-            A file or folder at the repository root, or a dependency listed in the project&apos;s
-            manifest, adds the template or patterns for its framework or tool.
+            A file or folder at the repository root or in any folder below it, or a dependency
+            listed in that folder&apos;s manifest, adds the template or patterns for its framework
+            or tool. Patterns that don&apos;t start with <code>**/</code> apply inside that folder,
+            so each project in a monorepo gets its own.
           </span>
           {renderEntries(projectFiles, (e) => <Signals signals={e.signals} />)}
         </>
@@ -313,7 +321,7 @@ export default function ExcludeListsDisclosure() {
         <div style={{ marginTop: '0.75rem' }}>
           <span className={styles.hint}>
             When the action runs it identifies your repository&apos;s stack from GitHub&apos;s
-            Languages API and the project files at its root, and applies the matching{' '}
+            Languages API and the project files in each of its folders, and applies the matching{' '}
             <a href="https://github.com/github/gitignore" target="_blank" rel="noopener noreferrer">
               github/gitignore
             </a>{' '}
