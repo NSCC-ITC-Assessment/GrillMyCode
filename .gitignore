@@ -16,6 +16,8 @@ Thumbs.db
 # Editor
 .vscode/*
 !.vscode/mcp.json
+!.vscode/launch.json
+!.vscode/tasks.json
 .idea/
 
 # Action output files

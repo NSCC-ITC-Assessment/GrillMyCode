@@ -158,6 +158,31 @@ Adding a new `ai_provider` value requires changes in all of the following places
    default, and currently emits `api_key` unconditionally — revisit that if the new provider does
    not require a key.
 
+## Editor Extensions
+
+`extensions/` holds the editor extensions, one folder per editor (`extensions/vscode/` today),
+each a separate project with its own `package.json` and lockfile, like `docs-site/`. Nothing
+under `extensions/` is copied into the action's container image.
+
+- **The report format is a contract.** The extensions read the issue the action posts. If a
+  change alters what `formatReport` (`src/report.js`), `renderQuestions` (`src/postprocess.js`)
+  or `postIssue` (`src/delivery/issue.js`) writes, `test/extension-fixtures.test.js` fails.
+  Follow `extensions/fixtures/README.md`: a changed layout means keeping the old fixtures and
+  teaching each extension's reader both, because issues in the old layout stay open in
+  students' repositories.
+- **`extensions/fixtures/current/` is generated** by `node scripts/build-extension-fixtures.js`.
+  Do not edit it by hand, and do not let Prettier format it.
+- **`extensions/vscode/src/shared/` must not import `vscode`.** That is what lets its tests, in
+  `extensions/vscode/test/`, run under the root `pnpm test`. Code that needs the editor goes in
+  `src/student/`, and its tests in `test-host/` (`pnpm test:host`, from `extensions/vscode/`).
+- **Issue text is untrusted.** Anyone with write access to a student repository can edit the
+  issue. Escape it before it reaches a webview, never enable scripts in one, and never open a
+  path from it without `isSafeRelativePath`.
+- **`@types/vscode` must not pass `engines.vscode`**, or the extension will not package. Raise
+  both together, deliberately: a higher minimum drops support for older editors.
+- **Releases use their own tag prefix** (`vscode-v*`), never `v*`, which releases the action.
+- Lint, formatting and unit tests run from the repository root. `pnpm lint` covers `extensions/`.
+
 ## Constants vs Magic Numbers
 
 Numeric limits, default values, threshold values, and external API version strings must be defined as named, documented exports in `src/constants.js`. Do not hard-code them inline in other modules.

@@ -1,0 +1,8 @@
+# Everything not listed with a leading ! is left out of the packaged extension.
+# The bundle in dist/ holds all the code, so the source and tests stay behind.
+**
+!dist/extension.cjs
+!media/**
+!package.json
+!README.md
+!LICENSE

@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="6 11 350 350">
+  <!-- The GrillMyCode logo in one colour: VS Code draws an Activity Bar icon
+       from its shape alone and tints it to suit the theme. The full-colour
+       logo is docs-site/static/img/grillmycode-logo.svg; keep the two in step. -->
+  <defs>
+    <mask id="hole" maskUnits="userSpaceOnUse" x="6" y="11" width="350" height="350">
+      <rect x="6" y="11" width="350" height="350" fill="#fff"/>
+      <path d="M171 230C160 246 154 262 154 280V312H204V296C202 272 190 248 171 230Z" fill="#000"/>
+    </mask>
+  </defs>
+  <g fill="none" stroke="#000" stroke-width="27">
+    <path d="M118 91H96Q66 91 66 121V162Q66 196 20 196Q66 196 66 230V271Q66 301 96 301H118"/>
+    <path d="M244 91H266Q296 91 296 121V162Q296 196 342 196Q296 196 296 230V271Q296 301 266 301H244"/>
+  </g>
+  <path mask="url(#hole)" fill="#000" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54Z"/>
+</svg>

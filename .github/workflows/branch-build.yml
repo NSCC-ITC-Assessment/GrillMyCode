@@ -4,11 +4,15 @@ on:
   push:
     branches-ignore:
       - main
+    # No tag builds a branch image: release.yml handles v* tags, and each
+    # editor extension has a tag prefix and a release workflow of its own.
+    # Path filters are not applied to tag pushes, so this must be a tag filter.
     tags-ignore:
-      - "v*"
+      - "**"
     paths-ignore:
       - "docs-site/**"
       - "docs/**"
+      - "extensions/**"
       - "README.md"
       - "AGENTS.md"
       - "LICENSE"
@@ -24,6 +28,7 @@ on:
       - ".github/workflows/deploy-docs.yml"
       - ".github/workflows/pr-checks-docs.yml"
       - ".github/workflows/pr-checks.yml"
+      - ".github/workflows/vscode-extension-checks.yml"
       - ".github/workflows/refresh-gitignore-templates.yml"
       - ".github/workflows/release.yml"
       - ".github/workflows/renovate.yml"

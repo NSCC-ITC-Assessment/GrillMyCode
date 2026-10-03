@@ -11,8 +11,8 @@
     "preinstall": "npx only-allow pnpm",
     "start": "node src/main.js",
     "prepare": "husky",
-    "lint": "eslint src/",
-    "lint:fix": "eslint src/ --fix",
+    "lint": "eslint src/ extensions/",
+    "lint:fix": "eslint src/ extensions/ --fix",
     "test": "vitest run",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

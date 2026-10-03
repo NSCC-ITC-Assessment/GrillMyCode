@@ -1,0 +1,11 @@
+# Dependencies
+/node_modules
+
+# Build output: the bundle, the packaged extension, and the licence copied in
+# from the repository root when packaging
+/dist
+*.vsix
+/LICENSE
+
+# VS Code builds downloaded for test-host/
+/.vscode-test
