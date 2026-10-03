@@ -175,7 +175,7 @@ jobs:
         uses: softprops/action-gh-release@v3
         with:
           tag_name: ${{ github.ref_name }}
-          name: VS Code extension ${{ needs.build.outputs.version }}
+          name: GrillMyCode Companion for VS Code ${{ needs.build.outputs.version }}
           body_path: extensions/vscode/dist/release-notes.md
           files: extensions/vscode/dist/grillmycode.vsix
           prerelease: ${{ needs.build.outputs.prerelease }}

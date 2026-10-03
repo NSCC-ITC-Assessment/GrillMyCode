@@ -1,8 +1,8 @@
-# GrillMyCode for VS Code
+# GrillMyCode Companion
 
-See the questions [GrillMyCode](https://grillmycode.org) wrote about your code, right beside the code they ask about.
+The companion to [GrillMyCode](https://grillmycode.org) in VS Code. See the questions GrillMyCode wrote about your code, right beside the code they ask about.
 
-GrillMyCode is a GitHub Action your instructor adds to an assignment. Each time you push, it reads what you changed and posts a set of comprehension questions as an issue in your repository. This extension brings those questions into the editor.
+GrillMyCode is a GitHub Action your instructor adds to an assignment. Each time you push, it reads what you changed and posts a set of comprehension questions as an issue in your repository. GrillMyCode Companion brings those questions into the editor.
 
 ## What it does
 
@@ -27,4 +27,4 @@ The extension reads the questions issue in your repository through your GitHub a
 
 ## Not yet
 
-The extension does not generate questions and does not show answers.
+GrillMyCode Companion does not generate questions and does not show answers. The questions come from the GrillMyCode action your instructor set up.
