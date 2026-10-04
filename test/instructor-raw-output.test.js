@@ -236,6 +236,18 @@ describe('formatRawOutput', () => {
     expect(out).toContain('- **Served by:** via SomeHost');
   });
 
+  it('gives the count asked of the model beside num_questions when spares were asked for', () => {
+    const out = formatRawOutput({
+      ...opts,
+      rawOutput: '1. Q?',
+      request: { ...request, questionsAsked: 12 },
+      response,
+    });
+
+    expect(out).toContain('10 questions requested (12 asked of the model, with spares) · prompt');
+    expect(provenanceOf(out).request.questionsAsked).toBe(12);
+  });
+
   it('embeds the full record as JSON above the reply', () => {
     const out = formatRawOutput({ ...opts, rawOutput: '1. Q?', request, response });
     const record = provenanceOf(out);

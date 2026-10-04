@@ -238,6 +238,17 @@ export const MAX_PROJECT_FOLDERS = 100;
 export const MAX_QUESTIONS = 50;
 
 /**
+ * Spare questions the model is asked to write on top of num_questions:
+ * SPARE_QUESTIONS for every SPARE_QUESTIONS_PER requested, rounded up (see
+ * spareQuestions in src/prompt/prompt.js). Questions are dropped after the
+ * reply — no answer, a snippet that cannot be found, none of the student's own
+ * lines — so a reply of exactly num_questions would often leave the report
+ * short. The spares that turn out not to be needed are cut.
+ */
+export const SPARE_QUESTIONS = 2;
+export const SPARE_QUESTIONS_PER = 10;
+
+/**
  * Number of characters to display from a git SHA in log messages and reports.
  */
 export const GIT_SHA_SHORT_LENGTH = 7;

@@ -103,7 +103,7 @@ If you're happy with the questions but not the wait, try the **Speed** routing o
 
 ### Some questions are missing from a student's report
 
-GrillMyCode holds back any question it can't be sure doesn't give away its own answer, and the student's report says how many. It also drops questions that don't point at the student's own code: ones naming a file or lines that weren't sent to the AI, and ones showing only code the student didn't write in this submission. Your [instructor repository](reference/instructor-repository.md) copy has every question that wasn't dropped. The ones dropped for not pointing at the student's code are in `data/questions.json`, marked as dropped, and `data/raw-ai-output.md` has the model's full original reply. See [What code is assessed](reference/code-selection.md#4-after-the-ai-replies).
+GrillMyCode holds back any question it can't be sure doesn't give away its own answer, and the student's report says how many. It also drops questions that don't point at the student's own code: ones naming a file or lines that weren't sent to the AI, and ones showing only code the student didn't write in this submission. The AI is asked for spare questions to replace these, so the report is short only when more were dropped than there were spares. Your [instructor repository](reference/instructor-repository.md) copy has every question that wasn't dropped. The ones dropped for not pointing at the student's code are in `data/questions.json`, marked as dropped, and `data/raw-ai-output.md` has the model's full original reply. See [What code is assessed](reference/code-selection.md#4-after-the-ai-replies).
 
 ### A repository has two issues called GrillMyCode Questions
 

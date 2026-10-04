@@ -233,6 +233,7 @@ function provenanceComment(record) {
  * is bumped whenever a field changes meaning or is removed.
  *
  * @param {object} [opts.request]  - What was asked for: `numQuestions`,
+ *   `questionsAsked` (num_questions plus the spares the prompt asked for),
  *   `questionEmphasis`, `temperature` (null when none was sent),
  *   `reasoningEffort`, `promptHash`, `actionRef`
  * @param {object} [opts.response] - The metadata callAI returns
@@ -258,7 +259,13 @@ export function formatRawOutput({
 
   const requestLines = [];
   if (request) {
-    const settings = [`${request.numQuestions} questions requested`];
+    // The reply below holds up to `questionsAsked` questions, so the count is
+    // given beside num_questions wherever spares were asked for.
+    const asked =
+      request.questionsAsked > request.numQuestions
+        ? ` (${request.questionsAsked} asked of the model, with spares)`
+        : '';
+    const settings = [`${request.numQuestions} questions requested${asked}`];
     // Only a tilt is worth a mention; balanced is the prompt as it always was.
     if (request.questionEmphasis && request.questionEmphasis !== DEFAULT_QUESTION_EMPHASIS) {
       settings.push(`${request.questionEmphasis} emphasis`);

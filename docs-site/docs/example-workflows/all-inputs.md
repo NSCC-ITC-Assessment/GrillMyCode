@@ -92,7 +92,9 @@ jobs:
 
           # ── Question generation ───────────────────────────────────────────
 
-          # Number of comprehension questions to generate. Minimum 1, maximum 50.
+          # Number of comprehension questions in the report. Minimum 1, maximum 50.
+          # The AI is asked for two spare questions for every ten, rounded up, to
+          # replace any that are dropped. Spares that aren't needed are cut.
           num_questions: "20"
 
           # Limits the kinds of question. "balanced" mixes all kinds; "research"
