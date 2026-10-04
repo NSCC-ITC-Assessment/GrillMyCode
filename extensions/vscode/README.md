@@ -25,10 +25,16 @@ VS Code opens a walkthrough of these steps when the extension is installed. To s
 
 If the repository has questions for more than one branch or submission, use **Choose Which Questions to Show**.
 
+## For instructors
+
+If your assignment keeps a private answer key, open a student's repository and sign in. GrillMyCode Companion shows each question with its answer, beside the student's code.
+
+GitHub decides who sees this: the extension shows answers only to an account that can read the assignment's instructor repository. In your own test repository it starts in the view students get, and **Show Instructor View** switches. **Show Student View** switches back, which is worth doing before you share your screen.
+
 ## What it needs
 
-The extension reads the questions issue in your repository through your GitHub account. GitHub offers one permission for reading a private repository this way, which is full access to your repositories, so that is what the sign-in asks for. The extension uses it only to read the questions issue. It changes nothing on GitHub and sends nothing anywhere else.
+The extension reads the questions issue in your repository through your GitHub account. GitHub offers one permission for reading a private repository this way, which is full access to your repositories, so that is what the sign-in asks for. The extension uses it to read the questions issue, and to check whether the account can read the assignment's answer key. It changes nothing on GitHub and sends nothing anywhere else.
 
 ## Not yet
 
-GrillMyCode Companion does not generate questions and does not show answers. The questions come from the GrillMyCode action your instructor set up.
+GrillMyCode Companion does not generate questions, and it does not show answers to students. The questions come from the GrillMyCode action your instructor set up.

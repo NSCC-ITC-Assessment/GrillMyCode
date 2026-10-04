@@ -1,0 +1,26 @@
+{
+  "questions": [
+    {
+      "number": 1,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/cart.js",
+          "start_line": 19,
+          "end_line": 22,
+          "language": "js",
+          "code": "export function removeItem(cart, sku) {\n  cart.items = cart.items.filter((entry) => entry.sku !== sku);\n  return cart;\n}"
+        }
+      ],
+      "question": "What is `cart.items` after `removeItem` is called with a SKU that is not in the cart?",
+      "answer": "The same entries as before, in a new array.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    }
+  ]
+}

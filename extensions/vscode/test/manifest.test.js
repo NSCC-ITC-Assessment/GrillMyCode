@@ -78,3 +78,37 @@ describe('the walkthrough', () => {
     expect(named.filter((command) => !contributed.includes(command))).toEqual([]);
   });
 });
+
+// A student's copy must show no sign of the instructor view. Both commands are
+// in the manifest for everyone, so each place one can appear is conditional on
+// the key the extension sets only after reading an answer key.
+describe('the view switch', () => {
+  const switches = ['grillmycode.showInstructorView', 'grillmycode.showStudentView'];
+  const { commands, menus } = manifest.contributes;
+
+  it('is two commands', () => {
+    for (const command of switches) {
+      expect(commands.some((entry) => entry.command === command)).toBe(true);
+    }
+  });
+
+  it('is hidden from the Command Palette unless an answer key is readable', () => {
+    for (const command of switches) {
+      const entry = menus.commandPalette.find((item) => item.command === command);
+      expect(entry.when).toContain('grillmycode.answerKey');
+    }
+  });
+
+  it('is on no menu unless an answer key is readable', () => {
+    const entries = Object.values(menus)
+      .flat()
+      .filter((item) => switches.includes(item.command));
+    expect(entries.length).toBeGreaterThan(switches.length);
+    for (const entry of entries) expect(entry.when).toContain('grillmycode.answerKey');
+  });
+
+  it('has no keybinding, which would run it whatever the menus say', () => {
+    const bound = (manifest.contributes.keybindings ?? []).map((entry) => entry.command);
+    for (const command of switches) expect(bound).not.toContain(command);
+  });
+});

@@ -14,7 +14,7 @@ import { questionToHtml } from '../shared/html.js';
 
 const STYLE = `
   body { padding: 0 16px 16px; color: var(--vscode-foreground); font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); line-height: 1.5; }
-  h2 { font-size: 1em; font-weight: 600; margin: 12px 0 4px; }
+  h2, h3 { font-size: 1em; font-weight: 600; margin: 12px 0 4px; }
   p { margin: 0 0 10px; }
   .hint, .caption { color: var(--vscode-descriptionForeground); }
   .caption { margin: 12px 0 4px; }
@@ -25,6 +25,12 @@ const STYLE = `
 `;
 
 export class QuestionView {
+  /**
+   * Turns the question into the page's body. The instructor view puts its own
+   * here, which adds the answer.
+   */
+  toHtml = questionToHtml;
+
   #view;
   #question;
 
@@ -53,7 +59,7 @@ export class QuestionView {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style nonce="${nonce}">${STYLE}</style>
 </head>
-<body>${questionToHtml(this.#question)}</body>
+<body>${this.toHtml(this.#question)}</body>
 </html>`;
   }
 }

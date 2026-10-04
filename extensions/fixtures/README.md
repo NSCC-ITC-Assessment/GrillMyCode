@@ -5,13 +5,19 @@ paired with what an extension should read from it. Every editor extension
 tests its report reader against these files, whatever language it is written
 in, so they are the contract between the action and the extensions.
 
-Each case is a folder of three files:
+Each case is a folder of four files:
 
-| File            | What it holds                                                  |
-| --------------- | -------------------------------------------------------------- |
-| `issue.json`    | The title and labels the issue was created with                |
-| `body.md`       | The issue's body, byte for byte                                |
-| `expected.json` | The group, report details and questions a reader should return |
+| File             | What it holds                                                           |
+| ---------------- | ----------------------------------------------------------------------- |
+| `issue.json`     | The title and labels the issue was created with                         |
+| `body.md`        | The issue's body, byte for byte                                         |
+| `expected.json`  | The group, report details and questions a reader should return          |
+| `questions.json` | The answer key the same run files in the instructor repository, as data |
+
+`questions.json` is what an extension's instructor view reads. Its questions
+are the issue's, with each one's answer and distractors. The cases in `v0.24/`
+have none: the answer key has not changed since, and those folders are never
+regenerated.
 
 `expected.json` gives `headCommit`, the full SHA of the head commit, only where
 the issue carries it as hidden data.

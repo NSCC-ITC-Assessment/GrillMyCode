@@ -1,0 +1,40 @@
+{
+  "questions": [
+    {
+      "number": 1,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/pricing/tax.js",
+          "start_line": 5,
+          "end_line": 5,
+          "language": "js",
+          "code": "  return Number((amount * rate).toFixed(2));"
+        }
+      ],
+      "question": "What does `toFixed(2)` return, and why is the result passed to `Number`?",
+      "answer": "It returns a string, and `Number` turns it back into a number.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    },
+    {
+      "number": 2,
+      "dropped": false,
+      "broader": true,
+      "about_starter_code": false,
+      "snippets": [],
+      "question": "What would change if `RATES` were declared with `let`?",
+      "answer": "Nothing in this file, since `RATES` is never reassigned.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    }
+  ]
+}

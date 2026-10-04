@@ -8,7 +8,9 @@
  *   shared/   reading the report and choosing the issue. No VS Code imports,
  *             so the repository's own tests run it with no editor present.
  *   student/  what a student sees: the questions panel, the jump to code and
- *             the moved-code warning.
+ *             the moved-code warning. Its controller runs both views.
+ *   instructor/  what an account that can read the answer key gets as well:
+ *             finding and reading the key, and the answers under a question.
  */
 
 import { QuestionsController } from './student/controller.js';

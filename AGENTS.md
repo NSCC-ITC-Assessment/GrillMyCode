@@ -164,9 +164,11 @@ Adding a new `ai_provider` value requires changes in all of the following places
 each a separate project with its own `package.json` and lockfile, like `docs-site/`. Nothing
 under `extensions/` is copied into the action's container image.
 
-- **The report format is a contract.** The extensions read the issue the action posts. If a
-  change alters what `formatReport` (`src/report.js`), `renderQuestions` (`src/postprocess.js`)
-  or `postIssue` (`src/delivery/issue.js`) writes, `test/extension-fixtures.test.js` fails.
+- **The report format is a contract.** The extensions read the issue the action posts, and the
+  answer key it files in the instructor repository. If a change alters what `formatReport`
+  (`src/report.js`), `renderQuestions` (`src/postprocess.js`), `postIssue`
+  (`src/delivery/issue.js`) or `buildQuestionsJson` (`src/delivery/instructor-repo.js`) writes,
+  `test/extension-fixtures.test.js` fails.
   Follow `extensions/fixtures/README.md`: a changed layout means keeping the old fixtures and
   teaching each extension's reader both, because issues in the old layout stay open in
   students' repositories.
