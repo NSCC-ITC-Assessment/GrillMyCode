@@ -1,6 +1,6 @@
 # VS Code extension — plan
 
-> **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `c851bd1`
+> **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `5dbd87d`
 > **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
 > GrillMyCode Companion. Phase 2 is under way: publishing works, the guides
 > are written, both install routes are checked, and the stable release 0.2.0
@@ -8,7 +8,7 @@
 > `v0.25.0` and the extension's half in 0.2.1, both on 2026-10-04. Phases
 > 3, 5 and 6 are proposals, and so is everything under
 > [Further ideas](#further-ideas-to-consider), except the first-run
-> walkthrough, which is built and is in 0.2.2.
+> walkthrough, which was released in 0.2.2 on 2026-10-04.
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
 that code is open. This note records what an extension does with that, how it
@@ -430,10 +430,11 @@ Both release workflows build their notes with `scripts/release-notes.js`,
 which takes a tag pattern and path filters. It was moved out of `release.yml`
 and reproduces the published notes of five past action releases exactly.
 
-The workflow has run three times, all on 2026-10-03, each with the
-`VSCE_PAT` secret: `vscode-v0.1.1` and `vscode-v0.1.2`, published as
-pre-releases, and `vscode-v0.2.0`, published as a stable release. No other
-workflow ran on any of the tags.
+The workflow has run five times, each with the `VSCE_PAT` secret. On
+2026-10-03: `vscode-v0.1.1` and `vscode-v0.1.2`, published as pre-releases,
+and `vscode-v0.2.0`, published as a stable release. On 2026-10-04:
+`vscode-v0.2.1` and `vscode-v0.2.2`, both stable. No other workflow ran on any
+of the tags.
 
 **0.1.0 was not published by the workflow.** The Marketplace has held it since
 2026-10-03 at 21:38 UTC, 17 minutes before the workflow's first run, and it
@@ -641,7 +642,8 @@ and the second adds what makes it worth keeping open.
 Done:
 
 - **The Marketplace publisher**, `GrillMyCode`.
-- **The release workflow**, which has published 0.1.1, 0.1.2, 0.2.0 and 0.2.1.
+- **The release workflow**, which has published 0.1.1, 0.1.2, 0.2.0, 0.2.1
+  and 0.2.2.
 - **The name**, GrillMyCode Companion.
 - **The guides**, under [Documentation](#documentation-phase-2).
 - **The listing's screenshot and changelog.** `extensions/vscode/README.md`
@@ -845,9 +847,10 @@ phase 2. It answers the moved-code problem directly, where the warning only
 reports it.
 
 **Built from this list: the first-run walkthrough**, on 2026-10-04, as a
-one-off outside the phases. It is in 0.2.2, a stable release. The number is
-a patch although the walkthrough is a feature: 0.3.0 would have been a
-pre-release, which students do not receive.
+one-off outside the phases. It was released in 0.2.2 on 2026-10-04, a stable
+release, so installs of earlier versions move to it. The number is a patch
+although the walkthrough is a feature: 0.3.0 would have been a pre-release,
+which students do not receive.
 
 - **What it is:** a walkthrough in the manifest, **Get Started with
   GrillMyCode Companion**, with four steps: open the assignment's folder,
