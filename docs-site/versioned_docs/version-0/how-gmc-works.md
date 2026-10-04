@@ -56,7 +56,7 @@ The questions arrive in two forms:
 
 Students never see the answers. When the questions are generated again, for example after another push, the same issue is updated and a comment records the change. There is always exactly one current set.
 
-**Go deeper:** [What your students see](guides/what-students-see.md) · [The assessment issue and PDF](reference/assessment-output.md)
+**Go deeper:** [What your students see](guides/what-students-see.md) · [Showing questions in VS Code](guides/vscode-extension.md) · [The assessment issue and PDF](reference/assessment-output.md)
 
 ## 5. You get the questions, answers and LMS materials (optional for Classroom 50 instructors)
 

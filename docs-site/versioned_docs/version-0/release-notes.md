@@ -5,6 +5,36 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.25.0 — 2026-10-04
+
+### What's Changed
+
+### Features
+
+- put the questions in the issue as hidden data, and replace only GrillMyCode's own issues
+- **vscode:** say when the folder is in Restricted Mode
+- **vscode:** rename the extension to GrillMyCode Companion
+- **vscode:** add the VS Code extension, phase 1
+
+### Bug Fixes
+
+- **workflows:** update paths-ignore to exclude additional directories in build workflows
+
+### Documentation
+
+- **vscode:** record the install route check and correct the guides
+- **vscode:** add a screenshot and a changelog for the listing
+- add guides for the GrillMyCode Companion extension
+- bring the VS Code extension plan up to date
+- updates
+
+### Chores & Maintenance
+
+- **vscode:** make the release workflow ready for a Microsoft Entra sign-in
+- **vscode:** set the version to 0.2.0
+- **vscode:** run the in-editor tests on Windows and macOS
+- **vscode:** add the extension release workflow
+
 ## v0.24.0 — 2026-10-03
 
 ### What's Changed

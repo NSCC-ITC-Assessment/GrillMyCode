@@ -104,6 +104,10 @@ Yes, with the private answer key set up (Classroom 50 only). Every resubmission 
 
 In a GitHub issue in the student's repository, called **GrillMyCode Questions**, with a PDF linked from the top. See [What your students see](guides/what-students-see.md).
 
+### Can students read the questions in their editor?
+
+Yes, in VS Code, with the optional GrillMyCode Companion extension. It shows each question beside the lines it asks about. See [Showing questions in VS Code](guides/vscode-extension.md).
+
 ### Can I get the questions into my LMS?
 
 Yes, for Classroom 50 assignments. With the private answer key, each student gets a quiz file you can import into Brightspace, Canvas, Moodle and most others. See [Importing quizzes into your LMS](guides/lms-quizzes.md).

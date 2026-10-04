@@ -46,15 +46,35 @@ The questions follow, then a footer naming the model, provider and action versio
 
 The student's copy never includes answers or multiple-choice distractors unless `include_answers` is `'true'`. A question whose text would reveal an answer is withheld, and the report says how many. An Instructor Note that would reveal one is left out. See [What code is assessed](code-selection.md#4-after-the-ai-replies).
 
+### Hidden data
+
+Under the heading, the body holds one HTML comment, which GitHub doesn't display:
+
+```
+<!-- gmc:questions {"version":1,"headSha":"…","questions":[{"number":1,"broader":false,"snippets":[{"file":"src/app.js","start_line":12,"end_line":18}]}]} -->
+```
+
+| Field | Holds |
+|---|---|
+| `version` | The version of the issue's layout. It goes up when the body changes in a way a reader written for the last layout couldn't follow |
+| `headSha` | The full SHA of the head commit, which **Commits reviewed** shows the start of |
+| `questions` | For each question shown: its number, whether it is a broader question, and the file and lines of each snippet |
+
+The comment never holds a question's text, its code, an answer or a distractor, whether `include_answers` is on or off. A withheld question isn't listed.
+
+It has two uses. [The VS Code extension](vscode-extension.md#how-it-finds-the-questions) reads it, and the action knows its own issues by it. The PDF and the instructor repository's copy don't carry it.
+
 ### When the questions are regenerated
 
 Every run in the same delivery group **overwrites the issue body**. The issue number, URL and comment history stay the same. A note comment is added each time, recording the commit the new questions came from:
 
 > The assessment questions in this issue were regenerated at commit `a1b2c3d` and the questions have been updated. Any previous questions have been replaced.
 
-Only an **open** issue with the exact title is reused. If the student closes their issue, the next run opens a new one.
+Only an **open** issue with the exact title, whose body GrillMyCode wrote, is reused. If the student closes their issue, the next run opens a new one.
 
-If more than one open assessment issue exists for the same group, the extras are deleted. Deleting an issue needs admin rights, so if the workflow's token lacks them, the duplicates are left in place with a warning in the Actions log.
+An issue counts as GrillMyCode's when its body has the [hidden data](#hidden-data), or opens the way every report did before that data existed: the **GrillMyCode** heading, then a **Commits reviewed** line. Any other issue with the same title and label, such as one a person opened by hand, is never overwritten or deleted. The questions go in an issue of their own, and the Actions log names the issue that was left alone. A GrillMyCode issue edited until neither mark remains is treated the same way.
+
+If more than one open issue that GrillMyCode wrote exists for the same group, the extras are deleted. Deleting an issue needs admin rights, so if the workflow's token lacks them, the duplicates are left in place with a warning in the Actions log.
 
 ### Length limit
 
