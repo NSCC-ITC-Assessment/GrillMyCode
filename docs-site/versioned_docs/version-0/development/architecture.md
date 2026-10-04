@@ -124,6 +124,8 @@ loadCodebaseContext()   ← only when starter_code is context or ask, or previou
     │
 buildPrompt()
     │  Constructs the system + user messages for the AI
+    │  Told to write num_questions plus spareQuestions(): two spares for every
+    │  ten, rounded up, to stand in for questions dropped after the reply
     │  Explains the marker column when any file is marked
     │  Sends starter code as a nonce-delimited reference block and earlier work
     │  as a second untrusted block, both ahead of the submission
@@ -150,8 +152,8 @@ callAI()
     │  (finish reason, token usage, attempts, duration)
     │
 arrangeQuestions() → numberQuestions()
-    │  Broader questions last, the surplus over num_questions cut, the rest
-    │  numbered once for every copy
+    │  Broader questions last, the surplus over num_questions (the spares not
+    │  needed) cut, the rest numbered once for every copy
     │
 renderQuestions()
     │  Writes all the Markdown from the question objects: the student view

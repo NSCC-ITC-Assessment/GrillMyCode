@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.26.0 — 2026-10-04
+
+### What's Changed
+
+### Features
+
+- **prompt:** ask for spare questions to cover dropped ones
+
 ## v0.25.1 — 2026-10-04
 
 ### What's Changed
