@@ -8,7 +8,7 @@
 > `v0.25.0` and the extension's half in 0.2.1, both on 2026-10-04. Phases
 > 3, 5 and 6 are proposals, and so is everything under
 > [Further ideas](#further-ideas-to-consider), except the first-run
-> walkthrough, which is built and not yet released.
+> walkthrough, which is built and is in 0.2.2.
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
 that code is open. This note records what an extension does with that, how it
@@ -441,8 +441,9 @@ has no tag. It is not marked as a pre-release.
 
 ### Versions
 
-The extension has its own version numbers. It is at `0.2.1`, in the
-repository and on the Marketplace.
+The extension has its own version numbers. It is at `0.2.2` in the
+repository. The Marketplace has `0.2.1` until the `vscode-v0.2.2` tag is
+pushed.
 The Marketplace accepts only `major.minor.patch`, so VS Code's convention marks the channel:
 
 - **Even minor** (`1.2.x`): stable. This is what students get.
@@ -844,7 +845,9 @@ phase 2. It answers the moved-code problem directly, where the warning only
 reports it.
 
 **Built from this list: the first-run walkthrough**, on 2026-10-04, as a
-one-off outside the phases. It is not yet released.
+one-off outside the phases. It is in 0.2.2, a stable release. The number is
+a patch although the walkthrough is a feature: 0.3.0 would have been a
+pre-release, which students do not receive.
 
 - **What it is:** a walkthrough in the manifest, **Get Started with
   GrillMyCode Companion**, with four steps: open the assignment's folder,
@@ -862,7 +865,8 @@ one-off outside the phases. It is not yet released.
   Code's code opens a walkthrough for an extension installed while the window
   is open, which should cover the Extensions view and a recommendation. A
   codespace installs from the dev container configuration, and that is not
-  known. The pass as a student under
+  known. Nor is whether it opens for a student who already has the extension
+  when their install updates to 0.2.2. The pass as a student under
   [Phase 2](#phase-2-ready-for-a-class) is where to see both.
 - **The image is a crop of the listing's screenshot**, kept as a second file.
   The full screenshot was unreadable at the width the walkthrough gives it.

@@ -2,7 +2,7 @@
   "name": "grillmycode",
   "displayName": "GrillMyCode Companion",
   "description": "The companion to the GrillMyCode GitHub Action. Shows the questions it wrote about your code, beside the code they ask about.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
