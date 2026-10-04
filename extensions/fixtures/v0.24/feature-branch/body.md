@@ -1,7 +1,5 @@
 ## <img src="https://grillmycode.org/img/grillmycode-logo.svg" alt="" height="28" align="absmiddle"> GrillMyCode
 
-<!-- gmc:questions {"version":1,"headSha":"9b8e7d6c5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c","questions":[{"number":1,"broader":false,"snippets":[{"file":"scripts/help.js","start_line":1,"end_line":14}]},{"number":2,"broader":false,"snippets":[{"file":"src/pricing/tax.js","start_line":3,"end_line":6},{"file":"src/format.js","start_line":1,"end_line":3}]}]} -->
-
 [![Download as PDF](https://img.shields.io/badge/Download_as_PDF-DC143C?style=for-the-badge&logo=adobeacrobatreader&logoColor=white)](https://github.com/my-school/cs-principles-lab-3-jsmith/releases/download/gmc-assessments/grill-my-code-cs-principles-lab-3-jsmith.pdf)
 
 > **Generated:** 2026-01-15 14:30:00 UTC

@@ -5,6 +5,8 @@
  * that is open. Pure functions over the shapes parseReport returns.
  */
 
+import { SHORT_SHA_LENGTH } from './constants.js';
+
 /** A snippet's lines as the report captions them: `line 12` or `lines 28–37`. */
 export function describeLines(snippet) {
   return snippet.start_line === snippet.end_line
@@ -72,7 +74,8 @@ export function questionFiles(questions) {
  * the questions point into has changes that are not committed.
  *
  * @param {object} params
- * @param {string} params.headSha        - The short SHA the report reviewed.
+ * @param {string} params.headSha        - The SHA the report reviewed: the full
+ *   one when the issue carries it, otherwise the short one it prints.
  * @param {string} [params.folderCommit] - The full SHA the folder is at, if known.
  * @param {string[]} params.changedFiles - Repository-relative paths with
  *   uncommitted or unsaved changes, with forward slashes.
@@ -80,9 +83,10 @@ export function questionFiles(questions) {
  */
 export function describeDrift({ headSha, folderCommit, changedFiles, files }) {
   if (folderCommit && headSha && !folderCommit.startsWith(headSha)) {
+    const short = (sha) => sha.slice(0, SHORT_SHA_LENGTH);
     return (
-      `These questions were written for commit ${headSha}, and this folder is at ` +
-      `${folderCommit.slice(0, headSha.length)}. The highlighted lines may have moved.`
+      `These questions were written for commit ${short(headSha)}, and this folder is at ` +
+      `${short(folderCommit)}. The highlighted lines may have moved.`
     );
   }
   const edited = files.filter((file) => changedFiles.includes(file));

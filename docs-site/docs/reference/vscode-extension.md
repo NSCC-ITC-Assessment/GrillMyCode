@@ -29,6 +29,12 @@ The open folder must be a clone with a GitHub.com remote. The `origin` remote is
 
 It makes one request to GitHub: the repository's open issues labelled `assessment`, up to 100 of them. From those it keeps the issues that are titled the way the action [titles them](assessment-output.md#title-and-label) and whose body reads as a GrillMyCode report. Pull requests and any other issue with that label are ignored.
 
+Each question's number, file and lines come from the issue's [hidden data](assessment-output.md#hidden-data), and its text and code from the report around it. An issue posted before the action wrote that data is read from the report alone.
+
+## When the issue is newer than the extension
+
+The hidden data carries the version of the issue's layout. When that version is higher than the installed extension knows, the extension reads nothing from the issue. The GrillMyCode view says the questions were written by a newer version of GrillMyCode, and **Show GrillMyCode Companion** opens the extension's page in the Extensions view, where it can be updated. The questions are still in the issue on GitHub.
+
 ## Which set of questions it shows
 
 A repository has one issue per branch and one per submission tag. When there are several, the extension shows, in order of preference:

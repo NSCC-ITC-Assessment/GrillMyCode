@@ -281,6 +281,17 @@ export const SUMMARY_FILE_LIST_LIMIT = 1000;
 export const ISSUE_BODY_LIMIT = 65_000;
 
 /**
+ * Version of the issue's layout, written into its `gmc:questions` comment (see
+ * questionsComment in src/report.js). Raise it whenever an issue posted by this
+ * release could not be read by a reader written for the last one: a change to
+ * the report's Markdown that the extensions' readers depend on, or a field of
+ * the comment that changes meaning or is removed. A reader that meets a higher
+ * number than it knows asks to be updated instead of guessing. A new, optional
+ * field in the comment does not need a new number.
+ */
+export const ISSUE_LAYOUT_VERSION = 1;
+
+/**
  * Maximum stdout buffer size for git spawnSync calls.
  */
 export const GIT_MAX_BUFFER = 20 * 1024 * 1024; // 20 MB

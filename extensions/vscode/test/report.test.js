@@ -2,6 +2,7 @@ import { readFileSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
+import { ISSUE_LAYOUT_VERSION } from '../src/shared/constants.js';
 import { findQuestionIssues } from '../src/shared/issues.js';
 import { parseReport } from '../src/shared/report.js';
 
@@ -103,11 +104,115 @@ describe('parseReport', () => {
     expect(parseReport(edited).questions.map((q) => q.number)).toEqual([1, 2, 3, 4, 5]);
   });
 
+  it('reads a report posted before the hidden data existed, with no full commit', () => {
+    const before = cases.find((c) => c.name === 'v0.24/default-branch').body;
+    expect(before).not.toContain('gmc:questions');
+    const report = parseReport(before);
+    expect(report.headCommit).toBeUndefined();
+    expect(report.questions).toHaveLength(5);
+  });
+
   it('never takes a later line for the question', () => {
     const edited = body.replace(
       '**Question 2:**',
       '**Question 2:**\n\n**First text.**\n\n**Second text.**',
     );
     expect(parseReport(edited).questions[1].question).toBe('First text.');
+  });
+});
+
+describe('the hidden data', () => {
+  /** The body with its data comment rewritten by `change`, which may also replace the record. */
+  const withData = (change, text = body) =>
+    text.replace(/^<!-- gmc:questions (.*) -->$/m, (_line, json) => {
+      const data = JSON.parse(json);
+      return `<!-- gmc:questions ${JSON.stringify(change(data) ?? data)} -->`;
+    });
+
+  it('gives the full commit the report reviewed', () => {
+    const report = parseReport(body);
+    expect(report.headCommit).toBe('9b8e7d6c5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c');
+    expect(report.headCommit.startsWith(report.headSha)).toBe(true);
+  });
+
+  it("is where a snippet's file and lines come from, not the caption", () => {
+    const edited = body.replace('**`src/cart.js`**, lines 1–9', '**`src/other.js`**, lines 40–50');
+    expect(edited).not.toBe(body);
+    expect(parseReport(edited).questions[0].snippets[0]).toMatchObject({
+      file: 'src/cart.js',
+      start_line: 1,
+      end_line: 9,
+    });
+  });
+
+  it('reads a file name the caption cannot hold', () => {
+    const file = 'src/odd `name`.js';
+    const report = parseReport(
+      withData((data) => {
+        data.questions[0].snippets[0].file = file;
+      }),
+    );
+    expect(report.questions[0].snippets[0].file).toBe(file);
+  });
+
+  it('leaves a question as the Markdown has it when the data lists it differently', () => {
+    const report = parseReport(
+      withData((data) => {
+        data.questions[0].snippets = [];
+        data.questions[1].number = 99;
+      }),
+    );
+    expect(report.questions.map((q) => q.number)).toEqual([1, 2, 3, 4, 5]);
+    expect(report.questions[0].snippets[0].file).toBe('src/cart.js');
+    expect(report.questions[1].snippets[0].start_line).toBe(16);
+  });
+
+  it('shows no more questions than the Markdown has', () => {
+    const cut = body.slice(0, body.indexOf('**Question 4:**'));
+    expect(parseReport(cut).questions.map((q) => q.number)).toEqual([1, 2, 3]);
+  });
+
+  it.each([
+    ['is not JSON', () => 'not json'],
+    ['has no version', (data) => ({ ...data, version: undefined })],
+    ['has a commit that is not a SHA', (data) => ({ ...data, headSha: '../../etc' })],
+    ['has no questions', (data) => ({ ...data, questions: null })],
+    [
+      'has a line that is not a number',
+      (data) => {
+        data.questions[0].snippets[0].start_line = '1';
+      },
+    ],
+    [
+      'has a file that is not text',
+      (data) => {
+        data.questions[0].snippets[0].file = { toString: 1 };
+      },
+    ],
+  ])('falls back to the Markdown when the data %s', (_name, change) => {
+    const report = parseReport(withData(change));
+    expect(report.headCommit).toBeUndefined();
+    expect(report.needsUpdate).toBeUndefined();
+    expect(report.questions).toEqual(parseReport(body).questions);
+  });
+
+  it('asks for an update, and reads nothing, when the layout is newer', () => {
+    const newer = withData((data) => ({ version: ISSUE_LAYOUT_VERSION + 1, anything: data }));
+    expect(parseReport(newer)).toEqual({ needsUpdate: true, questions: [] });
+  });
+
+  it('asks for an update even when the rest of a newer layout is unreadable', () => {
+    const comment = `<!-- gmc:questions {"version":${ISSUE_LAYOUT_VERSION + 1}} -->`;
+    expect(parseReport(`# A new heading\n\nNew text.\n\n${comment}\n`)).toEqual({
+      needsUpdate: true,
+      questions: [],
+    });
+  });
+
+  it('takes the first comment, so one inside a snippet changes nothing', () => {
+    const fake = '<!-- gmc:questions {"version":99} -->';
+    const edited = body.replace('existing.quantity += item.quantity;', fake);
+    expect(edited).not.toBe(body);
+    expect(parseReport(edited).needsUpdate).toBeUndefined();
   });
 });

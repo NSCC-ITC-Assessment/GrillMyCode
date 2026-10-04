@@ -14,6 +14,7 @@
  *   signedOut     no GitHub session, or one GitHub no longer accepts
  *   noAccess      GitHub answered 404: no such repository for this account
  *   noIssue       the repository has no questions issue that reads as a report
+ *   needsUpdate   the questions are in a layout newer than this extension reads
  *   error         anything else; the output channel has the details
  *   ready         questions are showing
  */
@@ -181,6 +182,7 @@ export class QuestionsController {
       preferredTitle: this.#context.workspaceState.get(this.#preferenceKey()),
     });
     if (!this.#issue) return this.#setState('noIssue');
+    if (this.#issue.report.needsUpdate) return this.#setState('needsUpdate');
 
     const { report, group } = this.#issue;
     this.#tree.show(this.#target.repository.rootUri, report.questions);
@@ -247,7 +249,7 @@ export class QuestionsController {
     const { repository } = this.#target;
     const notes = [
       describeDrift({
-        headSha: report.headSha,
+        headSha: report.headCommit ?? report.headSha,
         folderCommit: repository.state.HEAD?.commit,
         changedFiles: changedFiles(repository),
         files: questionFiles(report.questions),
@@ -283,7 +285,9 @@ export class QuestionsController {
         ...this.#issues.map((issue) => ({
           label: describeGroup(issue.group),
           description: `#${issue.number}${issue === this.#issue ? ' · showing' : ''}`,
-          detail: `${issue.report.questions.length} questions · commit ${issue.report.headSha}`,
+          detail: issue.report.needsUpdate
+            ? 'Needs a newer version of GrillMyCode Companion'
+            : `${issue.report.questions.length} questions · commit ${issue.report.headSha}`,
           issue,
         })),
       ],

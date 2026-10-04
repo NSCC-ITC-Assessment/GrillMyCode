@@ -168,7 +168,7 @@ uploadPdfAsset()
     │  Replaces the existing PDF asset for this branch (stable URL)
     │  Returns browser_download_url → pdfUrl
     │
-formatReport(pdfUrl)    ← issue body (base + PDF download link)
+formatReport(pdfUrl, issueQuestions)    ← issue body (base + PDF download link + hidden questions data)
     │
         sets action outputs
         (pdf_url, questions, code_before_strip, code_after_strip)
@@ -296,7 +296,7 @@ Transient failures are retried automatically up to `retryMaxAttempts` total atte
 
 Uses an update-first strategy:
 
-1. List open assessment issues whose title exactly matches this branch's (`GrillMyCode Questions (<branch>)`, or `GrillMyCode Questions` when no branch is known) — or, on a tag run, this tag group's (`GrillMyCode Questions (tag: <pattern>)`)
+1. List open assessment issues whose title exactly matches this branch's (`GrillMyCode Questions (<branch>)`, or `GrillMyCode Questions` when no branch is known) — or, on a tag run, this tag group's (`GrillMyCode Questions (tag: <pattern>)`). Keep only those `isAssessmentBody()` accepts: a body with the `gmc:questions` comment that `questionsComment()` in `src/report.js` writes, or one that opens as reports did before that comment existed. Any other issue with the title is logged and left untouched.
 2. If one exists, update its title and body in-place (preserving issue number, URL, and comment history). Extra duplicates are deleted via the `deleteIssue` GraphQL mutation (non-fatal — needs admin rights, so a refused delete warns and leaves the duplicate in place).
 3. If none exists, create a fresh issue, then pin it via the `pinIssue` GraphQL mutation (non-fatal — silently warns if the 3-issue pin limit is already reached).
 

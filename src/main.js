@@ -1424,6 +1424,8 @@ async function run() {
     // Distractors never reach the student copy; the correct answer only with
     // include_answers.
     let questions;
+    // The questions the student's report shows, which its hidden data lists.
+    let shownQuestions = finalQuestions;
     // The context summary is shown to the student as the Instructor Note, so
     // it is held to the same leak check as the question text. The instructor
     // copy keeps it either way.
@@ -1435,9 +1437,9 @@ async function run() {
       // Fail-closed: withhold any question whose text carries a correct answer
       // (e.g. the model was injected into echoing it), rather than risk a leak.
       const leaked = new Set(findLeakedAnswers(finalQuestions));
-      const shown = finalQuestions.filter((q) => !leaked.has(q));
-      questions = renderQuestions(shown, { view: 'student' });
-      state.questionsGenerated = shown.length;
+      shownQuestions = finalQuestions.filter((q) => !leaked.has(q));
+      questions = renderQuestions(shownQuestions, { view: 'student' });
+      state.questionsGenerated = shownQuestions.length;
       state.questionsWithheld = leaked.size;
       if (leaked.size > 0) {
         core.warning(
@@ -1509,7 +1511,7 @@ async function run() {
     state.pdfUrl = pdfUrl || '';
     core.setOutput('pdf_url', pdfUrl || '');
 
-    // ── Format issue body (base report + PDF download link) ─────────────────
+    // ── Format issue body (base report + PDF link + hidden questions data) ──
     const issueBody = formatReport({
       questions,
       files,
@@ -1527,6 +1529,7 @@ async function run() {
       studentLogin: submitter,
       sourceRepo,
       pdfUrl,
+      issueQuestions: shownQuestions,
     });
 
     core.setOutput('questions', questions);

@@ -132,6 +132,17 @@ describe('describeDrift', () => {
     expect(message).toContain('this folder is at 1234567.');
   });
 
+  it('compares the whole commit when the report gives it, and still names it short', () => {
+    const full = { ...base, headSha: base.folderCommit };
+    expect(describeDrift(full)).toBe('');
+    const message = describeDrift({ ...full, folderCommit: '1234567890abcdef' });
+    expect(message).toContain('commit 9b8e7d6,');
+    expect(message).toContain('this folder is at 1234567.');
+    // The same first seven characters, and a different commit.
+    const lookalike = `${base.headSha}${'f'.repeat(33)}`;
+    expect(describeDrift({ ...full, folderCommit: lookalike })).not.toBe('');
+  });
+
   it('names up to two changed files, and counts more', () => {
     expect(describeDrift({ ...base, changedFiles: ['src/a.js'] })).toMatch(/^src\/a\.js changed/);
     expect(describeDrift({ ...base, changedFiles: ['src/b.js', 'src/a.js'] })).toMatch(

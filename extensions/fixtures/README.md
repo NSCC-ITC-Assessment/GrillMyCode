@@ -13,6 +13,9 @@ Each case is a folder of three files:
 | `body.md`       | The issue's body, byte for byte                                |
 | `expected.json` | The group, report details and questions a reader should return |
 
+`expected.json` gives `headCommit`, the full SHA of the head commit, only where
+the issue carries it as hidden data.
+
 All names are fictional: the organization `my-school`, the repository
 `cs-principles-lab-3-jsmith` and the student `jsmith`.
 
@@ -22,6 +25,15 @@ All names are fictional: the organization `my-school`, the repository
   not edit it by hand.
 - **Any other folder** is a layout an earlier release wrote, kept so the
   extensions go on reading it. These are never regenerated.
+
+| Folder     | Layout                                                                       |
+| ---------- | ---------------------------------------------------------------------------- |
+| `v0.24/`   | Markdown only, as posted up to v0.24                                         |
+| `current/` | Layout version 1: the same Markdown, with the hidden `gmc:questions` comment |
+
+The comment's `version` is `ISSUE_LAYOUT_VERSION` in `src/constants.js`. Raise
+it with any change that needs a new folder here, so that an extension written
+for the layout before asks to be updated instead of misreading the issue.
 
 Prettier leaves both alone (`.prettierignore`): a reformatted fixture would no
 longer be what the action posts.

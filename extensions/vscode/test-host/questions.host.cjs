@@ -65,6 +65,23 @@ describe('GrillMyCode', () => {
     controller.showIssues([fixtureIssue()]);
   });
 
+  it('asks for an update when the questions are in a newer layout', async () => {
+    const issue = fixtureIssue();
+    const body = issue.body.replace(/"version":\d+/, '"version":99');
+    assert.notStrictEqual(body, issue.body);
+    controller.showIssues([{ ...issue, body }]);
+    assert.strictEqual(controller.state, 'needsUpdate');
+    controller.showIssues([fixtureIssue()]);
+    assert.strictEqual(controller.state, 'ready');
+  });
+
+  // The update message links to the extension's own page by this command,
+  // which belongs to VS Code and not to this extension.
+  it('can open its own page in the Extensions view', async () => {
+    const commands = await vscode.commands.getCommands(false);
+    assert.ok(commands.includes('extension.open'));
+  });
+
   it('opens a question at the lines it asks about', async () => {
     // Question 2 of the fixture shows src/cart.js, line 16.
     await vscode.commands.executeCommand('grillmycode.openQuestion', {

@@ -90,6 +90,11 @@
       },
       {
         "view": "grillmycode.questions",
+        "contents": "These questions were written by a newer version of GrillMyCode than this extension can read. Update GrillMyCode Companion to see them here. Until then, they are in the issue on GitHub.\n[Show GrillMyCode Companion](command:extension.open?%5B%22GrillMyCode.grillmycode%22%5D)\n[Refresh](command:grillmycode.refresh)",
+        "when": "grillmycode.state == needsUpdate"
+      },
+      {
+        "view": "grillmycode.questions",
         "contents": "The questions could not be loaded. The GrillMyCode output channel has the details.\n[Try Again](command:grillmycode.refresh)",
         "when": "grillmycode.state == error"
       }
