@@ -1,13 +1,14 @@
 # VS Code extension — plan
 
-> **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `d004b1b`
+> **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `c942da7`
 > **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
 > GrillMyCode Companion. Phase 2 is under way: publishing works, the guides
 > are written, both install routes are checked, and the stable release 0.2.0
-> was published on 2026-10-03. A class trial remains. Phase 4 is built on the
-> `extension-phase2b` branch and not released: it waits on an action release
-> and an extension release. Phases 3, 5 and 6 are proposals, and so is
-> everything under [Further ideas](#further-ideas-to-consider).
+> was published on 2026-10-03. Phase 4 is built: the
+> action's half went out in `v0.25.0` on 2026-10-04, and the extension's half
+> is version 0.2.1, which is in the repository and waits for its tag. Phases
+> 3, 5 and 6 are proposals, and so is everything under
+> [Further ideas](#further-ideas-to-consider).
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
 that code is open. This note records what an extension does with that, how it
@@ -18,14 +19,14 @@ disturbing the action's own pipeline.
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                                  | Needs first                                              | Status                                                   |
-| ----- | ----------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning           | Nothing                                                  | Published                                                |
-| 2     | Ready for a class: publishing, guides, a stable release and a class trial, then questions pinned to lines and "studied" ticks | Nothing                                                  | In progress: 0.2.0 is published, the class trial is left |
-| 3     | Instructor view: the viva companion and the view switch                                                                       | A decision on where marks are stored                     | Not started                                              |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                                | An action release                                        | Built, not released: both releases are left              |
-| 5     | Workflow help                                                                                                                 | A look at what the GitHub Actions extension already does | Not started                                              |
-| 6     | Assessed-files preview and local trial runs                                                                                   | The action's core extracted from the Actions toolkit     | Not started                                              |
+| Phase | What it adds                                                                                                        | Needs first                                              | Status                                                                                |
+| ----- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                                  | Published                                                                             |
+| 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.2.0 is published; two hand checks, the token and the features are left |
+| 3     | Instructor view: the viva companion and the view switch                                                             | A decision on where marks are stored                     | Not started                                                                           |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Action half released in v0.25.0; 0.2.1 waits for its tag                              |
+| 5     | Workflow help                                                                                                       | A look at what the GitHub Actions extension already does | Not started                                                                           |
+| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                           |
 
 Phases 2 to 5 do not depend on one another and can be taken in another order.
 The suggested order is 2, 4, 3, 5, 6:
@@ -443,9 +444,9 @@ has no tag. It is not marked as a pre-release.
 
 ### Versions
 
-The extension has its own version numbers, and is at `0.2.0` in the
-repository and on the Marketplace. The Marketplace
-accepts only `major.minor.patch`, so VS Code's convention marks the channel:
+The extension has its own version numbers. It is at `0.2.1` in the
+repository and `0.2.0` on the Marketplace, until `vscode-v0.2.1` is pushed.
+The Marketplace accepts only `major.minor.patch`, so VS Code's convention marks the channel:
 
 - **Even minor** (`1.2.x`): stable. This is what students get.
 - **Odd minor** (`1.3.x`): pre-release, for instructors who opt in.
@@ -457,9 +458,8 @@ differs only in its name, "GrillMyCode", its description and its README.
 
 Students' installs update on their own, so a stable release mid-term changes
 what every student sees. The first stable release made on purpose is
-`0.2.0`, and installs of 0.1.0 move to it. It went out before the class
-trial, because the trial is of a stable release. A version
-number can be published only once, even if it is later removed.
+`0.2.0`, and installs of 0.1.0 move to it. A version number can be
+published only once, even if it is later removed.
 
 What ties the extension to the action is the report format, not the version
 number. Most workflows float on `@v0`, so the format changes for everyone on
@@ -567,8 +567,8 @@ Still open:
 
 - The docs site's stable version is snapshotted only when the action is
   tagged. Until then a new page is under "Next" and unversioned links to it
-  return 404, so the Marketplace listing must not link to it. The root
-  `README.md` links the guide this way and returns 404 until that tag.
+  return 404, so the Marketplace listing must not link to it. The two
+  extension guides have been in the stable version since `v0.25.0`.
 
 ---
 
@@ -681,8 +681,11 @@ Left, to be ready for a class:
   is ready for a Microsoft Entra identity. The account steps under
   [Accounts and secrets](#accounts-and-secrets) are left, and are due by
   2026-11-02 unless trusted publishing opens first.
-- **A trial with one class**, with the instructor adding the extension to the
-  template repository. [The class trial](#the-class-trial) has the steps.
+- **One pass as a student**, from a template repository that lists the
+  extension: accept the assignment with a test account, then follow the
+  student guide in a codespace and in desktop VS Code, through the install,
+  the sign-in, a push, the questions and the jump to code. No codespace has
+  yet been created from a template that lists the extension.
 
 Left, features:
 
@@ -693,58 +696,9 @@ Left, features:
 - **"Studied" ticks**, stored locally.
 - **Refreshing when the window regains focus.**
 
-Done when a class has used a stable release for one assignment, installed by
-the template repository and not by hand.
-
-#### The class trial
-
-One class and one assignment, on the stable release. It answers what no test
-here can: whether students get the extension without help, whether they reach
-their questions, and whether the jump to code is worth more to them than the
-issue alone.
-
-Before the class:
-
-1. **Do the Windows install by hand**, listed above.
-2. **Decide whether students may be asked for the `repo` permission.** Every
-   student who signs in is asked for it. See
-   [Open decisions](#open-decisions).
-3. **Choose an assignment nobody has accepted yet.** The two files reach a
-   student's repository only if they are in the template when the student
-   accepts.
-4. **Choose the address students are given for their guide.** Until the
-   action is next tagged, the student guide is under "Next" on the docs site,
-   at `/docs/next/guides/vscode-extension-students`, and the address without
-   `next` returns 404.
-5. **Go through it once as a student.** Add the two files to the real
-   template, accept the assignment with a test account, and follow the
-   student guide in a codespace and in desktop VS Code: the install, the
-   sign-in, a push, the questions, and the jump to code. This is the first
-   time a codespace is created from a template that lists the extension.
-
-With the class, the instructor adds the wording from the instructor guide to
-the assignment instructions. The extension stays optional, and the issue and
-the PDF work as before.
-
-What to record. The extension collects no usage data, so all of it comes from
-the instructor and the students:
-
-- **How many students used it, and how they got it:** a codespace, the offer
-  in desktop VS Code, or installing by hand.
-- **Where students stopped.** The message in the GrillMyCode view says which
-  step: Restricted Mode, a folder that is not a clone, the wrong account, or
-  no questions yet.
-- **Whether anyone refused the sign-in** because of what it asks for.
-- **Whether the moved-code warning appeared, and whether it was understood.**
-  Questions pinned to lines wait on this.
-- **Whether students expected new questions to load on their own** after a
-  later push.
-- **What students asked the instructor** that the student guide should have
-  answered.
-
-Afterwards, the findings go in this note. A fix to the extension goes out as a
-stable `0.2.x`, which every student's install updates to, so one made during
-the assignment needs the same care as the release itself.
+The first half is done when the three items above are. A trial with one
+class was planned as its last step and was dropped on 2026-10-04, so nothing
+here waits on a class using the extension.
 
 ### Phase 3: instructor view
 
@@ -781,7 +735,7 @@ The hidden data in the issue and the marker check, in
 - **Done when** a test asserts the comment never carries an answer or a
   distractor, and the extension reads issues in both layouts.
 
-Built, on the `extension-phase2b` branch:
+Built, and merged in #155:
 
 - **The action's two changes**, under
   [Changes to GrillMyCode itself](#changes-to-grillmycode-itself).
@@ -807,18 +761,31 @@ What was checked:
 - The repository's tests, lint and formatting, and the docs site build.
 - Nine tests inside VS Code 1.140.0 on Linux, two of them new: the update
   message's state, and that VS Code has the command its link runs.
+- **The update message, looked at in VS Code** 1.140.0 on Linux, under a
+  virtual display, with an issue whose layout version was raised to 2. The
+  text and both buttons show in the Questions view. The command the first
+  button runs, with the argument the link carries, opened the extension's
+  Marketplace page. It was run as a command, not selected with a pointer.
+- **The comment in a real issue.** The first run of `v0.25.0` wrote it with
+  layout version 1, the full head commit and all 19 of its questions.
 
 What was not checked:
 
-- **The update message, looked at in VS Code**, and its link selected.
-- **A real run of the action.** The comment and the marker check are covered
-  by tests against a stand-in for GitHub, not by an issue on GitHub.
+- **An issue from before `v0.25.0` being updated in place** on GitHub, not
+  left beside a new one. Tests cover it against a stand-in for GitHub.
+- **The update message in an installed copy.** The page opened from a
+  development copy offers **Install**. An installed copy with a newer version
+  on the Marketplace should offer **Update**, which was not seen.
+
+Released:
+
+- **The action's half**, in `v0.25.0` on 2026-10-04.
 
 Left:
 
-- **The action release.** It can go first.
-- **An extension release** with the new reader. The changelog entry is under
-  "Unreleased", and the version is still 0.2.0.
+- **The extension release.** The version is 0.2.1 and the changelog has its
+  entry. Pushing `vscode-v0.2.1` publishes it as a stable release, so every
+  install updates to it.
 
 ### Phase 5: workflow help
 
