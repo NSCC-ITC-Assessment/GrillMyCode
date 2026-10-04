@@ -1,7 +1,5 @@
 ## <img src="https://grillmycode.org/img/grillmycode-logo.svg" alt="" height="28" align="absmiddle"> GrillMyCode
 
-<!-- gmc:questions {"version":1,"headSha":"9b8e7d6c5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c","questions":[{"number":1,"broader":false,"snippets":[{"file":"src/cart.js","start_line":1,"end_line":9}]},{"number":2,"broader":false,"snippets":[{"file":"src/cart.js","start_line":16,"end_line":16}]},{"number":3,"broader":false,"snippets":[{"file":"src/pricing/tax.js","start_line":3,"end_line":6},{"file":"src/cart.js","start_line":11,"end_line":17}]},{"number":4,"broader":false,"snippets":[{"file":"src/pricing/tax.js","start_line":4,"end_line":4}]},{"number":5,"broader":true,"snippets":[]}]} -->
-
 > **Generated:** 2026-01-15 14:30:00 UTC
 
 > **Student:** `jsmith`

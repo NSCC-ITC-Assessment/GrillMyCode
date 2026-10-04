@@ -8,6 +8,7 @@
 import {
   DEFAULT_QUESTION_EMPHASIS,
   GIT_SHA_SHORT_LENGTH,
+  ISSUE_LAYOUT_VERSION,
   LOGO_HEADING_HEIGHT_PX,
   LOGO_URL,
 } from './constants.js';
@@ -19,6 +20,58 @@ import {
  */
 export const LOGO_IMG = `<img src="${LOGO_URL}" alt="" height="${LOGO_HEADING_HEIGHT_PX}" align="absmiddle">`;
 
+/** How the hidden comment that carries an issue's questions as data opens. */
+export const QUESTIONS_COMMENT_OPEN = '<!-- gmc:questions ';
+
+/**
+ * JSON for embedding in an HTML comment in a report. `<` and `>` are written
+ * as JSON escapes so no value can close the comment early, and so are `@`, `#`
+ * and the backtick, which postIssue's auto-link defusing would otherwise act
+ * on, putting a zero-width space into a file path. The result still parses as
+ * the same JSON.
+ */
+function commentJson(record) {
+  return JSON.stringify(record).replace(
+    /[<>@#`]/g,
+    (char) => `\\u${char.charCodeAt(0).toString(16).padStart(4, '0')}`,
+  );
+}
+
+/**
+ * The hidden comment that carries a student's questions as data, for the
+ * editor extensions and as the mark postIssue knows its own issues by:
+ *
+ *   <!-- gmc:questions {"version":1,"headSha":"…","questions":[…]} -->
+ *
+ * Each question is its entry in questions.json (buildQuestionsJson in
+ * src/delivery/instructor-repo.js) less the question text, the code, the
+ * answer and the distractors: its number, whether it is a broader question,
+ * and the file and lines of each snippet. The student can read this comment,
+ * so it must never carry an answer or a distractor.
+ *
+ * `version` is ISSUE_LAYOUT_VERSION, which covers the Markdown around the
+ * comment as well. `headSha` is the full SHA the report prints the start of.
+ *
+ * @param {object[]} questions - The numbered questions the report shows, less
+ *   any the answer-leak guard withheld.
+ */
+export function questionsComment({ headSha, questions }) {
+  const record = {
+    version: ISSUE_LAYOUT_VERSION,
+    headSha,
+    questions: questions.map((q) => ({
+      number: q.number,
+      broader: q.broader,
+      snippets: q.snippets.map(({ file, start, end }) => ({
+        file,
+        start_line: start,
+        end_line: end,
+      })),
+    })),
+  };
+  return `${QUESTIONS_COMMENT_OPEN}${commentJson(record)} -->`;
+}
+
 /**
  * Assembles the full Markdown assessment report.
  *
@@ -29,6 +82,12 @@ export const LOGO_IMG = `<img src="${LOGO_URL}" alt="" height="${LOGO_HEADING_HE
  *   - allChangedFiles  — unfiltered list of all files changed since the base
  *                        SHA; when provided it replaces the filtered `files`
  *                        list in the report metadata
+ *
+ * `issueQuestions` is given for the student's issue alone: the questions the
+ * report shows, as data, which go under the heading as a hidden comment (see
+ * questionsComment). It sits at the top so a report cut short for length
+ * keeps it, and after the heading because a reader written before the comment
+ * existed expects the heading first.
  */
 export function formatReport({
   questions,
@@ -49,6 +108,7 @@ export function formatReport({
   allChangedFiles,
   pdfUrl,
   submissionNote,
+  issueQuestions,
 }) {
   const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
   const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
@@ -101,9 +161,14 @@ export function formatReport({
       ]
     : [];
 
+  const dataComment = issueQuestions
+    ? [questionsComment({ headSha, questions: issueQuestions }), '']
+    : [];
+
   return [
     `## ${LOGO_IMG} GrillMyCode`,
     '',
+    ...dataComment,
     ...pdfBadge,
     `> **Generated:** ${date}`,
     studentNote,

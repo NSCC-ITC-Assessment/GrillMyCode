@@ -255,6 +255,8 @@ function expectedFor({ title, questions, report, view }) {
     report: {
       baseSha: BASE_SHA.slice(0, 7),
       headSha: HEAD_SHA.slice(0, 7),
+      // From the hidden data. A layout kept from before it has no such field.
+      headCommit: HEAD_SHA,
       // The report names a branch only when it is not the default one.
       branch: ['', 'main', 'master'].includes(report.branchName) ? null : report.branchName,
       tag: report.tagName ?? null,
@@ -305,6 +307,7 @@ async function buildCase({
     contextSummary: parsed.contextSummary,
     studentLogin: 'jsmith',
     sourceRepo: 'my-school/cs-principles-lab-3-jsmith',
+    issueQuestions: questions,
     ...report,
   }).replace(/^> \*\*Generated:\*\* .*$/m, `> **Generated:** ${GENERATED}`);
 

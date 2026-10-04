@@ -105,6 +105,10 @@ If you're happy with the questions but not the wait, try the **Speed** routing o
 
 GrillMyCode holds back any question it can't be sure doesn't give away its own answer, and the student's report says how many. It also drops questions that don't point at the student's own code: ones naming a file or lines that weren't sent to the AI, and ones showing only code the student didn't write in this submission. Your [instructor repository](reference/instructor-repository.md) copy has every question that wasn't dropped. The ones dropped for not pointing at the student's code are in `data/questions.json`, marked as dropped, and `data/raw-ai-output.md` has the model's full original reply. See [What code is assessed](reference/code-selection.md#4-after-the-ai-replies).
 
+### A repository has two issues called GrillMyCode Questions
+
+One of them wasn't written by GrillMyCode: someone opened it by hand with the same title and the `assessment` label, or edited a GrillMyCode issue until the report's opening lines were gone. GrillMyCode never overwrites or deletes an issue it didn't write, so it posts the questions in an issue of its own, and the run's log names the one it left alone. Close or rename the other issue. See [When the questions are regenerated](reference/assessment-output.md#when-the-questions-are-regenerated).
+
 ### A file I expected isn't assessed
 
 Check the `Exclude patterns applied` list in the run's log, and find the pattern that matches the file. Then add the file, or the pattern for all files of that type, to `exclude_pattern_overrides`. See [File filtering](reference/exclude-patterns.md#confirming-what-was-applied).

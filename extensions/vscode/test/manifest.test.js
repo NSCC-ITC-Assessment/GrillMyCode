@@ -27,3 +27,15 @@ describe('Restricted Mode', () => {
     expect(welcome.contents).toContain('command:workbench.trust.manage');
   });
 });
+
+describe('the update message', () => {
+  // The link opens this extension's own page, by an identifier that is
+  // written out in the manifest's text and so cannot follow a rename.
+  it('links to the extension by its own identifier', () => {
+    const welcome = manifest.contributes.viewsWelcome.find(
+      (entry) => entry.when === 'grillmycode.state == needsUpdate',
+    );
+    const args = encodeURIComponent(JSON.stringify([`${manifest.publisher}.${manifest.name}`]));
+    expect(welcome.contents).toContain(`(command:extension.open?${args})`);
+  });
+});

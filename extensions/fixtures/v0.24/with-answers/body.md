@@ -1,7 +1,5 @@
 ## <img src="https://grillmycode.org/img/grillmycode-logo.svg" alt="" height="28" align="absmiddle"> GrillMyCode
 
-<!-- gmc:questions {"version":1,"headSha":"9b8e7d6c5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c","questions":[{"number":1,"broader":false,"snippets":[{"file":"src/pricing/tax.js","start_line":5,"end_line":5}]},{"number":2,"broader":true,"snippets":[]}]} -->
-
 > **Generated:** 2026-01-15 14:30:00 UTC
 
 > **Student:** `jsmith`

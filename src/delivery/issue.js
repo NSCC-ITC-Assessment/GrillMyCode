@@ -3,11 +3,13 @@
  *
  * Updates any existing open assessment issue for the same branch — or, for a
  * run started by a submission tag, the same submission_tags pattern — with the
- * latest report. If none exists, creates a new one.
+ * latest report. If none exists, creates a new one. An issue counts as an
+ * assessment issue only if this action wrote its body (see isAssessmentBody).
  */
 
 import * as core from '@actions/core';
 import { GIT_SHA_SHORT_LENGTH, ISSUES_PER_PAGE } from '../constants.js';
+import { QUESTIONS_COMMENT_OPEN } from '../report.js';
 
 // Zero-width space — rendered invisibly but breaks GitHub's auto-linking.
 const ZWSP = '​';
@@ -51,6 +53,30 @@ export function neutraliseIssueAutoLinks(markdown) {
     .join('');
 }
 
+/**
+ * Whether an issue's body is one this action wrote, which is what makes the
+ * issue safe to overwrite or delete. The title and label alone do not: a
+ * person can open an issue with both.
+ *
+ * An issue carries the hidden `gmc:questions` comment (questionsComment in
+ * src/report.js). One posted before that comment existed is known by how every
+ * report has opened: the GrillMyCode heading, then a "Commits reviewed" line
+ * before the first rule. Those stay open in students' repositories, and must
+ * go on being updated rather than left beside a second issue.
+ */
+export function isAssessmentBody(body) {
+  if (typeof body !== 'string') return false;
+  const lines = body.split(/\r?\n/);
+  if (lines.some((line) => line.startsWith(QUESTIONS_COMMENT_OPEN))) return true;
+
+  const first = lines.findIndex((line) => line.trim() !== '');
+  if (first === -1 || !/^## .*GrillMyCode\s*$/.test(lines[first])) return false;
+  const rule = lines.findIndex((line, i) => i > first && /^---\s*$/.test(line));
+  return lines
+    .slice(first + 1, rule === -1 ? undefined : rule)
+    .some((line) => line.startsWith('> **Commits reviewed:**'));
+}
+
 export async function postIssue({
   octokit,
   ctx,
@@ -83,7 +109,19 @@ export async function postIssue({
 
   // Extras are deleted below, so only an exact title match counts. A prefix
   // match would, with an empty branch name, sweep up every branch's issue.
-  const predecessors = existing.data.filter((i) => i.title === title);
+  const titled = existing.data.filter((i) => i.title === title);
+
+  // The body is overwritten and extras are deleted, so the issue must also be
+  // one this action wrote. Someone's own issue with the same title and label
+  // is left as it is, and the questions go in an issue of their own.
+  const predecessors = titled.filter((i) => isAssessmentBody(i.body));
+  for (const other of titled.filter((i) => !predecessors.includes(i))) {
+    // Not a warning: nothing is wrong, and it would repeat on every run.
+    core.info(
+      `Issue #${other.number} has the title and label of the assessment issue but was not ` +
+        `written by GrillMyCode, so it was left as it is.`,
+    );
+  }
 
   // ── Update existing issue or create a new one ─────────────────────────────
   if (predecessors.length > 0) {

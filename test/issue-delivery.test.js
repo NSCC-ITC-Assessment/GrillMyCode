@@ -1,12 +1,23 @@
+import { readFileSync } from 'fs';
+import { join } from 'path';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as core from '@actions/core';
-import { postIssue } from '../src/delivery/issue.js';
+import { isAssessmentBody, postIssue } from '../src/delivery/issue.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), warning: vi.fn() }));
 
+/** Every fixture's issue body: `current` has the hidden comment, `v0.24` predates it. */
+const fixtureBody = (layout) =>
+  readFileSync(
+    join(import.meta.dirname, '..', 'extensions', 'fixtures', layout, 'default-branch', 'body.md'),
+    'utf-8',
+  );
+const BODY = fixtureBody('current');
+const BODY_BEFORE_COMMENT = fixtureBody('v0.24');
+
 /** An open assessment issue as returned by issues.listForRepo. */
-function issue(number, title) {
-  return { number, title, node_id: `I_${number}` };
+function issue(number, title, body = BODY) {
+  return { number, title, body, node_id: `I_${number}` };
 }
 
 /**
@@ -130,6 +141,75 @@ describe('postIssue predecessor matching', () => {
     ]);
     expect(await post(octokit, 'main')).toEqual({ number: 1, url: 'https://example.test/1' });
     expect(mutated(octokit, 'deleteIssue')).toEqual([]);
+  });
+});
+
+describe('postIssue and issues it did not write', () => {
+  beforeEach(() => vi.clearAllMocks());
+
+  const TITLE = 'GrillMyCode Questions (main)';
+  const SOMEONE_ELSES = 'My notes on the questions.\n\n---\n\nAsk about question 2.';
+
+  it("leaves a person's issue with the same title and label, and opens its own", async () => {
+    const octokit = fakeOctokit([issue(1, TITLE, SOMEONE_ELSES)]);
+    expect(await post(octokit, 'main')).toEqual({ number: 99, url: 'https://example.test/99' });
+    expect(mutated(octokit, 'updateIssue')).toEqual([]);
+    expect(mutated(octokit, 'deleteIssue')).toEqual([]);
+    expect(core.info).toHaveBeenCalledWith(expect.stringContaining('Issue #1 has the title'));
+  });
+
+  it("never deletes a person's issue as a duplicate", async () => {
+    const octokit = fakeOctokit([
+      issue(1, TITLE),
+      issue(2, TITLE, SOMEONE_ELSES),
+      issue(3, TITLE, null),
+      issue(4, TITLE),
+    ]);
+    expect(await post(octokit, 'main')).toEqual({ number: 1, url: 'https://example.test/1' });
+    expect(mutated(octokit, 'updateIssue')).toEqual(['I_1']);
+    expect(mutated(octokit, 'deleteIssue')).toEqual(['I_4']);
+  });
+
+  it('skips past it to update its own issue', async () => {
+    const octokit = fakeOctokit([issue(1, TITLE, SOMEONE_ELSES), issue(2, TITLE)]);
+    expect(await post(octokit, 'main')).toEqual({ number: 2, url: 'https://example.test/2' });
+    expect(mutated(octokit, 'deleteIssue')).toEqual([]);
+  });
+
+  // Issues posted by earlier releases stay open in students' repositories.
+  it('updates an issue posted before the hidden comment existed', async () => {
+    const octokit = fakeOctokit([issue(1, TITLE, BODY_BEFORE_COMMENT)]);
+    expect(await post(octokit, 'main')).toEqual({ number: 1, url: 'https://example.test/1' });
+    expect(octokit.rest.issues.create).not.toHaveBeenCalled();
+  });
+});
+
+describe('isAssessmentBody', () => {
+  it('knows a body by its hidden comment', () => {
+    expect(BODY).toContain('<!-- gmc:questions ');
+    expect(isAssessmentBody(BODY)).toBe(true);
+    expect(isAssessmentBody(BODY.replace(/\n/g, '\r\n'))).toBe(true);
+  });
+
+  it('knows a body posted before the comment existed by how it opens', () => {
+    expect(BODY_BEFORE_COMMENT).not.toContain('gmc:questions');
+    expect(isAssessmentBody(BODY_BEFORE_COMMENT)).toBe(true);
+    expect(isAssessmentBody(BODY_BEFORE_COMMENT.replace(/\n/g, '\r\n'))).toBe(true);
+  });
+
+  it('still knows a body cut short for length', () => {
+    expect(isAssessmentBody(BODY.slice(0, 600))).toBe(true);
+    expect(isAssessmentBody(BODY_BEFORE_COMMENT.slice(0, 600))).toBe(true);
+  });
+
+  it.each([
+    ['no body', null],
+    ['an empty body', ''],
+    ['an ordinary issue', '## Bug\n\nThe cart total is wrong.\n\n---\n\nSteps to reproduce…'],
+    ['the heading alone', '## GrillMyCode\n\n---\n\n> **Commits reviewed:** `a` → `b`'],
+    ['the comment mid-line', 'See `<!-- gmc:questions {} -->` in the report.'],
+  ])('does not take %s for one', (_name, body) => {
+    expect(isAssessmentBody(body)).toBe(false);
   });
 });
 
