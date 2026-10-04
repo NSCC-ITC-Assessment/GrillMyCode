@@ -13,6 +13,7 @@ import {
   resolveSnippets,
 } from '../src/postprocess.js';
 import { SNIPPET_MAX_LINES } from '../src/constants.js';
+import { spareQuestions } from '../src/prompt/prompt.js';
 
 /** The files the model was sent, as buildAssessedCodeContent describes them. */
 const APP = {
@@ -177,6 +178,34 @@ describe('arrangeQuestions', () => {
 
   it('reports no surplus when under the limit', () => {
     expect(arrangeQuestions([q('c1')], 3).surplus).toBe(0);
+  });
+});
+
+describe('spareQuestions', () => {
+  it.each([
+    [1, 1],
+    [4, 1],
+    [5, 1],
+    [6, 2],
+    [10, 2],
+    [11, 3],
+    [15, 3],
+    [20, 4],
+    [50, 10],
+  ])('asks for two spares per ten of %i questions, rounded up: %i', (n, spare) => {
+    expect(spareQuestions(n)).toBe(spare);
+  });
+
+  it('leaves the requested count once the spares are cut, broader ones first', () => {
+    const asked = 10 + spareQuestions(10);
+    const reply = Array.from({ length: asked }, (_, i) => ({
+      name: `q${i + 1}`,
+      broader: i === 2,
+    }));
+    const { questions, surplus } = arrangeQuestions(reply, 10);
+    expect(questions).toHaveLength(10);
+    expect(questions.map((x) => x.name)).not.toContain('q3');
+    expect(surplus).toBe(2);
   });
 });
 

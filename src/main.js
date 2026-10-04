@@ -57,6 +57,7 @@ import {
   buildResponseFormat,
   maxStarterQuestions,
   PROMPT_TEMPLATE_HASH,
+  spareQuestions,
 } from './prompt/prompt.js';
 import { callAI } from './ai.js';
 import { formatReport, formatRawOutput, formatPrompt } from './report.js';
@@ -1284,10 +1285,16 @@ async function run() {
       );
     }
 
+    // The model is asked for more questions than the report will hold, since
+    // some are dropped below. The starter-code cap above stays worked out from
+    // num_questions: it limits the questions the report keeps.
+    const spare = spareQuestions(inputs.numQuestions);
+    const questionsAsked = inputs.numQuestions + spare;
+
     const messages = buildPrompt({
       codeContent,
       files: assessedFiles,
-      numQuestions: inputs.numQuestions,
+      numQuestions: questionsAsked,
       questionEmphasis: inputs.questionEmphasis,
       instructorContext: inputs.instructorContext,
       assignmentContext,
@@ -1303,7 +1310,8 @@ async function run() {
     core.debug(`Prompt messages:\n${JSON.stringify(messages, null, 2)}`);
 
     core.info(
-      `Calling ${inputs.aiProvider} (model: ${inputs.aiModel}) to generate ${inputs.numQuestions} questions…`,
+      `Calling ${inputs.aiProvider} (model: ${inputs.aiModel}) to generate ${questionsAsked} questions: ` +
+        `${inputs.numQuestions} requested and ${spare} spare, in case some are dropped…`,
     );
 
     // Held unmodified so a verbatim copy can be filed alongside the instructor
@@ -1411,9 +1419,17 @@ async function run() {
       resolved.questions,
       inputs.numQuestions,
     );
-    if (surplus > 0) {
+    // Spares left over are the expected case, so cutting them is not a
+    // warning. A reply longer than the count asked for is: the model did not
+    // keep to the prompt.
+    if (reply.entries > questionsAsked) {
       core.warning(
-        `AI generated more than ${inputs.numQuestions} questions — truncating to the requested count.`,
+        `AI wrote ${reply.entries} questions, more than the ${questionsAsked} it was asked for.`,
+      );
+    }
+    if (surplus > 0) {
+      core.info(
+        `Cut ${surplus} question(s) that were not needed to reach the ${inputs.numQuestions} requested.`,
       );
     }
     // Numbered once, here, so every copy of the report numbers a question the
@@ -1689,6 +1705,7 @@ async function run() {
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
         request: {
           numQuestions: inputs.numQuestions,
+          questionsAsked,
           questionEmphasis: inputs.questionEmphasis,
           temperature: inputs.aiTemperature,
           reasoningEffort: inputs.aiReasoningEffort,

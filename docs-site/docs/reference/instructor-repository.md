@@ -90,7 +90,7 @@ Questions GrillMyCode [dropped](code-selection.md#4-after-the-ai-replies) becaus
 
 ## `raw-ai-output.md`
 
-In the `data/` subfolder. A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived: a JSON object, shown in a code block. Its snippets are file names and line numbers, not code. GrillMyCode has not yet checked it, copied in the code, dropped questions that don't point at the student's own code, cut questions beyond `num_questions`, or numbered and formatted the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)).
+In the `data/` subfolder. A diagnostic record, not something to read or import; **`questions.md` is the assessment**. It holds the model's reply exactly as it arrived: a JSON object, shown in a code block. Its snippets are file names and line numbers, not code. GrillMyCode has not yet checked it, copied in the code, dropped questions that don't point at the student's own code, cut questions beyond `num_questions`, or numbered and formatted the rest (see [What code is assessed](code-selection.md#4-after-the-ai-replies)). It usually holds more questions than `num_questions`, because the model is asked for spares; the header gives both counts.
 
 Open it when a student's `questions.md` looks wrong. Questions cut for being over the count, or dropped for missing question text or an answer, are only visible here; the ones dropped for not pointing at the student's code are also in [`questions.json`](#questionsjson). Include its contents in any bug report about generated questions.
 

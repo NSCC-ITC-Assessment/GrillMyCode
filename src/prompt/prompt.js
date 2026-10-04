@@ -17,6 +17,8 @@ import {
   RESEARCH_LOOKUP_QUESTION_SHARE,
   DEFAULT_STARTER_QUESTIONS_ONE_IN,
   EARLIER_STARTER_HEADING,
+  SPARE_QUESTIONS,
+  SPARE_QUESTIONS_PER,
 } from '../constants.js';
 import { buildOpeningCheck, buildQuestionWordRule, openingsFor } from './openings.js';
 import { listWith } from './text.js';
@@ -30,6 +32,18 @@ import { listWith } from './text.js';
 export function maxStarterQuestions(numQuestions, oneIn = DEFAULT_STARTER_QUESTIONS_ONE_IN) {
   if (numQuestions < 2) return 0;
   return Math.max(1, Math.floor(numQuestions / oneIn));
+}
+
+/**
+ * How many spare questions the model is asked for on top of `numQuestions`:
+ * SPARE_QUESTIONS for every SPARE_QUESTIONS_PER, rounded up, so even a single
+ * question has a spare. The prompt is built for the sum, as the count the
+ * model must write — it is never told that some are spares, which would
+ * invite it to write those with less care. arrangeQuestions cuts the set back
+ * to `numQuestions` once the unusable questions have been dropped.
+ */
+export function spareQuestions(numQuestions) {
+  return Math.ceil((numQuestions * SPARE_QUESTIONS) / SPARE_QUESTIONS_PER);
 }
 
 /**
@@ -282,6 +296,10 @@ function buildResearchReasoningStep(questionEmphasis) {
  * `markedFiles` names the assessed files that existed before the assessed range
  * and so carry a marker column separating the student's lines from the code
  * they started with (see buildAssessedCodeContent).
+ *
+ * `numQuestions` is the count the model is told to write, and every quota in
+ * the prompt is worked out from it. main.js passes num_questions plus its
+ * spares (see spareQuestions), not num_questions itself.
  *
  * `questionEmphasis` (question_emphasis) restricts every question to the
  * research or the tracing question types — see EMPHASES and buildEmphasisRules.
