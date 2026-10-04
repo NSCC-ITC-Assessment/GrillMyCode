@@ -36,7 +36,7 @@ A **GrillMyCode** heading with the logo, a **Download as PDF** button, then a he
 | **Commits reviewed** | Always: base → head, as short SHAs |
 | **Branch** | Only on a branch other than `main` or `master` |
 | **Submission tag** | On tag runs, with the tag the diff started from when `tag_diff_base` is `previous-tag` or `tag:<name>` |
-| **Code Files Assessed** | Always: the files that passed filtering |
+| **Code Files Assessed** | Always: the files that passed [filtering](code-selection.md#2-filtering-the-files) and were sent to the AI |
 | **Assignment Context** | When `assignment_context` matched any files |
 | **Codebase context** | When `starter_code` or `previous_work` sent any files: how many, and that answers may depend on them though they are not assessed |
 | **Starter code** | When `starter_code` is `ask` and any question is about starter code alone: how many. See [Asking about starter code](code-selection.md#asking-about-starter-code) |

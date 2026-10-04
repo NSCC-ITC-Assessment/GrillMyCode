@@ -147,6 +147,9 @@ function createRunState() {
     // Changed files the exclude patterns removed, each with the first pattern
     // that matched it: [{ filepath, pattern }].
     excludedFiles: [],
+    // Changed files the patterns let through that have no text to assess, each
+    // with why: [{ filepath, reason }] (see collectRawFiles).
+    skippedFiles: [],
     assignmentContextFiles: [],
     // Assessed files that existed before the range, sent with the student's
     // lines marked (see buildAssessedCodeContent).
@@ -468,13 +471,14 @@ function renderConfiguration(state) {
 
 /**
  * The excluded-files row: every changed file the exclude patterns removed,
- * grouped under the pattern that matched it, largest group first. A student
- * asking why a file was not assessed finds the answer and the pattern to
- * override in one place.
+ * grouped under the pattern that matched it, largest group first, then the
+ * files with no text to assess, grouped by why. A student asking why a file
+ * was not assessed finds the answer and the pattern to override in one place.
  */
 function renderExcludedFilesSetting(state) {
   const excluded = state.excludedFiles;
-  if (excluded.length === 0) return 'none';
+  const skipped = state.skippedFiles;
+  if (excluded.length === 0 && skipped.length === 0) return 'none';
 
   const byPattern = new Map();
   for (const { filepath, pattern } of excluded) {
@@ -487,10 +491,18 @@ function renderExcludedFilesSetting(state) {
       label: pattern ? cellCode(pattern) : 'no pattern recorded',
       files: [...files].sort(),
     }));
+  // No pattern removed these, and no override brings them back.
+  for (const [reason, label] of [
+    ['binary', 'binary files'],
+    ['deleted', 'deleted files'],
+  ]) {
+    const files = skipped.filter((s) => s.reason === reason).map((s) => s.filepath);
+    groups.push({ label, files: files.sort() });
+  }
 
   return (
-    `${fmtNum(excluded.length)} of ${fmtNum(state.allFiles.length)} changed files, ` +
-    `by the pattern that matched:` +
+    `${fmtNum(excluded.length + skipped.length)} of ${fmtNum(state.allFiles.length)} ` +
+    `changed files, by the pattern or rule that left them out:` +
     fileListCell(groups)
   );
 }
@@ -1047,7 +1059,6 @@ async function run() {
       `Exclude patterns applied (${excludePatterns.length}):\n${excludePatterns.map((p) => `  ${p}`).join('\n')}`,
     );
     const files = filterFiles(allFiles, excludePatterns, inputs.excludePatternOverrides);
-    state.files = files;
     state.excludePatterns = excludePatterns;
     state.excludePatternOverrides = inputs.excludePatternOverrides;
     state.excludedFiles = findExcludedFiles(allFiles, files, excludePatterns);
@@ -1082,20 +1093,22 @@ async function run() {
       });
       return;
     }
-    core.info(`Assessing ${files.length} file(s): ${files.join(', ')}`);
-    state.fileStats = getDiffStat(baseSha, headSha, files);
 
-    // ── Fetch diff content ──────────────────────────────────────────────────
-    const diff = getDiff(baseSha, headSha, files);
-    state.diffChars = diff.length;
-    core.info(`Total diff size: ${diff.length} characters`);
-
-    // ── Strip comments from changed files (unless keep_comments is set) ────
-    const rawFiles = collectRawFiles(files, headSha);
-    const rawContent = buildCodeContent(rawFiles);
-    state.rawChars = rawContent.length;
-    core.info(`Code size before comment stripping: ${rawContent.length} characters`);
-
+    // ── Read the changed files ──────────────────────────────────────────────
+    // A file deleted in the range, or a binary one such as an image, gets past
+    // the exclude patterns but has no text to assess. `files` stays what the
+    // patterns let through; `assessedFiles` is what the AI is sent, and is the
+    // list every report, log line and summary names as assessed.
+    const { rawFiles, skipped } = collectRawFiles(files, headSha);
+    const assessedFiles = rawFiles.map((f) => f.filepath);
+    state.files = assessedFiles;
+    state.skippedFiles = skipped;
+    if (skipped.length > 0) {
+      core.info(
+        `Left out ${skipped.length} file(s) with no text to assess:\n` +
+          skipped.map((s) => `  ${s.filepath}  (${s.reason})`).join('\n'),
+      );
+    }
     if (rawFiles.length === 0) {
       // Every changed file was deleted or binary. Snippets are read back out
       // of the files by line number, so there is no code to ask about.
@@ -1104,6 +1117,18 @@ async function run() {
           'so there is no code to ask questions about.',
       );
     }
+    core.info(`Assessing ${assessedFiles.length} file(s): ${assessedFiles.join(', ')}`);
+    state.fileStats = getDiffStat(baseSha, headSha, assessedFiles);
+
+    // ── Fetch diff content ──────────────────────────────────────────────────
+    const diff = getDiff(baseSha, headSha, assessedFiles);
+    state.diffChars = diff.length;
+    core.info(`Total diff size: ${diff.length} characters`);
+
+    // ── Strip comments from changed files (unless keep_comments is set) ────
+    const rawContent = buildCodeContent(rawFiles);
+    state.rawChars = rawContent.length;
+    core.info(`Code size before comment stripping: ${rawContent.length} characters`);
 
     let processedFiles;
     let commentsKept = [];
@@ -1261,7 +1286,7 @@ async function run() {
 
     const messages = buildPrompt({
       codeContent,
-      files,
+      files: assessedFiles,
       numQuestions: inputs.numQuestions,
       questionEmphasis: inputs.questionEmphasis,
       instructorContext: inputs.instructorContext,
@@ -1462,7 +1487,7 @@ async function run() {
 
     const baseReport = formatReport({
       questions,
-      files,
+      files: assessedFiles,
       baseSha,
       headSha,
       provider: inputs.aiProvider,
@@ -1514,7 +1539,7 @@ async function run() {
     // ── Format issue body (base report + PDF link + hidden questions data) ──
     const issueBody = formatReport({
       questions,
-      files,
+      files: assessedFiles,
       baseSha,
       headSha,
       provider: inputs.aiProvider,
@@ -1638,7 +1663,7 @@ async function run() {
 
       const instructorReport = formatReport({
         questions: instructorQuestions,
-        files,
+        files: assessedFiles,
         baseSha,
         headSha,
         provider: inputs.aiProvider,
