@@ -1,12 +1,11 @@
 # VS Code extension — plan
 
-> **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `c942da7`
+> **Recorded:** 2026-10-03 (`ff56b1d`), last brought up to date at `c851bd1`
 > **Status:** Phase 1 is built, in `extensions/`, and on the Marketplace as
 > GrillMyCode Companion. Phase 2 is under way: publishing works, the guides
 > are written, both install routes are checked, and the stable release 0.2.0
-> was published on 2026-10-03. Phase 4 is built: the
-> action's half went out in `v0.25.0` on 2026-10-04, and the extension's half
-> is version 0.2.1, which is in the repository and waits for its tag. Phases
+> was published on 2026-10-03. Phase 4 is released: the action's half in
+> `v0.25.0` and the extension's half in 0.2.1, both on 2026-10-04. Phases
 > 3, 5 and 6 are proposals, and so is everything under
 > [Further ideas](#further-ideas-to-consider).
 
@@ -24,19 +23,16 @@ disturbing the action's own pipeline.
 | 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                                  | Published                                                                             |
 | 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.2.0 is published; two hand checks, the token and the features are left |
 | 3     | Instructor view: the viva companion and the view switch                                                             | A decision on where marks are stored                     | Not started                                                                           |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Action half released in v0.25.0; 0.2.1 waits for its tag                              |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                               |
 | 5     | Workflow help                                                                                                       | A look at what the GitHub Actions extension already does | Not started                                                                           |
 | 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                           |
 
-Phases 2 to 5 do not depend on one another and can be taken in another order.
-The suggested order is 2, 4, 3, 5, 6:
+Phases 2, 3 and 5 do not depend on one another and can be taken in another
+order. Phase 4 is released, ahead of the rest of phase 2. The suggested order
+for what remains is 2, 3, 5, 6:
 
 - **Finish phase 2's class-ready half first.** Nothing else matters until a
   class can install it.
-- **Then phase 4.** It is small, the marker check fixes a real fault in the
-  action, and every report layout change before it is one more layout the
-  extension has to read from Markdown. It must come before an extension for a
-  second editor.
 - **Then phase 3**, the largest gain for instructors.
 
 Ideas that belong to no phase yet are under
@@ -444,8 +440,8 @@ has no tag. It is not marked as a pre-release.
 
 ### Versions
 
-The extension has its own version numbers. It is at `0.2.1` in the
-repository and `0.2.0` on the Marketplace, until `vscode-v0.2.1` is pushed.
+The extension has its own version numbers. It is at `0.2.1`, in the
+repository and on the Marketplace.
 The Marketplace accepts only `major.minor.patch`, so VS Code's convention marks the channel:
 
 - **Even minor** (`1.2.x`): stable. This is what students get.
@@ -643,7 +639,7 @@ and the second adds what makes it worth keeping open.
 Done:
 
 - **The Marketplace publisher**, `GrillMyCode`.
-- **The release workflow**, which has published 0.1.1, 0.1.2 and 0.2.0.
+- **The release workflow**, which has published 0.1.1, 0.1.2, 0.2.0 and 0.2.1.
 - **The name**, GrillMyCode Companion.
 - **The guides**, under [Documentation](#documentation-phase-2).
 - **The listing's screenshot and changelog.** `extensions/vscode/README.md`
@@ -780,12 +776,10 @@ What was not checked:
 Released:
 
 - **The action's half**, in `v0.25.0` on 2026-10-04.
+- **The extension's half**, in 0.2.1 on 2026-10-04, a stable release, so
+  every install updates to it.
 
-Left:
-
-- **The extension release.** The version is 0.2.1 and the changelog has its
-  entry. Pushing `vscode-v0.2.1` publishes it as a stable release, so every
-  install updates to it.
+Nothing is left to build. The two checks above stay open.
 
 ### Phase 5: workflow help
 
