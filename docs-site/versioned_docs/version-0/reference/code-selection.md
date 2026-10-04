@@ -89,6 +89,8 @@ The changed files between base and head are filtered in this order:
 2. Files matching an **exclude pattern** are dropped, unless
 3. they also match an **override** in `exclude_pattern_overrides`, which always wins.
 
+A file **deleted** between the base and the head has nothing left to read, so it is left out as well. Neither a binary nor a deleted file appears under **Code Files Assessed** in the report.
+
 The exclude patterns combine the always-excluded list, the patterns detected for the repository's stack, and `additional_exclude_patterns`. See [File filtering](exclude-patterns.md) for all of them.
 
 ## 3. Comment stripping and line marking

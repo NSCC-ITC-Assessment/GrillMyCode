@@ -5,6 +5,30 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.25.1 — 2026-10-04
+
+### What's Changed
+
+### Features
+
+- **vscode:** show the answer alone in the instructor view
+- **vscode:** add an instructor view with answers
+- **vscode:** add a first-run walkthrough
+
+### Bug Fixes
+
+- **report:** leave binary and deleted files out of the assessed list
+
+### Documentation
+
+- update release notes and walkthrough details in plan
+
+### Chores & Maintenance
+
+- **vscode:** set the version to 0.2.2
+- **deps:** bump packages
+- **vscode:** set the version to 0.2.1
+
 ## v0.25.0 — 2026-10-04
 
 ### What's Changed

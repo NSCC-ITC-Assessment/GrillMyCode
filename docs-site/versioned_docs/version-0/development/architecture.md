@@ -70,19 +70,20 @@ getChangedFiles() → filterFiles()
     │     writes a job summary naming the reason, then warns — or fails when
     │     fail_on_empty_assessment is enabled
     │
-getDiff()
-    │  Runs `git diff baseSha headSha -- <files>`
-    │  Result kept as a fallback only — not sent to the AI directly
-    │
 collectRawFiles()
     │  Fetches full file content at headSha via `git show`
-    │  (deleted files are silently skipped)
+    │  Deleted and binary files are returned separately, with the reason, and
+    │  are not assessed: the report, summary and prompt name only the files read
+    │  Fails the run if no changed file could be read as text (all deleted
+    │  or binary): snippets are read back out of the files by line number
+    │
+getDiff()
+    │  Runs `git diff baseSha headSha -- <assessed files>`
+    │  Result kept as a fallback only — not sent to the AI directly
     │
 stripCommentsFromFiles()
     │  Writes each file to /tmp, runs the rmcm binary on it
     │  Falls back silently to original content for unsupported types
-    │  Fails the run if no changed file could be read as text (all deleted
-    │  or binary): snippets are read back out of the files by line number
     │
 collectFilesAt(baseSha) → buildAssessedCodeContent()
     │  Reads each assessed file at baseSha, processed like the head copy
