@@ -14,17 +14,24 @@ import { questionToHtml } from '../shared/html.js';
 
 const STYLE = `
   body { padding: 0 16px 16px; color: var(--vscode-foreground); font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); line-height: 1.5; }
-  h2 { font-size: 1em; font-weight: 600; margin: 12px 0 4px; }
-  p { margin: 0 0 10px; }
+  h2, h3 { font-size: 1em; font-weight: 600; margin: 12px 0 4px; }
+  p, ul { margin: 0 0 10px; }
+  ul { padding-left: 20px; }
   .hint, .caption { color: var(--vscode-descriptionForeground); }
   .caption { margin: 12px 0 4px; }
   code { font-family: var(--vscode-editor-font-family); font-size: var(--vscode-editor-font-size); }
-  p code { background: var(--vscode-textCodeBlock-background); border-radius: 3px; padding: 1px 4px; }
+  p code, li code { background: var(--vscode-textCodeBlock-background); border-radius: 3px; padding: 1px 4px; }
   pre { background: var(--vscode-textCodeBlock-background); border-radius: 4px; margin: 0 0 10px; overflow-x: auto; padding: 8px 10px; }
   pre code { background: none; color: var(--vscode-editor-foreground); padding: 0; }
 `;
 
 export class QuestionView {
+  /**
+   * Turns the question into the page's body. The instructor view puts its own
+   * here, which adds the answer.
+   */
+  toHtml = questionToHtml;
+
   #view;
   #question;
 
@@ -53,7 +60,7 @@ export class QuestionView {
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style nonce="${nonce}">${STYLE}</style>
 </head>
-<body>${questionToHtml(this.#question)}</body>
+<body>${this.toHtml(this.#question)}</body>
 </html>`;
   }
 }

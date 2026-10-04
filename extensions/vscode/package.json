@@ -181,6 +181,18 @@
         "command": "grillmycode.openQuestion",
         "title": "Open Question",
         "category": "GrillMyCode"
+      },
+      {
+        "command": "grillmycode.showInstructorView",
+        "title": "Show Instructor View",
+        "category": "GrillMyCode",
+        "icon": "$(key)"
+      },
+      {
+        "command": "grillmycode.showStudentView",
+        "title": "Show Student View",
+        "category": "GrillMyCode",
+        "icon": "$(mortar-board)"
       }
     ],
     "menus": {
@@ -197,8 +209,18 @@
         },
         {
           "command": "grillmycode.openIssue",
-          "when": "view == grillmycode.questions && grillmycode.state == ready",
+          "when": "view == grillmycode.questions && grillmycode.state == ready && grillmycode.hasIssue",
           "group": "navigation@3"
+        },
+        {
+          "command": "grillmycode.showInstructorView",
+          "when": "view == grillmycode.questions && grillmycode.answerKey && grillmycode.view == student",
+          "group": "navigation@0"
+        },
+        {
+          "command": "grillmycode.showStudentView",
+          "when": "view == grillmycode.questions && grillmycode.answerKey && grillmycode.view == instructor",
+          "group": "navigation@0"
         }
       ],
       "commandPalette": [
@@ -208,11 +230,19 @@
         },
         {
           "command": "grillmycode.selectIssue",
-          "when": "grillmycode.state == ready"
+          "when": "grillmycode.state == ready && grillmycode.hasIssue"
         },
         {
           "command": "grillmycode.openIssue",
-          "when": "grillmycode.state == ready"
+          "when": "grillmycode.state == ready && grillmycode.hasIssue"
+        },
+        {
+          "command": "grillmycode.showInstructorView",
+          "when": "grillmycode.answerKey && grillmycode.view == student"
+        },
+        {
+          "command": "grillmycode.showStudentView",
+          "when": "grillmycode.answerKey && grillmycode.view == instructor"
         }
       ]
     }

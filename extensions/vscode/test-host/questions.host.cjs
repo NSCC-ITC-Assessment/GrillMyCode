@@ -1,6 +1,7 @@
 // Runs inside VS Code (pnpm test:host), against the throwaway clone that
-// .vscode-test.mjs makes. The questions come from the shared fixtures, handed
-// to the controller directly, so no test needs a GitHub sign-in.
+// .vscode-test.mjs makes. The questions and the answer key come from the
+// shared fixtures, handed to the controller directly, so no test needs a
+// GitHub sign-in.
 
 const assert = require('assert');
 const { readFileSync } = require('fs');
@@ -19,6 +20,20 @@ function fixtureIssue() {
     html_url: 'https://github.com/my-school/cs-principles-lab-3-jsmith/issues/1',
     updated_at: '2026-01-15T14:30:00Z',
     body: readFileSync(join(FIXTURE, 'body.md'), 'utf-8'),
+  };
+}
+
+/**
+ * The fixture's answer key, as an account that can read it gets it from
+ * findAnswerKey. `own` says the repository is that account's.
+ */
+function fixtureKey({ own }) {
+  const { questions } = JSON.parse(readFileSync(join(FIXTURE, 'questions.json'), 'utf-8'));
+  return {
+    questions,
+    own,
+    repo: 'cs-principles-lab-3-grillmycode-instructor',
+    path: 'jsmith/data/questions.json',
   };
 }
 
@@ -43,7 +58,15 @@ describe('GrillMyCode', () => {
 
   it('registers its commands', async () => {
     const commands = await vscode.commands.getCommands(true);
-    for (const name of ['refresh', 'signIn', 'selectIssue', 'openIssue', 'openQuestion']) {
+    for (const name of [
+      'refresh',
+      'signIn',
+      'selectIssue',
+      'openIssue',
+      'openQuestion',
+      'showInstructorView',
+      'showStudentView',
+    ]) {
       assert.ok(commands.includes(`grillmycode.${name}`), `grillmycode.${name}`);
     }
   });
@@ -131,5 +154,67 @@ describe('GrillMyCode', () => {
       },
     });
     assert.strictEqual(vscode.window.activeTextEditor.document.uri.toString(), before);
+  });
+
+  // The tests from here on run in order: the view chosen by hand is remembered
+  // for the repository, and the first three need none to have been chosen.
+  describe('the views', () => {
+    const show = (view) =>
+      vscode.commands.executeCommand(
+        view === 'instructor' ? 'grillmycode.showInstructorView' : 'grillmycode.showStudentView',
+      );
+
+    it('gives an account with no answer key the student view, and no other', async () => {
+      controller.showIssues([fixtureIssue()]);
+      assert.strictEqual(controller.view, 'student');
+      await show('instructor');
+      assert.strictEqual(controller.view, 'student');
+    });
+
+    it("opens the account's own repository in the student view", async () => {
+      controller.showIssues([fixtureIssue()], fixtureKey({ own: true }));
+      assert.strictEqual(controller.view, 'student');
+      assert.strictEqual(controller.state, 'ready');
+    });
+
+    it("opens someone else's repository in the instructor view", async () => {
+      controller.showIssues([fixtureIssue()], fixtureKey({ own: false }));
+      assert.strictEqual(controller.view, 'instructor');
+      assert.strictEqual(controller.state, 'ready');
+    });
+
+    it('shows the answer key in a repository that has no questions issue', async () => {
+      controller.showIssues([], fixtureKey({ own: false }));
+      assert.strictEqual(controller.view, 'instructor');
+      assert.strictEqual(controller.state, 'ready');
+    });
+
+    it('switches between the views, and remembers the choice', async () => {
+      controller.showIssues([fixtureIssue()], fixtureKey({ own: false }));
+      await show('student');
+      assert.strictEqual(controller.view, 'student');
+      assert.strictEqual(controller.state, 'ready');
+
+      controller.showIssues([fixtureIssue()], fixtureKey({ own: false }));
+      assert.strictEqual(controller.view, 'student');
+
+      await show('instructor');
+      assert.strictEqual(controller.view, 'instructor');
+    });
+
+    it('says the student view has no questions when there is no issue', async () => {
+      controller.showIssues([], fixtureKey({ own: false }));
+      await show('student');
+      assert.strictEqual(controller.state, 'noIssue');
+      await show('instructor');
+      assert.strictEqual(controller.state, 'ready');
+    });
+
+    // The instructor view was the last one chosen, and is still not shown.
+    it('goes back to the student view when the answer key is gone', async () => {
+      controller.showIssues([fixtureIssue()]);
+      assert.strictEqual(controller.view, 'student');
+      assert.strictEqual(controller.state, 'ready');
+    });
   });
 });

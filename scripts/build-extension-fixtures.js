@@ -5,9 +5,11 @@
 // would post — parseQuestionsReply, resolveSnippets, renderQuestions,
 // formatReport and postIssue — against a stand-in for GitHub, and files:
 //
-//   issue.json     the title and labels the issue was created with
-//   body.md        the issue's body, byte for byte
-//   expected.json  what an extension should read back from the two
+//   issue.json      the title and labels the issue was created with
+//   body.md         the issue's body, byte for byte
+//   expected.json   what an extension should read back from the two
+//   questions.json  the answer key the same run files in the instructor
+//                   repository (buildQuestionsJson), byte for byte
 //
 // expected.json is written from the questions that went in, not by reading
 // body.md, so an extension that reads body.md and gets expected.json has made
@@ -23,6 +25,7 @@
 import { mkdirSync, rmSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join, resolve } from 'path';
+import { buildQuestionsJson } from '../src/delivery/instructor-repo.js';
 import { postIssue } from '../src/delivery/issue.js';
 import {
   arrangeQuestions,
@@ -329,6 +332,7 @@ async function buildCase({
     [`${name}/expected.json`]: json(
       expectedFor({ title, questions, report: { ...report, files }, view }),
     ),
+    [`${name}/questions.json`]: buildQuestionsJson(questions),
   };
 }
 

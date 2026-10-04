@@ -16,7 +16,7 @@ It's optional. The [issue and PDF](what-students-see.md) work the same with or w
 - **The whole question**, shown under the list with the code as it was when the question was written.
 - **A warning when the code has changed** since the questions were written, because the highlighted lines may no longer be the right ones.
 
-The extension doesn't write questions and doesn't show answers.
+The extension doesn't write questions and doesn't show students the answers.
 
 ![VS Code with the GrillMyCode view open. The questions list is grouped by file, with question 1 selected. The editor shows cart.js with lines 1 to 9 highlighted, and the whole question is shown under the list with its code.](/img/screenshots/vscode-extension-questions.png)
 
@@ -58,6 +58,10 @@ Neither file is assessed. GrillMyCode leaves out editor and codespace settings, 
 
 A student's repository is a copy of the template at the moment they accepted, and these two files don't reach it afterwards. Students without them, and students in [empty-repository assignments](classroom50.md#empty-repository-assignments), can install the extension themselves in a minute. [Your questions in VS Code](vscode-extension-students.md) has the steps.
 
+## What instructors get
+
+If you keep a [private answer key](instructor-setup.md), open a student's repository and sign in: each question comes with its answer, beside the student's code. Students never see this. In your own test repository, a button switches between the students' view and yours.
+
 ## What to tell your students
 
 Adapt this for your assignment instructions:
@@ -68,7 +72,7 @@ Adapt this for your assignment instructions:
 
 The extension reads the questions through the student's GitHub account, so each student signs in to GitHub from VS Code once. The sign-in asks for access to the student's repositories. That is broader than the extension needs, but it's the only permission GitHub offers for reading a private repository this way.
 
-The extension uses it to read the questions issue and nothing else. It changes nothing on GitHub, and it collects no usage data.
+The extension uses it to read the questions issue, and to ask GitHub whether the account can see the answer key, which a student's can't. It changes nothing on GitHub, and it collects no usage data.
 
 ## Good to know
 
@@ -78,4 +82,4 @@ The extension uses it to read the questions issue and nothing else. It changes n
 
 ---
 
-**Go deeper:** [The VS Code extension](../reference/vscode-extension.md): how it finds the questions, which set it shows, and what the sign-in is used for
+**Go deeper:** [The VS Code extension](../reference/vscode-extension.md): how it finds the questions, which set it shows, the instructor view, and what the sign-in is used for

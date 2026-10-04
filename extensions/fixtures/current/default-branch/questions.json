@@ -1,0 +1,113 @@
+{
+  "questions": [
+    {
+      "number": 1,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/cart.js",
+          "start_line": 1,
+          "end_line": 9,
+          "language": "js",
+          "code": "export function addItem(cart, item) {\n  const existing = cart.items.find((entry) => entry.sku === item.sku);\n  if (existing) {\n    existing.quantity += item.quantity;\n  } else {\n    cart.items.push({ ...item });\n  }\n  return cart;\n}"
+        }
+      ],
+      "question": "What does `addItem` do to `cart.items` when the SKU is already in the cart?",
+      "answer": "It adds the new quantity to the existing entry and pushes nothing.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    },
+    {
+      "number": 2,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/cart.js",
+          "start_line": 16,
+          "end_line": 16,
+          "language": "js",
+          "code": "  return Math.round(total * 100) / 100;"
+        }
+      ],
+      "question": "Why is the total rounded with `Math.round(total * 100) / 100` before it is returned?",
+      "answer": "Floating-point addition can leave a long fraction, and this keeps two decimal places.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    },
+    {
+      "number": 3,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/pricing/tax.js",
+          "start_line": 3,
+          "end_line": 6,
+          "language": "js",
+          "code": "export function taxFor(amount, province) {\n  const rate = RATES[province] ?? 0;\n  return Number((amount * rate).toFixed(2));\n}"
+        },
+        {
+          "file": "src/cart.js",
+          "start_line": 11,
+          "end_line": 17,
+          "language": "js",
+          "code": "export function subtotal(cart) {\n  let total = 0;\n  for (const entry of cart.items) {\n    total += entry.price * entry.quantity;\n  }\n  return Math.round(total * 100) / 100;\n}"
+        }
+      ],
+      "question": "What does `taxFor` return for a province that is not in `RATES`, and how would `subtotal` be affected?",
+      "answer": "It returns 0, because the rate falls back to 0, and `subtotal` is unaffected.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    },
+    {
+      "number": 4,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/pricing/tax.js",
+          "start_line": 4,
+          "end_line": 4,
+          "language": "js",
+          "code": "  const rate = RATES[province] ?? 0;"
+        }
+      ],
+      "question": "Which line would change if issue #12 asked for a rate tagged @deprecated to be skipped?",
+      "answer": "The line that looks the rate up in `RATES`.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    },
+    {
+      "number": 5,
+      "dropped": false,
+      "broader": true,
+      "about_starter_code": false,
+      "snippets": [],
+      "question": "How would you test `removeItem` without depending on `addItem`?",
+      "answer": "Build the cart object by hand, call `removeItem`, and check `cart.items`.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    }
+  ]
+}

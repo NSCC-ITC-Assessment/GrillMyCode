@@ -40,7 +40,7 @@ The questions were written about your code as it was when you pushed. If you hav
 
 ## What the sign-in asks for
 
-The extension reads your questions through your GitHub account. GitHub offers one permission for reading a private repository this way, which is access to your repositories, so that is what the sign-in asks for. The extension uses it only to read your questions. It changes nothing on GitHub and sends nothing anywhere else.
+The extension reads your questions through your GitHub account. GitHub offers one permission for reading a private repository this way, which is access to your repositories, so that is what the sign-in asks for. The extension uses it to read your questions, and to check whether the account is an instructor's. It changes nothing on GitHub and sends nothing anywhere else.
 
 ## If your questions don't appear
 

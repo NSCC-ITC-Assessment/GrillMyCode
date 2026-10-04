@@ -1,9 +1,15 @@
 /**
  * Questions controller
  *
- * Ties the student side together: finds the open folder's repository, signs
- * in, loads the questions issue, and keeps the list, the selected question and
- * the moved-code warning in step with the folder.
+ * Ties the views together: finds the open folder's repository, signs in,
+ * loads the questions issue, and keeps the list, the selected question and the
+ * moved-code warning in step with the folder.
+ *
+ * It also looks for the repository's answer key (instructor/answer-key.js). An
+ * account that can read it gets the instructor view, which lists the key's
+ * questions with their answers, and a switch between the two views. An account
+ * that cannot gets the student view alone, built from the issue as before,
+ * with nothing to show that another view exists.
  *
  * What the Questions view shows when it has no questions is chosen by the
  * `grillmycode.state` context key (see viewsWelcome in package.json):
@@ -17,6 +23,10 @@
  *   needsUpdate   the questions are in a layout newer than this extension reads
  *   error         anything else; the output channel has the details
  *   ready         questions are showing
+ *
+ * Two more keys follow the answer key: `grillmycode.answerKey` is true while
+ * one is readable, and `grillmycode.view` is `student` or `instructor`.
+ * `grillmycode.hasIssue` is true while the questions showing have an issue.
  */
 
 import * as vscode from 'vscode';
@@ -25,6 +35,9 @@ import { GitHubError, listLabelledIssues } from '../shared/github.js';
 import { chooseIssue, describeGroup, findQuestionIssues } from '../shared/issues.js';
 import { describeDrift, openableSnippets, questionFiles } from '../shared/questions.js';
 import { parseReport } from '../shared/report.js';
+import { findAnswerKey, matchesReport } from '../instructor/answer-key.js';
+import { instructorQuestionToHtml } from '../instructor/html.js';
+import { questionToHtml } from '../shared/html.js';
 import { changedFiles, findGitHubRepository, getGitApi } from './git.js';
 import { Highlighter } from './highlighter.js';
 import { QuestionView } from './question-view.js';
@@ -36,6 +49,8 @@ const SETTLE_MS = 300;
 export class QuestionsController {
   /** The state shown, as listed above. Read by test-host/. */
   state = 'loading';
+  /** The view showing, `student` or `instructor`. Read by test-host/. */
+  view = 'student';
 
   #context;
   #log = vscode.window.createOutputChannel('GrillMyCode', { log: true });
@@ -58,8 +73,13 @@ export class QuestionsController {
   #branch;
   /** Every questions issue that reads as a report, each with its `report`. */
   #issues = [];
-  /** The one showing. */
+  /** The one showing, or behind the answer key that is. */
   #issue;
+  /**
+   * The answer key for those questions, as findAnswerKey returns it, when the
+   * signed-in account can read it.
+   */
+  #key;
   /** Counts loads, so a slow one that has been overtaken can tell and stop. */
   #load = 0;
   #settle;
@@ -77,6 +97,8 @@ export class QuestionsController {
       command('selectIssue', () => this.#selectIssue()),
       command('openIssue', () => this.#openIssue()),
       command('openQuestion', (node) => this.#openQuestion(node)),
+      command('showInstructorView', () => this.#switchView('instructor')),
+      command('showStudentView', () => this.#switchView('student')),
       // Covers moving through the list with the keyboard, which runs no command.
       this.#treeView.onDidChangeSelection(({ selection: [node] }) => {
         if (node?.question) this.#questionView.show(node.question);
@@ -104,6 +126,9 @@ export class QuestionsController {
     const load = ++this.#load;
     const overtaken = () => load !== this.#load;
     for (const listener of this.#waiting.splice(0)) listener.dispose();
+    this.#issues = [];
+    this.#key = undefined;
+    this.#setView('student');
     this.#setState('loading');
 
     if (!this.#api) {
@@ -157,16 +182,40 @@ export class QuestionsController {
       return this.#setState(status === 401 ? 'signedOut' : status === 404 ? 'noAccess' : 'error');
     }
     if (overtaken()) return;
-    this.showIssues(issues);
+    this.#readIssues(issues);
+
+    // The key is looked for before anything is shown, so an instructor's list
+    // does not open on the student's questions and then change.
+    const found = await findAnswerKey({
+      owner,
+      repo,
+      login: session.account.label,
+      group: this.#chooseIssue()?.group,
+      token: session.accessToken,
+      fetch: globalThis.fetch,
+    });
+    if (overtaken()) return;
+    // At debug level: for a student there is never one, and that is no fault.
+    if (found.reason) this.#log.debug(`No answer key for ${owner}/${repo}: ${found.reason}`);
+    this.#key = found.reason ? undefined : found;
+    this.#show();
   }
 
   /**
    * Shows the questions from a repository's issues, as the GitHub REST API
-   * lists them. Split from load() so test-host/ can supply issues without a
-   * GitHub sign-in.
+   * lists them, and from its answer key, as findAnswerKey returns it, for an
+   * account that can read one. Split from load() so test-host/ can supply both
+   * without a GitHub sign-in.
    */
-  showIssues(issues) {
+  showIssues(issues, key) {
     if (!this.#target) return this.#setState('noRepository');
+    this.#readIssues(issues);
+    this.#key = key;
+    this.#show();
+  }
+
+  /** Keeps the questions issues among a repository's issues, each with its report. */
+  #readIssues(issues) {
     this.#issues = findQuestionIssues(issues)
       .map((issue) => ({ ...issue, report: parseReport(issue.body) }))
       .filter((issue) => issue.report);
@@ -175,22 +224,57 @@ export class QuestionsController {
       'grillmycode.severalIssues',
       this.#issues.length > 1,
     );
-
     this.#branch = this.#target?.repository.state.HEAD?.name;
-    this.#issue = chooseIssue(this.#issues, {
+  }
+
+  #chooseIssue() {
+    return chooseIssue(this.#issues, {
       branch: this.#branch,
       preferredTitle: this.#context.workspaceState.get(this.#preferenceKey()),
     });
-    if (!this.#issue) return this.#setState('noIssue');
-    if (this.#issue.report.needsUpdate) return this.#setState('needsUpdate');
+  }
 
-    const { report, group } = this.#issue;
-    this.#tree.show(this.#target.repository.rootUri, report.questions);
-    this.#treeView.description = `${describeGroup(group)} · ${report.headSha}`;
+  /**
+   * Shows what was loaded, in the view this account gets. With no answer key
+   * that is the student view. With one it is the view last chosen by hand for
+   * this repository, or else the student view in the account's own repository
+   * and the instructor view in anyone else's.
+   */
+  #show() {
+    const issue = this.#chooseIssue();
+    const key = this.#key;
+    const chosen = this.#context.workspaceState.get(this.#viewKey());
+    this.#setView(key ? (chosen ?? (key.own ? 'student' : 'instructor')) : 'student');
+    const instructor = this.view === 'instructor';
+    // Only an account with both views is told which one it is looking at.
+    const viewName = key && (instructor ? 'Instructor view' : 'Student view');
+    this.#questionView.toHtml = instructor ? instructorQuestionToHtml : questionToHtml;
+
+    // The student view is the issue's questions and nothing else, read by the
+    // code every student's copy runs. The instructor view is the key's, and
+    // needs no issue.
+    if (!instructor && (!issue || issue.report.needsUpdate)) {
+      this.#setState(issue ? 'needsUpdate' : 'noIssue');
+      this.#treeView.description = viewName || undefined;
+      return;
+    }
+
+    this.#issue = issue;
+    const report = this.#report();
+    this.#tree.show(this.#target.repository.rootUri, instructor ? key.questions : report.questions);
+    this.#treeView.description = [viewName, issue && describeGroup(issue.group), report?.headSha]
+      .filter(Boolean)
+      .join(' · ');
     this.#questionView.show(undefined);
     this.#highlighter.clear();
+    vscode.commands.executeCommand('setContext', 'grillmycode.hasIssue', Boolean(issue));
     this.#setState('ready');
     this.#updateWarning();
+  }
+
+  /** The report of the issue showing, when this extension can read its layout. */
+  #report() {
+    return this.#issue?.report.needsUpdate ? undefined : this.#issue?.report;
   }
 
   dispose() {
@@ -200,11 +284,19 @@ export class QuestionsController {
     for (const disposable of this.#disposables) disposable.dispose();
   }
 
+  /** Says which view is showing, and whether there is another to switch to. */
+  #setView(view) {
+    this.view = view;
+    vscode.commands.executeCommand('setContext', 'grillmycode.view', view);
+    vscode.commands.executeCommand('setContext', 'grillmycode.answerKey', Boolean(this.#key));
+  }
+
   #setState(state) {
     this.state = state;
     vscode.commands.executeCommand('setContext', 'grillmycode.state', state);
     if (state !== 'ready') {
       this.#issue = undefined;
+      vscode.commands.executeCommand('setContext', 'grillmycode.hasIssue', false);
       this.#tree.clear();
       this.#treeView.description = undefined;
       // A message hides the welcome text that explains the state.
@@ -245,16 +337,26 @@ export class QuestionsController {
   /** Says, above the list, when the highlighted lines may not be the ones asked about. */
   #updateWarning() {
     if (this.state !== 'ready') return;
-    const { report } = this.#issue;
+    const report = this.#report();
     const { repository } = this.#target;
+    const instructor = this.view === 'instructor';
+    const questions = instructor ? this.#key.questions : report.questions;
+    // The answer key does not say which commit it was written about. The issue
+    // does, and stands in for it while the two hold the same questions.
+    const sameRun = report && (!instructor || matchesReport(report.questions, questions));
     const notes = [
-      describeDrift({
-        headSha: report.headCommit ?? report.headSha,
-        folderCommit: repository.state.HEAD?.commit,
-        changedFiles: changedFiles(repository),
-        files: questionFiles(report.questions),
-      }),
-      report.truncated
+      instructor && report && !sameRun
+        ? "The answer key and the questions issue showing are from different runs of GrillMyCode. These are the answer key's questions, and their lines may not be the ones in this folder."
+        : '',
+      sameRun
+        ? describeDrift({
+            headSha: report.headCommit ?? report.headSha,
+            folderCommit: repository.state.HEAD?.commit,
+            changedFiles: changedFiles(repository),
+            files: questionFiles(questions),
+          })
+        : '',
+      !instructor && report.truncated
         ? 'This report was too long to show in full, so its last questions are missing here. The PDF linked from the issue has them all.'
         : '',
     ];
@@ -271,6 +373,18 @@ export class QuestionsController {
   /** Workspace-state key for the questions chosen by hand for this repository. */
   #preferenceKey() {
     return `issueTitle:${this.#target?.owner}/${this.#target?.repo}`;
+  }
+
+  /** Workspace-state key for the view chosen by hand for this repository. */
+  #viewKey() {
+    return `view:${this.#target?.owner}/${this.#target?.repo}`;
+  }
+
+  /** Changes the view, for an account that has both, and remembers it for this repository. */
+  async #switchView(view) {
+    if (!this.#key) return;
+    await this.#context.workspaceState.update(this.#viewKey(), view);
+    this.#show();
   }
 
   async #selectIssue() {

@@ -49,3 +49,30 @@ export const ISSUES_PER_PAGE = 100;
  * lets an OAuth token read issues in a private repository.
  */
 export const GITHUB_SCOPES = ['repo'];
+
+/**
+ * What the action adds to an assignment's name to name its instructor
+ * repository, as INSTRUCTOR_REPO_SUFFIX in src/constants.js:
+ * `cs-principles-lab-3` gives `cs-principles-lab-3-grillmycode-instructor`.
+ */
+export const INSTRUCTOR_REPO_SUFFIX = '-grillmycode-instructor';
+
+/**
+ * Where the action files a student's answer key, inside that student's folder
+ * of the instructor repository (deliverToInstructorRepo in
+ * src/delivery/instructor-repo.js).
+ */
+export const ANSWER_KEY_FILE = 'data/questions.json';
+
+/**
+ * The folder a submission tag's answer key is filed under when the tag pattern
+ * has no character a folder name can keep, as SUBMISSION_TAG_GROUP_FALLBACK in
+ * src/constants.js.
+ */
+export const TAG_GROUP_FALLBACK = 'tag';
+
+/**
+ * Collaborators requested per page. One page is read: a Classroom 50
+ * repository has one direct collaborator per student.
+ */
+export const COLLABORATORS_PER_PAGE = 100;
