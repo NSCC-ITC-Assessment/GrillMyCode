@@ -67,7 +67,9 @@ function readQuestion(entry) {
 
 /**
  * The questions in an answer key's text, in the shape parseReport returns with
- * `answer` and `distractors` added. Undefined when the text is not an answer
+ * `answer` and `distractors` added. The view shows the answer alone, and the
+ * distractors are kept for whatever reads the key next. Undefined when the
+ * text is not an answer
  * key or holds no question.
  *
  * The file is the action's, but it is read as carefully as the issue: an entry

@@ -27,7 +27,7 @@ If the repository has questions for more than one branch or submission, use **Ch
 
 ## For instructors
 
-If your assignment keeps a private answer key, open a student's repository and sign in. GrillMyCode Companion shows each question with its answer and distractors, beside the student's code.
+If your assignment keeps a private answer key, open a student's repository and sign in. GrillMyCode Companion shows each question with its answer, beside the student's code.
 
 GitHub decides who sees this: the extension shows answers only to an account that can read the assignment's instructor repository. In your own test repository it starts in the view students get, and **Show Instructor View** switches. **Show Student View** switches back, which is worth doing before you share your screen.
 

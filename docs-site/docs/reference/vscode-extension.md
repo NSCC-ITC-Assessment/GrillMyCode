@@ -79,7 +79,7 @@ A range that runs past the end of the file is cut to fit. A file that no longer 
 
 ## The instructor view
 
-An account that can read an assignment's answer key gets a second view. It lists the answer key's questions, and **Selected Question** shows each one's answer and distractors under its code. Selecting a question still opens the student's file at the lines it asks about.
+An account that can read an assignment's answer key gets a second view. It lists the answer key's questions, and **Selected Question** shows each one's answer under its code. Selecting a question still opens the student's file at the lines it asks about.
 
 No setting turns the view on. GitHub decides who can read the [instructor repository](instructor-repository.md), and the extension offers the view only after it has read the answer key with the signed-in account. A student's account cannot read it, so a student's copy shows the questions and nothing else: no answers, no switch, and no mention of another view.
 
@@ -128,6 +128,7 @@ A repository with an answer key and no questions issue still gets the instructor
 ### What the instructor view leaves out
 
 - **Marks and notes.** Nothing is recorded in the editor.
+- **Distractors.** The answer key holds them for the [quiz](instructor-repository.md#quiz-files). The view shows the answer alone.
 - **Dropped questions.** The answer key lists the questions the action dropped for not pointing at the student's code. The view shows only the ones that were asked.
 - **Earlier submissions.** The view reads the current answer key, not the [history](instructor-repository.md#spotting-resubmissions) kept for a submission tag.
 - **A repository the action could not identify.** If the student is no longer a direct collaborator, the action filed no answer key and the extension finds none.

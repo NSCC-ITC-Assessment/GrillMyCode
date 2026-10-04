@@ -2,9 +2,9 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
-## Unreleased
+## 0.3.0 (pre-release), 2026-10-04
 
-- Adds an instructor view. An account that can read an assignment's private answer key sees each question's answer and distractors under it, beside the student's code. **Show Student View** and **Show Instructor View** switch between the two. Students see no change.
+- Adds an instructor view. An account that can read an assignment's private answer key sees each question's answer under it, beside the student's code. **Show Student View** and **Show Instructor View** switch between the two. Students see no change.
 
 ## 0.2.2, 2026-10-04
 

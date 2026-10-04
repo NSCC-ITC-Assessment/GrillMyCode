@@ -46,7 +46,7 @@ or changes scope.
   the extension reads both layouts and asks for an update when the version is
   newer than it knows.
 - **Phase 3**, built on 2026-10-04 and not released: an account that can
-  read the answer key sees each question's answer and distractors, and can
+  read the answer key sees each question's answer, and can
   switch to the student view. How the view is chosen is in the docs site's
   `reference/vscode-extension.md`.
 - **The first-run walkthrough**, released in 0.2.2 on 2026-10-04, outside the
@@ -175,8 +175,8 @@ check reports the Marketplace's answer on every run. When it opens: raise
 
 ### Phase 3: what is left
 
-- **A release.** The changelog entry is under "Unreleased" and the version is
-  still 0.2.2. See [Open decisions](#open-decisions) for the channel.
+- **A release.** The version is set to 0.3.0, a pre-release, and the tag is
+  not pushed. A stable release would follow as 0.4.0.
 - **Marks and notes per question.** Left out on 2026-10-04, until where they
   are stored is decided.
 - **A real viva.** The phase is done when an instructor runs one from the
@@ -193,6 +193,8 @@ Settled while building:
   key starts in the instructor view.
 - **Any account that can read the answer key gets the switch**, not only one
   in its own repository.
+- **Distractors are not shown.** They are written for the quiz, and a spoken
+  check has no use for them. The reader still keeps them.
 - **The answer key and the issue are compared by each question's number and
   lines.** When they differ the view says so, and makes no moved-code claim.
 
@@ -289,9 +291,6 @@ All build on phase 3, except the Workflow Wizard, which sits with phase 5.
 - **Whether students may be asked for the `repo` permission.** There is no
   narrower one for private repositories.
 - **A release freeze during term** for stable versions.
-- **Which channel the instructor view is released on:** a pre-release, which
-  only people who opt in receive, or a stable release, which changes every
-  student's install although students see no difference.
 - **Where viva marks and notes are stored:** locally, or committed to the
   instructor repository. And what a mark is: levels, a number, or a note
   alone.

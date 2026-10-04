@@ -254,22 +254,28 @@ describe('the instructor markup', () => {
     distractors: ['<script>alert(1)</script>', 'A `second` one'],
   };
 
-  it('adds the answer and the distractors under the question', () => {
+  it('adds the answer under the question', () => {
     const html = instructorQuestionToHtml(question);
     expect(html).toContain('<h2>Question 2</h2>');
     expect(html).toContain('<h3>Answer</h3>');
-    expect(html).toContain('<h3>Distractors</h3>');
-    expect(html).toContain('<li>A <code>second</code> one</li>');
   });
 
-  it('escapes both, which come from a file on GitHub', () => {
-    const html = answerToHtml(question);
-    expect(html).toContain('Use <code>&lt;b&gt;</code> &amp; stop.');
+  // Distractors are for the quiz. A spoken check has no use for them.
+  it('leaves the distractors out', () => {
+    const html = instructorQuestionToHtml(question);
+    expect(html).not.toContain('Distractors');
+    expect(html).not.toContain('second');
+    expect(html).not.toContain('alert');
+  });
+
+  it('escapes the answer, which comes from a file on GitHub', () => {
+    const html = answerToHtml({ ...question, answer: 'Use `<b>` & <script>stop</script>.' });
+    expect(html).toContain('Use <code>&lt;b&gt;</code> &amp; &lt;script&gt;stop');
     expect(html).not.toContain('<script>');
   });
 
-  it('leaves out a heading with nothing under it', () => {
-    expect(answerToHtml({ ...question, answer: '', distractors: [] })).toBe('');
+  it('leaves out the heading when there is no answer', () => {
+    expect(answerToHtml({ ...question, answer: '' })).toBe('');
     expect(answerToHtml({ answer: 'Yes.' })).toBe('<h3>Answer</h3><p class="answer">Yes.</p>');
   });
 
