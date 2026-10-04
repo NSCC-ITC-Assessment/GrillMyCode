@@ -7,7 +7,8 @@
 > was published on 2026-10-03. Phase 4 is released: the action's half in
 > `v0.25.0` and the extension's half in 0.2.1, both on 2026-10-04. Phases
 > 3, 5 and 6 are proposals, and so is everything under
-> [Further ideas](#further-ideas-to-consider).
+> [Further ideas](#further-ideas-to-consider), except the first-run
+> walkthrough, which is built and not yet released.
 
 GrillMyCode's output is about specific lines of code, and VS Code is where
 that code is open. This note records what an extension does with that, how it
@@ -681,7 +682,9 @@ Left, to be ready for a class:
   extension: accept the assignment with a test account, then follow the
   student guide in a codespace and in desktop VS Code, through the install,
   the sign-in, a push, the questions and the jump to code. No codespace has
-  yet been created from a template that lists the extension.
+  yet been created from a template that lists the extension. The same pass
+  shows whether the walkthrough opens after each kind of install, and whether
+  its steps are ticked as the student goes.
 
 Left, features:
 
@@ -833,13 +836,37 @@ and "medium" a week or two.
 | New-questions notice      | A badge on the Activity Bar icon and a notification when a newer set of questions arrives                           | Nothing                                                    | Small  |
 | Run status                | After a push, shows that the GrillMyCode workflow is running and loads the questions when it finishes               | Reading the repository's workflow runs                     | Small  |
 | Next and previous         | Commands and keyboard shortcuts to step through the questions, and a count in the status bar                        | Nothing                                                    | Small  |
-| First-run walkthrough     | VS Code's "Get Started" page, covering sign-in and where questions come from                                        | Nothing                                                    | Small  |
 | Open from the issue       | A link on each question in the issue that opens it in VS Code                                                       | An action change, and probably a redirect page on the site | Medium |
 | Other interface languages | The extension's own text in French and other languages. The questions stay in the language the action wrote them in | Translations                                               | Small  |
 
 "The code as it was" deserves a look before questions are pinned to lines in
 phase 2. It answers the moved-code problem directly, where the warning only
 reports it.
+
+**Built from this list: the first-run walkthrough**, on 2026-10-04, as a
+one-off outside the phases. It is not yet released.
+
+- **What it is:** a walkthrough in the manifest, **Get Started with
+  GrillMyCode Companion**, with four steps: open the assignment's folder,
+  sign in to GitHub, where the questions come from, and go from a question
+  to its code. Its text and image are in `extensions/vscode/media/walkthrough/`.
+- **No code in the extension changed.** Each step is ticked by the
+  `grillmycode.state` context key the Questions view already sets, or by the
+  open-question command. Opening the walkthrough starts the extension, which
+  VS Code arranges for every walkthrough, so the key is set without the view
+  being opened.
+- **Checked:** opened in desktop VS Code 1.140.0 on Linux, in the test clone
+  with nobody signed in. The first step was ticked and the rest were not. The
+  in-editor tests check that every command a button runs exists.
+- **Not checked:** whether VS Code opens it by itself after an install. VS
+  Code's code opens a walkthrough for an extension installed while the window
+  is open, which should cover the Extensions view and a recommendation. A
+  codespace installs from the dev container configuration, and that is not
+  known. The pass as a student under
+  [Phase 2](#phase-2-ready-for-a-class) is where to see both.
+- **The image is a crop of the listing's screenshot**, kept as a second file.
+  The full screenshot was unreadable at the width the walkthrough gives it.
+  A new listing screenshot means cropping it again.
 
 ### For instructors
 

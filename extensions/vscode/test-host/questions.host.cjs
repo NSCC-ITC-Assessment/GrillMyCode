@@ -82,6 +82,19 @@ describe('GrillMyCode', () => {
     assert.ok(commands.includes('extension.open'));
   });
 
+  // The walkthrough's buttons run commands by name, and some of those belong
+  // to VS Code: opening a folder, and showing the Questions view.
+  it("has every command the walkthrough's buttons run", async () => {
+    const { contributes } = require('../package.json');
+    const linked = contributes.walkthroughs
+      .flatMap(({ steps }) => steps)
+      .flatMap(({ description }) => [...description.matchAll(/\(command:([\w.]+)/g)])
+      .map(([, command]) => command);
+    assert.ok(linked.length > 0);
+    const commands = await vscode.commands.getCommands(false);
+    for (const command of linked) assert.ok(commands.includes(command), command);
+  });
+
   it('opens a question at the lines it asks about', async () => {
     // Question 2 of the fixture shows src/cart.js, line 16.
     await vscode.commands.executeCommand('grillmycode.openQuestion', {

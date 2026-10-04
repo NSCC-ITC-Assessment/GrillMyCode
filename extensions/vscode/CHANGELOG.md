@@ -2,6 +2,10 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## Unreleased
+
+- Adds a walkthrough, **Get Started with GrillMyCode Companion**, that VS Code opens when the extension is installed. It covers opening the assignment's folder, signing in to GitHub, where the questions come from, and going from a question to its code.
+
 ## 0.2.1, 2026-10-04
 
 - Reads the hidden data that newer versions of GrillMyCode put in the questions issue, so a question opens at the right file and lines whatever the file is called. Issues posted before that are read as they were.

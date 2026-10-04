@@ -21,6 +21,8 @@ GrillMyCode is a GitHub Action your instructor adds to an assignment. Each time 
 
 Your questions appear once you have pushed and the GrillMyCode workflow has finished. Use **Refresh Questions** after a later push.
 
+VS Code opens a walkthrough of these steps when the extension is installed. To see it again, run **Welcome: Open Walkthrough...** from the Command Palette and choose **Get Started with GrillMyCode Companion**.
+
 If the repository has questions for more than one branch or submission, use **Choose Which Questions to Show**.
 
 ## What it needs
