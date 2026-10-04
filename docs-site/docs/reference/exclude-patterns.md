@@ -249,11 +249,13 @@ Exclude patterns applied (94):
 Excluded 2 file(s):
   package-lock.json  (**/package-lock.json)
   README.md  (**/*.md)
+Left out 1 file(s) with no text to assess:
+  public/logo.png  (binary)
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 ```
 
 There is one `Scanned …` line per manifest read — `package.json`, `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — named by its path. `Using gitignore templates:` lists the templates applied at the repository root (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`), and each `Using gitignore templates in <folder>/:` line lists those of a [nested project folder](#monorepos-and-nested-projects).
 
-If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern.
+If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern. The `Left out N file(s)` list names the files no pattern matched that are binary or were deleted; see [Filtering the files](code-selection.md#2-filtering-the-files).
 
-The run summary shows the same list in its **Configuration used by this run** table, under **Excluded files**: one collapsed group per pattern, largest first. Each list shows at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. The **Codebase context** row lists the files sent as context the same way.
+The run summary shows the same lists in its **Configuration used by this run** table, under **Excluded files**: one collapsed group per pattern, largest first, then one for binary files and one for deleted files. Each list shows at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. The **Codebase context** row lists the files sent as context the same way.

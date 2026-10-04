@@ -8,6 +8,7 @@ import { diffLines, listChangedPaths, listTreeFiles, readFileAt } from '../src/g
 import {
   buildAssessedCodeContent,
   collectFilesAt,
+  collectRawFiles,
   findCodebaseContextFiles,
   folderDistance,
   keepsLinePositions,
@@ -595,6 +596,20 @@ describe('reading codebase files from git', () => {
   it('skips binary and missing files when collecting', () => {
     const found = collectFilesAt(['logo.bin', 'src/board.py', 'src/missing.py'], first);
     expect(found).toEqual([{ filepath: 'src/board.py', content: 'BOARD = []\n' }]);
+  });
+
+  // The report names only the files in rawFiles as assessed, so an image that
+  // no exclude pattern covers must come back as skipped, not among them.
+  it('separates the files with no text to assess, and says why', () => {
+    const { rawFiles, skipped } = collectRawFiles(
+      ['logo.bin', 'src/board.py', 'src/missing.py'],
+      first,
+    );
+    expect(rawFiles).toEqual([{ filepath: 'src/board.py', content: 'BOARD = []\n' }]);
+    expect(skipped).toEqual([
+      { filepath: 'logo.bin', reason: 'binary' },
+      { filepath: 'src/missing.py', reason: 'deleted' },
+    ]);
   });
 });
 
