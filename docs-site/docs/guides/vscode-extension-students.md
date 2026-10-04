@@ -17,6 +17,8 @@ You don't have to use it. The same questions are always in your repository's **I
 
 The first time you install an extension from a publisher, VS Code asks whether you trust that publisher. Select **Trust Publisher & Install**.
 
+After the install, VS Code may open a page called **Get Started with GrillMyCode Companion**. It walks through the same steps as this page, and you can close it at any time.
+
 ## See your questions
 
 1. Open your assignment's folder in VS Code. It has to be the repository you cloned from GitHub.

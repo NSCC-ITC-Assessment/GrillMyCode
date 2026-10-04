@@ -21,6 +21,21 @@ GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketpla
 
 Both install the latest stable version. A pre-release is installed only when the reader asks VS Code for one.
 
+## The walkthrough
+
+The extension adds a walkthrough, **Get Started with GrillMyCode Companion**, to VS Code's Welcome page. VS Code opens it when the extension is installed in an open window, and **Welcome: Open Walkthrough...** in the Command Palette opens it again. Opening it starts the extension, which looks for the repository but does not ask anyone to sign in.
+
+Each step is ticked by what the extension finds, not by its button being selected:
+
+| Step | Ticked when |
+| ---- | ----------- |
+| **Open your assignment's folder** | The open folder is a clone with a GitHub.com remote |
+| **Sign in to GitHub** | GitHub has accepted the sign-in and found the repository |
+| **Get your questions** | A set of questions is showing |
+| **Go from a question to its code** | A question has been opened from the list |
+
+A step that is ticked stays ticked, in every folder, until the reader unticks it.
+
 ## Which repository it reads
 
 The open folder must be a clone with a GitHub.com remote. The `origin` remote is used when it points at GitHub, otherwise the first remote that does. In a window with several folders, the extension shows the questions for the first folder that qualifies.

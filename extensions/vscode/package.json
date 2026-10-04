@@ -2,7 +2,7 @@
   "name": "grillmycode",
   "displayName": "GrillMyCode Companion",
   "description": "The companion to the GrillMyCode GitHub Action. Shows the questions it wrote about your code, beside the code they ask about.",
-  "version": "0.2.1",
+  "version": "0.2.2",
   "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
@@ -97,6 +97,60 @@
         "view": "grillmycode.questions",
         "contents": "The questions could not be loaded. The GrillMyCode output channel has the details.\n[Try Again](command:grillmycode.refresh)",
         "when": "grillmycode.state == error"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "gettingStarted",
+        "title": "Get Started with GrillMyCode Companion",
+        "description": "Your GrillMyCode questions, beside the code they ask about.",
+        "steps": [
+          {
+            "id": "openFolder",
+            "title": "Open your assignment's folder",
+            "description": "Open the folder you cloned from GitHub for this assignment. GrillMyCode Companion finds your questions from it.\n[Open Folder](command:vscode.openFolder)",
+            "media": {
+              "markdown": "media/walkthrough/open-folder.md"
+            },
+            "completionEvents": [
+              "onContext:grillmycode.state == signedOut || grillmycode.state == noAccess || grillmycode.state == noIssue || grillmycode.state == needsUpdate || grillmycode.state == error || grillmycode.state == ready"
+            ]
+          },
+          {
+            "id": "signIn",
+            "title": "Sign in to GitHub",
+            "description": "With the folder open, sign in so GrillMyCode Companion can read the questions in your repository.\n[Sign in to GitHub](command:grillmycode.signIn)",
+            "media": {
+              "markdown": "media/walkthrough/sign-in.md"
+            },
+            "completionEvents": [
+              "onContext:grillmycode.state == noIssue || grillmycode.state == needsUpdate || grillmycode.state == ready"
+            ]
+          },
+          {
+            "id": "questionsSource",
+            "title": "Get your questions",
+            "description": "GrillMyCode writes your questions when it runs on your repository, which is usually when you push or tag your work. They take a few minutes to arrive, and this step is ticked once they are showing.\n[Show the GrillMyCode View](command:grillmycode.questions.focus)\nWaited a few minutes? [Refresh Questions](command:grillmycode.refresh)",
+            "media": {
+              "markdown": "media/walkthrough/questions-source.md"
+            },
+            "completionEvents": [
+              "onContext:grillmycode.state == ready"
+            ]
+          },
+          {
+            "id": "openQuestion",
+            "title": "Go from a question to its code",
+            "description": "Select a question in the list to open its file, with the lines it asks about highlighted. The whole question is shown under the list.\n[Show the GrillMyCode View](command:grillmycode.questions.focus)",
+            "media": {
+              "image": "media/walkthrough/questions.png",
+              "altText": "The Questions list, grouped by file, with question 1 selected. Beside it, the editor shows cart.js with lines 1 to 9 highlighted."
+            },
+            "completionEvents": [
+              "onCommand:grillmycode.openQuestion"
+            ]
+          }
+        ]
       }
     ],
     "commands": [
