@@ -18,4 +18,6 @@ overrides:
   joi: '>=17.13.4 <18'
   websocket-driver: '>=0.7.5 <1'
   launch-editor: '>=2.14.1 <3'
-  brace-expansion: '>=1.1.16 <2'
+  # Only the 1.x line Docusaurus's minimatch 3 asks for. Unscoped, this also
+  # forced the Workflow Wizard's minimatch 10 onto 1.x, which it cannot load.
+  'brace-expansion@1': '>=1.1.16 <2'

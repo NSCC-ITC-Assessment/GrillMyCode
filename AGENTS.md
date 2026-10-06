@@ -191,11 +191,19 @@ Numeric limits, default values, threshold values, and external API version strin
 
 ### Exclude pattern templates
 
-`src/constants.js` exports `FALLBACK_EXCLUDE_PATTERNS` — a broad list used only when the GitHub Languages API is unreachable at runtime. Prefer adding coverage to `scripts/fetch-gitignore-templates.js` (language/template mappings) or `src/stack-detection.js` (detection logic) over editing the fallback list directly.
+`src/constants.js` exports `FALLBACK_EXCLUDE_PATTERNS` — a broad list used only when the GitHub Languages API is unreachable at runtime. Prefer adding coverage to `scripts/fetch-gitignore-templates.js` (language/template mappings) or `src/file-selection.js` (detection maps and logic) over editing the fallback list directly.
 
 The bundled template data lives in `src/data/gitignore-templates.json` (generated — do not edit by hand). Run `node scripts/fetch-gitignore-templates.js` to refresh it.
 
-The Workflow Wizard lists every pattern the action can apply on its own, from `docs-site/docs/_workflow-wizard/excludeLists.json` (also generated — do not edit by hand). After changing the template data, the lists in `src/constants.js` or the detection maps in `src/stack-detection.js`, run `node scripts/build-wizard-exclude-lists.js`; `test/wizard-exclude-lists.test.js` fails until you do. The weekly template refresh workflow runs both scripts.
+The Workflow Wizard lists every pattern the action can apply on its own, from `docs-site/docs/_workflow-wizard/excludeLists.json` (also generated — do not edit by hand). After changing the template data, the lists in `src/constants.js` or the detection maps in `src/file-selection.js`, run `node scripts/build-wizard-exclude-lists.js`; `test/wizard-exclude-lists.test.js` fails until you do. The weekly template refresh workflow runs both scripts.
+
+### File selection rules
+
+`src/file-selection.js` holds the rules that decide which files are assessed: splitting and reading pattern lists, matching files against excludes and overrides, and working out a repository's stack. It is shared with the Workflow Wizard, so:
+
+- **Keep it pure.** It may import only `minimatch` and `./constants.js` — no `git`, `fs`, network or `@actions/core`. Reading and logging belong in `src/stack-detection.js` and `src/main.js`.
+- **The Wizard's copy is generated.** `docs-site/docs/_workflow-wizard/fileSelection.js` is `src/file-selection.js` with its constants written in (do not edit by hand). After changing `src/file-selection.js`, or a constant it imports, run `node scripts/build-wizard-file-selection.js`; `test/wizard-file-selection.test.js` fails until you do.
+- **`minimatch` must be the same range in `package.json` and `docs-site/package.json`**, so a pattern matches the same way in both. Raise them together; the same test checks this.
 
 ## No Shell Interpolation
 

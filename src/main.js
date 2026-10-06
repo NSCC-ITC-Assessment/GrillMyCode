@@ -23,7 +23,6 @@ import {
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
   ISSUE_BODY_LIMIT,
-  WORKFLOWS_EXCLUDE_PATTERN,
 } from './constants.js';
 import { readInputs } from './inputs.js';
 import {
@@ -36,9 +35,8 @@ import {
 } from './context.js';
 import { resolveSubmissionIdentity } from './submission-identity.js';
 import { getChangedFiles, getDiff, getDiffStat, getFirstCommit } from './git.js';
+import { buildFileRules } from './file-selection.js';
 import {
-  createFileFilter,
-  instructorPatterns,
   collectFilesAt,
   collectRawFiles,
   stripCommentsFromFiles,
@@ -49,7 +47,7 @@ import {
   readAssignmentContextFiles,
   selectCodebaseContext,
 } from './files.js';
-import { ALWAYS_EXCLUDE, detectExcludePatterns } from './stack-detection.js';
+import { detectExcludePatterns } from './stack-detection.js';
 import {
   buildPrompt,
   buildResponseFormat,
@@ -1034,16 +1032,11 @@ async function run() {
       ctx.repo.repo,
       headSha,
     );
-    const instructorExcludes = inputs.additionalExcludePatterns.flatMap(instructorPatterns);
-    const excludePatterns = [
-      ...new Set([...detectedPatterns, ...instructorExcludes, WORKFLOWS_EXCLUDE_PATTERN]),
-    ];
-    // Matched ignoring case; the detected templates are matched as written.
-    const caseInsensitivePatterns = [
-      ...ALWAYS_EXCLUDE,
-      ...instructorExcludes,
-      WORKFLOWS_EXCLUDE_PATTERN,
-    ];
+    const { excludePatterns, caseInsensitivePatterns, verdictOn } = buildFileRules({
+      detectedPatterns,
+      additionalExcludePatterns: inputs.additionalExcludePatterns,
+      excludePatternOverrides: inputs.excludePatternOverrides,
+    });
     if (inputs.additionalExcludePatterns.length > 0) {
       core.info(
         `Additional exclude patterns (from input): ${inputs.additionalExcludePatterns.join(', ')}`,
@@ -1057,11 +1050,6 @@ async function run() {
     core.info(
       `Exclude patterns applied (${excludePatterns.length}):\n${excludePatterns.map((p) => `  ${p}`).join('\n')}`,
     );
-    const verdictOn = createFileFilter({
-      excludePatterns,
-      overridePatterns: inputs.excludePatternOverrides,
-      caseInsensitivePatterns,
-    });
     const verdicts = allFiles.map((filepath) => ({ filepath, ...verdictOn(filepath) }));
     const files = verdicts.filter((v) => v.assessed).map((v) => v.filepath);
     state.excludePatterns = excludePatterns;

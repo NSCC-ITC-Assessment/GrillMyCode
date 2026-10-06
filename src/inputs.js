@@ -34,7 +34,7 @@ import {
   DEFAULT_STARTER_QUESTIONS_ONE_IN,
   MIN_STARTER_QUESTIONS_ONE_IN,
 } from './constants.js';
-import { splitPatternList } from './files.js';
+import { splitPatternList } from './file-selection.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
 /**

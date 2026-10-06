@@ -132,7 +132,7 @@ export const WORKFLOWS_EXCLUDE_PATTERN = '.github/workflows/**';
  * the assessment along with it. A file matching one of these patterns is
  * re-included only by an override the same pattern also matches when read as
  * a path — `.env`, `frontend/.env`, `*.lock`, `vendor/**` — and stays
- * excluded otherwise (see createFileFilter in src/files.js).
+ * excluded otherwise (see createFileFilter in src/file-selection.js).
  *
  * This list does not exclude anything: the always-excluded list covers the
  * first two groups, and the detected templates or the fallback list cover the
@@ -173,7 +173,7 @@ export const PROTECTED_EXCLUDE_PATTERNS = PROTECTED_EXCLUDE_GROUPS.flatMap((g) =
  * Fallback glob patterns used when automatic stack detection fails or returns
  * no results. Covers the most common languages and build artefacts so that
  * assessments still work if the GitHub API is unreachable. The always-excluded
- * patterns in src/stack-detection.js are applied alongside it.
+ * patterns in src/file-selection.js are applied alongside it.
  */
 export const FALLBACK_EXCLUDE_PATTERNS = [
   // Every directory pattern carries an explicit `**/` prefix so it matches at
@@ -268,7 +268,7 @@ export const FALLBACK_EXCLUDE_PATTERNS = [
 
 /**
  * Maximum number of project folders stack detection scans (see
- * src/stack-detection.js), the repository root included. Shallower folders
+ * src/file-selection.js), the repository root included. Shallower folders
  * are kept first; beyond the cap a warning is logged and the deeper folders
  * get only the repository-wide patterns. Bounds the manifests read and the
  * size of the exclude list in a repository with many small projects.

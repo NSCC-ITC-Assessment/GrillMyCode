@@ -2,8 +2,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import * as core from '@actions/core';
 import { listTreeFiles, readFileAt } from '../src/git.js';
 import { MAX_PROJECT_FOLDERS } from '../src/constants.js';
-import { filterFiles } from '../src/files.js';
-import { detectExcludePatterns, findProjectFolders, underFolder } from '../src/stack-detection.js';
+import { filterFiles, findProjectFolders, underFolder } from '../src/file-selection.js';
+import { detectExcludePatterns } from '../src/stack-detection.js';
 
 vi.mock('@actions/core', () => ({ info: vi.fn(), warning: vi.fn(), debug: vi.fn() }));
 vi.mock('../src/git.js', () => ({ listTreeFiles: vi.fn(), readFileAt: vi.fn() }));
@@ -31,6 +31,15 @@ const manifest = {
 };
 
 const laravelComposer = JSON.stringify({ require: { 'laravel/framework': '^12.0' } });
+
+/** A tree with more project folders than are scanned: the root, top/ and 120 labs. */
+function manyProjects() {
+  const paths = Array.from({ length: MAX_PROJECT_FOLDERS + 20 }, (_, i) => {
+    return `labs/lab${String(i).padStart(3, '0')}/package.json`;
+  });
+  paths.push('top/package.json');
+  return paths;
+}
 
 beforeEach(() => vi.clearAllMocks());
 afterEach(() => vi.unstubAllGlobals());
@@ -209,36 +218,53 @@ describe('detectExcludePatterns project folders', () => {
 
 describe('findProjectFolders', () => {
   it('records the markers found directly in each folder, root first', () => {
-    const folders = findProjectFolders([
+    const { folders, found } = findProjectFolders([
       'b/package.json',
       'a/sub/pom.xml',
       'a/package.json',
       'App.xcodeproj/project.pbxproj',
       'src/main.c',
     ]);
+    expect(found).toBe(4);
     expect([...folders.keys()]).toEqual(['', 'a', 'b', 'a/sub']);
     expect(folders.get('')).toEqual(new Set(['App.xcodeproj']));
     expect(folders.get('a/sub')).toEqual(new Set(['pom.xml']));
   });
 
   it('records a marker folder such as ProjectSettings in its parent', () => {
-    const folders = findProjectFolders(['game/ProjectSettings/ProjectVersion.txt']);
+    const { folders } = findProjectFolders(['game/ProjectSettings/ProjectVersion.txt']);
     expect(folders.get('game')).toEqual(new Set(['ProjectSettings']));
   });
 
   it('ignores names that only look like map keys', () => {
-    expect([...findProjectFolders(['x/constructor', 'y/toString']).keys()]).toEqual(['']);
+    expect([...findProjectFolders(['x/constructor', 'y/toString']).folders.keys()]).toEqual(['']);
   });
 
-  it(`keeps the ${MAX_PROJECT_FOLDERS} shallowest folders and warns`, () => {
-    const paths = Array.from({ length: MAX_PROJECT_FOLDERS + 20 }, (_, i) => {
-      return `labs/lab${String(i).padStart(3, '0')}/package.json`;
-    });
-    paths.push('top/package.json');
-    const folders = findProjectFolders(paths);
+  it(`keeps the ${MAX_PROJECT_FOLDERS} shallowest folders and counts them all`, () => {
+    const { folders, found } = findProjectFolders(manyProjects());
     expect(folders.size).toBe(MAX_PROJECT_FOLDERS);
+    expect(found).toBe(MAX_PROJECT_FOLDERS + 22);
     expect([...folders.keys()].slice(0, 2)).toEqual(['', 'top']);
-    expect(core.warning).toHaveBeenCalledWith(expect.stringContaining('project folders'));
+  });
+});
+
+describe('detectExcludePatterns project folder cap', () => {
+  it('warns when a repository holds more project folders than it scans', async () => {
+    stubLanguages({});
+    stubTree(Object.fromEntries(manyProjects().map((path) => [path, '{}'])));
+    await detect();
+    expect(core.warning).toHaveBeenCalledWith(
+      `Found ${MAX_PROJECT_FOLDERS + 22} project folders; scanning the ${MAX_PROJECT_FOLDERS} ` +
+        `shallowest. Deeper folders get only the patterns that apply at any depth — add any ` +
+        `build output they commit with additional_exclude_patterns.`,
+    );
+  });
+
+  it('does not warn below the cap', async () => {
+    stubLanguages({});
+    stubTree({ 'a/package.json': '{}', 'b/package.json': '{}' });
+    await detect();
+    expect(core.warning).not.toHaveBeenCalled();
   });
 });
 
