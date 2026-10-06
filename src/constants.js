@@ -126,6 +126,50 @@ export const NON_CODE_ASSET_EXCLUDE_PATTERNS = NON_CODE_ASSET_EXCLUDE_GROUPS.fla
 export const WORKFLOWS_EXCLUDE_PATTERN = '.github/workflows/**';
 
 /**
+ * Files an override brings back only when it names them. A broad override
+ * such as `frontend/**` or `*.json` is written to re-include something else,
+ * and once dragged frontend/.env, the lock file and all of node_modules into
+ * the assessment along with it. A file matching one of these patterns is
+ * re-included only by an override the same pattern also matches when read as
+ * a path — `.env`, `frontend/.env`, `*.lock`, `vendor/**` — and stays
+ * excluded otherwise (see createFileFilter in src/files.js).
+ *
+ * This list does not exclude anything: the always-excluded list covers the
+ * first two groups, and the detected templates or the fallback list cover the
+ * dependency folders.
+ */
+export const PROTECTED_EXCLUDE_GROUPS = [
+  {
+    label: 'Environment files',
+    patterns: ['**/.env', '**/.env.*'],
+  },
+  {
+    label: 'Lock files',
+    patterns: [
+      '**/*.lock',
+      '**/package-lock.json',
+      '**/yarn.lock',
+      '**/pnpm-lock.yaml',
+      '**/Pipfile.lock',
+      '**/poetry.lock',
+    ],
+  },
+  {
+    label: 'Dependency folders',
+    patterns: [
+      '**/node_modules/**',
+      '**/bower_components/**',
+      '**/vendor/**',
+      '**/.venv/**',
+      '**/venv/**',
+    ],
+  },
+];
+
+/** PROTECTED_EXCLUDE_GROUPS as one list. */
+export const PROTECTED_EXCLUDE_PATTERNS = PROTECTED_EXCLUDE_GROUPS.flatMap((g) => g.patterns);
+
+/**
  * Fallback glob patterns used when automatic stack detection fails or returns
  * no results. Covers the most common languages and build artefacts so that
  * assessments still work if the GitHub API is unreachable. The always-excluded

@@ -5,17 +5,51 @@
 
 import { DISPATCH_OVERRIDES_BY_KEY, resolveDispatchOverrides } from './dispatchInputs';
 
+/** Splits one line of a pattern list on its commas, leaving those inside a closed pair of braces. */
+function splitPatternLine(line) {
+  const open = [];
+  const pairs = [];
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '\\') i++;
+    else if (line[i] === '{') open.push(i);
+    else if (line[i] === '}' && open.length > 0) pairs.push([open.pop(), i]);
+  }
+  const inBraces = (i) => pairs.some(([start, end]) => start < i && i < end);
+
+  const parts = [];
+  let start = 0;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '\\') i++;
+    else if (line[i] === ',' && !inBraces(i)) {
+      parts.push(line.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(line.slice(start));
+  return parts;
+}
+
+/**
+ * Splits a pattern list the way the action does (splitPatternList in
+ * src/files.js; test/exclude-patterns.test.js holds the two to the same
+ * answers): on commas and line breaks, except a comma inside a closed pair of
+ * braces, which is part of its pattern (`*.{js,ts}`).
+ */
+export function splitPatternList(value) {
+  return value
+    .split(/[\r\n]+/)
+    .flatMap(splitPatternLine)
+    .map((p) => p.trim().replace(/\s*,\s*/g, ','))
+    .filter(Boolean);
+}
+
 /**
  * Normalises a pattern string that may use commas, newlines, or a mix as
  * delimiters. Returns a single comma-separated string with each entry trimmed
  * and empty entries removed.
  */
 function normalizePatterns(value) {
-  return value
-    .split(/[,\r\n]+/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .join(', ');
+  return splitPatternList(value).join(', ');
 }
 
 /**

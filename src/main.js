@@ -14,7 +14,6 @@
 
 import * as core from '@actions/core';
 import * as github from '@actions/github';
-import { Minimatch } from 'minimatch';
 import {
   EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
   SUMMARY_FILE_LIST_LIMIT,
@@ -38,9 +37,8 @@ import {
 import { resolveSubmissionIdentity } from './submission-identity.js';
 import { getChangedFiles, getDiff, getDiffStat, getFirstCommit } from './git.js';
 import {
-  filterFiles,
-  instructorPattern,
-  PATTERN_MATCH_OPTIONS,
+  createFileFilter,
+  instructorPatterns,
   collectFilesAt,
   collectRawFiles,
   stripCommentsFromFiles,
@@ -51,7 +49,7 @@ import {
   readAssignmentContextFiles,
   selectCodebaseContext,
 } from './files.js';
-import { detectExcludePatterns } from './stack-detection.js';
+import { ALWAYS_EXCLUDE, detectExcludePatterns } from './stack-detection.js';
 import {
   buildPrompt,
   buildResponseFormat,
@@ -148,6 +146,9 @@ function createRunState() {
     // Changed files the exclude patterns removed, each with the first pattern
     // that matched it: [{ filepath, pattern }].
     excludedFiles: [],
+    // Those of them an override matched without naming the protected pattern
+    // that keeps them out: [{ filepath, guard }] (see createFileFilter).
+    protectedFiles: [],
     // Changed files the patterns let through that have no text to assess, each
     // with why: [{ filepath, reason }] (see collectRawFiles).
     skippedFiles: [],
@@ -237,22 +238,6 @@ function table(headers, rows) {
 function overflowNote(total, shown) {
   const remainder = total - shown;
   return remainder > 0 ? `\n_…and ${fmtNum(remainder)} more — full list in the run log._\n` : '';
-}
-
-/**
- * Pairs each changed file the filter removed with the first exclude pattern
- * that matched it. The patterns are compiled once: a committed dependency tree
- * can run to thousands of paths against a hundred or more patterns.
- */
-function findExcludedFiles(allFiles, assessedFiles, excludePatterns) {
-  const matchers = excludePatterns.map((p) => new Minimatch(p, PATTERN_MATCH_OPTIONS));
-  const assessed = new Set(assessedFiles);
-  return allFiles
-    .filter((f) => !assessed.has(f))
-    .map((filepath) => ({
-      filepath,
-      pattern: matchers.find((m) => m.match(filepath))?.pattern ?? '',
-    }));
 }
 
 /**
@@ -460,6 +445,14 @@ function renderConfiguration(state) {
     note +=
       `\nRe-include an excluded file with \`exclude_pattern_overrides\` — pass the exact path ` +
       `(e.g. ${refCode(state.excludedFiles[0].filepath)}) or the pattern that matched it.\n`;
+  }
+  if (state.protectedFiles.length > 0) {
+    const n = state.protectedFiles.length;
+    note +=
+      `\n${fmtNum(n)} excluded file${n === 1 ? '' : 's'} matched \`exclude_pattern_overrides\` ` +
+      `but ${n === 1 ? 'was' : 'were'} kept out (e.g. ${refCode(state.protectedFiles[0].filepath)}): ` +
+      `environment files, lock files and dependency folders are re-included only by an override ` +
+      `that names them, such as the file's own path.\n`;
   }
   if (i.includeAnswers) {
     note +=
@@ -821,6 +814,7 @@ function loadCodebaseContext({
   skippedRange,
   files,
   excludePatterns,
+  caseInsensitivePatterns,
 }) {
   const none = {
     starterContent: '',
@@ -845,6 +839,7 @@ function loadCodebaseContext({
     firstCommit: inputs.starterCode === 'none' ? null : getFirstCommit(),
     excludePatterns,
     excludePatternOverrides: inputs.excludePatternOverrides,
+    caseInsensitivePatterns,
     assessedFiles: files,
     skippedRange,
   }).filter((f) => (f.kind === 'starter' ? sendStarter : sendEarlier));
@@ -1039,12 +1034,15 @@ async function run() {
       ctx.repo.repo,
       headSha,
     );
+    const instructorExcludes = inputs.additionalExcludePatterns.flatMap(instructorPatterns);
     const excludePatterns = [
-      ...new Set([
-        ...detectedPatterns,
-        ...inputs.additionalExcludePatterns.map(instructorPattern),
-        WORKFLOWS_EXCLUDE_PATTERN,
-      ]),
+      ...new Set([...detectedPatterns, ...instructorExcludes, WORKFLOWS_EXCLUDE_PATTERN]),
+    ];
+    // Matched ignoring case; the detected templates are matched as written.
+    const caseInsensitivePatterns = [
+      ...ALWAYS_EXCLUDE,
+      ...instructorExcludes,
+      WORKFLOWS_EXCLUDE_PATTERN,
     ];
     if (inputs.additionalExcludePatterns.length > 0) {
       core.info(
@@ -1059,14 +1057,33 @@ async function run() {
     core.info(
       `Exclude patterns applied (${excludePatterns.length}):\n${excludePatterns.map((p) => `  ${p}`).join('\n')}`,
     );
-    const files = filterFiles(allFiles, excludePatterns, inputs.excludePatternOverrides);
+    const verdictOn = createFileFilter({
+      excludePatterns,
+      overridePatterns: inputs.excludePatternOverrides,
+      caseInsensitivePatterns,
+    });
+    const verdicts = allFiles.map((filepath) => ({ filepath, ...verdictOn(filepath) }));
+    const files = verdicts.filter((v) => v.assessed).map((v) => v.filepath);
     state.excludePatterns = excludePatterns;
     state.excludePatternOverrides = inputs.excludePatternOverrides;
-    state.excludedFiles = findExcludedFiles(allFiles, files, excludePatterns);
+    state.excludedFiles = verdicts
+      .filter((v) => !v.assessed)
+      .map(({ filepath, pattern }) => ({ filepath, pattern }));
+    state.protectedFiles = verdicts
+      .filter((v) => v.guard)
+      .map(({ filepath, guard }) => ({ filepath, guard }));
     if (state.excludedFiles.length > 0) {
       core.info(
         `Excluded ${state.excludedFiles.length} file(s):\n` +
           state.excludedFiles.map((e) => `  ${e.filepath}  (${e.pattern})`).join('\n'),
+      );
+    }
+    if (state.protectedFiles.length > 0) {
+      core.info(
+        `Kept out ${state.protectedFiles.length} file(s) that an override matched but did not ` +
+          `name. Environment files, lock files and dependency folders are re-included only by ` +
+          `an override that names them, such as the file's own path:\n` +
+          state.protectedFiles.map((p) => `  ${p.filepath}  (${p.guard})`).join('\n'),
       );
     }
 
@@ -1243,6 +1260,7 @@ async function run() {
           skippedRange,
           files,
           excludePatterns,
+          caseInsensitivePatterns,
         })
       : {
           starterContent: '',

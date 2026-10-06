@@ -11,7 +11,7 @@ import * as core from '@actions/core';
 import { spawnSync } from 'child_process';
 import fs from 'fs';
 import path from 'path';
-import { braceExpand, minimatch } from 'minimatch';
+import { braceExpand, Minimatch, minimatch } from 'minimatch';
 import { extractText, getDocumentProxy } from 'unpdf';
 import mammoth from 'mammoth';
 import {
@@ -19,6 +19,7 @@ import {
   COMMENT_STRIP_TIMEOUT_MS,
   EARLIER_STARTER_HEADING,
   LINE_MARKERS,
+  PROTECTED_EXCLUDE_PATTERNS,
 } from './constants.js';
 import { diffLines, git, listChangedPaths, listTreeFiles, readFileAt } from './git.js';
 
@@ -27,48 +28,185 @@ import { diffLines, git, listChangedPaths, listTreeFiles, readFileAt } from './g
  * off: under it a pattern with no slash matches on the file name at any
  * depth, which turned a template's root-anchored `index.php` (WordPress) or
  * `Makefile` (Perl) into every index.php or Makefile in the repository.
- * Instructor patterns keep that any-depth meaning through instructorPattern.
+ * Instructor patterns keep that any-depth meaning through instructorPatterns.
  */
 export const PATTERN_MATCH_OPTIONS = { dot: true };
 
 /**
- * An exclude or override pattern the instructor wrote, in the form it is
- * matched. One with no slash matches by file name at any depth, so it is
- * written as `**\/pattern` (`starter.py` → `**\/starter.py`); one with a slash
- * is anchored at the repository root and returned as it is. Brace
- * alternatives are judged one by one, so `{*.sql,data/**}` still matches
- * `.sql` files anywhere. A leading `!` stays in front.
+ * The same, ignoring case. The instructor's patterns and the always-excluded
+ * list are matched this way, so `data/**` covers a student's `Data/` and
+ * `**\/*.md` covers `README.MD`. The detected templates are not: several name
+ * folders by words a student also uses for source (`build`, `lib`, `debug`),
+ * and ignoring case there would exclude more of it.
  */
-export function instructorPattern(pattern) {
-  const negation = pattern.match(/^!*/)[0];
-  const body = pattern.slice(negation.length);
-  const alternatives = braceExpand(body);
-  if (alternatives.every((a) => a.includes('/'))) return pattern;
-  if (alternatives.every((a) => !a.includes('/'))) return `${negation}**/${body}`;
-  const anchored = alternatives.map((a) => (a.includes('/') ? a : `**/${a}`));
-  return `${negation}{${anchored.join(',')}}`;
+const CASE_INSENSITIVE_MATCH_OPTIONS = { ...PATTERN_MATCH_OPTIONS, nocase: true };
+
+/** Splits one line of a pattern list on its commas, leaving those inside a closed pair of braces. */
+function splitPatternLine(line) {
+  const open = [];
+  const pairs = [];
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '\\') i++;
+    else if (line[i] === '{') open.push(i);
+    else if (line[i] === '}' && open.length > 0) pairs.push([open.pop(), i]);
+  }
+  const inBraces = (i) => pairs.some(([start, end]) => start < i && i < end);
+
+  const parts = [];
+  let start = 0;
+  for (let i = 0; i < line.length; i++) {
+    if (line[i] === '\\') i++;
+    else if (line[i] === ',' && !inBraces(i)) {
+      parts.push(line.slice(start, i));
+      start = i + 1;
+    }
+  }
+  parts.push(line.slice(start));
+  return parts;
 }
 
 /**
- * Filters a list of file paths against exclude glob patterns.
- * Any file that would be excluded but matches an override pattern is re-included.
+ * Splits a pattern list input into its patterns. Commas and line breaks
+ * separate patterns, except a comma inside a closed pair of braces, which is
+ * part of the pattern (`*.{js,ts}`); an unclosed brace protects nothing.
+ * Spaces around a comma inside braces are dropped, so `*.{js, ts}` means what
+ * it looks like. A backslash keeps the character after it out of all this.
+ */
+export function splitPatternList(text) {
+  return text
+    .split(/[\r\n]+/)
+    .flatMap(splitPatternLine)
+    .map((p) => p.trim().replace(/\s*,\s*/g, ','))
+    .filter(Boolean);
+}
+
+/** Whether a pattern is a plain name or path: nothing in it is glob syntax. */
+function isPlainPath(pattern) {
+  return !new Minimatch(pattern, { ...PATTERN_MATCH_OPTIONS, magicalBraces: true }).hasMagic();
+}
+
+/**
+ * An exclude or override pattern the instructor wrote, in the forms it is
+ * matched — usually one, sometimes two, none for a pattern that names nothing.
+ *
+ * One with no slash matches by file name at any depth, so it is written as
+ * `**\/pattern` (`starter.py` → `**\/starter.py`); one with a slash is anchored
+ * at the repository root and kept as it is. Brace alternatives are judged one
+ * by one, so `{*.sql,data/**}` still matches `.sql` files anywhere. A leading
+ * `!` stays in front.
+ *
+ * The ways a path is commonly written all work. A leading `./` or `/` anchors
+ * the pattern at the root and is dropped (`/data/**` → `data/**`), as in a
+ * .gitignore. A trailing `/` names a folder and matches everything in it
+ * (`data/` → `**\/data/**`). A plain name or path, with no wildcards, may be
+ * either a file or a folder, so it gets both forms (`data` → `**\/data` and
+ * `**\/data/**`).
+ */
+export function instructorPatterns(pattern) {
+  const negation = pattern.match(/^!*/)[0];
+  const written = pattern.slice(negation.length);
+  const rooted = /^\.?\//.test(written);
+  const folder = written.endsWith('/');
+  const body = written.replace(/^(\.\/)*\/*/, '').replace(/\/+$/, '');
+  if (!body) return [];
+
+  const alternatives = braceExpand(body);
+  let anchored;
+  if (rooted || alternatives.every((a) => a.includes('/'))) {
+    anchored = body;
+  } else if (alternatives.every((a) => !a.includes('/'))) {
+    anchored = `**/${body}`;
+  } else {
+    anchored = `{${alternatives.map((a) => (a.includes('/') ? a : `**/${a}`)).join(',')}}`;
+  }
+
+  const matched = `${negation}${anchored}`;
+  if (folder) return [`${matched}/**`];
+  return !negation && isPlainPath(body) ? [matched, `${matched}/**`] : [matched];
+}
+
+/**
+ * Builds the test that decides whether a file is assessed. Returns a function
+ * from a path to its verdict:
+ *
+ *   { assessed: true }                      — no exclude pattern matched it, or
+ *                                             an override brought it back
+ *   { assessed: false, pattern }            — excluded; `pattern` is the first
+ *                                             exclude pattern that matched
+ *   { assessed: false, pattern, guard }     — as above, though an override
+ *                                             matched it: `guard` is the
+ *                                             protected pattern the override
+ *                                             does not name
+ *
+ * Exclude patterns are matched as written — the caller passes the instructor's
+ * through instructorPatterns — and those also listed in
+ * `caseInsensitivePatterns` are matched ignoring case. Overrides are always
+ * the instructor's, so they are converted here and always ignore case.
+ *
+ * An override wins over every exclude pattern, with one exception: a file
+ * matching PROTECTED_EXCLUDE_PATTERNS comes back only when each protected
+ * pattern matching it also matches the override itself, read as a path. So
+ * `frontend/.env`, `.env` and `**\/.env` re-include frontend/.env and
+ * `frontend/**` does not. A brace override is judged one alternative at a
+ * time, as it is matched; a negated one never names anything.
+ */
+export function createFileFilter({
+  excludePatterns,
+  overridePatterns = [],
+  caseInsensitivePatterns = [],
+}) {
+  const ignoreCase = new Set(caseInsensitivePatterns);
+  const isProtected = new Set(PROTECTED_EXCLUDE_PATTERNS);
+  // Protected patterns are tried first, so a file in node_modules is reported
+  // under the pattern an override has to name rather than, say, `**/*.md`.
+  const excludes = [
+    ...excludePatterns.filter((p) => isProtected.has(p)),
+    ...excludePatterns.filter((p) => !isProtected.has(p)),
+  ].map(
+    (p) =>
+      new Minimatch(p, ignoreCase.has(p) ? CASE_INSENSITIVE_MATCH_OPTIONS : PATTERN_MATCH_OPTIONS),
+  );
+  const guards = PROTECTED_EXCLUDE_PATTERNS.map(
+    (p) => new Minimatch(p, CASE_INSENSITIVE_MATCH_OPTIONS),
+  );
+  const overrides = overridePatterns
+    .flatMap(instructorPatterns)
+    .flatMap((p) => (p.startsWith('!') ? [p] : braceExpand(p)))
+    .map((p) => ({
+      matcher: new Minimatch(p, CASE_INSENSITIVE_MATCH_OPTIONS),
+      names: new Set(guards.filter((g) => g.match(p))),
+    }));
+
+  return (filepath) => {
+    const excludedBy = excludes.find((m) => m.match(filepath));
+    if (!excludedBy) return { assessed: true };
+    const excluded = { assessed: false, pattern: excludedBy.pattern };
+
+    const matching = overrides.filter((o) => o.matcher.match(filepath));
+    if (matching.length === 0) return excluded;
+    const guarding = guards.filter((g) => g.match(filepath));
+    if (matching.some((o) => guarding.every((g) => o.names.has(g)))) return { assessed: true };
+    // Every matching override leaves at least one guard unnamed; report one.
+    const unnamed = guarding.find((g) => !matching[0].names.has(g));
+    return { ...excluded, guard: unnamed.pattern };
+  };
+}
+
+/**
+ * Filters a list of file paths against exclude glob patterns, keeping the
+ * files that are assessed (see createFileFilter).
+ *
  * Overrides accept either an exact pattern from the exclude list (e.g. **\/*.md)
  * or a specific file path that would otherwise be excluded (e.g. README.md).
- *
- * Exclude patterns are matched as written — the caller passes instructor
- * patterns through instructorPattern. Overrides are always the instructor's,
- * so they are converted here.
  */
-export function filterFiles(files, excludePatterns, overridePatterns = []) {
-  const opts = PATTERN_MATCH_OPTIONS;
-  const overrides = overridePatterns.map(instructorPattern);
-
-  return files.filter((f) => {
-    const excluded = excludePatterns.some((p) => minimatch(f, p, opts));
-    if (!excluded) return true;
-    if (overrides.length === 0) return false;
-    return overrides.some((p) => minimatch(f, p, opts));
-  });
+export function filterFiles(
+  files,
+  excludePatterns,
+  overridePatterns = [],
+  caseInsensitivePatterns = [],
+) {
+  const verdict = createFileFilter({ excludePatterns, overridePatterns, caseInsensitivePatterns });
+  return files.filter((f) => verdict(f).assessed);
 }
 
 /**
@@ -439,6 +577,7 @@ export function findCodebaseContextFiles({
   firstCommit,
   excludePatterns,
   excludePatternOverrides,
+  caseInsensitivePatterns = [],
   assessedFiles,
   skippedRange = null,
 }) {
@@ -448,6 +587,7 @@ export function findCodebaseContextFiles({
     listTreeFiles(headSha),
     excludePatterns,
     excludePatternOverrides,
+    caseInsensitivePatterns,
   ).filter((p) => !changedInRange.has(p) && !skipped.has(p) && !assessedFiles.includes(p));
 
   let inFirstCommit = new Set();

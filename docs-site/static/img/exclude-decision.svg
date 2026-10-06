@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 460" role="img" aria-labelledby="gmc-excl-title">
-  <title id="gmc-excl-title">How each changed file is filtered. The exclude patterns are the union of three sources: the always-excluded list, the patterns detected for the repository's stack, and additional_exclude_patterns. For each changed file: is it binary? If yes, it is skipped, and nothing brings it back. If not, does it match an exclude pattern? If not, it is assessed. If it does, does it match an exclude_pattern_overrides entry? If yes, it is assessed, because overrides win. If not, it is skipped.</title>
+  <title id="gmc-excl-title">How each changed file is filtered. The exclude patterns are the union of three sources: the always-excluded list, the patterns detected for the repository's stack, and additional_exclude_patterns. For each changed file: is it binary? If yes, it is skipped, and nothing brings it back. If not, does it match an exclude pattern? If not, it is assessed. If it does, does it match an exclude_pattern_overrides entry? If yes, it is assessed, because overrides win, unless the file is protected and the override does not name it. If not, it is skipped.</title>
   <style>
     .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -93,7 +93,7 @@
     <text class="yn" x="716" y="292" style="fill:#15803D">yes</text>
     <rect class="ink" x="748" y="276" width="228" height="48" rx="14" fill="#DCFCE7" stroke-width="2.5"/>
     <text class="q" x="764" y="298" style="fill:#15803D">Assessed</text>
-    <text class="sub" x="764" y="316" style="font-size:12px">overrides always win</text>
+    <text class="sub" x="764" y="316" style="font-size:12px">unless it is protected</text>
   </g>
   <use href="#gmc-excl-down" x="550" y="330"/>
   <text class="txt yn" x="562" y="350" style="fill:#B91C1C">no</text>
