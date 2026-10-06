@@ -113,6 +113,10 @@ One of them wasn't written by GrillMyCode: someone opened it by hand with the sa
 
 Check the `Exclude patterns applied` list in the run's log, and find the pattern that matches the file. Then add the file, or the pattern for all files of that type, to `exclude_pattern_overrides`. See [File filtering](reference/exclude-patterns.md#confirming-what-was-applied).
 
+### An override didn't bring a file back
+
+The file is an environment file, a lock file or inside a dependency folder such as `node_modules/`. These come back only when an entry in `exclude_pattern_overrides` names them, for example `frontend/.env`. A broader entry such as `frontend/**` leaves them out, and the run's log lists them under `Kept out`. See [Protected files](reference/exclude-patterns.md#protected-files).
+
 ### Files are assessed that shouldn't be
 
 Add them to `additional_exclude_patterns`. See [Choosing which files are assessed](guides/choosing-files.md#leaving-out-more).

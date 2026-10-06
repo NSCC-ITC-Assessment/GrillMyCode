@@ -112,24 +112,32 @@ inputs:
 
   exclude_pattern_overrides:
     description: >
-      Comma-separated entries that allow specific files through the default
-      exclude list. Each entry can be either an exact pattern from the default
-      list (e.g. **/*.md — re-includes all Markdown files) or a specific file
-      path that would be excluded by a default pattern (e.g. README.md — only
-      that file is re-included while **/*.md still excludes everything else).
+      Entries that allow specific files through the exclude list, separated
+      by commas or line breaks. Each entry can be either a pattern (e.g.
+      **/*.md — re-includes all Markdown files) or a specific file path that
+      would be excluded (e.g. README.md — only that file is re-included while
+      **/*.md still excludes everything else). Entries are written like
+      additional_exclude_patterns and ignore case. An override wins over every
+      exclude pattern, with one exception: environment files, lock files and
+      dependency folders are re-included only by an entry that names them
+      (frontend/.env, *.lock, vendor/**), not by a broader one (frontend/**).
     required: false
     default: ""
 
   additional_exclude_patterns:
     description: >
-      Comma-separated glob patterns for extra files to exclude from the
-      assessment, on top of the patterns auto-detected from the repository's
-      language and framework stack. Use this to exclude files specific to your
-      assignment (e.g. provided starter files, test fixtures, data files) that
-      would not normally be excluded by the auto-detected patterns.
+      Glob patterns for extra files to exclude from the assessment, on top of
+      the patterns auto-detected from the repository's language and framework
+      stack, separated by commas or line breaks. Use this to exclude files
+      specific to your assignment (e.g. provided starter files, test fixtures,
+      data files) that would not normally be excluded by the auto-detected
+      patterns.
       A pattern containing no slash matches on file name alone, at any depth
       (starter.py excludes src/starter.py too). Include a slash to match a
-      path exactly (src/starter.py), or lead with **/ to be explicit.
+      path exactly (src/starter.py), or lead with **/ to be explicit. A plain
+      name or path with no wildcards also covers the folder of that name
+      (data excludes everything in data/), and a trailing slash names a
+      folder only (data/). Patterns ignore case.
     required: false
     default: ""
 

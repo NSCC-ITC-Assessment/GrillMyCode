@@ -34,7 +34,34 @@ import {
   DEFAULT_STARTER_QUESTIONS_ONE_IN,
   MIN_STARTER_QUESTIONS_ONE_IN,
 } from './constants.js';
+import { splitPatternList } from './files.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
+
+/**
+ * Reads additional_exclude_patterns or exclude_pattern_overrides (see
+ * splitPatternList), and warns about the two .gitignore habits that mean
+ * something else here: a leading `!`, which inverts the pattern instead of
+ * re-including a file, and a `#` comment, which is read as a file name.
+ * `negated` says what an inverted pattern does in this input.
+ */
+function readPatternList(name, negated) {
+  const patterns = splitPatternList(core.getInput(name) || '');
+  for (const pattern of patterns) {
+    if (pattern.startsWith('!')) {
+      core.warning(
+        `${name}: "${pattern}" starts with "!", which inverts the pattern: it ${negated} ` +
+          `every file that does not match "${pattern.replace(/^!+/, '')}". Remove the "!" ` +
+          'unless that is what you intend.',
+      );
+    } else if (pattern.startsWith('#')) {
+      core.warning(
+        `${name}: "${pattern}" starts with "#". Comments are not supported in this input, so ` +
+          'it is read as a file name. Remove it if it is a comment.',
+      );
+    }
+  }
+  return patterns;
+}
 
 /**
  * Parses submission_tags. Accepts commas, newlines or both as separators, since
@@ -246,9 +273,6 @@ function readStarterQuestionsOneIn() {
 }
 
 export function readInputs() {
-  const excludeStr = core.getInput('additional_exclude_patterns');
-  const overrideStr = core.getInput('exclude_pattern_overrides');
-
   const rawNumQuestions = Math.max(
     MIN_QUESTIONS,
     parseInt(core.getInput('num_questions') || String(DEFAULT_NUM_QUESTIONS), 10),
@@ -260,19 +284,11 @@ export function readInputs() {
     );
   }
 
-  const additionalExcludePatterns = excludeStr
-    ? excludeStr
-        .split(',')
-        .map((p) => p.trim())
-        .filter(Boolean)
-    : [];
-
-  const overridePatterns = overrideStr
-    ? overrideStr
-        .split(',')
-        .map((p) => p.trim())
-        .filter(Boolean)
-    : [];
+  const additionalExcludePatterns = readPatternList('additional_exclude_patterns', 'excludes');
+  const overridePatterns = readPatternList(
+    'exclude_pattern_overrides',
+    're-includes, among the excluded files,',
+  );
 
   const apiKey = core.getInput('api_key') || '';
   if (!apiKey) {
@@ -301,13 +317,7 @@ export function readInputs() {
     additionalExcludePatterns,
     excludePatternOverrides: overridePatterns,
     instructorContext: core.getInput('instructor_context') || '',
-    assignmentContextGlobs: (() => {
-      const raw = core.getInput('assignment_context') || '';
-      return raw
-        .split(',')
-        .map((s) => s.trim())
-        .filter(Boolean);
-    })(),
+    assignmentContextGlobs: splitPatternList(core.getInput('assignment_context') || ''),
     assignmentContextMaxChars: Math.max(
       1,
       parseInt(

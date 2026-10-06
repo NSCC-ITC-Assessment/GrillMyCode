@@ -1,13 +1,29 @@
-import { describe, expect, it } from 'vitest';
+import * as core from '@actions/core';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
-import { filterFiles, instructorPattern } from '../src/files.js';
+import {
+  createFileFilter,
+  filterFiles,
+  instructorPatterns,
+  splitPatternList,
+} from '../src/files.js';
 import {
   EDITOR_CONFIG_EXCLUDE_PATTERNS,
   FALLBACK_EXCLUDE_PATTERNS,
   NON_CODE_ASSET_EXCLUDE_PATTERNS,
+  PROTECTED_EXCLUDE_GROUPS,
+  PROTECTED_EXCLUDE_PATTERNS,
 } from '../src/constants.js';
+import { readInputs } from '../src/inputs.js';
+import { ALWAYS_EXCLUDE, ALWAYS_EXCLUDE_GROUPS } from '../src/stack-detection.js';
+import { splitPatternList as wizardSplitPatternList } from '../docs-site/docs/_workflow-wizard/generateYaml.js';
+
+vi.mock('@actions/core', async (importOriginal) => ({
+  ...(await importOriginal()),
+  warning: vi.fn(),
+}));
 import { parseGitignore } from '../scripts/fetch-gitignore-templates.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -161,36 +177,264 @@ describe('root-anchored template patterns without a slash', () => {
   });
 });
 
-describe('instructorPattern', () => {
+describe('instructorPatterns', () => {
   it('makes a pattern with no slash match by file name at any depth', () => {
-    expect(instructorPattern('starter.py')).toBe('**/starter.py');
-    expect(instructorPattern('*.{md,txt}')).toBe('**/*.{md,txt}');
-    expect(
-      filterFiles(['starter.py', 'lab/starter.py'], [instructorPattern('starter.py')]),
-    ).toEqual([]);
+    expect(instructorPatterns('*.py')).toEqual(['**/*.py']);
+    expect(instructorPatterns('*.{md,txt}')).toEqual(['**/*.{md,txt}']);
+    expect(filterFiles(['starter.py', 'lab/starter.py'], instructorPatterns('starter.py'))).toEqual(
+      [],
+    );
   });
 
   it('leaves a pattern with a slash anchored at the root', () => {
-    expect(instructorPattern('tests/**')).toBe('tests/**');
-    expect(instructorPattern('src/*.{js,ts}')).toBe('src/*.{js,ts}');
+    expect(instructorPatterns('tests/**')).toEqual(['tests/**']);
+    expect(instructorPatterns('src/*.{js,ts}')).toEqual(['src/*.{js,ts}']);
   });
 
   it('judges brace alternatives one by one', () => {
-    expect(instructorPattern('{*.sql,data/**}')).toBe('{**/*.sql,data/**}');
+    expect(instructorPatterns('{*.sql,data/**}')).toEqual(['{**/*.sql,data/**}']);
     const kept = filterFiles(
       ['db/q.sql', 'data/raw/a.bin', 'x/data/a.bin'],
-      [instructorPattern('{*.sql,data/**}')],
+      instructorPatterns('{*.sql,data/**}'),
     );
     expect(kept).toEqual(['x/data/a.bin']);
   });
 
   it('keeps a leading ! in front', () => {
-    expect(instructorPattern('!README.md')).toBe('!**/README.md');
+    expect(instructorPatterns('!README.md')).toEqual(['!**/README.md']);
   });
 
   it('is applied to overrides, so a file name re-includes it at any depth', () => {
     expect(filterFiles(['docs/README.md', 'notes.md'], ['**/*.md'], ['README.md'])).toEqual([
       'docs/README.md',
     ]);
+  });
+
+  it('gives a plain name both its file and its folder form', () => {
+    expect(instructorPatterns('starter.py')).toEqual(['**/starter.py', '**/starter.py/**']);
+    expect(instructorPatterns('src/lib')).toEqual(['src/lib', 'src/lib/**']);
+    const files = ['data', 'data/a.json', 'src/data/b.json', 'src/database.py'];
+    expect(filterFiles(files, instructorPatterns('data'))).toEqual(['src/database.py']);
+  });
+
+  it('reads a trailing slash as a folder, at any depth unless the path has another slash', () => {
+    expect(instructorPatterns('data/')).toEqual(['**/data/**']);
+    expect(instructorPatterns('tests/fixtures/')).toEqual(['tests/fixtures/**']);
+    expect(instructorPatterns('*.xcodeproj/')).toEqual(['**/*.xcodeproj/**']);
+    expect(
+      filterFiles(['data', 'data/a.json', 'x/data/b.json'], instructorPatterns('data/')),
+    ).toEqual(['data']);
+  });
+
+  it('reads a leading ./ or / as the repository root and drops it', () => {
+    expect(instructorPatterns('./data/**')).toEqual(['data/**']);
+    expect(instructorPatterns('/data/**')).toEqual(['data/**']);
+    expect(instructorPatterns('/config.json')).toEqual(['config.json', 'config.json/**']);
+    expect(instructorPatterns('./data/')).toEqual(['data/**']);
+    expect(instructorPatterns('/*.sql')).toEqual(['*.sql']);
+    const files = ['config.json', 'src/config.json'];
+    expect(filterFiles(files, instructorPatterns('/config.json'))).toEqual(['src/config.json']);
+  });
+
+  it('keeps a pattern with wildcards to the one form it had', () => {
+    expect(instructorPatterns('test*')).toEqual(['**/test*']);
+    expect(instructorPatterns('lab \\[1\\]/notes')).toEqual([
+      'lab \\[1\\]/notes',
+      'lab \\[1\\]/notes/**',
+    ]);
+  });
+
+  it('gives a pattern that names nothing no forms', () => {
+    expect(instructorPatterns('/')).toEqual([]);
+    expect(instructorPatterns('./')).toEqual([]);
+  });
+});
+
+describe('splitPatternList', () => {
+  it('splits on commas and line breaks', () => {
+    expect(splitPatternList('data/**, *.sql\n  tests/fixtures/**\r\n\nREADME.md,')).toEqual([
+      'data/**',
+      '*.sql',
+      'tests/fixtures/**',
+      'README.md',
+    ]);
+    expect(splitPatternList('')).toEqual([]);
+  });
+
+  it('keeps a comma inside braces with its pattern', () => {
+    expect(splitPatternList('*.{js,ts}, src/{a,b{c,d}}/**')).toEqual([
+      '*.{js,ts}',
+      'src/{a,b{c,d}}/**',
+    ]);
+    expect(
+      filterFiles(
+        ['a.js', 'b.ts', 'c.py'],
+        splitPatternList('*.{js, ts}').flatMap(instructorPatterns),
+      ),
+    ).toEqual(['c.py']);
+  });
+
+  it('splits at a comma after a brace that never closes', () => {
+    expect(splitPatternList('{a,b')).toEqual(['{a', 'b']);
+    expect(splitPatternList('a},{b,c}')).toEqual(['a}', '{b,c}']);
+  });
+
+  it('leaves an escaped brace out of the pairing', () => {
+    expect(splitPatternList('lab \\{1,2\\}')).toEqual(['lab \\{1', '2\\}']);
+  });
+
+  it("is matched by the Workflow Wizard's copy", () => {
+    for (const list of [
+      'data/**, *.sql\n  tests/fixtures/**\r\n\nREADME.md,',
+      '*.{js, ts}, src/{a,b{c,d}}/**',
+      '{a,b',
+      'a},{b,c}',
+      'lab \\{1,2\\}',
+      '',
+    ]) {
+      expect(wizardSplitPatternList(list)).toEqual(splitPatternList(list));
+    }
+  });
+});
+
+describe('case-insensitive matching', () => {
+  const files = ['Readme.MD', 'Data/x.json', 'src/Main.PY', 'Build/out.js'];
+
+  it('applies to the patterns named as case-insensitive only', () => {
+    const excludes = ['**/*.md', 'data/**', '**/build/**'];
+    expect(filterFiles(files, excludes)).toEqual(files);
+    expect(filterFiles(files, excludes, [], ['**/*.md', 'data/**'])).toEqual([
+      'src/Main.PY',
+      'Build/out.js',
+    ]);
+  });
+
+  it('always applies to overrides', () => {
+    expect(filterFiles(['README.md', 'notes.md'], ['**/*.md'], ['readme.MD'])).toEqual([
+      'README.md',
+    ]);
+  });
+});
+
+describe('protected files', () => {
+  const excludes = ['**/*.md', ...PROTECTED_EXCLUDE_PATTERNS];
+  const files = [
+    'frontend/.env',
+    'frontend/package-lock.json',
+    'frontend/node_modules/x/index.js',
+    'frontend/node_modules/x/README.md',
+    'frontend/notes.md',
+    'vendor/pkg/a.php',
+    'vendor/pkg/.env',
+  ];
+  const kept = (...overrides) => filterFiles(files, excludes, overrides);
+
+  it('stay out under an override that does not name them', () => {
+    expect(kept('frontend/**')).toEqual(['frontend/notes.md']);
+    expect(kept('frontend/')).toEqual(['frontend/notes.md']);
+    expect(kept('*.md')).toEqual(['frontend/notes.md']);
+    expect(kept('**')).toEqual(['frontend/notes.md']);
+    expect(kept('*.json')).toEqual([]);
+  });
+
+  it('come back under an override that names them', () => {
+    expect(kept('frontend/.env')).toEqual(['frontend/.env']);
+    expect(kept('package-lock.json')).toEqual(['frontend/package-lock.json']);
+    expect(kept('*.lock', '**/package-lock.json')).toEqual(['frontend/package-lock.json']);
+    expect(kept('**/node_modules/**')).toEqual([
+      'frontend/node_modules/x/index.js',
+      'frontend/node_modules/x/README.md',
+    ]);
+    expect(kept('frontend/node_modules/x/index.js')).toEqual(['frontend/node_modules/x/index.js']);
+  });
+
+  it('come back only when every protected pattern matching them is named', () => {
+    expect(kept('vendor/')).toEqual(['vendor/pkg/a.php']);
+    expect(kept('vendor/', '.env')).toEqual(['frontend/.env', 'vendor/pkg/a.php']);
+    expect(kept('vendor/pkg/.env')).toEqual(['vendor/pkg/.env']);
+  });
+
+  it('judge a brace override one alternative at a time', () => {
+    expect(kept('{.env,*.md}')).toEqual(['frontend/.env', 'frontend/notes.md']);
+    expect(kept('!*.php')).toEqual(['frontend/notes.md']);
+  });
+
+  it('do not limit an override on any other file', () => {
+    expect(filterFiles(['tests/a.py', 'tests/b.py'], ['tests/**'], ['tests/a.py'])).toEqual([
+      'tests/a.py',
+    ]);
+  });
+
+  it('are reported with the protected pattern the override left unnamed', () => {
+    const verdictOn = createFileFilter({ excludePatterns: excludes, overridePatterns: ['*.md'] });
+    expect(verdictOn('frontend/node_modules/x/README.md')).toEqual({
+      assessed: false,
+      pattern: '**/node_modules/**',
+      guard: '**/node_modules/**',
+    });
+    expect(verdictOn('frontend/.env')).toEqual({ assessed: false, pattern: '**/.env' });
+    expect(verdictOn('frontend/notes.md')).toEqual({ assessed: true });
+    expect(verdictOn('src/app.js')).toEqual({ assessed: true });
+  });
+
+  it('cover every always-excluded environment and lock file pattern', () => {
+    const always = ALWAYS_EXCLUDE_GROUPS.filter((g) =>
+      ['Environment files', 'Lock files'].includes(g.label),
+    ).flatMap((g) => g.patterns);
+    expect(always.length).toBeGreaterThan(0);
+    expect(PROTECTED_EXCLUDE_PATTERNS).toEqual(expect.arrayContaining(always));
+    expect(PROTECTED_EXCLUDE_GROUPS.map((g) => g.label)).toContain('Dependency folders');
+    expect(ALWAYS_EXCLUDE).toEqual(expect.arrayContaining(always));
+  });
+});
+
+describe('pattern list inputs', () => {
+  const KEYS = [
+    'INPUT_GITHUB_TOKEN',
+    'INPUT_API_KEY',
+    'INPUT_ADDITIONAL_EXCLUDE_PATTERNS',
+    'INPUT_EXCLUDE_PATTERN_OVERRIDES',
+    'INPUT_ASSIGNMENT_CONTEXT',
+  ];
+  const read = (env) => {
+    for (const key of KEYS) delete process.env[key];
+    Object.assign(process.env, { INPUT_GITHUB_TOKEN: 'token', INPUT_API_KEY: 'key' }, env);
+    return readInputs();
+  };
+
+  afterEach(() => {
+    for (const key of KEYS) delete process.env[key];
+    core.warning.mockClear();
+  });
+
+  it('are split outside braces and across lines', () => {
+    const inputs = read({
+      INPUT_ADDITIONAL_EXCLUDE_PATTERNS: '*.{sql,csv}, data/\nfixtures',
+      INPUT_EXCLUDE_PATTERN_OVERRIDES: 'README.md',
+      INPUT_ASSIGNMENT_CONTEXT: 'docs/*.{md,txt}, brief.pdf',
+    });
+    expect(inputs.additionalExcludePatterns).toEqual(['*.{sql,csv}', 'data/', 'fixtures']);
+    expect(inputs.excludePatternOverrides).toEqual(['README.md']);
+    expect(inputs.assignmentContextGlobs).toEqual(['docs/*.{md,txt}', 'brief.pdf']);
+  });
+
+  it('are empty when the input is', () => {
+    const inputs = read({});
+    expect(inputs.additionalExcludePatterns).toEqual([]);
+    expect(inputs.excludePatternOverrides).toEqual([]);
+  });
+
+  it('warn about a leading ! or #, and keep the pattern', () => {
+    const inputs = read({
+      INPUT_ADDITIONAL_EXCLUDE_PATTERNS: '!src/**, # starter files, data/**',
+      INPUT_EXCLUDE_PATTERN_OVERRIDES: '!keep.py',
+    });
+    expect(inputs.additionalExcludePatterns).toEqual(['!src/**', '# starter files', 'data/**']);
+    const messages = core.warning.mock.calls.map(([m]) => m);
+    expect(messages).toHaveLength(3);
+    expect(messages[0]).toMatch(/additional_exclude_patterns: "!src\/\*\*" starts with "!"/);
+    expect(messages[0]).toMatch(/excludes every file that does not match "src\/\*\*"/);
+    expect(messages[1]).toMatch(/"# starter files" starts with "#"/);
+    expect(messages[2]).toMatch(/exclude_pattern_overrides: "!keep.py"/);
   });
 });

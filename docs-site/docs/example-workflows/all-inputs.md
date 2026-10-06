@@ -133,16 +133,20 @@ jobs:
 
           # ── File filtering ────────────────────────────────────────────────
 
-          # Allow specific files through the default exclude list.
-          # Use an exact default pattern (e.g. **/*.md) to re-include all files
-          # of that type, or a specific path (e.g. README.md) to allow only
-          # that file while the pattern still excludes everything else.
+          # Allow specific files through the exclude list.
+          # Use a pattern (e.g. **/*.md) to re-include all files of that type,
+          # or a specific path (e.g. README.md) to allow only that file while
+          # the pattern still excludes everything else. Environment files, lock
+          # files and dependency folders come back only when an entry names
+          # them (e.g. frontend/.env), not under a broader one (frontend/**).
           # exclude_pattern_overrides: 'README.md'
 
-          # Comma-separated glob patterns for extra files to exclude on top of
-          # the auto-detected stack patterns (lock files, build artefacts, etc.
-          # for your language/framework are excluded automatically).
-          # additional_exclude_patterns: 'tests/**,docs/**'
+          # Glob patterns for extra files to exclude on top of the
+          # auto-detected stack patterns (lock files, build artefacts, etc.
+          # for your language/framework are excluded automatically). Separate
+          # them with commas or line breaks. A trailing slash names a folder,
+          # and case is ignored.
+          # additional_exclude_patterns: 'tests/, docs/**, *.{sql,csv}'
 
           # ── Instructor repository ─────────────────────────────────────────
 

@@ -91,7 +91,9 @@ export const ALWAYS_EXCLUDE_GROUPS = [
   },
 ];
 
-const ALWAYS_EXCLUDE = [
+// Every pattern excluded whatever the stack. These are matched ignoring case
+// (see createFileFilter in src/files.js); the detected templates are not.
+export const ALWAYS_EXCLUDE = [
   ...ALWAYS_EXCLUDE_GROUPS.flatMap((g) => g.patterns),
   ...EDITOR_CONFIG_EXCLUDE_PATTERNS,
   ...NON_CODE_ASSET_EXCLUDE_PATTERNS,
