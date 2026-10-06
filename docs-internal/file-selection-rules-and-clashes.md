@@ -1,9 +1,9 @@
 # File Selection — Rules, Clashes and Plan
 
 > **Recorded:** 2026-10-06 (`35a982c`)
-> **Status:** Phases 0 and 1 done (2026-10-06, uncommitted at the time of writing). The rules
-> and clashes below describe the code **before** Phase 1; see
-> [What Phase 1 changed](#what-phase-1-changed). Phases 2 to 5 are not started.
+> **Status:** Phases 0 to 2 done (2026-10-06). The rules and clashes below describe the code
+> **before** Phase 1; see [What Phase 1 changed](#what-phase-1-changed) and
+> [What Phase 2 changed](#what-phase-2-changed). Phases 3 to 5 are not started.
 
 Instructors using the Workflow Wizard often get file selection wrong on the
 first run: files they wanted are left out, or files they didn't want are
@@ -144,10 +144,12 @@ the next release. Decisions taken:
 **Phase 1 — Fix the rules.** _(Done.)_ See
 [What Phase 1 changed](#what-phase-1-changed).
 
-**Phase 2 — Share the logic.** Move the pure parts (`instructorPattern`,
-`filterFiles`, `findProjectFolders`, template selection) into a module with no
-`git`, `fs` or `@actions/core` imports, usable by both the action and the
-wizard. Add a parity test alongside `test/wizard-exclude-lists.test.js`.
+**Phase 2 — Share the logic.** _(Done.)_ Move the pure parts
+(`instructorPattern`, `filterFiles`, `findProjectFolders`, template selection)
+into a module with no `git`, `fs` or `@actions/core` imports, usable by both
+the action and the wizard. Add a parity test alongside
+`test/wizard-exclude-lists.test.js`. See
+[What Phase 2 changed](#what-phase-2-changed).
 
 **Phase 3 — Wizard preview.** In the Files step: pick a solution folder or
 paste a file list; show assessed and left-out files with the rule responsible,
@@ -194,3 +196,31 @@ detail: `docs-site/docs/reference/exclude-patterns.md`.
 
 Clash status after Phase 1: 1 fixed for protected files; 5 and 6 fixed; 2, 3,
 4, 7, 8 and 9 unchanged.
+
+---
+
+## What Phase 2 changed
+
+No change in behaviour. The log lines and the files selected are the same.
+
+- **One module.** `src/file-selection.js` holds every rule: pattern splitting
+  and reading, the file filter, the always-excluded list, the detection maps,
+  and two new entry points. `detectStack` takes the languages, the file list
+  and a function that reads a manifest, and returns the exclude list.
+  `buildFileRules` adds the instructor's two lists and returns the verdict
+  function. It imports only `minimatch` and `./constants.js`.
+- **The action** keeps the reading and logging in `src/stack-detection.js` and
+  `src/main.js`.
+- **The wizard** gets a generated copy, `fileSelection.js`, written by
+  `scripts/build-wizard-file-selection.js` with the constants inlined. It
+  cannot import `src/`, because the wizard is snapshotted into
+  `versioned_docs/`. Its hand-copied `splitPatternList` is gone.
+- **Parity.** `test/wizard-file-selection.test.js` fails if the copy is stale,
+  if the two `minimatch` ranges differ, or if sample repositories give
+  different answers through the wizard's copy and templates.
+- **Found on the way.** The docs site pinned `brace-expansion` to 1.x for every
+  package, which `minimatch` 10 cannot load. The pin now applies to 1.x
+  requests only.
+
+For Phase 3: the wizard's templates come from `excludeLists.json`; languages
+still have to be approximated from file extensions.

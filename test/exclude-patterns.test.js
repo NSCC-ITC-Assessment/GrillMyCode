@@ -4,11 +4,13 @@ import { readFileSync } from 'fs';
 import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import {
+  ALWAYS_EXCLUDE,
+  ALWAYS_EXCLUDE_GROUPS,
   createFileFilter,
   filterFiles,
   instructorPatterns,
   splitPatternList,
-} from '../src/files.js';
+} from '../src/file-selection.js';
 import {
   EDITOR_CONFIG_EXCLUDE_PATTERNS,
   FALLBACK_EXCLUDE_PATTERNS,
@@ -17,8 +19,6 @@ import {
   PROTECTED_EXCLUDE_PATTERNS,
 } from '../src/constants.js';
 import { readInputs } from '../src/inputs.js';
-import { ALWAYS_EXCLUDE, ALWAYS_EXCLUDE_GROUPS } from '../src/stack-detection.js';
-import { splitPatternList as wizardSplitPatternList } from '../docs-site/docs/_workflow-wizard/generateYaml.js';
 
 vi.mock('@actions/core', async (importOriginal) => ({
   ...(await importOriginal()),
@@ -281,19 +281,6 @@ describe('splitPatternList', () => {
 
   it('leaves an escaped brace out of the pairing', () => {
     expect(splitPatternList('lab \\{1,2\\}')).toEqual(['lab \\{1', '2\\}']);
-  });
-
-  it("is matched by the Workflow Wizard's copy", () => {
-    for (const list of [
-      'data/**, *.sql\n  tests/fixtures/**\r\n\nREADME.md,',
-      '*.{js, ts}, src/{a,b{c,d}}/**',
-      '{a,b',
-      'a},{b,c}',
-      'lab \\{1,2\\}',
-      '',
-    ]) {
-      expect(wizardSplitPatternList(list)).toEqual(splitPatternList(list));
-    }
   });
 });
 

@@ -3,7 +3,7 @@
 // Files step can list them in full without importing src/ (the Wizard is
 // snapshotted into versioned_docs/, where a path into src/ would not resolve).
 //
-// Run after changing the lists in src/constants.js or src/stack-detection.js,
+// Run after changing the lists in src/constants.js or src/file-selection.js,
 // or after refreshing src/data/gitignore-templates.json:
 //   node scripts/build-wizard-exclude-lists.js
 //
@@ -31,7 +31,7 @@ import {
   PACKAGE_DEP_TO_PATTERNS,
   PACKAGE_DEP_TO_TEMPLATES,
   ROOT_SUFFIX_TO_TEMPLATES,
-} from '../src/stack-detection.js';
+} from '../src/file-selection.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_PATH = join(__dirname, '..', 'src', 'data', 'gitignore-templates.json');
