@@ -6,6 +6,15 @@ sidebar_position: 11
 
 Notes for anyone upgrading a workflow, or an instructor repository, from an earlier GrillMyCode release. Newest changes first.
 
+## File patterns are more forgiving, and broad overrides no longer bring back protected files
+
+Most workflows need no change. These apply to `additional_exclude_patterns` and `exclude_pattern_overrides`; see [Pattern syntax](exclude-patterns.md#pattern-syntax).
+
+- **Patterns that matched nothing now work.** `data/`, `/data/**`, `./data/**` and `*.{js,ts}` are read as their author meant, and a plain name such as `data` also covers the folder of that name. Patterns may be separated by line breaks as well as commas. If a workflow carries one of these, more files are excluded or re-included than before.
+- **Case is ignored** in your patterns and in the patterns always excluded, so `README.MD` and `Data/` are now matched. Auto-detected template patterns are unchanged.
+- **A broad override no longer re-includes environment files, lock files or dependency folders.** `frontend/**` used to bring back `frontend/.env` and `frontend/node_modules/`. Name them to assess them: `frontend/.env`, `*.lock`, `node_modules/`. See [Protected files](exclude-patterns.md#protected-files).
+- **A leading `!` or `#`** now produces a warning. What the pattern does is unchanged.
+
 ## The issue carries hidden data, and only GrillMyCode's own issues are replaced
 
 Nothing to change in a workflow. Each assessment issue now holds its questions' numbers, files and lines as [hidden data](assessment-output.md#hidden-data), which the VS Code extension reads.

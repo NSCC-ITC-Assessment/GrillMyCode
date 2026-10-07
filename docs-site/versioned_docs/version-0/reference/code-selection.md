@@ -87,7 +87,7 @@ The changed files between base and head are filtered in this order:
 
 1. **Binary files** (any file containing a null byte) are always dropped. Nothing can bring them back.
 2. Files matching an **exclude pattern** are dropped, unless
-3. they also match an **override** in `exclude_pattern_overrides`, which always wins.
+3. they also match an **override** in `exclude_pattern_overrides`, which wins unless the file is [protected](exclude-patterns.md#protected-files) and the override doesn't name it.
 
 A file **deleted** between the base and the head has nothing left to read, so it is left out as well. Neither a binary nor a deleted file appears under **Code Files Assessed** in the report.
 

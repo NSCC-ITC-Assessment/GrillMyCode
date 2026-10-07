@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.27.0 — 2026-10-07
+
+### What's Changed
+
+### Features
+
+- **wizard:** preview which files a run would assess in the Files step
+- **files:** forgive common pattern forms and protect secrets from broad overrides
+
+### Refactoring
+
+- **files:** share the file selection rules with the Workflow Wizard
+
 ## v0.26.0 — 2026-10-04
 
 ### What's Changed

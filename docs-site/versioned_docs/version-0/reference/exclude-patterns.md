@@ -11,7 +11,7 @@ GrillMyCode detects each repository's languages and frameworks and excludes the 
 
 For each file in the changed diff, the action applies this logic in order:
 
-![On the left, three lists (always excluded, detected for the repo's stack, and additional_exclude_patterns) combine into the exclude patterns. On the right, each changed file goes through three questions. Binary, with a null byte? If yes, skipped, and nothing brings it back. If no: matches an exclude pattern? If no, assessed. If yes: matches an entry in exclude_pattern_overrides? If yes, assessed, because overrides always win. If no, skipped.](/img/exclude-decision.svg)
+![On the left, three lists (always excluded, detected for the repo's stack, and additional_exclude_patterns) combine into the exclude patterns. On the right, each changed file goes through three questions. Binary, with a null byte? If yes, skipped, and nothing brings it back. If no: matches an exclude pattern? If no, assessed. If yes: matches an entry in exclude_pattern_overrides? If yes, assessed, unless it is protected. If no, skipped.](/img/exclude-decision.svg)
 
 The exclude patterns themselves come from three sources, merged in this order:
 
@@ -21,7 +21,7 @@ The exclude patterns themselves come from three sources, merged in this order:
 | Auto-detected stack | _(automatic)_ | Build artifacts, dependency dirs, generated files for your specific language/framework |
 | Instructor additions | `additional_exclude_patterns` | Assignment-specific files the auto-detection wouldn't know about |
 
-The final exclude list is the **union** of all three. `exclude_pattern_overrides` can punch individual files back through after the fact.
+The final exclude list is the **union** of all three. `exclude_pattern_overrides` can punch individual files back through after the fact, with one limit: see [Protected files](#protected-files).
 
 ## How auto-detection works
 
@@ -147,9 +147,25 @@ Re-include any of them with `exclude_pattern_overrides` when they are the delive
 
 This section describes the patterns **you** write in `additional_exclude_patterns` and `exclude_pattern_overrides`.
 
-Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with `dot: true`, so they match dotfiles. A pattern **with no `/`** matches by file name at any depth: the action writes it as `**/` plus the pattern, and that is the form the run log's `Exclude patterns applied` list shows (`starter.py` appears as `**/starter.py`). A pattern **with a `/`** is matched from the repository root.
+Separate patterns with commas or line breaks. A comma inside braces belongs to its pattern, so `*.{js,ts}` is one pattern.
 
-The built-in and auto-detected patterns are matched exactly as written. A template pattern with no slash, such as WordPress's `index.php`, therefore applies only in the project folder that turned the template on, not to every `index.php` in the repository.
+Patterns use [minimatch](https://github.com/isaacs/minimatch) glob syntax with `dot: true`, so they match dotfiles. A pattern **with no `/`** matches by file name at any depth: the action writes it as `**/` plus the pattern, and that is the form the run log's `Exclude patterns applied` list shows (`*.sql` appears as `**/*.sql`). A pattern **with a `/`** is matched from the repository root.
+
+The usual ways of writing a path all work:
+
+| You write | Read as | Meaning |
+|---|---|---|
+| `data` | `**/data` and `**/data/**` | A plain name or path, with no wildcards, covers the file of that name and everything in a folder of that name |
+| `data/` | `**/data/**` | A trailing `/` names a folder only |
+| `/data/**` or `./data/**` | `data/**` | A leading `/` or `./` means the repository root |
+| `/config.json` | `config.json` and `config.json/**` | Only at the root, not at any depth |
+
+**Case is ignored** in your patterns and in the [patterns always excluded](#patterns-always-excluded): `data/**` covers `Data/`, and `README.MD` is excluded like `README.md`. The auto-detected template patterns are matched as written, case included. A template pattern with no slash, such as WordPress's `index.php`, also applies only in the project folder that turned the template on, not to every `index.php` in the repository.
+
+Two `.gitignore` habits don't carry over, and the run warns about both:
+
+- A leading `!` doesn't re-include a file. It inverts the pattern, so `!src/**` excludes everything outside `src/`. To re-include a file, use `exclude_pattern_overrides`.
+- A line starting with `#` isn't a comment. It is read as a file name.
 
 | Pattern | What it matches |
 |---|---|
@@ -158,6 +174,7 @@ The built-in and auto-detected patterns are matched exactly as written. A templa
 | `data/*.csv` | `.csv` files directly inside a `data/` directory |
 | `**/*.test.js` | Any `.test.js` file at any depth |
 | `provided_starter/**` | All files inside `provided_starter/` |
+| `provided_starter/` | All files inside any folder named `provided_starter` |
 | `config.json` | Any file named exactly `config.json` at any depth (no `/`) |
 | `src/config.json` | Only `src/config.json` specifically (has a `/`, so anchored) |
 
@@ -203,11 +220,11 @@ Common use cases for instructors:
 
 ## Override exclude patterns
 
-If a file is excluded but you want it assessed, use `exclude_pattern_overrides`. This takes precedence over everything — both auto-detected patterns and `additional_exclude_patterns`.
+If a file is excluded but you want it assessed, use `exclude_pattern_overrides`. This takes precedence over both auto-detected patterns and `additional_exclude_patterns`, except for [protected files](#protected-files). Entries follow the same [pattern syntax](#pattern-syntax) and always ignore case.
 
 Each entry can be:
 
-- An **exact pattern** — re-includes all files matching that pattern:
+- A **pattern** — re-includes all files matching that pattern:
   ```yaml
   exclude_pattern_overrides: '**/*.md'   # re-includes all Markdown files
   ```
@@ -229,6 +246,50 @@ Use `exclude_pattern_overrides` to widen what gets assessed (re-include somethin
 
 :::
 
+### Protected files
+
+A broad override is usually written to bring back something else, so three kinds of file come back only when an override **names** them:
+
+| Kind | Patterns |
+|---|---|
+| Environment files | `.env`, `.env.*` |
+| Lock files | `*.lock`, `package-lock.json`, `yarn.lock`, `pnpm-lock.yaml`, `Pipfile.lock`, `poetry.lock` |
+| Dependency folders | `node_modules/`, `bower_components/`, `vendor/`, `.venv/`, `venv/` |
+
+An override names a protected file when the protected pattern also fits the override itself:
+
+| Override | `frontend/.env` | `frontend/node_modules/…` | Why |
+|---|---|---|---|
+| `frontend/**` | Kept out | Kept out | Names neither |
+| `*.json` | — | Kept out | Doesn't name `node_modules` |
+| `frontend/.env` or `.env` | Assessed | — | Names the file |
+| `node_modules/` or `**/node_modules/**` | — | Assessed | Names the folder |
+| `vendor/` | — | — | Brings back `vendor/`, but not a `.env` or lock file inside it; name those too |
+
+A file kept out this way stays in the `Excluded` list, and the run log lists it again under `Kept out`, with the protected pattern to name.
+
+## Previewing in the Workflow Wizard
+
+The [Workflow Wizard](../workflow-wizard.mdx)'s **Files** step can try your patterns on real files before any run. Under **Try the patterns on your files**, choose a folder on your computer, or paste a list of paths such as the output of `git ls-files`. The Wizard then shows:
+
+- the files that would be assessed, and those left out, grouped by the pattern responsible and where it comes from: an always-excluded list, a stack template, the fallback list, or one of your own patterns;
+- under each pattern box, what each entry does: how many files it leaves out or brings back, whether it matches nothing, and which [protected files](#protected-files) an override matches without naming;
+- a warning when a stack template leaves out source files, such as `src/lib/util.js` under Python's `**/lib/**`, with a **Bring these back** link that adds the override.
+
+The preview runs the action's own matching code in your browser. Nothing is uploaded: the page reads the file names, the start of each file to tell whether it is binary, and the text of the dependency manifests (`package.json`, `composer.json`, `Gemfile`, `mix.exs`) in each project folder.
+
+It is an estimate, because some things are only known at run time:
+
+| A run… | The preview… |
+|---|---|
+| Asks the GitHub Languages API for the repository's languages | Works them out from file names, using the extension lists of [Linguist](https://github.com/github-linguist/linguist), the library behind that API. They are listed under **Languages**, each with a tick box. An extension shared by several languages, such as `.h`, is listed unticked |
+| Detects the stack of each student's repository separately | Shows the result for the folder you chose. A student who adds another language or framework gets its patterns too |
+| Considers only the files changed in the [commit range](code-selection.md), and skips deleted files | Treats every file as changed |
+| Skips binary files, such as images, whatever the patterns say | Does the same for a folder, by reading the first 8,000 bytes of each file. A pasted list has no file contents, so its binary files are listed as assessed |
+| Sees only committed files | Sees everything in the folder, committed or not. A pasted `git ls-files` list is exact, but has no file contents, so frameworks named only in a manifest aren't detected |
+
+To keep large folders quick, the preview does not open `.git` or the dependency folders `node_modules`, `bower_components`, `vendor`, `.venv` and `venv`. It says whether a rule leaves each of those out. It reads at most 5,000 files, shallowest folders first.
+
 ## Confirming what was applied
 
 The action logs the full exclude list on every run. Look for these lines in the workflow step output:
@@ -249,6 +310,8 @@ Exclude patterns applied (94):
 Excluded 2 file(s):
   package-lock.json  (**/package-lock.json)
   README.md  (**/*.md)
+Kept out 1 file(s) that an override matched but did not name. Environment files, lock files and dependency folders are re-included only by an override that names them, such as the file's own path:
+  frontend/.env  (**/.env)
 Left out 1 file(s) with no text to assess:
   public/logo.png  (binary)
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
@@ -256,6 +319,6 @@ Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 
 There is one `Scanned …` line per manifest read — `package.json`, `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — named by its path. `Using gitignore templates:` lists the templates applied at the repository root (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`), and each `Using gitignore templates in <folder>/:` line lists those of a [nested project folder](#monorepos-and-nested-projects).
 
-If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern. The `Left out N file(s)` list names the files no pattern matched that are binary or were deleted; see [Filtering the files](code-selection.md#2-filtering-the-files).
+If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern. The `Kept out N file(s)` list appears only when an override matched a [protected file](#protected-files) without naming it. The `Left out N file(s)` list names the files no pattern matched that are binary or were deleted; see [Filtering the files](code-selection.md#2-filtering-the-files).
 
 The run summary shows the same lists in its **Configuration used by this run** table, under **Excluded files**: one collapsed group per pattern, largest first, then one for binary files and one for deleted files. Each list shows at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. The **Codebase context** row lists the files sent as context the same way.

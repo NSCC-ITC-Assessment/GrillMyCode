@@ -33,7 +33,7 @@ List them in the Workflow Wizard's **Files** step, under **Additional exclude pa
 | One particular file | `config.json` |
 | A folder inside another folder | `tests/fixtures/**` |
 
-Separate several patterns with commas: `data/**, tests/fixtures/**`.
+Separate several patterns with commas, or put one on each line: `data/**, tests/fixtures/**`. Capital letters don't matter, so `data/**` also covers a folder a student named `Data`.
 
 ## Bringing something back
 
@@ -47,7 +47,11 @@ List it in the **Files** step under **Exclude pattern overrides**:
 | One particular file | `README.md` |
 | A folder that's normally left out | `**/.devcontainer/**` |
 
-An override always wins, so anything you list here is assessed even if another rule would leave it out.
+An override wins over every other rule, so anything you list here is assessed even if another rule would leave it out. There is one exception: environment files, lock files and installed libraries come back only when you name them, such as `frontend/.env`. A broad override such as `frontend/**` leaves them out.
+
+## Trying your patterns first
+
+At the bottom of the **Files** step, under **Try the patterns on your files**, choose a folder on your computer, such as your own solution. The Wizard shows which of its files would be assessed and which rule leaves out each of the rest, and updates as you type. Nothing is uploaded. Treat it as an estimate; see [Previewing in the Workflow Wizard](../reference/exclude-patterns.md#previewing-in-the-workflow-wizard).
 
 ## Checking what was assessed
 

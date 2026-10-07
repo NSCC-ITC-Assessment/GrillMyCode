@@ -4,18 +4,16 @@
  */
 
 import { DISPATCH_OVERRIDES_BY_KEY, resolveDispatchOverrides } from './dispatchInputs';
+import { splitPatternList } from './fileSelection';
 
 /**
  * Normalises a pattern string that may use commas, newlines, or a mix as
  * delimiters. Returns a single comma-separated string with each entry trimmed
- * and empty entries removed.
+ * and empty entries removed. The list is split by the action's own code (see
+ * fileSelection.js), so a comma inside braces stays with its pattern.
  */
 function normalizePatterns(value) {
-  return value
-    .split(/[,\r\n]+/)
-    .map((p) => p.trim())
-    .filter(Boolean)
-    .join(', ');
+  return splitPatternList(value).join(', ');
 }
 
 /**
