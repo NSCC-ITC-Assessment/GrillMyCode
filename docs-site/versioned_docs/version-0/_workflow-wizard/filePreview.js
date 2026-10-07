@@ -13,7 +13,10 @@ import {
   findProjectFolders,
   instructorPatterns,
   patternProblem,
+  pinnedStack,
   splitPatternList,
+  splitStackTemplates,
+  stackTemplateEntries,
 } from './fileSelection';
 
 /**
@@ -260,6 +263,9 @@ function checkOverrides(overrides, paths, unopened, verdicts, binaryPaths) {
  *   languageFiles              — languageFiles.json
  *   additionalExcludePatterns,
  *   excludePatternOverrides    — the two boxes, as typed
+ *   stackTemplates             — the workflow's stack_templates value. With
+ *                                one, the stack is the one it names, as in a
+ *                                run, and `languages` and `texts` go unused
  *   unopened                   — dependency folders the reader did not open
  *   binary                     — the paths found to be binary (see
  *                                readBinaryFiles); none for a pasted list,
@@ -282,8 +288,14 @@ function checkOverrides(overrides, paths, unopened, verdicts, binaryPaths) {
  *                                buildFileRules), and `override` the text that
  *                                brings the group back (see asOverride)
  *   leftOutCount               — files left out, by a pattern or as binary
- *   stack                      — [{ folder, templates, patterns }] detected
- *   usedFallback               — nothing was detected
+ *   stack                      — [{ folder, templates, patterns }] detected,
+ *                                or named by `stackTemplates`
+ *   pinned                     — `stackTemplates` set the stack
+ *   pin                        — the stack as stack_templates entries, and
+ *                                the project folders they can't name:
+ *                                { entries, unnamed } (see
+ *                                stackTemplateEntries)
+ *   usedFallback               — the stack is empty, so the fallback list applies
  *   foldersFound, foldersScanned — project folders in the list, and how many
  *                                were scanned (fewer, above the action's cap)
  *   unopened                   — [{ folder, pattern, assessed }]: whether
@@ -301,17 +313,22 @@ export function previewFiles({
   languageFiles,
   additionalExcludePatterns = '',
   excludePatternOverrides = '',
+  stackTemplates = '',
   unopened = [],
   binary = [],
 }) {
   const additional = splitPatternList(additionalExcludePatterns);
   const overrides = splitPatternList(excludePatternOverrides);
-  const stack = detectStack({
-    languages,
-    paths,
-    readText: (path) => (Object.hasOwn(texts, path) ? texts[path] : null),
-    allTemplates: lists.templates,
-  });
+  const pinnedEntries = splitStackTemplates(stackTemplates);
+  const pinned = pinnedEntries.length > 0;
+  const stack = pinned
+    ? pinnedStack({ entries: pinnedEntries, allTemplates: lists.templates })
+    : detectStack({
+        languages,
+        paths,
+        readText: (path) => (Object.hasOwn(texts, path) ? texts[path] : null),
+        allTemplates: lists.templates,
+      });
   const { verdictOn, origins, mayBeOwnWork } = buildFileRules({
     detectedPatterns: stack.patterns,
     detectedOrigins: stack.origins,
@@ -372,6 +389,8 @@ export function previewFiles({
       templates: [...keys],
       patterns: [...extraPatterns],
     })),
+    pinned,
+    pin: stackTemplateEntries(stack.detected),
     usedFallback: stack.detected.size === 0,
     foldersFound: stack.foldersFound,
     foldersScanned: findProjectFolders(paths).folders.size,

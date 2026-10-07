@@ -18,7 +18,7 @@ The exclude patterns themselves come from three sources, merged in this order:
 | Source | Input | Purpose |
 |---|---|---|
 | Always-excluded | _(hardcoded)_ | Lock files, env files, OS noise, source maps, logs, Markdown, editor and IDE settings, diagrams, tabular data — never relevant to assessment |
-| Auto-detected stack | _(automatic)_ | Build artifacts, dependency dirs, generated files for your specific language/framework |
+| Auto-detected stack | _(automatic)_, or `stack_templates` to [name it yourself](#using-the-same-stack-for-every-student) | Build artifacts, dependency dirs, generated files for your specific language/framework |
 | Instructor additions | `additional_exclude_patterns` | Assignment-specific files the auto-detection wouldn't know about |
 
 The final exclude list is the **union** of all three. `exclude_pattern_overrides` can punch individual files back through after the fact, with one limit: see [Protected files](#protected-files).
@@ -88,6 +88,53 @@ The project doesn't have to sit at the repository root. A repository can hold on
 - Templates selected by the Languages API apply at the repository root only, since language data has no folder. Patterns that match at any depth (`**/node_modules/**`, `**/__pycache__/**`) cover every folder however they were selected.
 - Up to 100 project folders are scanned, shallowest first. Beyond that the run logs a warning, and deeper folders get only the patterns that match at any depth; add anything else they commit with `additional_exclude_patterns`.
 - A folder name containing glob characters is escaped in the pattern, e.g. `lab \[1\]/vendor/**`. Pass the pattern exactly as the run log shows it to `exclude_pattern_overrides`.
+
+## Using the same stack for every student
+
+Auto-detection runs in each repository, on every run. Two students' repositories can therefore get different exclude patterns, and a student who adds a project file, such as an empty `Cargo.toml`, turns its template on. To give every repository the same patterns, name the stack templates yourself in `stack_templates`:
+
+```yaml
+- uses: NSCC-ITC-Assessment/GrillMyCode@v0
+  with:
+    github_token: ${{ secrets.GITHUB_TOKEN }}
+    api_key: ${{ secrets.OPENROUTER_API_KEY }}
+    stack_templates: 'Node, Nextjs, Composer@api, Laravel@api'
+```
+
+Separate entries with commas or line breaks. Each one names a template, and may add `@` and a folder:
+
+| Entry | What it applies |
+|---|---|
+| `Node` | The `Node` template at the repository root |
+| `Laravel@api` | The `Laravel` template inside `api/`, as for a [nested project folder](#monorepos-and-nested-projects): its anchored patterns become `api/vendor/**`, `api/bootstrap/compiled.php` and so on |
+
+With `stack_templates` set, a run:
+
+- doesn't ask the Languages API or look for project files, and applies no template you didn't name;
+- still applies the [patterns always excluded](#patterns-always-excluded), `additional_exclude_patterns`, `exclude_pattern_overrides` and the rule for [protected files](#protected-files);
+- still lists the [source files a template pattern left out](#source-files-a-detected-pattern-left-out).
+
+### Template names
+
+A name is a [github/gitignore](https://github.com/github/gitignore) template as the run log's `Using gitignore templates` lines print it: `Node`, `Python`, `Global/JetBrains`, `community/JavaScript/Vue`. `SvelteKit` and `Nuxt` name the two pattern sets the action keeps for frameworks with no upstream template. Case is ignored.
+
+A language isn't always a template: JavaScript and TypeScript use `Node`, and C# uses `Dotnet`. A run warns about a name it doesn't know, says which template a language name means, and leaves that entry out. It doesn't fail, so a workflow keeps running if a template is later removed from the upstream collection. If no entry names a known template, the run uses the fallback list.
+
+### Getting the value
+
+You don't have to write the list by hand:
+
+- In the [Workflow Wizard](../workflow-wizard.mdx)'s **Files** step, [preview a folder](#previewing-in-the-workflow-wizard) holding your solution and tick **Use these templates for every student**. The Wizard writes the stack it shows into the workflow.
+- The run summary of any run that detected its stack gives the value for that repository, in the **Stack templates** row of **Configuration used by this run**. A [preview run](#previewing-in-a-run) in a repository holding your solution shows it without generating questions.
+
+### When to leave it empty
+
+- Students choose their own language or framework. A template you didn't name is never applied, so their build output is assessed unless an always-excluded pattern covers it.
+- Students lay their projects out in folders of their own. A template's anchored patterns apply only in the folder you named; a project in another folder gets only the patterns that match at any depth (`**/node_modules/**`).
+
+If you're not sure the same stack suits every student's repository, don't set it.
+
+A folder whose name contains a comma, or starts or ends with a space, can't be named in an entry.
 
 ## Patterns always excluded
 
@@ -283,7 +330,7 @@ It is an estimate, because some things are only known at run time:
 | A run… | The preview… |
 |---|---|
 | Asks the GitHub Languages API for the repository's languages | Works them out from file names, using the extension lists of [Linguist](https://github.com/github-linguist/linguist), the library behind that API. They are listed under **Languages**, each with a tick box. An extension shared by several languages, such as `.h`, is listed unticked |
-| Detects the stack of each student's repository separately | Shows the result for the folder you chose. A student who adds another language or framework gets its patterns too |
+| Detects the stack of each student's repository separately, unless [`stack_templates` names it](#using-the-same-stack-for-every-student) | Shows the result for the folder you chose. A student who adds another language or framework gets its patterns too. Tick **Use these templates for every student**, and every run applies the stack shown instead |
 | Considers only the files changed in the [commit range](code-selection.md), and skips deleted files | Treats every file as changed |
 | Skips binary files, such as images, whatever the patterns say | Does the same for a folder, by reading the first 8,000 bytes of each file. A pasted list has no file contents, so its binary files are listed as assessed |
 | Sees only committed files | Sees everything in the folder, committed or not. A pasted `git ls-files` list is exact, but has no file contents, so frameworks named only in a manifest aren't detected |
@@ -314,7 +361,7 @@ A preview run:
 
 The usual way to run one is from the **Run workflow** form: the [Workflow Wizard](../workflow-wizard.mdx)'s **Manual runs** step puts `preview_only` on it, ticked by default. Run it in a repository that holds some work, such as your own solution. Don't set `preview_only: "true"` in the workflow file itself and leave it there: every run would then be a preview, and no student would be assessed.
 
-Because the stack is detected in each repository separately, a preview is exact for the repository it ran in. Another student's repository can still differ.
+Because the stack is detected in each repository separately, a preview is exact for the repository it ran in. Another student's repository can still differ, unless you [use the same stack for every student](#using-the-same-stack-for-every-student).
 
 ## Confirming what was applied
 
@@ -347,13 +394,15 @@ Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
 
 There is one `Scanned …` line per manifest read — `package.json`, `composer.json` for PHP, `Gemfile` for Ruby, `mix.exs` for Elixir — named by its path. `Using gitignore templates:` lists the templates applied at the repository root (e.g. `Composer, Laravel`; `Ruby, Rails`; `Elixir, community/Elixir/Phoenix`), and each `Using gitignore templates in <folder>/:` line lists those of a [nested project folder](#monorepos-and-nested-projects).
 
+With [`stack_templates`](#using-the-same-stack-for-every-student) set, the `Detected languages` and `Scanned …` lines are replaced by one saying the stack was set by `stack_templates`, and the `Using gitignore templates` lines list the templates you named.
+
 If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern. The `Kept out N file(s)` list appears only when an override matched a [protected file](#protected-files) without naming it. The `Left out N file(s)` list names the files no pattern matched that are binary or were deleted; see [Filtering the files](code-selection.md#2-filtering-the-files).
 
 ### Source files a detected pattern left out
 
 The `N source file(s) were left out by a pattern detected from the repository` list appears when a pattern nobody wrote down may have removed a student's own work. A file is listed when all of these hold:
 
-- the pattern that left it out comes from a detected stack template, a project file or the fallback list, not from an [always-excluded list](#patterns-always-excluded);
+- the pattern that left it out comes from a stack template, whether detected or named in `stack_templates`, a project file or the fallback list, not from an [always-excluded list](#patterns-always-excluded);
 - its name marks it as source code, by the extension and file name lists of [Linguist](https://github.com/github-linguist/linguist), the library behind the GitHub Languages API;
 - it isn't a [protected file](#protected-files), such as one in `node_modules`;
 - none of your own `additional_exclude_patterns` matches it.
@@ -369,9 +418,11 @@ The **Files left out** section has one row per pattern, largest group first, the
 | From | Meaning |
 |---|---|
 | always left out: _list name_ | One of the [always-excluded](#patterns-always-excluded) lists |
-| _Name_ template | A detected stack template; "in `folder/`" when it was detected in a [nested project folder](#monorepos-and-nested-projects) |
+| _Name_ template | A stack template, detected or named in `stack_templates`; "in `folder/`" when it applies in a [nested project folder](#monorepos-and-nested-projects) |
 | project files | A pattern a project file adds without a template |
 | fallback list | The list used when no stack is detected |
 | `additional_exclude_patterns` | One of your own patterns |
+
+In the **Configuration used by this run** table, the **Stack templates** row says whether the stack was detected or set by `stack_templates`, and lists it as `stack_templates` entries, ready to copy into a workflow.
 
 A row marked ⚠️ holds at least one of the flagged source files. The lists show at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. In the **Configuration used by this run** table, the **Codebase context** row lists the files sent as context the same way.

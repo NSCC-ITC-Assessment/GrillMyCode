@@ -2141,7 +2141,8 @@
       "**/*.translation",
       "**/.mono/**",
       "**/data_*/**",
-      "**/mono_crash.*.json"
+      "**/mono_crash.*.json",
+      "**/*.exe"
     ],
     "Gradle": [
       "**/.gradle",
@@ -2323,6 +2324,7 @@
       "**/*.exe",
       "**/*.aliases",
       "**/*.lvlps",
+      "**/*.lvprojstate",
       "**/.cache/**",
       "**/*.UserState"
     ],

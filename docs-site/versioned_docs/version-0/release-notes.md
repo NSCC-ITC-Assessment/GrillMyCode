@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.29.0 — 2026-10-07
+
+### What's Changed
+
+### Features
+
+- **files:** add stack_templates to apply the same stack in every repository
+
+### Chores & Maintenance
+
+- refresh gitignore templates
+
 ## v0.28.0 — 2026-10-07
 
 ### What's Changed
