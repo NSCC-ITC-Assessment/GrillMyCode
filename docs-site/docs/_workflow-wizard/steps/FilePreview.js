@@ -454,6 +454,11 @@ function Results({ source, result, options, cfg, onChange }) {
               files in a repository, paste the output of <code>git ls-files</code> instead.
             </li>
           )}
+          <li>
+            To check a real repository, start a manual run with <code>preview_only</code> set to{' '}
+            <code>true</code>. It lists the files that run would assess and stops, without
+            generating questions. The <strong>Manual runs</strong> step puts it on the run form.
+          </li>
         </ul>
       </details>
 

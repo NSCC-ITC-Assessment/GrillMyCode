@@ -111,7 +111,7 @@ One of them wasn't written by GrillMyCode: someone opened it by hand with the sa
 
 ### A file I expected isn't assessed
 
-Check the `Exclude patterns applied` list in the run's log, and find the pattern that matches the file. Then add the file, or the pattern for all files of that type, to `exclude_pattern_overrides`. See [File filtering](reference/exclude-patterns.md#confirming-what-was-applied).
+Open the run's summary and find the file under **Files left out**, which names the pattern that removed it and where that pattern comes from. Then add the file, or the pattern for all files of that type, to `exclude_pattern_overrides`. To check the result without generating questions, start a [preview run](reference/exclude-patterns.md#previewing-in-a-run). See [File filtering](reference/exclude-patterns.md#confirming-what-was-applied).
 
 ### An override didn't bring a file back
 

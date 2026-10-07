@@ -76,7 +76,8 @@ inputs:
     description: >
       API key for the chosen AI provider. Required — create an OpenRouter key at
       https://openrouter.ai/keys and store it as a repository or organisation
-      secret. github_token cannot be used for question generation.
+      secret. github_token cannot be used for question generation. Only a
+      preview_only run, which never calls the AI, works without it.
     required: true
     default: ""
 
@@ -319,6 +320,22 @@ inputs:
     required: false
     default: "false"
 
+  preview_only:
+    description: >
+      When true, the run stops once it has worked out which files it would
+      assess, and reports them in the run summary: the files that would be
+      assessed, the changed files left out with the pattern or rule that left
+      each one out, and the context files that would be sent. The AI is never
+      called, so the run costs nothing and needs no api_key. No questions,
+      issue, PDF, instructor copy or repository labels are produced, the
+      outputs are empty, and an assessment from an earlier run is left as it
+      is. Use it to check additional_exclude_patterns and
+      exclude_pattern_overrides against a real repository before the first
+      assessed run. A preview that finds nothing to assess says so and
+      succeeds, whatever fail_on_empty_assessment is set to.
+    required: false
+    default: "false"
+
   keep_comments:
     description: >
       When false (the default), inline and block comments are stripped from the
@@ -458,6 +475,7 @@ runs:
     INPUT_CODEBASE_CONTEXT_MAX_CHARS: ${{ inputs.codebase_context_max_chars }}
     INPUT_KEEP_COMMENTS: ${{ inputs.keep_comments }}
     INPUT_FAIL_ON_EMPTY_ASSESSMENT: ${{ inputs.fail_on_empty_assessment }}
+    INPUT_PREVIEW_ONLY: ${{ inputs.preview_only }}
     INPUT_SKIP_COMMITTERS: ${{ inputs.skip_committers }}
     INPUT_SUBMISSION_TAGS: ${{ inputs.submission_tags }}
     INPUT_TAG_DIFF_BASE: ${{ inputs.tag_diff_base }}

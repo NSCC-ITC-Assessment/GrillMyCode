@@ -162,3 +162,24 @@ describe('generateYaml pattern lists', () => {
     expect(yaml).toContain('README.md, src/{a,b}/**');
   });
 });
+
+describe('generateYaml preview_only', () => {
+  const cfg = { ...DEFAULTS, triggerEvent: 'push+workflow_dispatch', branchMode: 'default' };
+
+  it('is a manual-run field, off unless the run sets it', () => {
+    const yaml = generateYaml({
+      ...cfg,
+      dispatchOverridesEnabled: true,
+      dispatchOverrides: ['preview_only'],
+    });
+    expect(yaml).toMatch(
+      /preview_only:\n {8}description: 'preview_only - .*'\n {8}type: choice\n {8}options: \['false', 'true'\]\n {8}default: 'false'/,
+    );
+    expect(yaml).toContain(`preview_only: "\${{ github.event.inputs.preview_only || 'false' }}"`);
+  });
+
+  it('is never written into the file on its own', () => {
+    expect(generateYaml({ ...cfg, dispatchOverridesEnabled: false })).not.toContain('preview_only');
+    expect(generateYaml({ ...cfg, previewOnly: false })).not.toContain('preview_only');
+  });
+});

@@ -22,7 +22,8 @@ function stubTree(files) {
   readFileAt.mockImplementation((sha, path) => files[path] ?? null);
 }
 
-const detect = () => detectExcludePatterns('token', 'org', 'repo', 'abc123');
+const detectRules = () => detectExcludePatterns('token', 'org', 'repo', 'abc123');
+const detect = async () => (await detectRules()).patterns;
 
 const manifest = {
   name: 'student-app',
@@ -99,6 +100,23 @@ describe('detectExcludePatterns fallback', () => {
       ]),
     );
     expect(new Set(patterns).size).toBe(patterns.length);
+  });
+
+  it('says where each pattern comes from', async () => {
+    stubLanguages({ Python: 1000 });
+    stubTree({ 'web/package.json': '{}' });
+    const { patterns, origins } = await detectRules();
+    expect([...origins.keys()]).toEqual(patterns);
+    expect(origins.get('**/__pycache__/**')).toEqual({
+      kind: 'template',
+      template: 'Python',
+      folder: '',
+    });
+    expect([...origins.values()]).toContainEqual({
+      kind: 'template',
+      template: 'Node',
+      folder: 'web',
+    });
   });
 
   it('still detects languages when the tree cannot be listed', async () => {

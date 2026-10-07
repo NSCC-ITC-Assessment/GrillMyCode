@@ -3,6 +3,7 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
 import {
+  ACTION_LANGUAGE_FILES_PATH,
   LANGUAGE_FILES_PATH,
   buildLanguageFiles,
   parseLinguistLanguages,
@@ -171,6 +172,10 @@ describe("the Workflow Wizard's language files", () => {
     });
     expect(languageFiles.extensions['.h']).toEqual(['C', 'C++', 'Objective-C']);
     expect(languageFiles.filenames.Gemfile).toBe('Ruby');
+  });
+
+  it("are the action's — run node scripts/build-wizard-exclude-lists.js if not", () => {
+    expect(JSON.parse(readFileSync(ACTION_LANGUAGE_FILES_PATH, 'utf-8'))).toEqual(languageFiles);
   });
 });
 
@@ -378,6 +383,15 @@ describe('previewFiles', () => {
       files: ['src/lib/notes.txt', 'src/lib/util.js'],
       codeFiles: ['src/lib/util.js'],
       override: '**/lib/**',
+    });
+  });
+
+  it("flags none the instructor's own pattern leaves out as well", () => {
+    const result = preview({ additionalExcludePatterns: 'src/lib/' });
+    expect(group(result, '**/lib/**')).toMatchObject({
+      files: ['src/lib/notes.txt', 'src/lib/util.js'],
+      codeFiles: [],
+      override: null,
     });
   });
 

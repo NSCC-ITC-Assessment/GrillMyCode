@@ -60,6 +60,19 @@
  *
  * starter_code is listed for two recoveries: none brings back a first commit
  * that an empty-repository student filled with all their work, and context adds
+ * preview_only produces no assessment at all, which sounds like what
+ * disqualified the four above, and is not. Those four make a run that looks
+ * like an assessment of a student with nothing to assess. A preview says what
+ * it is: its summary is headed as a preview, a notice on the run page says no
+ * questions were generated, and nothing a run delivers — the issue, the PDF,
+ * the instructor copy, the submission record — is written or replaced, so the
+ * assessment from the last real run stands. It is also the one run a student
+ * gains nothing from starting: the summary of every ordinary run already
+ * lists the same files. It is ticked by default and listed first, because the
+ * run it makes is the one to do before any other, and it costs nothing.
+ *
+ * starter_code is listed for two recoveries: none brings back a first commit
+ * that an empty-repository student filled with all their work, and context adds
  * the starter code as background when a run's questions came out shallow for
  * want of it. Its size limit, codebase_context_max_chars, stays in the file:
  * like assignment_context_max_chars it is a structural cap, not a per-run
@@ -94,6 +107,16 @@ export const MAX_DISPATCH_INPUTS = 25;
  *              student's own files, so the Wizard skips the step that sets it.
  */
 export const DISPATCH_OVERRIDES = [
+  {
+    key: 'preview_only',
+    cfgKey: 'previewOnly',
+    label: 'Preview only',
+    type: 'boolean',
+    defaultSelected: true,
+    description:
+      'true lists the files a run would assess and the files left out, then stops: the AI is not called and no questions are produced',
+    hint: 'Check which files a run would assess, in a real repository, before the first assessed run or after changing a pattern. The run summary lists the files assessed and the files left out, with the pattern responsible for each. The AI is not called, so the run costs nothing, and an existing assessment is left as it is.',
+  },
   {
     key: 'ai_model',
     cfgKey: 'aiModel',
@@ -227,9 +250,9 @@ export const DISPATCH_OVERRIDES = [
 ];
 
 /**
- * Ticked when the wizard first opens: the model, question, context and
- * file-filtering settings an instructor varies between runs of the same
- * assignment.
+ * Ticked when the wizard first opens: the file preview, and the model,
+ * question, context and file-filtering settings an instructor varies between
+ * runs of the same assignment.
  *
  * The rest stay unticked because they are situational rather than routine —
  * ai_reasoning_effort can multiply what a run costs, tag_diff_base re-scopes a

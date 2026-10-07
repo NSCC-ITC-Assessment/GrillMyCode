@@ -5,6 +5,7 @@
  *   1. Read and validate GitHub Actions inputs
  *   2. Resolve commit SHAs and the branch or submission tag from the event context
  *   3. Collect changed files, filter them, strip comments, and build the prompt
+ *      (a preview_only run reports the files and stops here)
  *   4. Call the configured AI provider to generate comprehension questions
  *   5. Generate a PDF of the assessment and attach it to the gmc-assessments release
  *   6. Create or update a GitHub Issue with the assessment questions and PDF link
@@ -16,6 +17,7 @@ import * as core from '@actions/core';
 import * as github from '@actions/github';
 import {
   EMPTY_ASSESSMENT_FILE_LIST_LIMIT,
+  SUMMARY_COLLISION_FILE_LIMIT,
   SUMMARY_FILE_LIST_LIMIT,
   SUMMARY_FILE_TABLE_LIMIT,
   GIT_EMPTY_TREE_SHA,
@@ -47,7 +49,7 @@ import {
   readAssignmentContextFiles,
   selectCodebaseContext,
 } from './files.js';
-import { detectExcludePatterns } from './stack-detection.js';
+import { detectExcludePatterns, loadLanguageFiles } from './stack-detection.js';
 import {
   buildPrompt,
   buildResponseFormat,
@@ -142,8 +144,12 @@ function createRunState() {
     excludePatterns: [],
     excludePatternOverrides: [],
     // Changed files the exclude patterns removed, each with the first pattern
-    // that matched it: [{ filepath, pattern }].
+    // that matched it and where that pattern comes from (see detectStack):
+    // [{ filepath, pattern, origin }].
     excludedFiles: [],
+    // Those of them that may be the student's own work all the same: source
+    // files a pattern from the detected stack left out (see mayBeOwnWork).
+    ownWorkFiles: [],
     // Those of them an override matched without naming the protected pattern
     // that keeps them out: [{ filepath, guard }] (see createFileFilter).
     protectedFiles: [],
@@ -186,6 +192,10 @@ function createRunState() {
     repoLabelTopic: 'skipped',
     repoLabelDescription: 'skipped',
     repoLabelError: '',
+
+    // A preview_only run that found nothing it would assess: why, with what
+    // to check (see explainEmptyAssessment), or null.
+    previewEmpty: null,
 
     inputs: null,
     diagnostics: [],
@@ -253,6 +263,19 @@ const cellCode = (text) => refCode(text).replace(/\|/g, '\\|');
  * explains a missing file); the rest are counted.
  */
 function fileListCell(groups) {
+  return fileLists(groups)
+    .map(
+      ({ label, files, list }) =>
+        `<details><summary>${label} (${fmtNum(files.length)})</summary>${list}</details>`,
+    )
+    .join('');
+}
+
+/**
+ * The groups of fileListCell that have files, each with `list`: its paths as
+ * they are written into a cell, clipped to the group's share of the limit.
+ */
+function fileLists(groups) {
   const nonEmpty = groups.filter((g) => g.files.length > 0);
   const quota = new Map();
   let budget = SUMMARY_FILE_LIST_LIMIT;
@@ -264,31 +287,34 @@ function fileListCell(groups) {
       budget -= share;
     });
 
-  return nonEmpty
-    .map((g) => {
-      const { label, files } = g;
-      const shown = files.slice(0, quota.get(g));
-      const remainder = files.length - shown.length;
-      const lines = shown.map(cellCode);
-      if (remainder > 0) {
-        lines.push(`_…and ${fmtNum(remainder)} more — full list in the run log_`);
-      }
-      return (
-        `<details><summary>${label} (${fmtNum(files.length)})</summary>` +
-        `${lines.join('<br>')}</details>`
-      );
-    })
-    .join('');
+  return nonEmpty.map((g) => {
+    const shown = g.files.slice(0, quota.get(g));
+    const remainder = g.files.length - shown.length;
+    const lines = shown.map(cellCode);
+    if (remainder > 0) {
+      lines.push(`_…and ${fmtNum(remainder)} more — full list in the run log_`);
+    }
+    return { ...g, list: lines.join('<br>') };
+  });
+}
+
+/** "7 of 19 changed files", with the number left out when there are any. */
+function fileCounts(state) {
+  const changed = state.allFiles.length;
+  const leftOut = changed - state.files.length;
+  return {
+    assessed: `**${fmtNum(state.files.length)} of ${fmtNum(changed)} changed file${changed === 1 ? '' : 's'}**`,
+    leftOut: leftOut > 0 ? [`**${fmtNum(leftOut)} left out**`] : [],
+  };
 }
 
 function renderHeadline(state) {
+  const { assessed, leftOut } = fileCounts(state);
   const counts = [];
   if (state.questionsGenerated !== null) {
     counts.push(`**${fmtNum(state.questionsGenerated)} questions**`);
   }
-  counts.push(
-    `**${fmtNum(state.files.length)} file${state.files.length === 1 ? '' : 's'}** assessed`,
-  );
+  counts.push(`${assessed} assessed`);
 
   const links = [];
   if (state.issueUrl) {
@@ -296,7 +322,76 @@ function renderHeadline(state) {
   }
   if (state.pdfUrl) links.push(`[Download PDF](${state.pdfUrl})`);
 
-  return [counts.join(' from '), ...links].join(' · ');
+  return [counts.join(' from '), ...leftOut, ...links].join(' · ');
+}
+
+/**
+ * The banner of a preview_only run: what would be assessed, and that nothing
+ * was. The second part is said every time, so nobody takes a preview's green
+ * tick for an assessment.
+ */
+function renderPreviewHeadline(state) {
+  const { assessed, leftOut } = fileCounts(state);
+  const empty = state.previewEmpty;
+  const lines = [
+    empty
+      ? `**Nothing would be assessed: ${empty.cause}**`
+      : [`${assessed} would be assessed`, ...leftOut].join(' · '),
+    'This run was a preview (`preview_only`): the AI was not called, and no questions, issue ' +
+      'or PDF were produced. An assessment from an earlier run is unchanged.',
+  ];
+  if (empty) {
+    lines.push(empty.detail);
+    if (empty.checks.length > 0) {
+      lines.push(`### What to check\n\n${empty.checks.map((c) => `- ${c}`).join('\n')}`);
+    }
+  }
+  return lines.join('\n\n');
+}
+
+/** Where an exclude pattern comes from, in a few words (see detectStack). */
+function describeOrigin(origin) {
+  const where = origin?.folder ? ` in ${refCode(`${origin.folder}/`)}` : '';
+  switch (origin?.kind) {
+    case 'yours':
+      return '`additional_exclude_patterns`';
+    case 'template':
+      return `${origin.template.split('/').pop()} template${where}`;
+    case 'project':
+      return `project files${where}`;
+    case 'fallback':
+      return 'fallback list';
+    case 'always':
+      return origin.label ? `always left out: ${origin.label}` : 'always left out';
+    default:
+      return '—';
+  }
+}
+
+/**
+ * The warning that some files left out may be the student's own work (see
+ * mayBeOwnWork). It sits under the headline because it is the one thing in a
+ * summary an instructor may need to act on, and the detected patterns that
+ * cause it are the ones nobody wrote down.
+ */
+function renderOwnWorkWarning(state) {
+  const flagged = state.ownWorkFiles;
+  if (flagged.length === 0) return '';
+  const shown = flagged
+    .slice(0, SUMMARY_COLLISION_FILE_LIMIT)
+    .map(
+      ({ filepath, pattern, origin }) =>
+        `${refCode(filepath)} (${refCode(pattern)}, ${describeOrigin(origin)})`,
+    );
+  const remainder = flagged.length - shown.length;
+  const n = flagged.length;
+  return (
+    `⚠️ **${fmtNum(n)} source file${n === 1 ? ' was' : 's were'} left out by a pattern detected ` +
+    `from this repository, not one the instructor wrote**, and may be work that should be ` +
+    `assessed: ${shown.join(', ')}${remainder > 0 ? `, and ${fmtNum(remainder)} more` : ''}. ` +
+    `Build output is rightly left out. To assess a file, name it or its pattern in ` +
+    `\`exclude_pattern_overrides\`.`
+  );
 }
 
 function renderOverview(state) {
@@ -318,7 +413,7 @@ function renderOverview(state) {
         ]
       : ['Branch', state.branchName ? `\`${state.branchName}\`` : '—'],
     [
-      'Commits assessed',
+      state.inputs?.previewOnly ? 'Commits compared' : 'Commits assessed',
       `${commitLink(state.repoSlug, state.baseSha)} → ${commitLink(state.repoSlug, state.headSha)}`,
     ],
   ];
@@ -355,14 +450,15 @@ function renderAssessedFiles(state) {
     );
   }
 
+  const preview = state.inputs?.previewOnly;
   const marked =
     state.markedFiles.length > 0
       ? `\n${fmtNum(state.markedFiles.length)} of these file(s) existed before this submission, ` +
-        `so questions were limited to the lines added or changed in it.\n`
+        `so questions ${preview ? 'would be' : 'were'} limited to the lines added or changed in it.\n`
       : '';
 
   return (
-    `### Files assessed\n\n` +
+    `### ${preview ? 'Files that would be assessed' : 'Files assessed'}\n\n` +
     table(['File', 'Added', 'Removed'], rows) +
     overflowNote(state.files.length, shown.length) +
     `\n**Total:** +${fmtNum(totals.added)} / −${fmtNum(totals.removed)} lines` +
@@ -425,10 +521,6 @@ function renderConfiguration(state) {
           ? `, ${fmtNum(state.excludePatternOverrides.length)} re-included by \`exclude_pattern_overrides\``
           : ''),
     ],
-    // Only once filtering has run: a run that failed before it has no answer.
-    ...(state.allFiles.length > 0 && state.excludePatterns.length > 0
-      ? [['Excluded files', renderExcludedFilesSetting(state)]]
-      : []),
     [
       'Assignment context',
       state.assignmentContextFiles.length > 0
@@ -439,19 +531,6 @@ function renderConfiguration(state) {
   ];
 
   let note = '';
-  if (state.excludedFiles.length > 0) {
-    note +=
-      `\nRe-include an excluded file with \`exclude_pattern_overrides\` — pass the exact path ` +
-      `(e.g. ${refCode(state.excludedFiles[0].filepath)}) or the pattern that matched it.\n`;
-  }
-  if (state.protectedFiles.length > 0) {
-    const n = state.protectedFiles.length;
-    note +=
-      `\n${fmtNum(n)} excluded file${n === 1 ? '' : 's'} matched \`exclude_pattern_overrides\` ` +
-      `but ${n === 1 ? 'was' : 'were'} kept out (e.g. ${refCode(state.protectedFiles[0].filepath)}): ` +
-      `environment files, lock files and dependency folders are re-included only by an override ` +
-      `that names them, such as the file's own path.\n`;
-  }
   if (i.includeAnswers) {
     note +=
       `\n⚠️ **\`include_answers\` is enabled — the student report contains the answers.** ` +
@@ -462,25 +541,28 @@ function renderConfiguration(state) {
 }
 
 /**
- * The excluded-files row: every changed file the exclude patterns removed,
- * grouped under the pattern that matched it, largest group first, then the
- * files with no text to assess, grouped by why. A student asking why a file
- * was not assessed finds the answer and the pattern to override in one place.
+ * The files-left-out section: every changed file that is not assessed, one
+ * row per pattern that removed any, largest group first, with where the
+ * pattern comes from, then the files with no text to assess, by why. A student
+ * asking why a file was not assessed, or an instructor checking their
+ * patterns, finds the answer and the pattern to override in one place.
  */
-function renderExcludedFilesSetting(state) {
+function renderLeftOutFiles(state) {
   const excluded = state.excludedFiles;
   const skipped = state.skippedFiles;
-  if (excluded.length === 0 && skipped.length === 0) return 'none';
+  if (excluded.length === 0 && skipped.length === 0) return '';
 
+  const flagged = new Set(state.ownWorkFiles.map((f) => f.filepath));
   const byPattern = new Map();
-  for (const { filepath, pattern } of excluded) {
-    if (!byPattern.has(pattern)) byPattern.set(pattern, []);
-    byPattern.get(pattern).push(filepath);
+  for (const { filepath, pattern, origin } of excluded) {
+    if (!byPattern.has(pattern)) byPattern.set(pattern, { origin, files: [] });
+    byPattern.get(pattern).files.push(filepath);
   }
   const groups = [...byPattern]
-    .sort(([pa, a], [pb, b]) => b.length - a.length || pa.localeCompare(pb))
-    .map(([pattern, files]) => ({
+    .sort(([pa, a], [pb, b]) => b.files.length - a.files.length || pa.localeCompare(pb))
+    .map(([pattern, { origin, files }]) => ({
       label: pattern ? cellCode(pattern) : 'no pattern recorded',
+      from: describeOrigin(origin) + (files.some((f) => flagged.has(f)) ? ' ⚠️' : ''),
       files: [...files].sort(),
     }));
   // No pattern removed these, and no override brings them back.
@@ -489,13 +571,39 @@ function renderExcludedFilesSetting(state) {
     ['deleted', 'deleted files'],
   ]) {
     const files = skipped.filter((s) => s.reason === reason).map((s) => s.filepath);
-    groups.push({ label, files: files.sort() });
+    groups.push({ label, from: 'no text to assess', files: files.sort() });
+  }
+
+  const rows = fileLists(groups).map(({ label, from, files, list }) => [
+    label,
+    from,
+    `<details><summary>${fmtNum(files.length)} file${files.length === 1 ? '' : 's'}</summary>${list}</details>`,
+  ]);
+
+  let note = '';
+  if (excluded.length > 0) {
+    // A file that may be the student's own work is the likeliest to be wanted
+    // back, and a better example than whichever path sorts first.
+    const example = (state.ownWorkFiles[0] ?? excluded[0]).filepath;
+    note +=
+      `\nRe-include an excluded file with \`exclude_pattern_overrides\` — pass the exact path ` +
+      `(e.g. ${refCode(example)}) or the pattern that matched it.\n`;
+  }
+  if (state.protectedFiles.length > 0) {
+    const n = state.protectedFiles.length;
+    note +=
+      `\n${fmtNum(n)} excluded file${n === 1 ? '' : 's'} matched \`exclude_pattern_overrides\` ` +
+      `but ${n === 1 ? 'was' : 'were'} kept out (e.g. ${refCode(state.protectedFiles[0].filepath)}): ` +
+      `environment files, lock files and dependency folders are re-included only by an override ` +
+      `that names them, such as the file's own path.\n`;
   }
 
   return (
-    `${fmtNum(excluded.length + skipped.length)} of ${fmtNum(state.allFiles.length)} ` +
-    `changed files, by the pattern or rule that left them out:` +
-    fileListCell(groups)
+    `### Files left out\n\n` +
+    `${fmtNum(excluded.length + skipped.length)} of ${fmtNum(state.allFiles.length)} changed ` +
+    `files, by the pattern or rule that left them out.\n\n` +
+    table(['Pattern or rule', 'From', 'Files'], rows) +
+    note
   );
 }
 
@@ -637,13 +745,18 @@ async function writeRunSummary(state) {
   if (state.handled) return;
 
   try {
+    const preview = state.inputs?.previewOnly === true;
     const heading = state.failureMessage
-      ? 'GrillMyCode — run failed'
-      : 'GrillMyCode — assessment questions generated';
+      ? `GrillMyCode — ${preview ? 'preview' : 'run'} failed`
+      : preview
+        ? 'GrillMyCode — file preview, no questions generated'
+        : 'GrillMyCode — assessment questions generated';
 
     const banner = state.failureMessage
       ? `❌ **${state.failureMessage}**\n\nThe sections below show how far the run got before it stopped.`
-      : renderHeadline(state);
+      : preview
+        ? renderPreviewHeadline(state)
+        : renderHeadline(state);
 
     // Assembled as discrete blocks and joined with a blank line: the <details>
     // and table blocks only render as HTML/markdown when a blank line separates
@@ -651,9 +764,12 @@ async function writeRunSummary(state) {
     const blocks = [
       `## 🔥 ${heading}`,
       banner,
+      renderOwnWorkWarning(state),
       renderOverview(state),
       renderAssessedFiles(state),
-      renderDelivery(state),
+      renderLeftOutFiles(state),
+      // A preview delivers nothing, so it has no delivery to report.
+      preview ? '' : renderDelivery(state),
       renderConfiguration(state),
       renderNotes(state),
     ];
@@ -695,61 +811,15 @@ async function reportEmptyAssessment({
   excludePatterns,
   inputs,
 }) {
-  const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
-  const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
-
-  let headline;
-  let detail;
-  let checks;
-
-  if (reason === 'empty-range') {
-    // The accept-time explanation only holds when the first commit is being
-    // excluded and no SHA override is in play. With starter_code: none the
-    // base is the empty tree, so a freshly accepted repository has files in
-    // range and this is genuinely unexpected — saying otherwise would send the
-    // reader looking for a cause that cannot apply.
-    const noStarter = inputs.starterCode === 'none';
-    const acceptTimeExplains = !noStarter && !inputs.baseSha && !inputs.headSha;
-    headline = `No assessment questions generated: the commit range ${shortBase}..${shortHead} contains no changed files.`;
-    detail =
-      `Nothing was compared, so the exclude patterns were never involved.` +
-      (acceptTimeExplains
-        ? ` This is expected immediately after an assignment is accepted, when the ` +
-          `repository's only commit is the starter code.`
-        : '');
-    checks = [
-      `The range assessed was \`${shortBase}..${shortHead}\`${baseSha === headSha ? ' — base and head are the same commit.' : '.'}`,
-      noStarter
-        ? '`starter_code` is **none**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'
-        : `\`starter_code\` is **${inputs.starterCode}**, so the first commit is treated as starter code and excluded. If this is a Classroom 50 empty-repository assignment (\`--empty-repo\`), the student's own first push is that first commit — set \`starter_code: none\` so their work is assessed.`,
-      inputs.baseSha || inputs.headSha
-        ? 'A manual `base_sha`/`head_sha` override is set on this workflow. Check it still points at the range you intend.'
-        : 'No manual SHA override is set, so the range came from the event and `starter_code`.',
-    ];
-  } else {
-    // Only claim the accept-time explanation when the excluded set actually is
-    // the Classroom 50 setup commit. Asserting it for an arbitrary set of
-    // excluded files would point the reader at a cause that is not theirs.
-    const isClassroomSetupCommit = allFiles.length === 1 && allFiles[0] === '.classroom50.yaml';
-    headline = `No assessment questions generated: all ${allFiles.length} changed file(s) were removed by the exclude patterns.`;
-    detail =
-      `Files did change in ${shortBase}..${shortHead}, but none survived filtering, ` +
-      `so there was nothing to send to the AI.` +
-      (isClassroomSetupCommit
-        ? ` This is the Classroom 50 setup commit, so this is expected immediately ` +
-          `after the assignment is accepted and before the student has pushed any work.`
-        : '');
-    // A whole excluded tree can run to hundreds of paths; enough to identify the
-    // pattern at fault is enough, and the full list is already in the run log.
-    const shown = allFiles.slice(0, EMPTY_ASSESSMENT_FILE_LIST_LIMIT);
-    const remainder = allFiles.length - shown.length;
-    checks = [
-      `Excluded files: ${shown.map((f) => `\`${f}\``).join(', ')}` +
-        (remainder > 0 ? `, and ${remainder} more (full list in the run log).` : ''),
-      `Re-include any of these with \`exclude_pattern_overrides\` — pass the exact path (e.g. \`${allFiles[0]}\`) or the default pattern that matched it.`,
-      `${excludePatterns.length} exclude pattern(s) were applied, combining the auto-detected stack patterns with \`additional_exclude_patterns\`. The full list is in the run log above.`,
-    ];
-  }
+  const { cause, detail, checks } = explainEmptyAssessment({
+    reason,
+    baseSha,
+    headSha,
+    allFiles,
+    excludePatterns,
+    inputs,
+  });
+  const headline = `No assessment questions generated: ${cause}`;
 
   // The summary is the part an instructor can actually find later; the
   // annotation only makes the run page show something is off.
@@ -777,6 +847,89 @@ async function reportEmptyAssessment({
   } else {
     core.warning(logMessage);
   }
+}
+
+/**
+ * Why a run has nothing to assess, as { cause, detail, checks }: the cause in
+ * a clause, a sentence or two of explanation, and what to check. Shared by
+ * reportEmptyAssessment and the summary of a preview_only run, which reports
+ * the same finding without it being an outcome.
+ */
+function explainEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePatterns, inputs }) {
+  const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
+  const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
+
+  let cause;
+  let detail;
+  let checks;
+
+  if (reason === 'empty-range') {
+    // The accept-time explanation only holds when the first commit is being
+    // excluded and no SHA override is in play. With starter_code: none the
+    // base is the empty tree, so a freshly accepted repository has files in
+    // range and this is genuinely unexpected — saying otherwise would send the
+    // reader looking for a cause that cannot apply.
+    const noStarter = inputs.starterCode === 'none';
+    const acceptTimeExplains = !noStarter && !inputs.baseSha && !inputs.headSha;
+    cause = `the commit range ${shortBase}..${shortHead} contains no changed files.`;
+    detail =
+      `Nothing was compared, so the exclude patterns were never involved.` +
+      (acceptTimeExplains
+        ? ` This is expected immediately after an assignment is accepted, when the ` +
+          `repository's only commit is the starter code.`
+        : '');
+    checks = [
+      `The range assessed was \`${shortBase}..${shortHead}\`${baseSha === headSha ? ' — base and head are the same commit.' : '.'}`,
+      noStarter
+        ? '`starter_code` is **none**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'
+        : `\`starter_code\` is **${inputs.starterCode}**, so the first commit is treated as starter code and excluded. If this is a Classroom 50 empty-repository assignment (\`--empty-repo\`), the student's own first push is that first commit — set \`starter_code: none\` so their work is assessed.`,
+      inputs.baseSha || inputs.headSha
+        ? 'A manual `base_sha`/`head_sha` override is set on this workflow. Check it still points at the range you intend.'
+        : 'No manual SHA override is set, so the range came from the event and `starter_code`.',
+    ];
+  } else {
+    // Only claim the accept-time explanation when the excluded set actually is
+    // the Classroom 50 setup commit. Asserting it for an arbitrary set of
+    // excluded files would point the reader at a cause that is not theirs.
+    const isClassroomSetupCommit = allFiles.length === 1 && allFiles[0] === '.classroom50.yaml';
+    cause = `all ${allFiles.length} changed file(s) were removed by the exclude patterns.`;
+    detail =
+      `Files did change in ${shortBase}..${shortHead}, but none survived filtering, ` +
+      `so there was nothing to send to the AI.` +
+      (isClassroomSetupCommit
+        ? ` This is the Classroom 50 setup commit, so this is expected immediately ` +
+          `after the assignment is accepted and before the student has pushed any work.`
+        : '');
+    // A whole excluded tree can run to hundreds of paths; enough to identify the
+    // pattern at fault is enough, and the full list is already in the run log.
+    const shown = allFiles.slice(0, EMPTY_ASSESSMENT_FILE_LIST_LIMIT);
+    const remainder = allFiles.length - shown.length;
+    checks = [
+      `Excluded files: ${shown.map((f) => `\`${f}\``).join(', ')}` +
+        (remainder > 0 ? `, and ${remainder} more (full list in the run log).` : ''),
+      `Re-include any of these with \`exclude_pattern_overrides\` — pass the exact path (e.g. \`${allFiles[0]}\`) or the default pattern that matched it.`,
+      `${excludePatterns.length} exclude pattern(s) were applied, combining the auto-detected stack patterns with \`additional_exclude_patterns\`. The full list is in the run log above.`,
+    ];
+  }
+
+  return { cause, detail, checks };
+}
+
+/**
+ * Ends a preview_only run: says in the log, and in a notice on the run page,
+ * what it found and that it produced nothing. The summary, written when the
+ * run finishes, carries the detail.
+ */
+function reportPreview(state) {
+  const changed = state.allFiles.length;
+  const found = state.previewEmpty
+    ? `nothing would be assessed: ${state.previewEmpty.cause}`
+    : `${state.files.length} of ${changed} changed file(s) would be assessed.`;
+  core.notice(
+    `Preview only (preview_only): ${found} The AI was not called, and no questions, issue or ` +
+      `PDF were produced. See the run summary for the files.`,
+    { title: 'GrillMyCode file preview' },
+  );
 }
 
 /**
@@ -1026,17 +1179,19 @@ async function run() {
     // ── Collect changed files and apply filters ─────────────────────────────
     const allFiles = getChangedFiles(baseSha, headSha);
     state.allFiles = allFiles;
-    const detectedPatterns = await detectExcludePatterns(
+    const { patterns: detectedPatterns, origins: detectedOrigins } = await detectExcludePatterns(
       inputs.githubToken,
       ctx.repo.owner,
       ctx.repo.repo,
       headSha,
     );
-    const { excludePatterns, caseInsensitivePatterns, verdictOn } = buildFileRules({
-      detectedPatterns,
-      additionalExcludePatterns: inputs.additionalExcludePatterns,
-      excludePatternOverrides: inputs.excludePatternOverrides,
-    });
+    const { excludePatterns, caseInsensitivePatterns, verdictOn, origins, mayBeOwnWork } =
+      buildFileRules({
+        detectedPatterns,
+        detectedOrigins,
+        additionalExcludePatterns: inputs.additionalExcludePatterns,
+        excludePatternOverrides: inputs.excludePatternOverrides,
+      });
     if (inputs.additionalExcludePatterns.length > 0) {
       core.info(
         `Additional exclude patterns (from input): ${inputs.additionalExcludePatterns.join(', ')}`,
@@ -1056,7 +1211,13 @@ async function run() {
     state.excludePatternOverrides = inputs.excludePatternOverrides;
     state.excludedFiles = verdicts
       .filter((v) => !v.assessed)
-      .map(({ filepath, pattern }) => ({ filepath, pattern }));
+      .map(({ filepath, pattern }) => ({ filepath, pattern, origin: origins.get(pattern) }));
+    const languageFiles = loadLanguageFiles();
+    state.ownWorkFiles = languageFiles
+      ? verdicts
+          .filter((v) => mayBeOwnWork(v.filepath, v, languageFiles))
+          .map(({ filepath, pattern }) => ({ filepath, pattern, origin: origins.get(pattern) }))
+      : [];
     state.protectedFiles = verdicts
       .filter((v) => v.guard)
       .map(({ filepath, guard }) => ({ filepath, guard }));
@@ -1073,6 +1234,34 @@ async function run() {
           `an override that names them, such as the file's own path:\n` +
           state.protectedFiles.map((p) => `  ${p.filepath}  (${p.guard})`).join('\n'),
       );
+    }
+    if (state.ownWorkFiles.length > 0) {
+      // A note, not a warning: build output is source code by its name too,
+      // and is rightly left out, so most of these need nothing done.
+      core.info(
+        `${state.ownWorkFiles.length} source file(s) were left out by a pattern detected from ` +
+          `the repository, not one from additional_exclude_patterns. If any is work that should ` +
+          `be assessed, name it or its pattern in exclude_pattern_overrides:\n` +
+          state.ownWorkFiles.map((e) => `  ${e.filepath}  (${e.pattern})`).join('\n'),
+      );
+    }
+
+    if (files.length === 0 && inputs.previewOnly) {
+      // The same two findings as below, reported as what the preview found
+      // rather than as how the run ended: a preview never fails for having
+      // nothing to assess.
+      state.previewEmpty = explainEmptyAssessment({
+        reason: allFiles.length === 0 ? 'empty-range' : 'fully-excluded',
+        baseSha,
+        headSha,
+        allFiles,
+        excludePatterns,
+        inputs,
+      });
+      // The files left out are listed by pattern in their own section.
+      if (allFiles.length > 0) state.previewEmpty.checks = [];
+      reportPreview(state);
+      return;
     }
 
     if (files.length === 0) {
@@ -1114,6 +1303,15 @@ async function run() {
         `Left out ${skipped.length} file(s) with no text to assess:\n` +
           skipped.map((s) => `  ${s.filepath}  (${s.reason})`).join('\n'),
       );
+    }
+    if (rawFiles.length === 0 && inputs.previewOnly) {
+      state.previewEmpty = {
+        cause: 'none of the changed files can be read as text.',
+        detail: 'Every changed file the patterns let through was deleted or is binary.',
+        checks: [],
+      };
+      reportPreview(state);
+      return;
     }
     if (rawFiles.length === 0) {
       // Every changed file was deleted or binary. Snippets are read back out
@@ -1259,6 +1457,15 @@ async function run() {
         };
     const codebaseContextFiles = [...state.codebaseStarterFiles, ...state.codebaseEarlierFiles];
     const codeSources = [...assessedSources, ...codebaseSources];
+
+    // ── Stop here on a preview ──────────────────────────────────────────────
+    // Everything a run would send has been chosen and measured: the assessed
+    // files, the files left out and the context. Nothing below is free or
+    // without effect, starting with the request to the AI.
+    if (inputs.previewOnly) {
+      reportPreview(state);
+      return;
+    }
 
     // Distractors are stripped from every student-facing copy and are never
     // set as an output, so the instructor repository is the only place they

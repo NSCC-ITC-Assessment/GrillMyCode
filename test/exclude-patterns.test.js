@@ -6,12 +6,16 @@ import { dirname, join } from 'path';
 import {
   ALWAYS_EXCLUDE,
   ALWAYS_EXCLUDE_GROUPS,
+  buildFileRules,
   createFileFilter,
+  detectStack,
+  fileLanguage,
   filterFiles,
   instructorPatterns,
   isBinary,
   patternProblem,
   splitPatternList,
+  underFolder,
 } from '../src/file-selection.js';
 import {
   EDITOR_CONFIG_EXCLUDE_PATTERNS,
@@ -319,6 +323,116 @@ describe('the verdict on a file', () => {
     });
     expect(verdictOn('README.md')).toEqual({ assessed: true, pattern: '**/*.md' });
     expect(verdictOn('notes.md')).toEqual({ assessed: false, pattern: '**/*.md' });
+  });
+});
+
+describe('where an exclude pattern comes from', () => {
+  const allTemplates = { Python: ['**/lib/**', '**/*.pyc'], Node: ['**/dist/**'] };
+  const stackOf = (paths, languages = []) =>
+    detectStack({ languages, paths, readText: () => null, allTemplates });
+
+  it('credits each detected pattern to its list, template or project folder', () => {
+    const { origins, patterns } = stackOf(['api/requirements.txt', 'web/package.json'], ['Python']);
+    expect([...origins.keys()]).toEqual(patterns);
+    expect(origins.get('**/.env')).toEqual({ kind: 'always', label: 'Environment files' });
+    expect(origins.get('**/lib/**')).toEqual({ kind: 'template', template: 'Python', folder: '' });
+    expect(origins.get(underFolder('web', '**/dist/**'))).toEqual({
+      kind: 'template',
+      template: 'Node',
+      folder: 'web',
+    });
+  });
+
+  it('credits the rest to the fallback list when nothing is detected', () => {
+    const { origins, patterns } = stackOf(['notes.txt']);
+    expect([...origins.keys()]).toEqual(patterns);
+    expect(origins.get('**/.env')).toEqual({ kind: 'always', label: 'Environment files' });
+    expect(origins.get(FALLBACK_EXCLUDE_PATTERNS.find((p) => !ALWAYS_EXCLUDE.includes(p)))).toEqual(
+      {
+        kind: 'fallback',
+      },
+    );
+  });
+
+  it("adds the workflows folder and the instructor's patterns, as written", () => {
+    const stack = stackOf(['requirements.txt'], ['Python']);
+    const { origins } = buildFileRules({
+      detectedPatterns: stack.patterns,
+      detectedOrigins: stack.origins,
+      additionalExcludePatterns: ['data/', '**/lib/**'],
+    });
+    expect(origins.get('.github/workflows/**')).toEqual({
+      kind: 'always',
+      label: 'GitHub Actions workflows',
+    });
+    expect(origins.get('**/data/**')).toEqual({ kind: 'yours', written: 'data/' });
+    // Already in the detected list, so it stays the template's.
+    expect(origins.get('**/lib/**').kind).toBe('template');
+  });
+});
+
+describe('fileLanguage', () => {
+  const languageFiles = {
+    extensions: { '.ts': 'TypeScript', '.d.ts': 'TypeScript', '.h': ['C', 'C++'] },
+    filenames: { Makefile: 'Makefile' },
+  };
+
+  it('reads a file name before an extension, and a longer extension first', () => {
+    expect(fileLanguage('src/Makefile', languageFiles)).toEqual({
+      language: 'Makefile',
+      via: 'Makefile',
+    });
+    expect(fileLanguage('types/api.d.ts', languageFiles).via).toBe('.d.ts');
+    expect(fileLanguage('SRC/APP.TS', languageFiles).language).toBe('TypeScript');
+    expect(fileLanguage('include/list.h', languageFiles).language).toEqual(['C', 'C++']);
+  });
+
+  it('is null for a file in no counted language', () => {
+    expect(fileLanguage('notes.txt', languageFiles)).toBeNull();
+    expect(fileLanguage('LICENSE', languageFiles)).toBeNull();
+  });
+});
+
+describe("a file left out that may be the student's own work", () => {
+  const languageFiles = { extensions: { '.js': 'JavaScript', '.py': 'Python' }, filenames: {} };
+  const allTemplates = { Python: ['**/lib/**'], Node: ['**/dist/**', '**/node_modules/**'] };
+  const rules = (settings = {}) => {
+    const stack = detectStack({
+      languages: ['Python', 'JavaScript'],
+      paths: ['package.json'],
+      readText: () => null,
+      allTemplates: { ...allTemplates, JavaScript: allTemplates.Node },
+    });
+    return buildFileRules({
+      detectedPatterns: stack.patterns,
+      detectedOrigins: stack.origins,
+      ...settings,
+    });
+  };
+  const flagged = (paths, settings) => {
+    const { verdictOn, mayBeOwnWork } = rules(settings);
+    return paths.filter((p) => mayBeOwnWork(p, verdictOn(p), languageFiles));
+  };
+
+  it('is a source file a detected pattern left out', () => {
+    expect(flagged(['src/lib/util.js', 'src/lib/notes.txt', 'src/app.js', 'dist/app.js'])).toEqual([
+      'src/lib/util.js',
+      'dist/app.js',
+    ]);
+  });
+
+  it('is never one a fixed list left out, or one in a dependency folder', () => {
+    expect(flagged(['app.min.js', 'node_modules/pkg/index.js', '.env'])).toEqual([]);
+  });
+
+  it("is never one the instructor's own patterns match", () => {
+    const paths = ['src/lib/util.js', 'tools/lib/gen.py'];
+    expect(flagged(paths, { additionalExcludePatterns: ['src/'] })).toEqual(['tools/lib/gen.py']);
+    expect(flagged(paths, { additionalExcludePatterns: ['*.JS'] })).toEqual(['tools/lib/gen.py']);
+  });
+
+  it('is never one an override brought back', () => {
+    expect(flagged(['src/lib/util.js'], { excludePatternOverrides: ['src/lib/**'] })).toEqual([]);
   });
 });
 

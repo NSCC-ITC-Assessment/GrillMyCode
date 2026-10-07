@@ -11,10 +11,12 @@
 // Linguist's language names, so the script downloads them. A test checks the
 // committed file against src/ with the language names it already lists.
 //
-// The same download gives languageFiles.json, beside it: the file extensions
-// and file names Linguist gives each language. The Wizard's file preview has
-// no Languages API result for a folder on the instructor's computer, so it
-// works the languages out from these.
+// The same download gives the file extensions and file names Linguist gives
+// each language, written twice: src/data/language-files.json, which the action
+// reads to tell whether a file an exclude pattern left out is source code, and
+// languageFiles.json beside the Wizard's lists. The Wizard's file preview uses
+// it for that too, and to work out a folder's languages, having no Languages
+// API result for a folder on the instructor's computer.
 
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -23,7 +25,6 @@ import {
   EDITOR_CONFIG_EXCLUDE_GROUPS,
   FALLBACK_EXCLUDE_PATTERNS,
   NON_CODE_ASSET_EXCLUDE_GROUPS,
-  WORKFLOWS_EXCLUDE_PATTERN,
 } from '../src/constants.js';
 import {
   ALWAYS_EXCLUDE_GROUPS,
@@ -36,6 +37,7 @@ import {
   PACKAGE_DEP_TO_PATTERNS,
   PACKAGE_DEP_TO_TEMPLATES,
   ROOT_SUFFIX_TO_TEMPLATES,
+  WORKFLOWS_EXCLUDE_GROUP,
 } from '../src/file-selection.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -49,6 +51,7 @@ export const OUT_PATH = join(
   'excludeLists.json',
 );
 export const LANGUAGE_FILES_PATH = join(dirname(OUT_PATH), 'languageFiles.json');
+export const ACTION_LANGUAGE_FILES_PATH = join(dirname(TEMPLATES_PATH), 'language-files.json');
 const LINGUIST_URL =
   'https://raw.githubusercontent.com/github-linguist/linguist/main/lib/linguist/languages.yml';
 
@@ -238,10 +241,7 @@ export function buildExcludeLists(languageNames, allTemplates) {
   ideTemplates.sort(byName);
 
   return {
-    always: [
-      ...ALWAYS_EXCLUDE_GROUPS,
-      { label: 'GitHub Actions workflows', patterns: [WORKFLOWS_EXCLUDE_PATTERN] },
-    ],
+    always: [...ALWAYS_EXCLUDE_GROUPS, WORKFLOWS_EXCLUDE_GROUP],
     editors: EDITOR_CONFIG_EXCLUDE_GROUPS,
     ideTemplates,
     nonCode: NON_CODE_ASSET_EXCLUDE_GROUPS,
@@ -271,12 +271,17 @@ async function main() {
       `entries (${Object.keys(lists.templates).length} templates) to ${OUT_PATH}.`,
   );
 
+  // The copy under src/ is checked by Prettier, which lays a short list out
+  // on one line: run `pnpm prettier --write` on it after this script.
   const languageFiles = buildLanguageFiles(languages);
-  writeFileSync(LANGUAGE_FILES_PATH, JSON.stringify(languageFiles, null, 2) + '\n', 'utf-8');
-  console.log(
-    `Wrote ${Object.keys(languageFiles.extensions).length} extensions and ` +
-      `${Object.keys(languageFiles.filenames).length} file names to ${LANGUAGE_FILES_PATH}.`,
-  );
+  const json = JSON.stringify(languageFiles, null, 2) + '\n';
+  for (const path of [ACTION_LANGUAGE_FILES_PATH, LANGUAGE_FILES_PATH]) {
+    writeFileSync(path, json, 'utf-8');
+    console.log(
+      `Wrote ${Object.keys(languageFiles.extensions).length} extensions and ` +
+        `${Object.keys(languageFiles.filenames).length} file names to ${path}.`,
+    );
+  }
 }
 
 // Only fetch when the script is run directly; the test suite imports it.

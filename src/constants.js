@@ -312,6 +312,13 @@ export const PROMPT_HASH_LENGTH = 12;
 export const EMPTY_ASSESSMENT_FILE_LIST_LIMIT = 20;
 
 /**
+ * Maximum number of files named in the job summary's warning about source
+ * files a detected pattern left out. The warning is there to be noticed, so
+ * it stays short; every file is in the list of files left out, below it.
+ */
+export const SUMMARY_COLLISION_FILE_LIMIT = 5;
+
+/**
  * Maximum number of rows rendered in the job summary's assessed-files table.
  * A 1 MiB summary that GitHub refuses to display helps nobody; the full list
  * is always in the run log.
@@ -779,6 +786,13 @@ export const SUBMISSION_TAG_GROUP_FALLBACK = 'tag';
  * at least once.
  */
 export const DEFAULT_LABEL_REPOS = false;
+
+/**
+ * Default for the preview_only input: a run generates questions. Set to true,
+ * a run stops once it has worked out which files it would assess and reports
+ * them, without calling the AI or delivering anything.
+ */
+export const DEFAULT_PREVIEW_ONLY = false;
 
 /**
  * Default for log_prompt, an undocumented diagnostic input. When on, the chat
