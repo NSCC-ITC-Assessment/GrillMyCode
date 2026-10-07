@@ -268,6 +268,28 @@ An override names a protected file when the protected pattern also fits the over
 
 A file kept out this way stays in the `Excluded` list, and the run log lists it again under `Kept out`, with the protected pattern to name.
 
+## Previewing in the Workflow Wizard
+
+The [Workflow Wizard](../workflow-wizard.mdx)'s **Files** step can try your patterns on real files before any run. Under **Try the patterns on your files**, choose a folder on your computer, or paste a list of paths such as the output of `git ls-files`. The Wizard then shows:
+
+- the files that would be assessed, and those left out, grouped by the pattern responsible and where it comes from: an always-excluded list, a stack template, the fallback list, or one of your own patterns;
+- under each pattern box, what each entry does: how many files it leaves out or brings back, whether it matches nothing, and which [protected files](#protected-files) an override matches without naming;
+- a warning when a stack template leaves out source files, such as `src/lib/util.js` under Python's `**/lib/**`, with a **Bring these back** link that adds the override.
+
+The preview runs the action's own matching code in your browser. Nothing is uploaded: the page reads the file names, the start of each file to tell whether it is binary, and the text of the dependency manifests (`package.json`, `composer.json`, `Gemfile`, `mix.exs`) in each project folder.
+
+It is an estimate, because some things are only known at run time:
+
+| A run… | The preview… |
+|---|---|
+| Asks the GitHub Languages API for the repository's languages | Works them out from file names, using the extension lists of [Linguist](https://github.com/github-linguist/linguist), the library behind that API. They are listed under **Languages**, each with a tick box. An extension shared by several languages, such as `.h`, is listed unticked |
+| Detects the stack of each student's repository separately | Shows the result for the folder you chose. A student who adds another language or framework gets its patterns too |
+| Considers only the files changed in the [commit range](code-selection.md), and skips deleted files | Treats every file as changed |
+| Skips binary files, such as images, whatever the patterns say | Does the same for a folder, by reading the first 8,000 bytes of each file. A pasted list has no file contents, so its binary files are listed as assessed |
+| Sees only committed files | Sees everything in the folder, committed or not. A pasted `git ls-files` list is exact, but has no file contents, so frameworks named only in a manifest aren't detected |
+
+To keep large folders quick, the preview does not open `.git` or the dependency folders `node_modules`, `bower_components`, `vendor`, `.venv` and `venv`. It says whether a rule leaves each of those out. It reads at most 5,000 files, shallowest folders first.
+
 ## Confirming what was applied
 
 The action logs the full exclude list on every run. Look for these lines in the workflow step output:

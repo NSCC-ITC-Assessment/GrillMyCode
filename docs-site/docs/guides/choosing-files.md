@@ -49,6 +49,10 @@ List it in the **Files** step under **Exclude pattern overrides**:
 
 An override wins over every other rule, so anything you list here is assessed even if another rule would leave it out. There is one exception: environment files, lock files and installed libraries come back only when you name them, such as `frontend/.env`. A broad override such as `frontend/**` leaves them out.
 
+## Trying your patterns first
+
+At the bottom of the **Files** step, under **Try the patterns on your files**, choose a folder on your computer, such as your own solution. The Wizard shows which of its files would be assessed and which rule leaves out each of the rest, and updates as you type. Nothing is uploaded. Treat it as an estimate; see [Previewing in the Workflow Wizard](../reference/exclude-patterns.md#previewing-in-the-workflow-wizard).
+
 ## Checking what was assessed
 
 The top of every assessment issue lists the files that were assessed, under **Code Files Assessed**. If a file you expected isn't there, it was left out. The run's summary page lists every file that was left out, grouped by the rule that removed it; see [File filtering](../reference/exclude-patterns.md#confirming-what-was-applied).

@@ -43,6 +43,8 @@ jobs:
 
       # The Workflow Wizard lists every template the action can apply, from
       # its own copy of these lists, plus Linguist's current language names.
+      # The same step refreshes languageFiles.json, Linguist's file extensions
+      # by language, which the Wizard's file preview reads.
       - name: Rebuild the Workflow Wizard's exclude lists
         run: node scripts/build-wizard-exclude-lists.js
 
@@ -53,7 +55,7 @@ jobs:
           branch: chore/refresh-gitignore-templates
           title: "chore: refresh gitignore templates"
           body: |
-            Automated refresh of `src/data/gitignore-templates.json` from [github/gitignore](https://github.com/github/gitignore), and of the Workflow Wizard's copy in `docs-site/docs/_workflow-wizard/excludeLists.json`.
+            Automated refresh of `src/data/gitignore-templates.json` from [github/gitignore](https://github.com/github/gitignore), and of the Workflow Wizard's copy in `docs-site/docs/_workflow-wizard/excludeLists.json`. `languageFiles.json`, beside it, is refreshed from [Linguist](https://github.com/github-linguist/linguist)'s language list.
 
             No changes to the file means this PR will not be created.
           commit-message: "chore: refresh gitignore templates"

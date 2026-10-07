@@ -246,6 +246,27 @@ export function splitPatternList(text) {
     .filter(Boolean);
 }
 
+/**
+ * The .gitignore habit a pattern shows that means something else here, if
+ * any: 'negated' for a leading `!`, which inverts the pattern instead of
+ * re-including a file, and 'comment' for a leading `#`, which is read as a
+ * file name. The pattern is applied as written either way; callers warn.
+ */
+export function patternProblem(pattern) {
+  if (pattern.startsWith('!')) return 'negated';
+  if (pattern.startsWith('#')) return 'comment';
+  return null;
+}
+
+/**
+ * Whether a file's content is binary: it contains a null byte, the test git
+ * itself uses. A binary file, such as an image, has no text to assess, and no
+ * pattern brings it back.
+ */
+export function isBinary(content) {
+  return content.includes('\0');
+}
+
 /** Whether a pattern is a plain name or path: nothing in it is glob syntax. */
 function isPlainPath(pattern) {
   return !new Minimatch(pattern, { ...PATTERN_MATCH_OPTIONS, magicalBraces: true }).hasMagic();
@@ -295,10 +316,11 @@ export function instructorPatterns(pattern) {
  * Builds the test that decides whether a file is assessed. Returns a function
  * from a path to its verdict:
  *
- *   { assessed: true }                      — no exclude pattern matched it, or
- *                                             an override brought it back
- *   { assessed: false, pattern }            — excluded; `pattern` is the first
- *                                             exclude pattern that matched
+ *   { assessed: true }                      — no exclude pattern matched it
+ *   { assessed: true, pattern }             — an override brought it back;
+ *                                             `pattern` is the first exclude
+ *                                             pattern that matched
+ *   { assessed: false, pattern }            — excluded by `pattern`
  *   { assessed: false, pattern, guard }     — as above, though an override
  *                                             matched it: `guard` is the
  *                                             protected pattern the override
@@ -325,13 +347,18 @@ export function createFileFilter({
   const isProtected = new Set(PROTECTED_EXCLUDE_PATTERNS);
   // Protected patterns are tried first, so a file in node_modules is reported
   // under the pattern an override has to name rather than, say, `**/*.md`.
+  // Each keeps the pattern as written: Minimatch drops a leading `!` from its
+  // own copy, and a file is reported under the pattern the instructor wrote.
   const excludes = [
     ...excludePatterns.filter((p) => isProtected.has(p)),
     ...excludePatterns.filter((p) => !isProtected.has(p)),
-  ].map(
-    (p) =>
-      new Minimatch(p, ignoreCase.has(p) ? CASE_INSENSITIVE_MATCH_OPTIONS : PATTERN_MATCH_OPTIONS),
-  );
+  ].map((p) => ({
+    pattern: p,
+    matcher: new Minimatch(
+      p,
+      ignoreCase.has(p) ? CASE_INSENSITIVE_MATCH_OPTIONS : PATTERN_MATCH_OPTIONS,
+    ),
+  }));
   const guards = PROTECTED_EXCLUDE_PATTERNS.map(
     (p) => new Minimatch(p, CASE_INSENSITIVE_MATCH_OPTIONS),
   );
@@ -344,14 +371,16 @@ export function createFileFilter({
     }));
 
   return (filepath) => {
-    const excludedBy = excludes.find((m) => m.match(filepath));
+    const excludedBy = excludes.find((e) => e.matcher.match(filepath));
     if (!excludedBy) return { assessed: true };
     const excluded = { assessed: false, pattern: excludedBy.pattern };
 
     const matching = overrides.filter((o) => o.matcher.match(filepath));
     if (matching.length === 0) return excluded;
     const guarding = guards.filter((g) => g.match(filepath));
-    if (matching.some((o) => guarding.every((g) => o.names.has(g)))) return { assessed: true };
+    if (matching.some((o) => guarding.every((g) => o.names.has(g)))) {
+      return { assessed: true, pattern: excludedBy.pattern };
+    }
     // Every matching override leaves at least one guard unnamed; report one.
     const unnamed = guarding.find((g) => !matching[0].names.has(g));
     return { ...excluded, guard: unnamed.pattern };
@@ -374,6 +403,10 @@ export function filterFiles(
   const verdict = createFileFilter({ excludePatterns, overridePatterns, caseInsensitivePatterns });
   return files.filter((f) => verdict(f).assessed);
 }
+
+// The files an override must name (see createFileFilter), for callers that
+// report on them.
+export { PROTECTED_EXCLUDE_PATTERNS };
 
 // These patterns are always excluded regardless of detected stack. Each one
 // carries an explicit `**/` prefix so it matches at any depth — a bare

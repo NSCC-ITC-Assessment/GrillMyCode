@@ -9,6 +9,8 @@ import {
   createFileFilter,
   filterFiles,
   instructorPatterns,
+  isBinary,
+  patternProblem,
   splitPatternList,
 } from '../src/file-selection.js';
 import {
@@ -303,6 +305,40 @@ describe('case-insensitive matching', () => {
   });
 });
 
+describe('the verdict on a file', () => {
+  it('names the exclude pattern as written, a leading ! included', () => {
+    const verdictOn = createFileFilter({ excludePatterns: instructorPatterns('!src/**') });
+    expect(verdictOn('README.md')).toEqual({ assessed: false, pattern: '!src/**' });
+    expect(verdictOn('src/app.js')).toEqual({ assessed: true });
+  });
+
+  it('names the exclude pattern an override beat', () => {
+    const verdictOn = createFileFilter({
+      excludePatterns: ['**/*.md', 'data/**'],
+      overridePatterns: ['README.md'],
+    });
+    expect(verdictOn('README.md')).toEqual({ assessed: true, pattern: '**/*.md' });
+    expect(verdictOn('notes.md')).toEqual({ assessed: false, pattern: '**/*.md' });
+  });
+});
+
+describe('patternProblem', () => {
+  it('names the two .gitignore habits that mean something else here', () => {
+    expect(patternProblem('!src/**')).toBe('negated');
+    expect(patternProblem('# starter files')).toBe('comment');
+    expect(patternProblem('data/**')).toBeNull();
+    expect(patternProblem('src/#notes.txt')).toBeNull();
+  });
+});
+
+describe('isBinary', () => {
+  it('calls content with a null byte binary', () => {
+    expect(isBinary('\x89PNG\r\n\x1a\n\0\0\0\rIHDR')).toBe(true);
+    expect(isBinary('const a = 1;\n')).toBe(false);
+    expect(isBinary('')).toBe(false);
+  });
+});
+
 describe('protected files', () => {
   const excludes = ['**/*.md', ...PROTECTED_EXCLUDE_PATTERNS];
   const files = [
@@ -360,7 +396,7 @@ describe('protected files', () => {
       guard: '**/node_modules/**',
     });
     expect(verdictOn('frontend/.env')).toEqual({ assessed: false, pattern: '**/.env' });
-    expect(verdictOn('frontend/notes.md')).toEqual({ assessed: true });
+    expect(verdictOn('frontend/notes.md')).toEqual({ assessed: true, pattern: '**/*.md' });
     expect(verdictOn('src/app.js')).toEqual({ assessed: true });
   });
 

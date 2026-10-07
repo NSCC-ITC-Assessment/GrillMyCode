@@ -34,7 +34,7 @@ import {
   DEFAULT_STARTER_QUESTIONS_ONE_IN,
   MIN_STARTER_QUESTIONS_ONE_IN,
 } from './constants.js';
-import { splitPatternList } from './file-selection.js';
+import { patternProblem, splitPatternList } from './file-selection.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
 /**
@@ -47,13 +47,14 @@ import { isSafeTagName, isSafeTagPattern } from './tags.js';
 function readPatternList(name, negated) {
   const patterns = splitPatternList(core.getInput(name) || '');
   for (const pattern of patterns) {
-    if (pattern.startsWith('!')) {
+    const problem = patternProblem(pattern);
+    if (problem === 'negated') {
       core.warning(
         `${name}: "${pattern}" starts with "!", which inverts the pattern: it ${negated} ` +
           `every file that does not match "${pattern.replace(/^!+/, '')}". Remove the "!" ` +
           'unless that is what you intend.',
       );
-    } else if (pattern.startsWith('#')) {
+    } else if (problem === 'comment') {
       core.warning(
         `${name}: "${pattern}" starts with "#". Comments are not supported in this input, so ` +
           'it is read as a file name. Remove it if it is a comment.',

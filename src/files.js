@@ -20,7 +20,7 @@ import {
   EARLIER_STARTER_HEADING,
   LINE_MARKERS,
 } from './constants.js';
-import { filterFiles } from './file-selection.js';
+import { filterFiles, isBinary } from './file-selection.js';
 import { diffLines, git, listChangedPaths, listTreeFiles, readFileAt } from './git.js';
 
 /**
@@ -41,9 +41,8 @@ export function collectRawFiles(files, headSha) {
       skipped.push({ filepath, reason: 'deleted' });
       continue;
     }
-    // Binary files contain null bytes — skip them rather than sending garbage
-    // to the AI. This mirrors the heuristic git itself uses.
-    if (content.includes('\0')) {
+    // Skip binary files rather than sending garbage to the AI.
+    if (isBinary(content)) {
       skipped.push({ filepath, reason: 'binary' });
       continue;
     }
@@ -61,7 +60,7 @@ export function collectFilesAt(paths, sha) {
   const found = [];
   for (const filepath of paths) {
     const content = readFileAt(sha, filepath);
-    if (content === null || content.includes('\0')) continue;
+    if (content === null || isBinary(content)) continue;
     found.push({ filepath, content });
   }
   return found;
@@ -416,7 +415,7 @@ export function findCodebaseContextFiles({
     if (!changedSinceStart.has(f.filepath)) return { ...f, kind: 'starter' };
     const starterCopy = readFileAt(firstCommit, f.filepath);
     // A binary first-commit copy has no lines to compare.
-    return starterCopy === null || starterCopy.includes('\0')
+    return starterCopy === null || isBinary(starterCopy)
       ? { ...f, kind: 'earlier' }
       : { ...f, kind: 'earlier', starterCopy };
   });

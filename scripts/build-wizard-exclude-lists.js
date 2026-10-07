@@ -10,6 +10,11 @@
 // Which templates the GitHub Languages API reaches by name depends on
 // Linguist's language names, so the script downloads them. A test checks the
 // committed file against src/ with the language names it already lists.
+//
+// The same download gives languageFiles.json, beside it: the file extensions
+// and file names Linguist gives each language. The Wizard's file preview has
+// no Languages API result for a folder on the instructor's computer, so it
+// works the languages out from these.
 
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -43,6 +48,7 @@ export const OUT_PATH = join(
   '_workflow-wizard',
   'excludeLists.json',
 );
+export const LANGUAGE_FILES_PATH = join(dirname(OUT_PATH), 'languageFiles.json');
 const LINGUIST_URL =
   'https://raw.githubusercontent.com/github-linguist/linguist/main/lib/linguist/languages.yml';
 
@@ -55,9 +61,103 @@ export const IDE_TEMPLATES = [
   'VisualStudio',
 ];
 
+// The language types GitHub counts in a repository's languages. Files in a
+// data or prose language (JSON, Markdown) are left out of the Languages API.
+const DETECTABLE_TYPES = ['programming', 'markup'];
+
+/**
+ * Linguist's languages, from languages.yml: each top-level key with its
+ * `type`, its `group` (the language its files are counted under, if not its
+ * own) and its `extensions` and `filenames` lists. The file is regular enough
+ * to read line by line, which saves a YAML parser.
+ */
+export function parseLinguistLanguages(yaml) {
+  const unquote = (value) => value.trim().replace(/^"(.*)"$/, '$1');
+  const languages = [];
+  let current = null;
+  let list = null;
+  for (const line of yaml.split(/\r?\n/)) {
+    const top = line.match(/^(?!#)"?([^\s"#][^"\n]*?)"?:\s*$/);
+    if (top) {
+      current = { name: top[1], type: null, group: null, extensions: [], filenames: [] };
+      languages.push(current);
+      list = null;
+      continue;
+    }
+    if (!current) continue;
+    const item = line.match(/^ {2}- (.*)$/);
+    if (item) {
+      if (list) current[list].push(unquote(item[1]));
+      continue;
+    }
+    const field = line.match(/^ {2}([a-z_]+):\s*(.*)$/);
+    if (!field) continue;
+    list = ['extensions', 'filenames'].includes(field[1]) ? field[1] : null;
+    if (field[1] === 'type' || field[1] === 'group') current[field[1]] = unquote(field[2]);
+  }
+  return languages;
+}
+
 /** Linguist's language names: the top-level keys of languages.yml. */
 export function parseLinguistNames(yaml) {
-  return [...yaml.matchAll(/^(?!#)"?([^\s"#][^"\n]*?)"?:\s*$/gm)].map((m) => m[1]);
+  return parseLinguistLanguages(yaml).map((l) => l.name);
+}
+
+/**
+ * The file extensions and file names that tell the Wizard a repository's
+ * languages, as { extensions, filenames }. Each maps an extension (lower
+ * case, with its dot) or an exact file name to
+ *
+ *   'Python'          — the language GitHub reports for such a file
+ *   ['C', 'C++', …]   — the languages it may report: Linguist shares the
+ *                       extension between several and settles each file by
+ *                       reading it, which the Wizard cannot
+ *
+ * An extension several languages list goes to the only one that has it as
+ * its primary extension — the first in its list — if there is exactly one:
+ * `.cs` is C#, though Smalltalk lists it too.
+ *
+ * Only the languages the Languages API counts are named (DETECTABLE_TYPES),
+ * each by the name it is reported under (its `group`, if it has one). An
+ * extension that belongs to a data or prose language is left out, and one
+ * shared with such a language stays a list even with a single name in it:
+ * `.md` may be GCC Machine Description, and is nearly always Markdown.
+ */
+export function buildLanguageFiles(languages) {
+  const detectable = (l) => DETECTABLE_TYPES.includes(l.type);
+  const reported = (list) => [...new Set(list.map((l) => l.group ?? l.name))].sort();
+  const settle = ({ candidates, primary }) => {
+    const settled = primary.length === 1 ? primary : candidates;
+    if (settled.length === 1) return detectable(settled[0]) ? reported(settled)[0] : null;
+    const names = reported(settled.filter(detectable));
+    if (names.length === 0) return null;
+    // Several languages counted under one name are no longer a choice.
+    return names.length === 1 && settled.every(detectable) ? names[0] : names;
+  };
+  const collect = (field, key, hasPrimary) => {
+    const byKey = new Map();
+    for (const language of languages) {
+      language[field].forEach((value, i) => {
+        const k = key(value);
+        if (!byKey.has(k)) byKey.set(k, { candidates: [], primary: [] });
+        const found = byKey.get(k);
+        // Two spellings of one extension (.C and .c) are one entry here.
+        if (!found.candidates.includes(language)) found.candidates.push(language);
+        if (hasPrimary && i === 0) found.primary.push(language);
+      });
+    }
+    return Object.fromEntries(
+      [...byKey]
+        .map(([k, found]) => [k, settle(found)])
+        .filter(([, language]) => language !== null)
+        .sort(([a], [b]) => (a < b ? -1 : 1)),
+    );
+  };
+
+  return {
+    extensions: collect('extensions', (ext) => ext.toLowerCase(), true),
+    filenames: collect('filenames', (name) => name, false),
+  };
 }
 
 /**
@@ -159,13 +259,23 @@ export function buildExcludeLists(languageNames, allTemplates) {
 async function main() {
   const res = await fetch(LINGUIST_URL);
   if (!res.ok) throw new Error(`HTTP ${res.status} for ${LINGUIST_URL}`);
-  const languageNames = parseLinguistNames(await res.text());
+  const languages = parseLinguistLanguages(await res.text());
   const allTemplates = JSON.parse(readFileSync(TEMPLATES_PATH, 'utf-8'));
-  const lists = buildExcludeLists(languageNames, allTemplates);
+  const lists = buildExcludeLists(
+    languages.map((l) => l.name),
+    allTemplates,
+  );
   writeFileSync(OUT_PATH, JSON.stringify(lists, null, 2) + '\n', 'utf-8');
   console.log(
     `Wrote ${lists.languages.length} language and ${lists.projectFiles.length} project-file ` +
       `entries (${Object.keys(lists.templates).length} templates) to ${OUT_PATH}.`,
+  );
+
+  const languageFiles = buildLanguageFiles(languages);
+  writeFileSync(LANGUAGE_FILES_PATH, JSON.stringify(languageFiles, null, 2) + '\n', 'utf-8');
+  console.log(
+    `Wrote ${Object.keys(languageFiles.extensions).length} extensions and ` +
+      `${Object.keys(languageFiles.filenames).length} file names to ${LANGUAGE_FILES_PATH}.`,
   );
 }
 

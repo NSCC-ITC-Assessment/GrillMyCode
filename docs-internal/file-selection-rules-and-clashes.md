@@ -1,9 +1,10 @@
 # File Selection — Rules, Clashes and Plan
 
 > **Recorded:** 2026-10-06 (`35a982c`)
-> **Status:** Phases 0 to 2 done (2026-10-06). The rules and clashes below describe the code
-> **before** Phase 1; see [What Phase 1 changed](#what-phase-1-changed) and
-> [What Phase 2 changed](#what-phase-2-changed). Phases 3 to 5 are not started.
+> **Status:** Phases 0 to 3 done (2026-10-06). The rules and clashes below describe the code
+> **before** Phase 1; see [What Phase 1 changed](#what-phase-1-changed),
+> [What Phase 2 changed](#what-phase-2-changed) and
+> [What Phase 3 changed](#what-phase-3-changed). Phases 4 and 5 are not started.
 
 Instructors using the Workflow Wizard often get file selection wrong on the
 first run: files they wanted are left out, or files they didn't want are
@@ -151,11 +152,12 @@ the action and the wizard. Add a parity test alongside
 `test/wizard-exclude-lists.test.js`. See
 [What Phase 2 changed](#what-phase-2-changed).
 
-**Phase 3 — Wizard preview.** In the Files step: pick a solution folder or
-paste a file list; show assessed and left-out files with the rule responsible,
-updating as patterns change. Include the collision warning and pattern checks.
-Label the result as expected, not guaranteed: language detection is
-approximated from file extensions, and clash 4 still applies.
+**Phase 3 — Wizard preview.** _(Done.)_ In the Files step: pick a solution
+folder or paste a file list; show assessed and left-out files with the rule
+responsible, updating as patterns change. Include the collision warning and
+pattern checks. Label the result as expected, not guaranteed: language
+detection is approximated from file extensions, and clash 4 still applies. See
+[What Phase 3 changed](#what-phase-3-changed).
 
 **Phase 4 — Preview-only run.** A new input, offered on the manual-run form,
 that stops before the AI call. Promote the left-out count to the summary
@@ -224,3 +226,40 @@ No change in behaviour. The log lines and the files selected are the same.
 
 For Phase 3: the wizard's templates come from `excludeLists.json`; languages
 still have to be approximated from file extensions.
+
+---
+
+## What Phase 3 changed
+
+The wizard's Files step has a preview, "Try the patterns on your files".
+User-facing detail: `docs-site/docs/reference/exclude-patterns.md`
+(Previewing in the Workflow Wizard).
+
+- **Input.** A folder read in the browser (`readFolder.js`), or a pasted list
+  of paths. Nothing is uploaded. `.git` and the protected dependency folders
+  are not opened; at most 5,000 files are read.
+- **Rules.** `filePreview.js` calls the generated `fileSelection.js`; it adds
+  no rules of its own. It reports the stack by folder, each file's verdict and
+  the origin of the pattern behind it.
+- **Languages.** Guessed from Linguist's extension and file-name lists
+  (`languageFiles.json`, written by `scripts/build-wizard-exclude-lists.js`).
+  Shown as tick boxes. An extension several languages share (`.h`, `.rs`,
+  `.pl`, `.m`) is listed unticked.
+- **Collision warning** (clash 3). Source files left out by a stack template or
+  the fallback list are flagged, with a link that adds the override.
+- **Pattern checks** (clash 6). Each pattern says what it does to the chosen
+  files: leaves out or brings back N, matches nothing, or matches protected
+  files without naming them. A leading `!` or `#` is flagged with no folder
+  chosen.
+- **Shared module.** Four small additions to `src/file-selection.js`:
+  `patternProblem` (the `!` and `#` check, moved from `inputs.js`), the
+  exclude pattern on a verdict an override won, an export of the protected
+  list, and `isBinary`. One fix: a negated pattern is now reported as written, with its `!`.
+  The run log and summary showed it without.
+- **Binary files.** For a folder, the preview reads the start of each file and
+  leaves binary ones out, with the action's own check (`isBinary`, moved into
+  the shared module). A pasted list has no contents, so it says it can't.
+
+Not done: the preview does not apply the commit range, and does not read
+`.gitignore` in a local folder. Clash 4 is unchanged
+until Phase 5.
