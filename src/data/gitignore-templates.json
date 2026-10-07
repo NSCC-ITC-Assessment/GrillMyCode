@@ -509,8 +509,7 @@
     "**/__history/**",
     "**/__recovery/**",
     "**/*.~*",
-    "**/*.stat",
-    "**/modules/**"
+    "**/*.stat"
   ],
   "Deno": ["**/.deno/**", "**/coverage/**", "**/*.lcov"],
   "Dotnet": [
@@ -1901,7 +1900,8 @@
     "**/*.translation",
     "**/.mono/**",
     "**/data_*/**",
-    "**/mono_crash.*.json"
+    "**/mono_crash.*.json",
+    "**/*.exe"
   ],
   "Gradle": [
     "**/.gradle",
@@ -3371,6 +3371,7 @@
     "**/*.exe",
     "**/*.aliases",
     "**/*.lvlps",
+    "**/*.lvprojstate",
     "**/.cache/**",
     "**/*.UserState"
   ],
@@ -6030,6 +6031,14 @@
     "**/*.py[cod]",
     "**/*$py.class",
     "**/[Bb]ackup*"
+  ],
+  "community/Linux/Flatpak": [
+    "**/.flatpak-builder",
+    "**/.flatpak-builder/**",
+    "**/builddir",
+    "**/builddir/**",
+    "**/repo",
+    "**/repo/**"
   ],
   "community/Linux/Snap": [
     "**/parts/**",
