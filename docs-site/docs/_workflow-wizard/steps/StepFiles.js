@@ -1,8 +1,12 @@
 import React from 'react';
 import styles from '../styles.module.css';
 import ExcludeListsDisclosure from './ExcludeListsDisclosure';
+import FilePreview, { PatternChecks, useFilePreview } from './FilePreview';
 
 export default function StepFiles({ cfg, onChange }) {
+  // Worked out here, not in FilePreview, so each pattern box can say what its
+  // patterns do to the chosen files.
+  const preview = useFilePreview(cfg);
   return (
     <div>
       <ExcludeListsDisclosure />
@@ -24,6 +28,11 @@ export default function StepFiles({ cfg, onChange }) {
           value={cfg.additionalExcludePatterns}
           onChange={(e) => onChange({ additionalExcludePatterns: e.target.value })}
           placeholder="e.g. data/**, tests/fixtures/**, provided_starter/**"
+        />
+        <PatternChecks
+          text={cfg.additionalExcludePatterns}
+          checks={preview.result?.excludeChecks}
+          kind="exclude"
         />
       </div>
 
@@ -47,7 +56,14 @@ export default function StepFiles({ cfg, onChange }) {
           onChange={(e) => onChange({ excludePatternOverrides: e.target.value })}
           placeholder="e.g. README.md, **/*.md"
         />
+        <PatternChecks
+          text={cfg.excludePatternOverrides}
+          checks={preview.result?.overrideChecks}
+          kind="override"
+        />
       </div>
+
+      <FilePreview cfg={cfg} onChange={onChange} preview={preview} />
     </div>
   );
 }

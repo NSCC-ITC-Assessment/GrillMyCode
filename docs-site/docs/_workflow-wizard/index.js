@@ -109,6 +109,13 @@ const INITIAL_CONFIG = {
 
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
+  // The Files step's preview, which tries the two lists above on real files.
+  // Neither is written to the workflow. previewSource is the folder chosen or
+  // the list pasted — { kind, label, paths, unopened, truncated, texts } — or
+  // null; previewLanguages holds the languages the instructor ticked or
+  // unticked against the preview's own guess (name → true or false).
+  previewSource: null,
+  previewLanguages: {},
   keepComments: false,
   // How students' repositories start, for the Repositories step's radios only:
   // 'empty' or 'template'. It is not an action input — starterCode is — but
@@ -224,7 +231,7 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
           <ul className={styles.introFeatures}>
             <li>Describe your students' <strong>repositories</strong>: Classroom 50, and any starter code</li>
             <li>Point the AI to any <strong>assignment</strong> documents</li>
-            <li>Fine-tune which <strong>files</strong> are assessed</li>
+            <li>Fine-tune which <strong>files</strong> are assessed, and try the patterns on a folder of your own</li>
             <li>Pick your <strong>AI model</strong> and configure <strong>question generation</strong></li>
             <li>Decide what <strong>students and instructors</strong> receive</li>
             <li>Choose your <strong>trigger</strong>: every push, a submission tag, or manual runs only</li>

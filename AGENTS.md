@@ -197,12 +197,15 @@ The bundled template data lives in `src/data/gitignore-templates.json` (generate
 
 The Workflow Wizard lists every pattern the action can apply on its own, from `docs-site/docs/_workflow-wizard/excludeLists.json` (also generated — do not edit by hand). After changing the template data, the lists in `src/constants.js` or the detection maps in `src/file-selection.js`, run `node scripts/build-wizard-exclude-lists.js`; `test/wizard-exclude-lists.test.js` fails until you do. The weekly template refresh workflow runs both scripts.
 
+The same script writes `docs-site/docs/_workflow-wizard/languageFiles.json` (generated — do not edit by hand): the file extensions and file names GitHub's Linguist gives each language, which the Wizard's file preview uses in place of the Languages API.
+
 ### File selection rules
 
 `src/file-selection.js` holds the rules that decide which files are assessed: splitting and reading pattern lists, matching files against excludes and overrides, and working out a repository's stack. It is shared with the Workflow Wizard, so:
 
 - **Keep it pure.** It may import only `minimatch` and `./constants.js` — no `git`, `fs`, network or `@actions/core`. Reading and logging belong in `src/stack-detection.js` and `src/main.js`.
 - **The Wizard's copy is generated.** `docs-site/docs/_workflow-wizard/fileSelection.js` is `src/file-selection.js` with its constants written in (do not edit by hand). After changing `src/file-selection.js`, or a constant it imports, run `node scripts/build-wizard-file-selection.js`; `test/wizard-file-selection.test.js` fails until you do.
+- **The Wizard's file preview asks these rules; it does not repeat them.** `docs-site/docs/_workflow-wizard/filePreview.js` prepares the input and sorts the answers for display. A new rule goes in `src/file-selection.js`, never in the preview. Keep `filePreview.js` free of React and browser APIs, so `test/wizard-file-preview.test.js` can run it; reading a folder belongs in `readFolder.js`.
 - **`minimatch` must be the same range in `package.json` and `docs-site/package.json`**, so a pattern matches the same way in both. Raise them together; the same test checks this.
 
 ## No Shell Interpolation
