@@ -116,6 +116,10 @@ const INITIAL_CONFIG = {
   // unticked against the preview's own guess (name → true or false).
   previewSource: null,
   previewLanguages: {},
+  // stack_templates: the stack templates every run applies, in place of
+  // detecting them in each repository. '' until the preview's "Use these
+  // templates for every student" is ticked, which writes the stack it shows.
+  stackTemplates: '',
   // The action's preview_only input. No step changes it: it reaches the
   // workflow only as a manual-run override, with this as its default.
   previewOnly: false,

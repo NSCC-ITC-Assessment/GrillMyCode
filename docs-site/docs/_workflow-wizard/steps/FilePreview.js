@@ -99,9 +99,10 @@ export function useFilePreview(cfg) {
             languageFiles: data.languageFiles,
             additionalExcludePatterns: additional,
             excludePatternOverrides: overrides,
+            stackTemplates: cfg.stackTemplates,
           })
         : null,
-    [source, data, options, additional, overrides],
+    [source, data, options, additional, overrides, cfg.stackTemplates],
   );
 
   return { result, options, loadError };
@@ -326,13 +327,64 @@ function Stack({ result }) {
   );
 }
 
+/**
+ * The tick box that writes the stack into the workflow as stack_templates, so
+ * every run uses it in place of detecting one. `entries` is what ticking it
+ * writes; `value` is what the workflow holds now, '' while it holds none.
+ * Shown without a folder too, once ticked, so it can always be unticked.
+ */
+function PinStack({ value, entries, unnamed = [], onChange }) {
+  const pinned = Boolean(value);
+  if (!pinned && entries.length === 0) return null;
+  return (
+    <>
+      <label className={styles.checkboxLabel} style={{ marginTop: '0.5rem' }}>
+        <input
+          type="checkbox"
+          checked={pinned}
+          onChange={(e) => onChange({ stackTemplates: e.target.checked ? entries.join(', ') : '' })}
+        />
+        <span>Use these templates for every student</span>
+      </label>
+      <span className={styles.hint}>
+        {pinned ? (
+          <>
+            The workflow sets <code>stack_templates: {value}</code>, so every run applies these
+            templates and no run works out its own. Untick to go back to detecting the stack in
+            each repository.
+          </>
+        ) : (
+          <>
+            A run normally works out the stack from the repository it runs in, so two students
+            can get different exclude patterns, and a file a student adds can turn a template on.
+            Tick this to write the templates above into the workflow as{' '}
+            <code>stack_templates</code>: every run then applies exactly these. If your students
+            choose their own language or framework, or you&apos;re not sure every repository is
+            laid out like this one, leave this unticked.
+          </>
+        )}
+      </span>
+      {!pinned && unnamed.length > 0 && (
+        <div className={styles.previewWarning}>
+          The templates in <code>{unnamed[0]}/</code>
+          {unnamed.length > 1 && ` and ${unnamed.length - 1} more folders`} would be left out: a
+          folder whose name has a comma, or starts or ends with a space, can&apos;t be named in{' '}
+          <code>stack_templates</code>.
+        </div>
+      )}
+    </>
+  );
+}
+
 function Warnings({ source, result, cfg, onChange }) {
   const uncovered = result.unopened.filter((u) => u.assessed);
   const collisions = result.leftOut.filter((g) => g.codeFiles.length > 0);
   const collided = collisions.reduce((n, g) => n + g.codeFiles.length, 0);
   // A pasted list has no file contents, so the frameworks a manifest names
   // can't be found.
-  const unreadManifests = source.kind === 'list' ? manifestPaths(source.paths) : [];
+  // No manifest is read once the workflow names the stack.
+  const unreadManifests =
+    source.kind === 'list' && !result.pinned ? manifestPaths(source.paths) : [];
 
   return (
     <>
@@ -345,8 +397,8 @@ function Warnings({ source, result, cfg, onChange }) {
       {collisions.length > 0 && (
         <div className={styles.previewWarning}>
           <strong>
-            {files(collided)} of source code {collided === 1 ? 'is' : 'are'} left out by the
-            detected stack.
+            {files(collided)} of source code {collided === 1 ? 'is' : 'are'} left out by the{' '}
+            {result.pinned ? 'stack templates' : 'detected stack'}.
           </strong>{' '}
           These patterns are meant for build output and caches. Check that they aren&apos;t
           catching your students&apos; own work:
@@ -437,13 +489,25 @@ function Results({ source, result, options, cfg, onChange }) {
       <details className={styles.nestedDisclosure}>
         <summary>This is an estimate. How close is it to a real run?</summary>
         <ul>
-          <li>
-            Languages are worked out from file names. A run asks GitHub, which reads the files.
-          </li>
-          <li>
-            Each student&apos;s repository is checked on its own. A student who adds another
-            language or framework gets its patterns too.
-          </li>
+          {result.pinned ? (
+            <li>
+              Every student&apos;s repository gets the stack templates shown here, because the
+              workflow names them. A project folder with another name gets only the patterns
+              that apply at any depth.
+            </li>
+          ) : (
+            <>
+              <li>
+                Languages are worked out from file names. A run asks GitHub, which reads the
+                files.
+              </li>
+              <li>
+                Each student&apos;s repository is checked on its own. A student who adds another
+                language or framework gets its patterns too, unless you tick{' '}
+                <strong>Use these templates for every student</strong> below.
+              </li>
+            </>
+          )}
           <li>
             A run assesses only the files a student added or changed. Every file here is treated
             as changed.
@@ -462,15 +526,24 @@ function Results({ source, result, options, cfg, onChange }) {
         </ul>
       </details>
 
-      <Languages
-        options={options}
-        choices={cfg.previewLanguages}
-        onChange={(previewLanguages) => onChange({ previewLanguages })}
-      />
+      {/* A run asks for no languages once the workflow names the stack. */}
+      {!result.pinned && (
+        <Languages
+          options={options}
+          choices={cfg.previewLanguages}
+          onChange={(previewLanguages) => onChange({ previewLanguages })}
+        />
+      )}
 
       <div className={styles.previewSection}>
         <span className={styles.previewSectionTitle}>Stack templates in use</span>
         <Stack result={result} />
+        <PinStack
+          value={cfg.stackTemplates}
+          entries={result.pin.entries}
+          unnamed={result.pin.unnamed}
+          onChange={onChange}
+        />
       </div>
 
       <Warnings source={source} result={result} cfg={cfg} onChange={onChange} />
@@ -682,6 +755,10 @@ export default function FilePreview({ cfg, onChange, preview }) {
       {source && !result && !loadError && <span className={styles.hint}>Working it out…</span>}
       {source && result && (
         <Results source={source} result={result} options={options} cfg={cfg} onChange={onChange} />
+      )}
+      {/* With no files showing, the tick stays within reach. */}
+      {!(source && result) && cfg.stackTemplates && (
+        <PinStack value={cfg.stackTemplates} entries={[]} onChange={onChange} />
       )}
     </div>
   );

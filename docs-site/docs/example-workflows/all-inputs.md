@@ -148,6 +148,14 @@ jobs:
           # and case is ignored.
           # additional_exclude_patterns: 'tests/, docs/**, *.{sql,csv}'
 
+          # The stack templates to apply in every repository, in place of
+          # detecting them from each repository's languages and project files:
+          # a github/gitignore template name, or a name and a project folder
+          # joined by @. Every student then gets the same exclude patterns.
+          # The Wizard's file preview writes this for you. If you're not sure
+          # the same stack suits every student's repository, don't set it.
+          # stack_templates: 'Node, Nextjs, Laravel@api'
+
           # When true, the run stops once it has worked out which files it
           # would assess, and lists them in the run summary with the files
           # left out and the pattern responsible for each. The AI is not

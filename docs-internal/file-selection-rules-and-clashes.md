@@ -1,11 +1,12 @@
 # File Selection — Rules, Clashes and Plan
 
 > **Recorded:** 2026-10-06 (`35a982c`)
-> **Status:** Phases 0 to 4 done (2026-10-07). The rules and clashes below describe the code
+> **Status:** Phases 0 to 5 done (2026-10-07). The rules and clashes below describe the code
 > **before** Phase 1; see [What Phase 1 changed](#what-phase-1-changed),
 > [What Phase 2 changed](#what-phase-2-changed),
-> [What Phase 3 changed](#what-phase-3-changed) and
-> [What Phase 4 changed](#what-phase-4-changed). Phase 5 is not started.
+> [What Phase 3 changed](#what-phase-3-changed),
+> [What Phase 4 changed](#what-phase-4-changed) and
+> [What Phase 5 changed](#what-phase-5-changed).
 
 Instructors using the Workflow Wizard often get file selection wrong on the
 first run: files they wanted are left out, or files they didn't want are
@@ -165,9 +166,9 @@ manual-run form, that stops before the AI call. Promote the left-out count to
 the summary headline and add the collision warning there too. See
 [What Phase 4 changed](#what-phase-4-changed).
 
-**Phase 5 — Pinned stack.** The wizard preview already knows the detected
-templates; write them into the workflow so the preview matches every student's
-run.
+**Phase 5 — Pinned stack.** _(Done.)_ The wizard preview already knows the
+detected templates; write them into the workflow so the preview matches every
+student's run. See [What Phase 5 changed](#what-phase-5-changed).
 
 **Later, if still needed:** context-only list, rename detection, allowlist.
 
@@ -301,3 +302,50 @@ commit range and sees only committed files. Clash 4 is unchanged until Phase 5.
 
 Not done: the architecture diagram (`architecture-overview.svg`) does not show
 the preview exit.
+
+---
+
+## What Phase 5 changed
+
+A new input, `stack_templates`. Empty, nothing changes. User-facing detail:
+`docs-site/docs/reference/exclude-patterns.md` (Using the same stack for every
+student).
+
+- **The input.** Entries separated by commas or line breaks. `Node` applies a
+  template at the root; `Laravel@api` applies it inside `api/`, as detection
+  does for a project folder. Names are the template keys the run log prints,
+  in any case, plus `SvelteKit` and `Nuxt` for the two pattern sets with no
+  upstream template (`OWN_TEMPLATES`).
+- **What it turns off.** The Languages API call, the project folder scan and
+  the manifests. The always-excluded lists, the instructor's two lists and the
+  protected set apply as before, and `mayBeOwnWork` still flags source a
+  named template leaves out.
+- **Unknown names warn; they don't fail.** A template can leave
+  github/gitignore in the weekly refresh after a workflow naming it is already
+  in student repositories. A language name gets a hint (`JavaScript` → Node).
+  With no known name, the run uses the fallback list.
+- **Shared module.** `pinnedStack` returns what `detectStack` does, and
+  `stackTemplateEntries` writes a detected stack as entries. A test checks
+  that pinning a detected stack gives the same exclude list, through the
+  action's templates and the wizard's.
+- **Wizard.** A tick box under the preview's stack, "Use these templates for
+  every student", writes the stack shown. Once ticked, the preview applies the
+  named stack, as a run would, and hides the language tick boxes. There is no
+  box for typing names: the wizard holds only the templates detection can
+  reach, so it would call a valid hand-typed name unknown.
+- **Summary, every run.** A "Stack templates" row in the configuration table
+  says whether the stack was detected or set, and lists it as entries, so a
+  preview run gives the value to copy.
+
+Clash status after Phase 5: 4 fixed for workflows that set the input. Detection
+is still per repository by default.
+
+Limits:
+
+- A named folder is literal. A student whose project sits in another folder
+  gets only the patterns that match at any depth.
+- A folder whose name has a comma, or a space at either end, can't be named.
+  The wizard leaves its templates out and says so.
+- Not offered on the manual-run form: the point is that it doesn't vary.
+- Nothing pins the fallback list. With nothing detected there is nothing to
+  name, and the wizard hides the tick box.

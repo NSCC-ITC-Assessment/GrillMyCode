@@ -299,6 +299,7 @@ const PROTECTED_EXCLUDE_PATTERNS = [
   "**/.venv/**",
   "**/venv/**"
 ];
+const STACK_TEMPLATE_FOLDER_SEPARATOR = "@";
 const WORKFLOWS_EXCLUDE_PATTERN = ".github/workflows/**";
 
 /**
@@ -709,13 +710,20 @@ export const CONFIG_TO_TEMPLATES = {
   '.vs': ['VisualStudio'],
 };
 
+// The pattern sets of frameworks that have no upstream gitignore template,
+// under the name stack_templates knows each by (see pinnedStack).
+export const OWN_TEMPLATES = {
+  SvelteKit: ['.svelte-kit/**'],
+  Nuxt: ['.nuxt/**', '.output/**'],
+};
+
 // Maps config files to exclude patterns directly, for frameworks that have no
 // upstream gitignore template. Applied inside the project folder holding them.
 export const CONFIG_TO_PATTERNS = {
-  'svelte.config.js': ['.svelte-kit/**'],
-  'svelte.config.ts': ['.svelte-kit/**'],
-  'nuxt.config.js': ['.nuxt/**', '.output/**'],
-  'nuxt.config.ts': ['.nuxt/**', '.output/**'],
+  'svelte.config.js': OWN_TEMPLATES.SvelteKit,
+  'svelte.config.ts': OWN_TEMPLATES.SvelteKit,
+  'nuxt.config.js': OWN_TEMPLATES.Nuxt,
+  'nuxt.config.ts': OWN_TEMPLATES.Nuxt,
 };
 
 // Maps filename suffixes to template keys, for frameworks where the project
@@ -744,9 +752,9 @@ export const PACKAGE_DEP_TO_TEMPLATES = {
 // Maps package.json dependency names to exclude patterns for frameworks with
 // no upstream gitignore template.
 export const PACKAGE_DEP_TO_PATTERNS = {
-  svelte: ['.svelte-kit/**'],
-  nuxt: ['.nuxt/**', '.output/**'],
-  '@nuxt/kit': ['.nuxt/**', '.output/**'],
+  svelte: OWN_TEMPLATES.SvelteKit,
+  nuxt: OWN_TEMPLATES.Nuxt,
+  '@nuxt/kit': OWN_TEMPLATES.Nuxt,
 };
 
 // Maps composer.json require/require-dev package names to gitignore template keys.
@@ -1047,6 +1055,15 @@ export function detectStack({ languages, paths, readText, allTemplates }) {
     if (found.keys.size > 0 || found.extraPatterns.size > 0) detected.set(folder, found);
   }
 
+  return { ...stackPatterns(detected, allTemplates), detected, manifests, foldersFound };
+}
+
+/**
+ * The exclude list a stack turns on, as { patterns, origins } (see
+ * detectStack): the always-excluded patterns, plus each template's patterns
+ * applied in its project folder, or plus the fallback list for an empty stack.
+ */
+function stackPatterns(detected, allTemplates) {
   const origins = new Map();
   const credit = (pattern, origin) => {
     if (!origins.has(pattern)) origins.set(pattern, origin);
@@ -1057,7 +1074,7 @@ export function detectStack({ languages, paths, readText, allTemplates }) {
 
   if (detected.size === 0) {
     FALLBACK_WITH_ALWAYS_EXCLUDE.forEach((p) => credit(p, { kind: 'fallback' }));
-    return { patterns: FALLBACK_WITH_ALWAYS_EXCLUDE, origins, detected, manifests, foldersFound };
+    return { patterns: FALLBACK_WITH_ALWAYS_EXCLUDE, origins };
   }
 
   for (const [folder, { keys, extraPatterns }] of detected) {
@@ -1069,7 +1086,115 @@ export function detectStack({ languages, paths, readText, allTemplates }) {
     for (const p of extraPatterns) credit(underFolder(folder, p), { kind: 'project', folder });
   }
 
-  return { patterns: [...origins.keys()], origins, detected, manifests, foldersFound };
+  return { patterns: [...origins.keys()], origins };
+}
+
+/** Splits a stack_templates input into its entries, at commas and line breaks. */
+export function splitStackTemplates(text) {
+  return text
+    .split(/[,\r\n]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean);
+}
+
+// A project folder as stack_templates writes it: no `./` or `/` in front and
+// no `/` behind, so `./api/` and `api` name the same folder, and `.` the root.
+const pinnedFolder = (written) =>
+  written
+    .trim()
+    .replace(/^(\.\/)*\/*/, '')
+    .replace(/\/+$/, '')
+    .replace(/^\.$/, '');
+
+// A folder stack_templates can't name: an entry ends at a comma or a line
+// break, and the spaces around it are dropped.
+const cannotBePinned = (folder) => /[,\r\n]/.test(folder) || folder !== folder.trim();
+
+/**
+ * A detected stack as the stack_templates entries that pin it (see
+ * pinnedStack): `Template` for one at the repository root, `Template@folder`
+ * for one in a project folder. Returns
+ *
+ *   entries  — in the order pinnedStack turns back into the same exclude list
+ *   unnamed  — the project folders left out because an entry can't name them:
+ *              a comma, a line break or a space at either end is in the way
+ */
+export function stackTemplateEntries(detected) {
+  const entries = [];
+  const unnamed = [];
+  for (const [folder, { keys, extraPatterns }] of detected) {
+    if (cannotBePinned(folder)) {
+      unnamed.push(folder);
+      continue;
+    }
+    const own = Object.keys(OWN_TEMPLATES).filter((name) =>
+      OWN_TEMPLATES[name].every((p) => extraPatterns.has(p)),
+    );
+    for (const name of [...keys, ...own]) {
+      entries.push(folder ? `${name}${STACK_TEMPLATE_FOLDER_SEPARATOR}${folder}` : name);
+    }
+  }
+  return { entries, unnamed };
+}
+
+/**
+ * The stack an instructor set with stack_templates, in place of the one
+ * detectStack would find: every repository gets the same templates, whatever
+ * its languages and project files.
+ *
+ *   entries       — the input's entries (see splitStackTemplates)
+ *   allTemplates  — template key → patterns
+ *
+ * A template is named by its key (`Node`, `Global/Linux`) or, for a framework
+ * with no upstream template, its name in OWN_TEMPLATES, in any case.
+ *
+ * Returns what detectStack does — `manifests` empty and `foldersFound` 0,
+ * since nothing is scanned — and
+ *
+ *   unknown       — the entries that name no template, which are left out:
+ *                   [{ written, name, language }]. `language` is the templates
+ *                   the name reaches as a language (`JavaScript` → Node), or
+ *                   null. Unknown names don't fail a run: a template can leave
+ *                   the upstream collection after a workflow was written
+ *
+ * With no entry that names a template, the exclude list is the fallback one,
+ * as it is when nothing is detected.
+ */
+export function pinnedStack({ entries, allTemplates }) {
+  const byName = new Map(
+    [...Object.keys(allTemplates), ...Object.keys(OWN_TEMPLATES)].map((key) => [
+      key.toLowerCase(),
+      key,
+    ]),
+  );
+  const languageByName = new Map(
+    Object.entries(LANGUAGE_TO_TEMPLATES).map(([language, keys]) => [language.toLowerCase(), keys]),
+  );
+
+  const detected = new Map();
+  const unknown = [];
+  for (const written of entries) {
+    const at = written.indexOf(STACK_TEMPLATE_FOLDER_SEPARATOR);
+    const name = (at === -1 ? written : written.slice(0, at)).trim();
+    const folder = at === -1 ? '' : pinnedFolder(written.slice(at + 1));
+    const key = byName.get(name.toLowerCase());
+    if (!key) {
+      unknown.push({ written, name, language: languageByName.get(name.toLowerCase()) ?? null });
+      continue;
+    }
+    if (!detected.has(folder)) detected.set(folder, { keys: new Set(), extraPatterns: new Set() });
+    // A name both collections hold is the upstream template.
+    if (Object.hasOwn(allTemplates, key)) detected.get(folder).keys.add(key);
+    else OWN_TEMPLATES[key].forEach((p) => detected.get(folder).extraPatterns.add(p));
+  }
+
+  return {
+    ...stackPatterns(detected, allTemplates),
+    detected,
+    manifests: [],
+    foldersFound: 0,
+    unknown,
+  };
 }
 
 /**
@@ -1093,8 +1218,8 @@ export function fileLanguage(path, { extensions, filenames }) {
   return null;
 }
 
-// The origins that depend on what was detected in the repository, where a
-// pattern can take a source file by surprise.
+// The origins that depend on the stack — detected in the repository, or set
+// with stack_templates — where a pattern can take a source file by surprise.
 const DETECTED_ORIGINS = ['template', 'project', 'fallback'];
 
 const protectedVerdictOn = createFileFilter({

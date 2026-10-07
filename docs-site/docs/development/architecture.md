@@ -64,6 +64,7 @@ resolveSubmissionIdentity()
 getChangedFiles() → buildFileRules()
     │  Runs `git diff --name-only baseSha headSha`
     │  Applies auto-detected stack patterns, additional_exclude_patterns, and exclude_pattern_overrides via minimatch
+    │  With stack_templates set, the stack is the one it names and nothing is detected
     │
     │  Each file left out is recorded with its pattern and where that
     │  pattern comes from (an always-excluded list, a template, the fallback
@@ -249,6 +250,7 @@ Reads and normalizes every `INPUT_*` environment variable. Responsible for:
 
 - Parsing comma-separated glob lists into arrays
 - Parsing `additional_exclude_patterns` into an array (stack-based patterns are resolved separately in `stack-detection.js` at runtime), using `splitPatternList()` from `file-selection.js`
+- Splitting `stack_templates` into its entries with `splitStackTemplates()`; the names are checked in `stack-detection.js`, where the templates are loaded, and an unknown one is ignored with a warning
 - Clamping `num_questions` to a minimum of 1 and a maximum of 50; a workflow warning is emitted if the supplied value exceeds 50
 - Splitting `assignment_context` into a `assignmentContextGlobs` array for later file resolution
 - Validating `question_emphasis` against `QUESTION_EMPHASIS_MODES`; an unknown value fails the run
@@ -256,7 +258,7 @@ Reads and normalizes every `INPUT_*` environment variable. Responsible for:
 
 ### `src/file-selection.js`
 
-The rules that decide which files are assessed, with no I/O of their own: `splitPatternList()` and `instructorPatterns()` read the instructor's patterns, `detectStack()` works out the exclude patterns a repository's languages and project files turn on, and `buildFileRules()` combines them into a function that gives each file its verdict. Both also say where each pattern comes from (`origins`), and `buildFileRules()` returns `mayBeOwnWork()`, which flags a source file a detected pattern left out. That test reads `src/data/language-files.json`, the file extensions and names Linguist gives each language, to tell source code by its name. `stack-detection.js` supplies the GitHub Languages API result, the file list and the manifests, and does the logging.
+The rules that decide which files are assessed, with no I/O of their own: `splitPatternList()` and `instructorPatterns()` read the instructor's patterns, `detectStack()` works out the exclude patterns a repository's languages and project files turn on, `pinnedStack()` gives those of the templates named in `stack_templates` instead (`stackTemplateEntries()` writes a detected stack in that form), and `buildFileRules()` combines them into a function that gives each file its verdict. Both also say where each pattern comes from (`origins`), and `buildFileRules()` returns `mayBeOwnWork()`, which flags a source file a detected pattern left out. That test reads `src/data/language-files.json`, the file extensions and names Linguist gives each language, to tell source code by its name. `stack-detection.js` supplies the GitHub Languages API result, the file list and the manifests, and does the logging.
 
 The Workflow Wizard runs a generated copy of this module, `docs-site/docs/_workflow-wizard/fileSelection.js`, so that both apply the same rules. The module may import only `minimatch` and `constants.js`. After changing it, run `node scripts/build-wizard-file-selection.js`; `test/wizard-file-selection.test.js` fails until the copy matches.
 
