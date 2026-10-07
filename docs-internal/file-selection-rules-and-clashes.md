@@ -1,10 +1,11 @@
 # File Selection — Rules, Clashes and Plan
 
 > **Recorded:** 2026-10-06 (`35a982c`)
-> **Status:** Phases 0 to 3 done (2026-10-06). The rules and clashes below describe the code
+> **Status:** Phases 0 to 4 done (2026-10-07). The rules and clashes below describe the code
 > **before** Phase 1; see [What Phase 1 changed](#what-phase-1-changed),
-> [What Phase 2 changed](#what-phase-2-changed) and
-> [What Phase 3 changed](#what-phase-3-changed). Phases 4 and 5 are not started.
+> [What Phase 2 changed](#what-phase-2-changed),
+> [What Phase 3 changed](#what-phase-3-changed) and
+> [What Phase 4 changed](#what-phase-4-changed). Phase 5 is not started.
 
 Instructors using the Workflow Wizard often get file selection wrong on the
 first run: files they wanted are left out, or files they didn't want are
@@ -159,9 +160,10 @@ pattern checks. Label the result as expected, not guaranteed: language
 detection is approximated from file extensions, and clash 4 still applies. See
 [What Phase 3 changed](#what-phase-3-changed).
 
-**Phase 4 — Preview-only run.** A new input, offered on the manual-run form,
-that stops before the AI call. Promote the left-out count to the summary
-headline and add the collision warning there too.
+**Phase 4 — Preview-only run.** _(Done.)_ A new input, offered on the
+manual-run form, that stops before the AI call. Promote the left-out count to
+the summary headline and add the collision warning there too. See
+[What Phase 4 changed](#what-phase-4-changed).
 
 **Phase 5 — Pinned stack.** The wizard preview already knows the detected
 templates; write them into the workflow so the preview matches every student's
@@ -263,3 +265,39 @@ User-facing detail: `docs-site/docs/reference/exclude-patterns.md`
 Not done: the preview does not apply the commit range, and does not read
 `.gitignore` in a local folder. Clash 4 is unchanged
 until Phase 5.
+
+---
+
+## What Phase 4 changed
+
+A new input, `preview_only`, and a clearer run summary for every run.
+User-facing detail: `docs-site/docs/reference/exclude-patterns.md` (Previewing
+in a run, Confirming what was applied).
+
+- **Preview run.** `preview_only: "true"` runs everything up to the AI call in
+  the real repository: commit range, Languages API, stack, patterns, binary
+  check, context files. Then it writes the summary and stops. No AI call, no
+  delivery, no outputs, no `api_key` needed. Nothing to assess is reported, not
+  failed. A notice on the run page says it was a preview.
+- **Manual-run form.** The wizard offers `preview_only` first on the Manual
+  runs step, ticked by default, and never writes it into the file as `true`.
+  Safe to expose: a preview is labelled as one and replaces nothing.
+- **Summary, every run.** The headline counts changed files assessed and left
+  out. "Files left out" is its own section, out of the collapsed configuration
+  table, with where each pattern comes from.
+- **Collision warning** (clash 3), every run. Source files a detected pattern
+  left out are named under the headline and marked in the table. In the log it
+  is a plain line, not a warning annotation: build output is flagged too.
+- **Shared module.** `detectStack` and `buildFileRules` now return each
+  pattern's origin, and `buildFileRules` returns `mayBeOwnWork`. Both moved out
+  of the wizard's `filePreview.js`, so the summary and the wizard flag the same
+  files. New: a file the instructor's own pattern also matches is no longer
+  flagged, in either.
+- **Data.** Linguist's extension lists are now bundled with the action too
+  (`src/data/language-files.json`); the wizard's `languageFiles.json` is a copy.
+
+This closes the Phase 3 gaps for one repository: a preview run applies the
+commit range and sees only committed files. Clash 4 is unchanged until Phase 5.
+
+Not done: the architecture diagram (`architecture-overview.svg`) does not show
+the preview exit.

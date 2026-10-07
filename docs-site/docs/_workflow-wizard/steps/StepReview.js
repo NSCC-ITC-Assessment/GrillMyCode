@@ -44,6 +44,18 @@ function buildChecklist(cfg, docsBase) {
       starterAsk: cfg.starterCode === 'ask',
       enabled: cfg.dispatchOverridesEnabled === true,
     });
+    if (overrides.includes('preview_only')) {
+      items.push({
+        text:
+          'Before the first assessed run, check which files a run would assess: in a repository ' +
+          'that holds some work, such as your own solution, go to Actions \u2192 GrillMyCode \u2192 ' +
+          'Run workflow, set "preview_only" to "true" and run it. The run summary lists the files ' +
+          'that would be assessed and the files left out, with the pattern responsible for each. ' +
+          'No questions are generated, so it costs nothing.',
+        linkHref: `${docsBase}/reference/exclude-patterns#previewing-in-a-run`,
+        linkLabel: 'Previewing in a run',
+      });
+    }
     if (overrides.length > 0) {
       items.push({
         text:

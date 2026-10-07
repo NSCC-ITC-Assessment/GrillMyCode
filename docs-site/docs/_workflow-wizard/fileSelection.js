@@ -21,6 +21,97 @@
  */
 
 import { braceExpand, Minimatch } from 'minimatch';
+const EDITOR_CONFIG_EXCLUDE_GROUPS = [
+  {
+    "label": "VS Code and its forks",
+    "patterns": [
+      "**/.vscode/**",
+      "**/.vscode-test/**",
+      "**/*.code-workspace",
+      "**/.history/**"
+    ]
+  },
+  {
+    "label": "Visual Studio",
+    "patterns": [
+      "**/.vs/**"
+    ]
+  },
+  {
+    "label": "JetBrains IDEs and Fleet",
+    "patterns": [
+      "**/.idea/**",
+      "**/*.iml",
+      "**/*.ipr",
+      "**/*.iws",
+      "**/.fleet/**"
+    ]
+  },
+  {
+    "label": "Eclipse",
+    "patterns": [
+      "**/.project",
+      "**/.classpath",
+      "**/.factorypath",
+      "**/.settings/**"
+    ]
+  },
+  {
+    "label": "NetBeans",
+    "patterns": [
+      "**/nbproject/**"
+    ]
+  },
+  {
+    "label": "Xcode project bundles",
+    "patterns": [
+      "**/*.xcodeproj/**",
+      "**/*.xcworkspace/**",
+      "**/xcuserdata/**"
+    ]
+  },
+  {
+    "label": "Sublime Text, Zed, Nova, Theia",
+    "patterns": [
+      "**/*.sublime-project",
+      "**/*.sublime-workspace",
+      "**/.zed/**",
+      "**/.nova/**",
+      "**/.theia/**"
+    ]
+  },
+  {
+    "label": "Vim and Emacs swap, backup and session files",
+    "patterns": [
+      "**/*.swp",
+      "**/*.swo",
+      "**/*~",
+      "**/.#*",
+      "**/#*#",
+      "**/.netrwhist",
+      "**/Session.vim"
+    ]
+  },
+  {
+    "label": "AI coding assistants",
+    "patterns": [
+      "**/.cursor/**",
+      "**/.cursorrules",
+      "**/.cursorignore",
+      "**/.windsurf/**",
+      "**/.windsurfrules",
+      "**/.claude/**",
+      "**/.continue/**"
+    ]
+  },
+  {
+    "label": "EditorConfig and dev containers",
+    "patterns": [
+      "**/.editorconfig",
+      "**/.devcontainer/**"
+    ]
+  }
+];
 const EDITOR_CONFIG_EXCLUDE_PATTERNS = [
   "**/.vscode/**",
   "**/.vscode-test/**",
@@ -161,6 +252,27 @@ const FALLBACK_EXCLUDE_PATTERNS = [
   "**/*.tsv"
 ];
 const MAX_PROJECT_FOLDERS = 100;
+const NON_CODE_ASSET_EXCLUDE_GROUPS = [
+  {
+    "label": "Diagrams (draw.io, Excalidraw, BPMN, PlantUML, Mermaid)",
+    "patterns": [
+      "**/*.drawio",
+      "**/*.dio",
+      "**/*.excalidraw",
+      "**/*.bpmn",
+      "**/*.puml",
+      "**/*.plantuml",
+      "**/*.mmd"
+    ]
+  },
+  {
+    "label": "Tabular data",
+    "patterns": [
+      "**/*.csv",
+      "**/*.tsv"
+    ]
+  }
+];
 const NON_CODE_ASSET_EXCLUDE_PATTERNS = [
   "**/*.drawio",
   "**/*.dio",
@@ -477,6 +589,21 @@ export const ALWAYS_EXCLUDE = [
   ...ALWAYS_EXCLUDE_GROUPS.flatMap((g) => g.patterns),
   ...EDITOR_CONFIG_EXCLUDE_PATTERNS,
   ...NON_CODE_ASSET_EXCLUDE_PATTERNS,
+];
+
+// The workflows folder, which every run leaves out as well (see
+// buildFileRules), under the label it is listed by.
+export const WORKFLOWS_EXCLUDE_GROUP = {
+  label: 'GitHub Actions workflows',
+  patterns: [WORKFLOWS_EXCLUDE_PATTERN],
+};
+
+// The always-excluded patterns in their labelled groups, in ALWAYS_EXCLUDE's
+// order, for saying which list left a file out (see detectStack).
+const ALWAYS_EXCLUDE_LABELLED = [
+  ...ALWAYS_EXCLUDE_GROUPS,
+  ...EDITOR_CONFIG_EXCLUDE_GROUPS,
+  ...NON_CODE_ASSET_EXCLUDE_GROUPS,
 ];
 
 // What a run gets when the stack can't be detected: the fallback list, plus
@@ -888,6 +1015,17 @@ function readFolderDeps(folder, names, readText) {
  *                   folder, or plus the fallback list when nothing was detected
  *   detected      — Map from project folder to the { keys, extraPatterns } it
  *                   turned on; empty when the fallback list was used
+ *   origins       — Map from each of those patterns to where it comes from:
+ *                     { kind: 'always', label }              an always-excluded list
+ *                     { kind: 'template', template, folder } a detected template,
+ *                                                            applied in a project
+ *                                                            folder ('' is the root)
+ *                     { kind: 'project', folder }            a pattern a project
+ *                                                            file adds without a
+ *                                                            template
+ *                     { kind: 'fallback' }                   the fallback list
+ *                   A pattern two sources share is credited to the first, in
+ *                   that order
  *   manifests     — the dependency manifests that listed anything:
  *                   [{ path, count, noun }]
  *   foldersFound  — project folders in the tree; above MAX_PROJECT_FOLDERS,
@@ -909,20 +1047,60 @@ export function detectStack({ languages, paths, readText, allTemplates }) {
     if (found.keys.size > 0 || found.extraPatterns.size > 0) detected.set(folder, found);
   }
 
+  const origins = new Map();
+  const credit = (pattern, origin) => {
+    if (!origins.has(pattern)) origins.set(pattern, origin);
+  };
+  for (const { label, patterns } of ALWAYS_EXCLUDE_LABELLED) {
+    patterns.forEach((p) => credit(p, { kind: 'always', label }));
+  }
+
   if (detected.size === 0) {
-    return { patterns: FALLBACK_WITH_ALWAYS_EXCLUDE, detected, manifests, foldersFound };
+    FALLBACK_WITH_ALWAYS_EXCLUDE.forEach((p) => credit(p, { kind: 'fallback' }));
+    return { patterns: FALLBACK_WITH_ALWAYS_EXCLUDE, origins, detected, manifests, foldersFound };
   }
 
-  const patterns = new Set(ALWAYS_EXCLUDE);
   for (const [folder, { keys, extraPatterns }] of detected) {
-    for (const key of keys) {
-      for (const p of allTemplates[key] ?? []) patterns.add(underFolder(folder, p));
+    for (const template of keys) {
+      for (const p of allTemplates[template] ?? []) {
+        credit(underFolder(folder, p), { kind: 'template', template, folder });
+      }
     }
-    for (const p of extraPatterns) patterns.add(underFolder(folder, p));
+    for (const p of extraPatterns) credit(underFolder(folder, p), { kind: 'project', folder });
   }
 
-  return { patterns: [...patterns], detected, manifests, foldersFound };
+  return { patterns: [...origins.keys()], origins, detected, manifests, foldersFound };
 }
+
+/**
+ * The language Linguist's tables give a file, as { language, via }: `language`
+ * is a name, or a list of names when the extension is shared (see
+ * buildLanguageFiles in scripts/build-wizard-exclude-lists.js), and `via` is
+ * the file name or extension that decided. null for a file in no counted
+ * language. A file name is tried before an extension, and a longer extension
+ * before a shorter one (`.d.ts` before `.ts`), as Linguist does.
+ */
+export function fileLanguage(path, { extensions, filenames }) {
+  const name = path.slice(path.lastIndexOf('/') + 1);
+  if (Object.hasOwn(filenames, name)) return { language: filenames[name], via: name };
+  const lower = name.toLowerCase();
+  for (let dot = lower.indexOf('.'); dot !== -1; dot = lower.indexOf('.', dot + 1)) {
+    const extension = lower.slice(dot);
+    if (Object.hasOwn(extensions, extension)) {
+      return { language: extensions[extension], via: extension };
+    }
+  }
+  return null;
+}
+
+// The origins that depend on what was detected in the repository, where a
+// pattern can take a source file by surprise.
+const DETECTED_ORIGINS = ['template', 'project', 'fallback'];
+
+const protectedVerdictOn = createFileFilter({
+  excludePatterns: PROTECTED_EXCLUDE_PATTERNS,
+  caseInsensitivePatterns: PROTECTED_EXCLUDE_PATTERNS,
+});
 
 /**
  * The rules one run applies to its files, from the exclude list of the
@@ -935,13 +1113,45 @@ export function detectStack({ languages, paths, readText, allTemplates }) {
  *                              the detected templates
  *   verdictOn                — (filepath) => the file's verdict (see
  *                              createFileFilter)
+ *   origins                  — Map from each exclude pattern to where it comes
+ *                              from: `detectedOrigins` (see detectStack), and
+ *                              { kind: 'yours', written } for an additional
+ *                              exclude pattern, as the instructor wrote it. A
+ *                              pattern of theirs the detected list already
+ *                              holds stays credited to that list
+ *   mayBeOwnWork             — (filepath, verdict, languageFiles) => whether
+ *                              a file left out may be the student's own work
+ *                              all the same; see below
+ *
+ * A file may be the student's own work when the pattern that left it out
+ * comes from the detected stack or the fallback list, not from a list that
+ * never changes, and the file is source code by its name (`languageFiles`,
+ * see fileLanguage). `**\/lib/**` from the Python template leaving out
+ * `src/lib/util.js` is the usual case. A file in a dependency folder is code
+ * too, and nobody's own work, so it never counts; nor does one the
+ * instructor's own exclude patterns match, which they meant to leave out
+ * whichever pattern got to it first.
+ *
+ * It is a prompt to look, not a verdict: build output such as `dist/app.js`
+ * is rightly left out, and reads the same from here.
  */
 export function buildFileRules({
   detectedPatterns,
+  detectedOrigins = new Map(),
   additionalExcludePatterns = [],
   excludePatternOverrides = [],
 }) {
   const instructorExcludes = additionalExcludePatterns.flatMap(instructorPatterns);
+  const origins = new Map(detectedOrigins);
+  const credit = (pattern, origin) => {
+    if (!origins.has(pattern)) origins.set(pattern, origin);
+  };
+  WORKFLOWS_EXCLUDE_GROUP.patterns.forEach((p) =>
+    credit(p, { kind: 'always', label: WORKFLOWS_EXCLUDE_GROUP.label }),
+  );
+  for (const written of additionalExcludePatterns) {
+    instructorPatterns(written).forEach((p) => credit(p, { kind: 'yours', written }));
+  }
   const excludePatterns = [
     ...new Set([...detectedPatterns, ...instructorExcludes, WORKFLOWS_EXCLUDE_PATTERN]),
   ];
@@ -955,5 +1165,16 @@ export function buildFileRules({
     overridePatterns: excludePatternOverrides,
     caseInsensitivePatterns,
   });
-  return { excludePatterns, caseInsensitivePatterns, verdictOn };
+  const instructorVerdictOn = createFileFilter({
+    excludePatterns: instructorExcludes,
+    caseInsensitivePatterns: instructorExcludes,
+  });
+  const mayBeOwnWork = (filepath, verdict, languageFiles) =>
+    !verdict.assessed &&
+    DETECTED_ORIGINS.includes(origins.get(verdict.pattern)?.kind) &&
+    fileLanguage(filepath, languageFiles) !== null &&
+    protectedVerdictOn(filepath).assessed &&
+    instructorVerdictOn(filepath).assessed;
+
+  return { excludePatterns, caseInsensitivePatterns, verdictOn, origins, mayBeOwnWork };
 }

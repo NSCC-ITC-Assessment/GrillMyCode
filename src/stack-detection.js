@@ -13,11 +13,12 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import * as core from '@actions/core';
 import { GITHUB_API_VERSION, MAX_PROJECT_FOLDERS } from './constants.js';
-import { FALLBACK_WITH_ALWAYS_EXCLUDE, detectStack } from './file-selection.js';
+import { detectStack } from './file-selection.js';
 import { listTreeFiles, readFileAt } from './git.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_PATH = join(__dirname, 'data', 'gitignore-templates.json');
+const LANGUAGE_FILES_PATH = join(__dirname, 'data', 'language-files.json');
 
 async function fetchJson(url, headers) {
   const res = await fetch(url, { headers });
@@ -34,13 +35,39 @@ function readTextAt(headSha, path) {
   }
 }
 
+/**
+ * The file extensions and file names Linguist gives each language (see
+ * fileLanguage), or null when the bundled copy can't be read. Only the note
+ * about source files a detected pattern left out depends on it, so a run
+ * goes on without.
+ */
+export function loadLanguageFiles() {
+  try {
+    return JSON.parse(readFileSync(LANGUAGE_FILES_PATH, 'utf-8'));
+  } catch {
+    core.debug('Could not load the bundled language file names.');
+    return null;
+  }
+}
+
+/**
+ * The exclude list for the repository at headSha, as { patterns, origins }:
+ * the patterns, and where each comes from (see detectStack).
+ */
 export async function detectExcludePatterns(token, owner, repo, headSha) {
   let allTemplates;
   try {
     allTemplates = JSON.parse(readFileSync(TEMPLATES_PATH, 'utf-8'));
   } catch {
     core.warning('Could not load bundled gitignore templates — using fallback exclude patterns.');
-    return FALLBACK_WITH_ALWAYS_EXCLUDE;
+    // With nothing to detect from, the rules give the fallback list.
+    const { patterns, origins } = detectStack({
+      languages: [],
+      paths: [],
+      readText: () => null,
+      allTemplates: {},
+    });
+    return { patterns, origins };
   }
 
   const headers = {
@@ -68,7 +95,7 @@ export async function detectExcludePatterns(token, owner, repo, headSha) {
     core.warning(`Could not list the files at ${headSha}: ${err.message}`);
   }
 
-  const { patterns, detected, manifests, foldersFound } = detectStack({
+  const { patterns, origins, detected, manifests, foldersFound } = detectStack({
     languages: detectedLanguages,
     paths,
     readText: (path) => readTextAt(headSha, path),
@@ -88,7 +115,7 @@ export async function detectExcludePatterns(token, owner, repo, headSha) {
 
   if (detected.size === 0) {
     core.info('No matching stack templates found — using fallback exclude patterns.');
-    return patterns;
+    return { patterns, origins };
   }
 
   for (const [folder, { keys }] of detected) {
@@ -100,5 +127,5 @@ export async function detectExcludePatterns(token, owner, repo, headSha) {
     );
   }
 
-  return patterns;
+  return { patterns, origins };
 }

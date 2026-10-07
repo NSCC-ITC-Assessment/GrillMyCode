@@ -228,6 +228,7 @@ export const DEFAULTS = {
   assignmentContextMaxChars: 20000,
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
+  previewOnly: false,
   keepComments: false,
   starterCode: 'ignore',
   starterQuestionsOneIn: 5,
@@ -568,6 +569,9 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
       yamlStr(normalizePatterns(cfg.additionalExcludePatterns)),
     );
   }
+  // No step sets this in the file, where it would turn every run into a
+  // preview and assess nobody. It is emitted only as a manual-run override.
+  pushInput('preview_only', 'previewOnly', yamlStr(cfg.previewOnly));
   pushInput('keep_comments', 'keepComments', yamlStr(cfg.keepComments));
   pushInput('starter_code', 'starterCode', yamlStr(cfg.starterCode));
   // Also emitted when starter_code is a dispatch override, so a manual run

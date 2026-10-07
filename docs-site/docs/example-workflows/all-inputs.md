@@ -148,6 +148,15 @@ jobs:
           # and case is ignored.
           # additional_exclude_patterns: 'tests/, docs/**, *.{sql,csv}'
 
+          # When true, the run stops once it has worked out which files it
+          # would assess, and lists them in the run summary with the files
+          # left out and the pattern responsible for each. The AI is not
+          # called, so no questions, issue or PDF are produced and api_key is
+          # not needed. Offer it on the Run workflow form rather than setting
+          # it here: left "true" in the file, every run is a preview and no
+          # student is assessed.
+          # preview_only: "false"
+
           # ── Instructor repository ─────────────────────────────────────────
 
           # Classroom 50 assignment repositories only — not available elsewhere.

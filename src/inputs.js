@@ -25,6 +25,7 @@ import {
   TAG_DIFF_BASE_NAMED_PREFIX,
   DEFAULT_LABEL_REPOS,
   DEFAULT_LOG_PROMPT,
+  DEFAULT_PREVIEW_ONLY,
   DEFAULT_QUESTION_EMPHASIS,
   QUESTION_EMPHASIS_MODES,
   STARTER_CODE_MODES,
@@ -130,6 +131,19 @@ function readLabelRepos() {
   if (value === 'true') return true;
   if (value === 'false') return false;
   throw new Error(`label_repos must be "true" or "false"; got "${value}".`);
+}
+
+/**
+ * Reads preview_only. An unrecognised value is a configuration error, as for
+ * label_repos: read one way it spends money on a run meant to be free, and
+ * read the other it leaves a student without questions.
+ */
+function readPreviewOnly() {
+  const value = core.getInput('preview_only').trim().toLowerCase();
+  if (value === '') return DEFAULT_PREVIEW_ONLY;
+  if (value === 'true') return true;
+  if (value === 'false') return false;
+  throw new Error(`preview_only must be "true" or "false"; got "${value}".`);
 }
 
 /**
@@ -291,8 +305,11 @@ export function readInputs() {
     're-includes, among the excluded files,',
   );
 
+  // A preview stops before the AI is called, so it can run before the key is
+  // set up.
+  const previewOnly = readPreviewOnly();
   const apiKey = core.getInput('api_key') || '';
-  if (!apiKey) {
+  if (!apiKey && !previewOnly) {
     throw new Error(
       'api_key is required. GrillMyCode generates questions via OpenRouter, which needs ' +
         'its own API key — github_token cannot be used for this. Create a key at ' +
@@ -313,6 +330,7 @@ export function readInputs() {
     aiTemperature: readTemperature(),
     aiReasoningEffort: readReasoningEffort(),
     apiKey,
+    previewOnly,
     numQuestions,
     questionEmphasis: readQuestionEmphasis(),
     additionalExcludePatterns,

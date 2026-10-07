@@ -141,6 +141,7 @@ The two must agree, so **edit both when you change a default**. If they drift, a
 
 | Input | Why expose it |
 |---|---|
+| `preview_only` | Check which files a run would assess, in a real repository, without generating questions (see below) |
 | `ai_model` | Try a different model when one produces weak questions |
 | `ai_reasoning_effort` | Re-run with less reasoning to cut a run's cost, or more when questions came out shallow. The form lists every level; one the model doesn't support is mapped to its nearest, and `none` fails on a model that always reasons |
 | `num_questions` | Re-run with a shorter or longer question set |
@@ -154,7 +155,9 @@ The two must agree, so **edit both when you change a default**. If they drift, a
 | `starter_code` | Recover a run where the student committed everything at once to an empty repository (`none`), or let the AI see your starter code when questions came out shallow (`context`); `context` and `ask` likely increase the run's cost |
 | `starter_questions_one_in` | Allow more or fewer questions about your starter code on one run. The Wizard offers it only when `starter_code` is `ask` or is on the form too |
 
-The Wizard lists them in this order and ticks `ai_model` through `keep_comments` by default, apart from `ai_reasoning_effort` and `tag_diff_base`.
+The Wizard lists them in this order and ticks `preview_only` through `keep_comments` by default, apart from `ai_reasoning_effort` and `tag_diff_base`.
+
+`preview_only` is the one setting here that produces no assessment, and it is safe on the form all the same. A [preview run](exclude-patterns.md#previewing-in-a-run) is labelled as one in its summary and in a notice on the run page, it writes and replaces nothing, and it shows a student only the list of files every run's summary already shows.
 
 ### Settings to keep out of the form
 
