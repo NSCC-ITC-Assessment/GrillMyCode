@@ -1,7 +1,8 @@
 // Stack detection — identifies the languages, frameworks, and IDEs in use by
 // querying the GitHub Languages API and scanning the commit's tree for project
 // folders, then assembles an exclude list from the gitignore templates those
-// signals turn on.
+// signals turn on. With stack_templates set, the instructor has named the
+// templates, and nothing is queried or scanned.
 //
 // This module does the reading and the logging. The rules — which files mark
 // a project folder, which templates they reach, and how a template's patterns
@@ -13,7 +14,7 @@ import { fileURLToPath } from 'url';
 import { dirname, join } from 'path';
 import * as core from '@actions/core';
 import { GITHUB_API_VERSION, MAX_PROJECT_FOLDERS } from './constants.js';
-import { detectStack } from './file-selection.js';
+import { detectStack, pinnedStack, stackTemplateEntries } from './file-selection.js';
 import { listTreeFiles, readFileAt } from './git.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -50,11 +51,60 @@ export function loadLanguageFiles() {
   }
 }
 
+/** Logs the templates of a stack, one line per project folder. */
+function logTemplates(detected) {
+  for (const [folder, { keys }] of detected) {
+    const list = [...keys].join(', ') || '(none)';
+    core.info(
+      folder === ''
+        ? `Using gitignore templates: ${list}`
+        : `Using gitignore templates in ${folder}/: ${list}`,
+    );
+  }
+}
+
 /**
- * The exclude list for the repository at headSha, as { patterns, origins }:
- * the patterns, and where each comes from (see detectStack).
+ * The exclude list stack_templates sets (see pinnedStack), in the form
+ * detectExcludePatterns returns. The repository is not looked at.
  */
-export async function detectExcludePatterns(token, owner, repo, headSha) {
+function pinnedExcludePatterns(stackTemplates, allTemplates) {
+  const { patterns, origins, detected, unknown } = pinnedStack({
+    entries: stackTemplates,
+    allTemplates,
+  });
+  core.info(
+    'Stack set by stack_templates — the languages and project files of this repository were ' +
+      'not checked.',
+  );
+  for (const { written, name, language } of unknown) {
+    core.warning(
+      `stack_templates: "${written}" was ignored, because "${name}" is not a template the ` +
+        'action knows.' +
+        (language ? ` It is a language; its template is ${language.join(' and ')}.` : ''),
+    );
+  }
+  if (detected.size === 0) {
+    core.warning(
+      'No entry in stack_templates names a known template — using fallback exclude patterns.',
+    );
+  } else {
+    logTemplates(detected);
+  }
+  return {
+    patterns,
+    origins,
+    stack: { pinned: true, entries: stackTemplateEntries(detected).entries },
+  };
+}
+
+/**
+ * The exclude list for the repository at headSha, as { patterns, origins,
+ * stack }: the patterns, where each comes from (see detectStack), and the
+ * stack behind them, as { pinned, entries } — whether `stackTemplates`, the
+ * stack_templates input, set it, and the stack_templates entries that name it
+ * (see stackTemplateEntries; none when the fallback list was used).
+ */
+export async function detectExcludePatterns(token, owner, repo, headSha, stackTemplates = []) {
   let allTemplates;
   try {
     allTemplates = JSON.parse(readFileSync(TEMPLATES_PATH, 'utf-8'));
@@ -67,8 +117,10 @@ export async function detectExcludePatterns(token, owner, repo, headSha) {
       readText: () => null,
       allTemplates: {},
     });
-    return { patterns, origins };
+    return { patterns, origins, stack: { pinned: stackTemplates.length > 0, entries: [] } };
   }
+
+  if (stackTemplates.length > 0) return pinnedExcludePatterns(stackTemplates, allTemplates);
 
   const headers = {
     Authorization: `Bearer ${token}`,
@@ -115,17 +167,14 @@ export async function detectExcludePatterns(token, owner, repo, headSha) {
 
   if (detected.size === 0) {
     core.info('No matching stack templates found — using fallback exclude patterns.');
-    return { patterns, origins };
+    return { patterns, origins, stack: { pinned: false, entries: [] } };
   }
 
-  for (const [folder, { keys }] of detected) {
-    const list = [...keys].join(', ') || '(none)';
-    core.info(
-      folder === ''
-        ? `Using gitignore templates: ${list}`
-        : `Using gitignore templates in ${folder}/: ${list}`,
-    );
-  }
+  logTemplates(detected);
 
-  return { patterns, origins };
+  return {
+    patterns,
+    origins,
+    stack: { pinned: false, entries: stackTemplateEntries(detected).entries },
+  };
 }

@@ -623,6 +623,48 @@ const inputFile = (webkitRelativePath, text = '') => ({
   ...blob(text),
 });
 
+describe('previewFiles with the stack set in the workflow', () => {
+  const paths = ['package.json', 'src/app.js', 'src/lib/util.js', 'api/main.py', 'dist/app.js'];
+  const preview = (settings = {}) =>
+    previewFiles({ paths, languages: ['Python'], lists, languageFiles, ...settings });
+
+  it('names the detected stack as stack_templates entries', () => {
+    const result = preview();
+    expect(result.pinned).toBe(false);
+    expect(result.pin).toEqual({ entries: ['Node', 'Python'], unnamed: [] });
+  });
+
+  it('applies the named templates and no others', () => {
+    const detected = preview();
+    expect(detected.assessed.map((f) => f.path)).not.toContain('src/lib/util.js');
+
+    const result = preview({ stackTemplates: 'Node' });
+    expect(result.pinned).toBe(true);
+    expect(result.usedFallback).toBe(false);
+    expect(result.stack).toEqual([{ folder: '', templates: ['Node'], patterns: [] }]);
+    expect(result.pin.entries).toEqual(['Node']);
+    // Python's **/lib/** no longer applies, whatever languages the files show.
+    expect(result.assessed.map((f) => f.path)).toContain('src/lib/util.js');
+    expect(result.assessed.map((f) => f.path)).not.toContain('dist/app.js');
+  });
+
+  it('gives what a run gives', () => {
+    const stack = action.pinnedStack({
+      entries: ['Node', 'Python@api'],
+      allTemplates: readJson('src', 'data', 'gitignore-templates.json'),
+    });
+    const { verdictOn } = action.buildFileRules({ detectedPatterns: stack.patterns });
+    const result = preview({ stackTemplates: 'Node\nPython@api' });
+    expect(result.assessed.map((f) => f.path)).toEqual(
+      paths.filter((path) => verdictOn(path).assessed).sort(),
+    );
+  });
+
+  it('detects again once the value is cleared', () => {
+    expect(preview({ stackTemplates: ' , ' }).pinned).toBe(false);
+  });
+});
+
 describe('readDirectoryHandle', () => {
   const tree = folderHandle('lab-3', [
     folderHandle('src', [fileHandle('app.js'), folderHandle('node_modules', [fileHandle('x.js')])]),

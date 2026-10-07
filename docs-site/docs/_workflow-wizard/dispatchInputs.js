@@ -15,7 +15,8 @@
  * secret must never be one. ai_provider and assignment_context_max_chars are
  * absent as structural: varying them mid-assignment produces results that are
  * not comparable across students, and neither is a setting an instructor
- * reaches for on a re-run.
+ * reaches for on a re-run. stack_templates is absent for the same reason: its
+ * purpose is that every student's files are chosen by the same patterns.
  *
  * include_answers, base_sha, head_sha and skip_committers are absent for a
  * shared reason: a dispatch input can be set by anyone who can run the

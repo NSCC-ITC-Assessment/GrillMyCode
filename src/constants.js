@@ -276,6 +276,14 @@ export const FALLBACK_EXCLUDE_PATTERNS = [
 export const MAX_PROJECT_FOLDERS = 100;
 
 /**
+ * What separates a template from its project folder in a stack_templates
+ * entry: `Laravel@api` applies the Laravel template inside api/, and a bare
+ * `Node` applies at the repository root. No template name contains it. A
+ * folder name may, so an entry is split at the first one.
+ */
+export const STACK_TEMPLATE_FOLDER_SEPARATOR = '@';
+
+/**
  * Maximum number of questions that can be generated in a single run.
  * Values supplied via num_questions above this limit are silently capped.
  */

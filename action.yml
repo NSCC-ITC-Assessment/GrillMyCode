@@ -320,6 +320,25 @@ inputs:
     required: false
     default: "false"
 
+  stack_templates:
+    description: >
+      The stack templates to apply in every repository, in place of detecting
+      them from each repository's languages and project files, separated by
+      commas or line breaks. Each entry is a github/gitignore template name
+      (Node, Python, Laravel), applied at the repository root, or a name and
+      a project folder joined by @ (Laravel@api), applied inside that folder.
+      Leave it empty (the default) and the stack is detected in each
+      repository. Set, every student's repository gets the same exclude
+      patterns, and a file a student adds can't turn a template on. The
+      always-excluded patterns, additional_exclude_patterns and
+      exclude_pattern_overrides apply as usual. The Workflow Wizard's file
+      preview writes this for you, and the run summary of any run shows the
+      value for that repository's detected stack. A name the action does not
+      know is ignored with a warning. If you're not sure the same stack suits
+      every student's repository, don't set it.
+    required: false
+    default: ""
+
   preview_only:
     description: >
       When true, the run stops once it has worked out which files it would
@@ -476,6 +495,7 @@ runs:
     INPUT_KEEP_COMMENTS: ${{ inputs.keep_comments }}
     INPUT_FAIL_ON_EMPTY_ASSESSMENT: ${{ inputs.fail_on_empty_assessment }}
     INPUT_PREVIEW_ONLY: ${{ inputs.preview_only }}
+    INPUT_STACK_TEMPLATES: ${{ inputs.stack_templates }}
     INPUT_SKIP_COMMITTERS: ${{ inputs.skip_committers }}
     INPUT_SUBMISSION_TAGS: ${{ inputs.submission_tags }}
     INPUT_TAG_DIFF_BASE: ${{ inputs.tag_diff_base }}

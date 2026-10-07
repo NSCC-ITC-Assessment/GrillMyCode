@@ -35,7 +35,7 @@ import {
   DEFAULT_STARTER_QUESTIONS_ONE_IN,
   MIN_STARTER_QUESTIONS_ONE_IN,
 } from './constants.js';
-import { patternProblem, splitPatternList } from './file-selection.js';
+import { patternProblem, splitPatternList, splitStackTemplates } from './file-selection.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
 /**
@@ -335,6 +335,10 @@ export function readInputs() {
     questionEmphasis: readQuestionEmphasis(),
     additionalExcludePatterns,
     excludePatternOverrides: overridePatterns,
+    // The templates to apply in place of detecting them; none means detect.
+    // The names are checked where the templates are loaded (see
+    // src/stack-detection.js).
+    stackTemplates: splitStackTemplates(core.getInput('stack_templates') || ''),
     instructorContext: core.getInput('instructor_context') || '',
     assignmentContextGlobs: splitPatternList(core.getInput('assignment_context') || ''),
     assignmentContextMaxChars: Math.max(

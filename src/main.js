@@ -143,12 +143,15 @@ function createRunState() {
     fileStats: [],
     excludePatterns: [],
     excludePatternOverrides: [],
+    // The stack behind the exclude patterns: whether stack_templates set it,
+    // and the stack_templates entries that name it (see detectExcludePatterns).
+    stack: { pinned: false, entries: [] },
     // Changed files the exclude patterns removed, each with the first pattern
     // that matched it and where that pattern comes from (see detectStack):
     // [{ filepath, pattern, origin }].
     excludedFiles: [],
     // Those of them that may be the student's own work all the same: source
-    // files a pattern from the detected stack left out (see mayBeOwnWork).
+    // files a pattern from the stack left out (see mayBeOwnWork).
     ownWorkFiles: [],
     // Those of them an override matched without naming the protected pattern
     // that keeps them out: [{ filepath, guard }] (see createFileFilter).
@@ -369,6 +372,24 @@ function describeOrigin(origin) {
 }
 
 /**
+ * The stack templates behind a run's exclude patterns, for the configuration
+ * table. A run that detected them shows the stack_templates value that would
+ * set the same ones, so an instructor can copy it from a preview run.
+ */
+function renderStackSetting(state) {
+  const { pinned, entries } = state.stack;
+  const list = entries.length > 0 ? cellCode(entries.join(', ')) : '';
+  if (pinned) {
+    return list
+      ? `set by \`stack_templates\`: ${list}`
+      : 'no entry in `stack_templates` names a known template; fallback list used ⚠️';
+  }
+  return list
+    ? `detected in this repository: ${list}`
+    : 'none detected in this repository; fallback list used';
+}
+
+/**
  * The warning that some files left out may be the student's own work (see
  * mayBeOwnWork). It sits under the headline because it is the one thing in a
  * summary an instructor may need to act on, and the detected patterns that
@@ -385,9 +406,13 @@ function renderOwnWorkWarning(state) {
     );
   const remainder = flagged.length - shown.length;
   const n = flagged.length;
+  // Under stack_templates the instructor chose the templates, not their patterns.
+  const source = state.stack.pinned
+    ? 'a stack template pattern (`stack_templates`)'
+    : 'a pattern detected from this repository';
   return (
-    `⚠️ **${fmtNum(n)} source file${n === 1 ? ' was' : 's were'} left out by a pattern detected ` +
-    `from this repository, not one the instructor wrote**, and may be work that should be ` +
+    `⚠️ **${fmtNum(n)} source file${n === 1 ? ' was' : 's were'} left out by ${source}, ` +
+    `not one the instructor wrote**, and may be work that should be ` +
     `assessed: ${shown.join(', ')}${remainder > 0 ? `, and ${fmtNum(remainder)} more` : ''}. ` +
     `Build output is rightly left out. To assess a file, name it or its pattern in ` +
     `\`exclude_pattern_overrides\`.`
@@ -521,6 +546,7 @@ function renderConfiguration(state) {
           ? `, ${fmtNum(state.excludePatternOverrides.length)} re-included by \`exclude_pattern_overrides\``
           : ''),
     ],
+    ['Stack templates', renderStackSetting(state)],
     [
       'Assignment context',
       state.assignmentContextFiles.length > 0
@@ -904,11 +930,13 @@ function explainEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePat
     // pattern at fault is enough, and the full list is already in the run log.
     const shown = allFiles.slice(0, EMPTY_ASSESSMENT_FILE_LIST_LIMIT);
     const remainder = allFiles.length - shown.length;
+    const stackSource =
+      inputs.stackTemplates?.length > 0 ? '`stack_templates`' : 'auto-detected stack';
     checks = [
       `Excluded files: ${shown.map((f) => `\`${f}\``).join(', ')}` +
         (remainder > 0 ? `, and ${remainder} more (full list in the run log).` : ''),
       `Re-include any of these with \`exclude_pattern_overrides\` — pass the exact path (e.g. \`${allFiles[0]}\`) or the default pattern that matched it.`,
-      `${excludePatterns.length} exclude pattern(s) were applied, combining the auto-detected stack patterns with \`additional_exclude_patterns\`. The full list is in the run log above.`,
+      `${excludePatterns.length} exclude pattern(s) were applied, combining the ${stackSource} patterns with \`additional_exclude_patterns\`. The full list is in the run log above.`,
     ];
   }
 
@@ -1179,12 +1207,18 @@ async function run() {
     // ── Collect changed files and apply filters ─────────────────────────────
     const allFiles = getChangedFiles(baseSha, headSha);
     state.allFiles = allFiles;
-    const { patterns: detectedPatterns, origins: detectedOrigins } = await detectExcludePatterns(
+    const {
+      patterns: detectedPatterns,
+      origins: detectedOrigins,
+      stack,
+    } = await detectExcludePatterns(
       inputs.githubToken,
       ctx.repo.owner,
       ctx.repo.repo,
       headSha,
+      inputs.stackTemplates,
     );
+    state.stack = stack;
     const { excludePatterns, caseInsensitivePatterns, verdictOn, origins, mayBeOwnWork } =
       buildFileRules({
         detectedPatterns,
@@ -1239,8 +1273,9 @@ async function run() {
       // A note, not a warning: build output is source code by its name too,
       // and is rightly left out, so most of these need nothing done.
       core.info(
-        `${state.ownWorkFiles.length} source file(s) were left out by a pattern detected from ` +
-          `the repository, not one from additional_exclude_patterns. If any is work that should ` +
+        `${state.ownWorkFiles.length} source file(s) were left out by a pattern ` +
+          `${stack.pinned ? 'from stack_templates' : 'detected from the repository'}, not one ` +
+          `from additional_exclude_patterns. If any is work that should ` +
           `be assessed, name it or its pattern in exclude_pattern_overrides:\n` +
           state.ownWorkFiles.map((e) => `  ${e.filepath}  (${e.pattern})`).join('\n'),
       );

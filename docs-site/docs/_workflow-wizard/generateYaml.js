@@ -228,6 +228,7 @@ export const DEFAULTS = {
   assignmentContextMaxChars: 20000,
   excludePatternOverrides: '',
   additionalExcludePatterns: '',
+  stackTemplates: '',
   previewOnly: false,
   keepComments: false,
   starterCode: 'ignore',
@@ -568,6 +569,13 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
       'additionalExcludePatterns',
       yamlStr(normalizePatterns(cfg.additionalExcludePatterns)),
     );
+  }
+  // Set by the file preview's "Use these templates for every student". Single
+  // quotes, so a folder name is written as it is: a backslash means nothing.
+  if (cfg.stackTemplates) {
+    lines.push('          # Every repository gets these stack templates. Remove this line to have');
+    lines.push('          # the stack detected in each repository instead.');
+    lines.push(`          stack_templates: ${yamlSingle(cfg.stackTemplates)}`);
   }
   // No step sets this in the file, where it would turn every run into a
   // preview and assess nobody. It is emitted only as a manual-run override.
