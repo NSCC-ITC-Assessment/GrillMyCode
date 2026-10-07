@@ -9,11 +9,11 @@ import {
   buildFileRules,
   createFileFilter,
   detectStack,
+  fileLanguage,
   findProjectFolders,
   instructorPatterns,
   patternProblem,
   splitPatternList,
-  underFolder,
 } from './fileSelection';
 
 /**
@@ -64,27 +64,6 @@ export function parseFileList(text) {
     if (path && !path.endsWith('/')) paths.add(path);
   }
   return [...paths];
-}
-
-/**
- * The language Linguist's tables give a file, as { language, via }: `language`
- * is a name, or a list of names when the extension is shared (see
- * buildLanguageFiles in scripts/build-wizard-exclude-lists.js), and `via` is
- * the file name or extension that decided. null for a file in no counted
- * language. A file name is tried before an extension, and a longer extension
- * before a shorter one (`.d.ts` before `.ts`), as Linguist does.
- */
-function fileLanguage(path, { extensions, filenames }) {
-  const name = path.slice(path.lastIndexOf('/') + 1);
-  if (Object.hasOwn(filenames, name)) return { language: filenames[name], via: name };
-  const lower = name.toLowerCase();
-  for (let dot = lower.indexOf('.'); dot !== -1; dot = lower.indexOf('.', dot + 1)) {
-    const extension = lower.slice(dot);
-    if (Object.hasOwn(extensions, extension)) {
-      return { language: extensions[extension], via: extension };
-    }
-  }
-  return null;
 }
 
 /**
@@ -182,45 +161,6 @@ export function asOverride(pattern) {
   return forms.length === 1 && forms[0] === pattern ? pattern : null;
 }
 
-/**
- * Where each exclude pattern of a run comes from, as a Map from pattern to
- *
- *   { kind: 'always', label }             — an always-excluded list
- *   { kind: 'template', template, folder } — a detected template, applied in
- *                                            a project folder ('' is the root)
- *   { kind: 'project', folder }           — patterns a project file adds
- *                                            without a template
- *   { kind: 'fallback' }                  — the list used when nothing is
- *                                            detected
- *   { kind: 'yours', written }            — an additional exclude pattern, as
- *                                            the instructor wrote it
- *
- * A pattern two sources share is credited to the first, in the order the
- * action assembles its list.
- */
-function patternOrigins(stack, lists, additional) {
-  const origins = new Map();
-  const add = (pattern, origin) => {
-    if (!origins.has(pattern)) origins.set(pattern, origin);
-  };
-  for (const group of [...lists.always, ...lists.editors, ...lists.nonCode]) {
-    group.patterns.forEach((p) => add(p, { kind: 'always', label: group.label }));
-  }
-  for (const [folder, { keys, extraPatterns }] of stack.detected) {
-    for (const template of keys) {
-      for (const p of lists.templates[template] ?? []) {
-        add(underFolder(folder, p), { kind: 'template', template, folder });
-      }
-    }
-    for (const p of extraPatterns) add(underFolder(folder, p), { kind: 'project', folder });
-  }
-  if (stack.detected.size === 0) stack.patterns.forEach((p) => add(p, { kind: 'fallback' }));
-  for (const written of additional) {
-    instructorPatterns(written).forEach((p) => add(p, { kind: 'yours', written }));
-  }
-  return origins;
-}
-
 // A stand-in for the files of a dependency folder the reader did not open.
 // Any name will do: a rule that covers such a folder does so by the folder's
 // name.
@@ -230,7 +170,6 @@ const insideFolder = (folder) => `${folder}/x`;
 // the detected ones — where a template can take a source file by surprise —
 // and the lists that never change last.
 const KIND_ORDER = ['yours', 'template', 'project', 'fallback', 'always'];
-const FROM_STACK = ['template', 'project', 'fallback'];
 
 /**
  * What each additional exclude pattern does to the files:
@@ -336,10 +275,11 @@ function checkOverrides(overrides, paths, unopened, verdicts, binaryPaths) {
  *                                override brings them back
  *   leftOut                    — [{ pattern, origin, files, codeFiles,
  *                                override }], one per exclude pattern that
- *                                left a file out (see patternOrigins).
- *                                `codeFiles` are the source files a detected
- *                                pattern left out, which may be a student's
- *                                own work, and `override` the text that
+ *                                left a file out. `origin` is where the
+ *                                pattern comes from (see detectStack and
+ *                                buildFileRules), `codeFiles` are the files
+ *                                that may be a student's own work (see
+ *                                buildFileRules), and `override` the text that
  *                                brings the group back (see asOverride)
  *   leftOutCount               — files left out, by a pattern or as binary
  *   stack                      — [{ folder, templates, patterns }] detected
@@ -372,15 +312,11 @@ export function previewFiles({
     readText: (path) => (Object.hasOwn(texts, path) ? texts[path] : null),
     allTemplates: lists.templates,
   });
-  const { verdictOn } = buildFileRules({
+  const { verdictOn, origins, mayBeOwnWork } = buildFileRules({
     detectedPatterns: stack.patterns,
+    detectedOrigins: stack.origins,
     additionalExcludePatterns: additional,
     excludePatternOverrides: overrides,
-  });
-  const origins = patternOrigins(stack, lists, additional);
-  const isProtected = createFileFilter({
-    excludePatterns: PROTECTED_EXCLUDE_PATTERNS,
-    caseInsensitivePatterns: PROTECTED_EXCLUDE_PATTERNS,
   });
 
   const verdicts = new Map();
@@ -409,14 +345,7 @@ export function previewFiles({
     }
     const group = groups.get(verdict.pattern);
     group.files.push(path);
-    // A dependency folder's files are code too, and nobody's own work.
-    if (
-      FROM_STACK.includes(group.origin.kind) &&
-      fileLanguage(path, languageFiles) &&
-      isProtected(path).assessed
-    ) {
-      group.codeFiles.push(path);
-    }
+    if (mayBeOwnWork(path, verdict, languageFiles)) group.codeFiles.push(path);
   }
 
   const leftOut = [...groups.values()]

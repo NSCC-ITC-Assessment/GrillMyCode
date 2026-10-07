@@ -116,6 +116,9 @@ const INITIAL_CONFIG = {
   // unticked against the preview's own guess (name → true or false).
   previewSource: null,
   previewLanguages: {},
+  // The action's preview_only input. No step changes it: it reaches the
+  // workflow only as a manual-run override, with this as its default.
+  previewOnly: false,
   keepComments: false,
   // How students' repositories start, for the Repositories step's radios only:
   // 'empty' or 'template'. It is not an action input — starterCode is — but

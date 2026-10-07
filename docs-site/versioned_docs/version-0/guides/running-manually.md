@@ -26,6 +26,7 @@ Normally, the settings in the workflow file apply to every run, and changing one
 
 Set this up in the Workflow Wizard's **Manual runs** step. Answer **Yes** to its first question to choose settings for the form, or **No** if you'd rather every run used the workflow file's settings. Under **Yes**, these are ticked by default:
 
+- preview only, which lists the files a run would assess and stops, without generating questions; see [Trying your patterns first](choosing-files.md#trying-your-patterns-first)
 - AI model
 - number of questions
 - question emphasis
@@ -46,6 +47,8 @@ Anyone who can run the workflow can fill in the form, and that includes the stud
 - **Secrets and keys.** What's typed in the form isn't secret.
 - **Include answers.** It would give students a "show me the answers" button.
 - **Settings that could quietly empty the assessment,** such as which commits are compared, or whose commits to skip.
+
+A preview is on the form because it isn't quiet: the run says plainly that it was a preview, and it leaves the student's existing questions alone.
 
 The assignment brief setting is on the form too. A student could point it at a file they wrote, but that only steers the topics, and the run summary lists the files it read. Untick it if you'd rather the brief could only be changed in the workflow file.
 

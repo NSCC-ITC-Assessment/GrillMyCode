@@ -290,6 +290,32 @@ It is an estimate, because some things are only known at run time:
 
 To keep large folders quick, the preview does not open `.git` or the dependency folders `node_modules`, `bower_components`, `vendor`, `.venv` and `venv`. It says whether a rule leaves each of those out. It reads at most 5,000 files, shallowest folders first.
 
+For the exact answer in one repository, [preview in a run](#previewing-in-a-run).
+
+## Previewing in a run
+
+Set `preview_only: "true"` and a run stops once it has worked out which files it would assess. It does everything a normal run does up to that point, in the real repository: it asks the Languages API, detects the stack, applies your patterns to the files changed in the [commit range](code-selection.md), reads them, and chooses the context files. Then it writes the run summary and ends, without calling the AI.
+
+The summary is headed **GrillMyCode — file preview, no questions generated** and shows:
+
+- how many of the changed files would be assessed, and how many are left out;
+- **Files that would be assessed**, with the lines added and removed in each;
+- **Files left out**, one row per pattern or rule, with where the pattern comes from; see [Confirming what was applied](#confirming-what-was-applied);
+- a warning when a detected pattern leaves out source files;
+- the settings the run used, including the assignment and codebase context files it would have sent.
+
+A preview run:
+
+- costs nothing, and works without `api_key`, so you can try it before the key is set up;
+- produces no questions, issue, PDF, instructor copy or repository labels, and sets no [outputs](inputs-outputs.md#outputs);
+- leaves an assessment from an earlier run as it is, and isn't counted as a submission under a [submission tag](triggers.md);
+- adds a notice to the run page saying that it was a preview;
+- succeeds when it finds nothing to assess, whatever `fail_on_empty_assessment` is set to, and says why in the summary.
+
+The usual way to run one is from the **Run workflow** form: the [Workflow Wizard](../workflow-wizard.mdx)'s **Manual runs** step puts `preview_only` on it, ticked by default. Run it in a repository that holds some work, such as your own solution. Don't set `preview_only: "true"` in the workflow file itself and leave it there: every run would then be a preview, and no student would be assessed.
+
+Because the stack is detected in each repository separately, a preview is exact for the repository it ran in. Another student's repository can still differ.
+
 ## Confirming what was applied
 
 The action logs the full exclude list on every run. Look for these lines in the workflow step output:
@@ -312,6 +338,8 @@ Excluded 2 file(s):
   README.md  (**/*.md)
 Kept out 1 file(s) that an override matched but did not name. Environment files, lock files and dependency folders are re-included only by an override that names them, such as the file's own path:
   frontend/.env  (**/.env)
+1 source file(s) were left out by a pattern detected from the repository, not one from additional_exclude_patterns. If any is work that should be assessed, name it or its pattern in exclude_pattern_overrides:
+  src/lib/util.js  (**/lib/**)
 Left out 1 file(s) with no text to assess:
   public/logo.png  (binary)
 Assessing 3 file(s): src/index.js, src/utils.js, src/api.js
@@ -321,4 +349,29 @@ There is one `Scanned …` line per manifest read — `package.json`, `composer.
 
 If a file you expected to be assessed is missing from the `Assessing N file(s)` line, it was excluded. The `Excluded N file(s)` list names the first pattern that matched each file, so you can decide whether to add an override for the path or the pattern. The `Kept out N file(s)` list appears only when an override matched a [protected file](#protected-files) without naming it. The `Left out N file(s)` list names the files no pattern matched that are binary or were deleted; see [Filtering the files](code-selection.md#2-filtering-the-files).
 
-The run summary shows the same lists in its **Configuration used by this run** table, under **Excluded files**: one collapsed group per pattern, largest first, then one for binary files and one for deleted files. Each list shows at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. The **Codebase context** row lists the files sent as context the same way.
+### Source files a detected pattern left out
+
+The `N source file(s) were left out by a pattern detected from the repository` list appears when a pattern nobody wrote down may have removed a student's own work. A file is listed when all of these hold:
+
+- the pattern that left it out comes from a detected stack template, a project file or the fallback list, not from an [always-excluded list](#patterns-always-excluded);
+- its name marks it as source code, by the extension and file name lists of [Linguist](https://github.com/github-linguist/linguist), the library behind the GitHub Languages API;
+- it isn't a [protected file](#protected-files), such as one in `node_modules`;
+- none of your own `additional_exclude_patterns` matches it.
+
+`src/lib/util.js` under the Python template's `**/lib/**` is the usual case. Build output such as `dist/app.js` is listed too, because by its name it is source code, and is rightly left out. Treat the list as a prompt to look.
+
+### In the run summary
+
+The run summary's first line counts the changed files assessed and those left out, such as **7 of 19 changed files** assessed · **12 left out**. Under it, a warning names up to five of the [source files a detected pattern left out](#source-files-a-detected-pattern-left-out).
+
+The **Files left out** section has one row per pattern, largest group first, then one for binary files and one for deleted files. Each row gives the pattern, where it comes from, and a collapsed list of its files. The origin is one of:
+
+| From | Meaning |
+|---|---|
+| always left out: _list name_ | One of the [always-excluded](#patterns-always-excluded) lists |
+| _Name_ template | A detected stack template; "in `folder/`" when it was detected in a [nested project folder](#monorepos-and-nested-projects) |
+| project files | A pattern a project file adds without a template |
+| fallback list | The list used when no stack is detected |
+| `additional_exclude_patterns` | One of your own patterns |
+
+A row marked ⚠️ holds at least one of the flagged source files. The lists show at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. In the **Configuration used by this run** table, the **Codebase context** row lists the files sent as context the same way.

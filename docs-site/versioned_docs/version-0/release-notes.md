@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.28.0 — 2026-10-07
+
+### What's Changed
+
+### Features
+
+- add preview_only to check a run's files without calling the AI
+
 ## v0.27.0 — 2026-10-07
 
 ### What's Changed

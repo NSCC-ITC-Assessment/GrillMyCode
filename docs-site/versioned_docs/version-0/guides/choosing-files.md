@@ -53,9 +53,11 @@ An override wins over every other rule, so anything you list here is assessed ev
 
 At the bottom of the **Files** step, under **Try the patterns on your files**, choose a folder on your computer, such as your own solution. The Wizard shows which of its files would be assessed and which rule leaves out each of the rest, and updates as you type. Nothing is uploaded. Treat it as an estimate; see [Previewing in the Workflow Wizard](../reference/exclude-patterns.md#previewing-in-the-workflow-wizard).
 
+For the exact answer, preview a real repository, such as one holding your solution: [start a run by hand](running-manually.md) with the form's preview field set to **true**. The run lists the files it would assess and leave out, then stops. It generates no questions and costs nothing.
+
 ## Checking what was assessed
 
-The top of every assessment issue lists the files that were assessed, under **Code Files Assessed**. If a file you expected isn't there, it was left out. The run's summary page lists every file that was left out, grouped by the rule that removed it; see [File filtering](../reference/exclude-patterns.md#confirming-what-was-applied).
+The top of every assessment issue lists the files that were assessed, under **Code Files Assessed**. If a file you expected isn't there, it was left out. The run's summary page lists every file that was left out, grouped by the rule that removed it, and warns when an automatic rule left out a code file that may be the student's own work; see [File filtering](../reference/exclude-patterns.md#confirming-what-was-applied).
 
 ---
 
