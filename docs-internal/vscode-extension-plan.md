@@ -3,8 +3,8 @@
 > **Recorded:** 2026-10-03 (`ff56b1d`), shortened on 2026-10-04. The long
 > version, with what was tried and how, is this file at `10791ec`.
 > **Status:** Phases 1 and 4 and the first-run walkthrough are released.
-> Phase 2 is under way. Phase 3 is built without marking, and not released.
-> Phases 5 and 6 are proposals.
+> Phase 2 is under way. Phase 3 is out as a pre-release, 0.3.0, without
+> marking. Phases 5 and 6 are proposals.
 
 GrillMyCode Companion (`GrillMyCode.grillmycode`) shows the questions the
 action posts beside the code they ask about. It lives in `extensions/vscode/`
@@ -19,14 +19,14 @@ steps are in `extensions/README.md`, and the rules for contributors are in
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                        | Needs first                                              | Status                                                                                |
-| ----- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ------------------------------------------------------------------------------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                                  | Published                                                                             |
-| 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.2.0 is published; two hand checks, the token and the features are left |
-| 3     | Instructor view: answers beside the student's code, and the view switch                                             | Nothing                                                  | Built, not released. Marks and notes are left out until their storage is decided      |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                               |
-| 5     | Workflow help                                                                                                       | A look at what the GitHub Actions extension already does | Not started                                                                           |
-| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                           |
+| Phase | What it adds                                                                                                        | Needs first                                              | Status                                                                                         |
+| ----- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------- |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                                  | Published                                                                                      |
+| 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.2.2 is the stable release; two hand checks, the token and the features are left |
+| 3     | Instructor view: answers beside the student's code, and the view switch                                             | Nothing                                                  | Pre-release: 0.3.0. A stable release, marks and notes, and a real viva are left                |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                                        |
+| 5     | Workflow help                                                                                                       | A look at what the GitHub Actions extension already does | Not started                                                                                    |
+| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                                    |
 
 Phases 2, 3 and 5 do not depend on one another. The suggested order for what
 remains is 2, 5, 6. Keep this table current when a phase starts, finishes
@@ -45,16 +45,16 @@ or changes scope.
   comment with a layout version, the action touches only issues it wrote, and
   the extension reads both layouts and asks for an update when the version is
   newer than it knows.
-- **Phase 3**, built on 2026-10-04 and not released: an account that can
-  read the answer key sees each question's answer, and can
+- **Phase 3**, released as the pre-release 0.3.0 on 2026-10-04: an account
+  that can read the answer key sees each question's answer, and can
   switch to the student view. How the view is chosen is in the docs site's
   `reference/vscode-extension.md`.
 - **The first-run walkthrough**, released in 0.2.2 on 2026-10-04, outside the
   phases. It is a patch number because 0.3.0 would have been a pre-release.
 - **Tags kept apart:** `release.yml` runs on `v[0-9]*` and `branch-build.yml`
   ignores every tag, so a `vscode-v*` tag cannot release the action.
-- **Releases:** the workflow has published 0.1.1 and 0.1.2 as pre-releases,
-  and 0.2.0, 0.2.1 and 0.2.2 as stable. 0.1.0 was published by hand, and is
+- **Releases:** the workflow has published 0.1.1, 0.1.2 and 0.3.0 as
+  pre-releases, and 0.2.0, 0.2.1 and 0.2.2 as stable. 0.1.0 was published by hand, and is
   stable although its minor number is odd.
 
 Built but never seen working:
@@ -175,8 +175,8 @@ check reports the Marketplace's answer on every run. When it opens: raise
 
 ### Phase 3: what is left
 
-- **A release.** The version is set to 0.3.0, a pre-release, and the tag is
-  not pushed. A stable release would follow as 0.4.0.
+- **A stable release.** 0.3.0 is a pre-release, so only installs that ask
+  for pre-releases have the view. The stable release would be 0.4.0.
 - **Marks and notes per question.** Left out on 2026-10-04, until where they
   are stored is decided.
 - **A real viva.** The phase is done when an instructor runs one from the
