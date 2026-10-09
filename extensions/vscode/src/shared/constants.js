@@ -76,3 +76,15 @@ export const TAG_GROUP_FALLBACK = 'tag';
  * repository has one direct collaborator per student.
  */
 export const COLLABORATORS_PER_PAGE = 100;
+
+/**
+ * The action as a workflow step's `uses` names it, before the `@` and the
+ * version. GitHub ignores letter case in both halves.
+ */
+export const ACTION_REPOSITORY = 'NSCC-ITC-Assessment/GrillMyCode';
+
+/**
+ * How far an input name may be from a known one, in single-letter edits, and
+ * still be offered as what was meant: `num_question` for `num_questions`.
+ */
+export const INPUT_NAME_MAX_EDITS = 2;

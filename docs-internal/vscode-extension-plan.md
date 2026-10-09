@@ -4,7 +4,8 @@
 > version, with what was tried and how, is this file at `10791ec`.
 > **Status:** Phases 1 and 4 and the first-run walkthrough are released.
 > Phase 2 is under way. Phase 3 is out as a pre-release, 0.3.0, without
-> marking. Phases 5 and 6 are proposals.
+> marking. Phase 5 is built, as 0.3.1, and not released. Phase 6 is a
+> proposal.
 
 GrillMyCode Companion (`GrillMyCode.grillmycode`) shows the questions the
 action posts beside the code they ask about. It lives in `extensions/vscode/`
@@ -25,11 +26,11 @@ steps are in `extensions/README.md`, and the rules for contributors are in
 | 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.2.2 is the stable release; two hand checks, the token and the features are left |
 | 3     | Instructor view: answers beside the student's code, and the view switch                                             | Nothing                                                  | Pre-release: 0.3.0. A stable release, marks and notes, and a real viva are left                |
 | 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                                        |
-| 5     | Workflow help                                                                                                       | A look at what the GitHub Actions extension already does | Not started                                                                                    |
+| 5     | Workflow help: the action's inputs checked, offered and described in a workflow file                                | A look at what the GitHub Actions extension already does | Built, not released: 0.3.1 is not tagged. A look beside the GitHub Actions extension is left   |
 | 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                                    |
 
 Phases 2, 3 and 5 do not depend on one another. The suggested order for what
-remains is 2, 5, 6. Keep this table current when a phase starts, finishes
+remains is 2, 6. Keep this table current when a phase starts, finishes
 or changes scope.
 
 ---
@@ -51,6 +52,10 @@ or changes scope.
   `reference/vscode-extension.md`.
 - **The first-run walkthrough**, released in 0.2.2 on 2026-10-04, outside the
   phases. It is a patch number because 0.3.0 would have been a pre-release.
+- **Phase 5**, built on 2026-10-09 and not released: in a workflow file, the
+  GrillMyCode step's inputs are checked as they are typed, and the values of
+  an input with a fixed set are offered. What is checked is in the docs
+  site's `reference/vscode-extension.md`.
 - **Tags kept apart:** `release.yml` runs on `v[0-9]*` and `branch-build.yml`
   ignores every tag, so a `vscode-v*` tag cannot release the action.
 - **Releases:** the workflow has published 0.1.1, 0.1.2 and 0.3.0 as
@@ -72,6 +77,13 @@ Built but never seen working:
 - **The two switch buttons in the view's title bar.** Both commands were run
   by name. The buttons show only under a pointer, which the test display
   lacks.
+- **Workflow help beside the GitHub Actions extension.** The tests run with
+  that extension absent. With it installed, input names, hover text and
+  unknown inputs are left to it, and nobody has looked at the two together,
+  signed in or not.
+- **Workflow help by hand.** The tests ask VS Code for the problems, the
+  completions and the hover text. Nobody has typed in a workflow file and
+  watched them appear.
 
 ---
 
@@ -159,6 +171,14 @@ check reports the Marketplace's answer on every run. When it opens: raise
   student installs, or if handling an API key in a tool every student has
   becomes hard to justify. The code is kept in a folder per side, so a split
   is a packaging change.
+- **The extension's input list is generated**, by
+  `scripts/build-extension-action-inputs.js`, and every check follows what
+  `src/inputs.js` does with the value. `test/extension-action-inputs.test.js`
+  fails when the list is stale, and when a check fires on a workflow the docs
+  show.
+- **The extension knows the inputs of the action as it was at the
+  extension's release.** An older extension reports a new input as unknown,
+  so that check is a warning that says to update, never an error.
 - **A student's copy shows no sign of the instructor view.** The two switch
   commands appear nowhere unless an answer key was read, and
   `test/manifest.test.js` guards it.
@@ -198,17 +218,37 @@ Settled while building:
 - **The answer key and the issue are compared by each question's number and
   lines.** When they differ the view says so, and makes no moved-code claim.
 
-### Phase 5: workflow help
+### Phase 5: what is left
 
-Completion, hover text and checks for the action's inputs in a workflow file,
-generated from `action.yml` at build time.
+- **A release.** The version is set to 0.3.1, a pre-release, and the tag is
+  not pushed.
+- **A look at it beside the GitHub Actions extension**, and one pass by hand.
+  Both are under [Done](#done), as built but never seen working.
 
-- **Check first what the GitHub Actions extension already does**, and build
-  only what it cannot. Checks on values and on inputs that depend on one
-  another are likely to be worth building either way.
-- **Size:** small to medium.
-- **Done when** a mistake in a GrillMyCode step is underlined before the
-  workflow is pushed.
+Settled while building:
+
+- **What the GitHub Actions extension already does is left to it.** It
+  offers and describes every action's inputs, and reports one the action
+  does not declare, from the `action.yml` it fetches. Where it is installed,
+  this extension does none of the three. It does not report a missing
+  `api_key`, because `action.yml` gives that input an empty default.
+- **Checks on values and between inputs are built either way**, with the
+  values of an input that has a fixed set.
+- **The file is read with the `yaml` package**, which GitHub's own workflow
+  parser uses, so a value is read as the action receives it.
+- **A value GitHub works out at run time is not checked.**
+- **Exclude patterns and stack templates are not checked.** Their rules are
+  in `src/file-selection.js`, which the extension does not carry yet. Phase 6
+  brings it in.
+- **Students get it too**, in a repository that holds the workflow. One
+  setting switches it off.
+
+Left out:
+
+- **Quick fixes**, such as replacing a misspelled input with the one meant.
+- **The Workflow Wizard in the editor.** It is under
+  [Further ideas](#further-ideas), and would write the file these checks
+  read.
 
 ### Phase 6: assessed-files preview and local trial runs
 

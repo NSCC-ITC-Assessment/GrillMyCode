@@ -2,7 +2,7 @@
   "name": "grillmycode",
   "displayName": "GrillMyCode Companion",
   "description": "The companion to the GrillMyCode GitHub Action. Shows the questions it wrote about your code, beside the code they ask about.",
-  "version": "0.3.0",
+  "version": "0.3.1",
   "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
@@ -33,8 +33,22 @@
       "description": "GrillMyCode finds your questions through VS Code's Git support, which is switched off in Restricted Mode. Trust the folder to see them."
     }
   },
-  "activationEvents": [],
+  "activationEvents": [
+    "onLanguage:yaml",
+    "onLanguage:github-actions-workflow"
+  ],
   "contributes": {
+    "configuration": {
+      "title": "GrillMyCode",
+      "properties": {
+        "grillmycode.workflowHelp.enabled": {
+          "type": "boolean",
+          "default": true,
+          "scope": "resource",
+          "markdownDescription": "Check the GrillMyCode step of a workflow file as you type, and offer its inputs and their values. Applies to files in `.github/workflows`."
+        }
+      }
+    },
     "viewsContainers": {
       "activitybar": [
         {
@@ -261,6 +275,7 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.0.0",
-    "esbuild": "^0.28.2"
+    "esbuild": "^0.28.2",
+    "yaml": "^2.9.1"
   }
 }

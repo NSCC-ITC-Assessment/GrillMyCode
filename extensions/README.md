@@ -33,6 +33,10 @@ open an assignment's folder in the window that appears.
 Lint, formatting and the unit tests in `vscode/test/` run from the repository
 root with everything else: `pnpm lint`, `pnpm format:check` and `pnpm test`.
 
+The extension's list of the action's inputs, `vscode/src/shared/action-inputs.js`,
+is generated from `action.yml`. After changing an input, run
+`node scripts/build-extension-action-inputs.js` from the repository root.
+
 ## Releasing the VS Code extension
 
 The extension has its own version numbers and its own tags, `vscode-v*`. A

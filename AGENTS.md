@@ -125,7 +125,7 @@ so text stays sharp.
 
 ## New Inputs
 
-New inputs must be added consistently across **all six locations**:
+New inputs must be added consistently across **all seven locations**:
 
 1. `action.yml` — input declaration, description, and default
 2. `src/inputs.js` — parsing and normalization
@@ -133,6 +133,7 @@ New inputs must be added consistently across **all six locations**:
 4. `README.md` — inputs table row
 5. `docs-site/docs/example-workflows/all-inputs.md` — active or commented-out entry with an inline explanatory comment
 6. `docs-site/docs/_workflow-wizard/` — add the input to the `DEFAULTS` object in `generateYaml.js`, wire up the UI control in the appropriate step component under `steps/`, and update `.github/prompts/plan-workflowWizard.prompt.md`
+7. `scripts/build-extension-action-inputs.js` — add the input to `RULES` if its value is more than free text, then run the script to refresh the VS Code extension's list (see [Editor Extensions](#editor-extensions))
 
 ## New AI Providers
 
@@ -150,7 +151,10 @@ Adding a new `ai_provider` value requires changes in all of the following places
 5. `docs-site/docs/reference/inputs-outputs.md` — same, plus the provider wording in `docs-site/docs/guides/choosing-a-model.md`, `docs-site/docs/getting-started/openrouter-key.md` and `docs-site/docs/reference/permissions.md`, which currently assume OpenRouter is the only provider
 6. A new provider page under `docs-site/docs/ai-providers/` following the style of `openrouter.md`
 7. A new dedicated example workflow page under `docs-site/docs/example-workflows/`
-8. **Workflow Wizard** — `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js` currently has
+8. `scripts/build-extension-action-inputs.js` — the `ai_provider` entry of `RULES` lists the
+   default provider alone; add the new value, then run the script, so the VS Code extension
+   stops reporting it as a value the action rejects
+9. **Workflow Wizard** — `docs-site/docs/_workflow-wizard/steps/StepAIProvider.js` currently has
    **no provider selector**: with one provider there was nothing to choose, so the radio group was
    removed and the step configures only the model and API key secret. Re-introduce a provider
    control there, keyed on `cfg.aiProvider` (the field is still carried in `INITIAL_CONFIG` and
@@ -174,9 +178,21 @@ under `extensions/` is copied into the action's container image.
   students' repositories.
 - **`extensions/fixtures/current/` is generated** by `node scripts/build-extension-fixtures.js`.
   Do not edit it by hand, and do not let Prettier format it.
+- **`extensions/vscode/src/shared/action-inputs.js` is generated** by
+  `node scripts/build-extension-action-inputs.js`, from `action.yml` and the `RULES` table in
+  that script, which says what `src/inputs.js` accepts for each input. Do not edit it by hand.
+  The extension's workflow help reads it. After changing an input's declaration, or how
+  `src/inputs.js` reads one, update `RULES` and run the script;
+  `test/extension-action-inputs.test.js` fails until you do. A new check on an input belongs in
+  `extensions/vscode/src/shared/input-checks.js` and must follow what the action does with the
+  value: that test also fails if a check fires on a workflow shown in the docs.
+- **`yaml` must be the same range in `package.json` and `extensions/vscode/package.json`.** The
+  extension's unit tests load the root's copy and the packaged extension bundles its own. Raise
+  them together; the same test checks this.
 - **`extensions/vscode/src/shared/` must not import `vscode`.** That is what lets its tests, in
   `extensions/vscode/test/`, run under the root `pnpm test`. Code that needs the editor goes in
-  `src/student/`, and its tests in `test-host/` (`pnpm test:host`, from `extensions/vscode/`).
+  `src/student/` or `src/workflow/`, and its tests in `test-host/` (`pnpm test:host`, from
+  `extensions/vscode/`).
 - **Issue text is untrusted.** Anyone with write access to a student repository can edit the
   issue. Escape it before it reaches a webview, never enable scripts in one, and never open a
   path from it without `isSafeRelativePath`.
