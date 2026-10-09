@@ -82,6 +82,8 @@ export class QuestionsController {
   #key;
   /** Counts loads, so a slow one that has been overtaken can tell and stop. */
   #load = 0;
+  /** The pending load, and the pending look at what changed in the folder. */
+  #reload;
   #settle;
 
   constructor(context) {
@@ -278,6 +280,7 @@ export class QuestionsController {
   }
 
   dispose() {
+    clearTimeout(this.#reload);
     clearTimeout(this.#settle);
     this.#targetListener?.dispose();
     for (const listener of this.#waiting) listener.dispose();
@@ -319,11 +322,15 @@ export class QuestionsController {
 
   /** Loads again once the repositories have stopped changing. */
   #loadSoon() {
-    clearTimeout(this.#settle);
-    this.#settle = setTimeout(() => this.load(), SETTLE_MS);
+    clearTimeout(this.#reload);
+    this.#reload = setTimeout(() => this.load(), SETTLE_MS);
   }
 
-  /** Something about the folder changed. Waits for it to settle, then catches up. */
+  /**
+   * Something about the folder changed. Waits for it to settle, then catches
+   * up. It has a timer of its own: sharing one with #loadSoon let an edit made
+   * while a load was pending cancel the load.
+   */
   #folderChanged() {
     clearTimeout(this.#settle);
     this.#settle = setTimeout(() => {

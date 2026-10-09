@@ -2,23 +2,29 @@
  * GrillMyCode for VS Code
  *
  * Entry point. VS Code calls activate() the first time the GrillMyCode view
- * is opened.
+ * is opened, or a YAML file is, which is what a workflow file is.
  *
  * Layout:
- *   shared/   reading the report and choosing the issue. No VS Code imports,
- *             so the repository's own tests run it with no editor present.
+ *   shared/   reading the report, choosing the issue and checking a workflow
+ *             file. No VS Code imports, so the repository's own tests run it
+ *             with no editor present.
  *   student/  what a student sees: the questions panel, the jump to code and
  *             the moved-code warning. Its controller runs both views.
  *   instructor/  what an account that can read the answer key gets as well:
  *             finding and reading the key, and the answers under a question.
+ *   workflow/  help with the GrillMyCode step of a workflow file: checks,
+ *             completion and hover text.
  */
 
 import { QuestionsController } from './student/controller.js';
+import { WorkflowHelp } from './workflow/help.js';
 
 export function activate(context) {
   const controller = new QuestionsController(context);
-  context.subscriptions.push(controller);
+  const workflowHelp = new WorkflowHelp();
+  context.subscriptions.push(controller, workflowHelp);
   controller.start();
+  workflowHelp.start();
   // For test-host/ only: the tests drive the panel without a GitHub sign-in.
   return { controller };
 }

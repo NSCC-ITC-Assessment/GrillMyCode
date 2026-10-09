@@ -3,7 +3,7 @@
 // root by `pnpm test`.
 //
 // The tests open a throwaway clone made here: a Git repository with a GitHub
-// remote and the files the fixture questions point into. Nothing in it is
+// remote, the files the fixture questions point into and a workflow file. Nothing in it is
 // ever pushed, and the tests never sign in to GitHub.
 
 import { spawnSync } from 'child_process';
@@ -65,6 +65,30 @@ for (const file of ['src/cart.js', 'src/pricing/tax.js']) {
   mkdirSync(join(workspace, file, '..'), { recursive: true });
   writeFileSync(join(workspace, file), `${lines}\n`);
 }
+
+// A workflow that runs GrillMyCode, with one value the action rejects, for the
+// tests of the workflow help.
+const workflowFile = join(workspace, '.github', 'workflows', 'grill-my-code.yml');
+mkdirSync(join(workflowFile, '..'), { recursive: true });
+writeFileSync(
+  workflowFile,
+  [
+    'name: GrillMyCode',
+    'on: push',
+    'jobs:',
+    '  generate-questions:',
+    '    runs-on: ubuntu-latest',
+    '    steps:',
+    '      - uses: actions/checkout@v6',
+    '        with:',
+    '          fetch-depth: 0',
+    '      - uses: NSCC-ITC-Assessment/GrillMyCode@v0',
+    '        with:',
+    '          api_key: ${{ secrets.OPENROUTER_API_KEY }}',
+    '          starter_code: asks',
+    '',
+  ].join('\n'),
+);
 
 git('init', '--initial-branch=main');
 git('remote', 'add', 'origin', 'https://github.com/my-school/cs-principles-lab-3-jsmith.git');

@@ -1,0 +1,250 @@
+// GENERATED FILE — do not edit. This is what action.yml declares for each
+// input, with what src/inputs.js accepts for it. To change it, edit those files
+// and run: node scripts/build-extension-action-inputs.js
+
+export const ACTION_INPUTS = {
+  github_token: {
+    description:
+      'GitHub token used for API access (issues, releases, and repository metadata). Defaults to the built-in GITHUB_TOKEN. This token is not used for AI question generation — see api_key.',
+    default: '',
+    required: true,
+    secret: true,
+  },
+  ai_provider: {
+    description: 'AI provider to use for question generation. Supported values: openrouter',
+    default: 'openrouter',
+    required: false,
+    kind: 'enum',
+    values: ['openrouter'],
+    caseSensitive: true,
+  },
+  ai_model: {
+    description:
+      "Model identifier for the chosen provider, in OpenRouter's provider/model-name format (e.g. google/gemini-3.5-flash-lite). See https://openrouter.ai/models for the full list.",
+    default: 'google/gemini-3.5-flash-lite',
+    required: false,
+  },
+  ai_retry_max_attempts: {
+    description:
+      'Total number of attempts (initial attempt plus retries) when calling the AI provider. Retries are triggered by transient errors: 429 (rate limit), 500, 502, 503, 504, and network-level failures, and by a reply that is not the JSON GrillMyCode asked for, unless the model stopped at its output limit. A 429 response with a Retry-After header is honoured, up to 30 seconds; a 429 without one waits at least 5 seconds; all other retryable errors use exponential backoff with full jitter. Values below 1 are clamped to 1.',
+    default: '5',
+    required: false,
+    kind: 'integer',
+    min: 1,
+  },
+  ai_temperature: {
+    description:
+      "Sampling temperature to send, from 0 to 2 (OpenRouter's range). Empty by default: no temperature is sent and the model runs at its own. Models differ in the range they accept, their default and whether they use temperature at all, so set this only if you know the chosen model's, and check the questions it produces. If you're not sure how a change would affect the questions, don't set it. A value outside 0 to 2 is ignored with a warning.",
+    default: '',
+    required: false,
+    kind: 'number',
+    min: 0,
+    max: 2,
+  },
+  ai_reasoning_effort: {
+    description:
+      'How much the model thinks before answering: default, none, minimal, low, medium, high, xhigh or max. "default" (the default) sends no setting, so the model\'s own default applies — some models reason at "high" unless told otherwise. Reasoning is billed as output, so a lower level can cut the cost of a run several times over. A level the model does not support is mapped to its nearest one; "none" fails the run for a model whose reasoning cannot be switched off. Ignored by models that do not reason.',
+    default: 'default',
+    required: false,
+    kind: 'enum',
+    values: ['default', 'none', 'minimal', 'low', 'medium', 'high', 'xhigh', 'max'],
+  },
+  api_key: {
+    description:
+      'API key for the chosen AI provider. Required — create an OpenRouter key at https://openrouter.ai/keys and store it as a repository or organisation secret. github_token cannot be used for question generation. Only a preview_only run, which never calls the AI, works without it.',
+    default: '',
+    required: true,
+    secret: true,
+  },
+  num_questions: {
+    description:
+      'Number of comprehension questions in the report (minimum 1, maximum 50). Supplied values above 50 are automatically capped to 50. The AI is asked for two spare questions for every ten, rounded up, to replace any that are dropped; spares that are not needed are cut.',
+    default: '20',
+    required: false,
+    kind: 'integer',
+    min: 1,
+    max: 50,
+  },
+  question_emphasis: {
+    description:
+      'Limits the kinds of question asked. "balanced" (default) mixes question types as usual. "research" asks only questions that turn on documentation, edge cases and changes — why a line is needed, how a built-in or library call behaves, what happens on an edge case or a change. "tracing" asks only questions the student answers by mentally running their own code — resulting values, variable state, execution order, where a value comes from. Both are all-or-nothing: when the code cannot supply enough good questions of that kind, the AI writes simpler ones of the same kind rather than switching kinds.',
+    default: 'balanced',
+    required: false,
+    kind: 'enum',
+    values: ['balanced', 'research', 'tracing'],
+  },
+  include_answers: {
+    description:
+      'When true, each question is immediately followed by its answer, labelled "Answer:", in the student-facing report. This means the student sees the answers — defeating the purpose of the assessment, which is for the student to research and determine the answers themselves. Leave this false in almost all cases. The instructor repository (when instructor_repo_token is configured) always includes answers regardless of this setting.',
+    default: 'false',
+    required: false,
+    kind: 'boolean',
+  },
+  exclude_pattern_overrides: {
+    description:
+      'Entries that allow specific files through the exclude list, separated by commas or line breaks. Each entry can be either a pattern (e.g. **/*.md — re-includes all Markdown files) or a specific file path that would be excluded (e.g. README.md — only that file is re-included while **/*.md still excludes everything else). Entries are written like additional_exclude_patterns and ignore case. An override wins over every exclude pattern, with one exception: environment files, lock files and dependency folders are re-included only by an entry that names them (frontend/.env, *.lock, vendor/**), not by a broader one (frontend/**).',
+    default: '',
+    required: false,
+  },
+  additional_exclude_patterns: {
+    description:
+      "Glob patterns for extra files to exclude from the assessment, on top of the patterns auto-detected from the repository's language and framework stack, separated by commas or line breaks. Use this to exclude files specific to your assignment (e.g. provided starter files, test fixtures, data files) that would not normally be excluded by the auto-detected patterns. A pattern containing no slash matches on file name alone, at any depth (starter.py excludes src/starter.py too). Include a slash to match a path exactly (src/starter.py), or lead with **/ to be explicit. A plain name or path with no wildcards also covers the folder of that name (data excludes everything in data/), and a trailing slash names a folder only (data/). Patterns ignore case.",
+    default: '',
+    required: false,
+  },
+  instructor_repo_token: {
+    description:
+      "Classroom 50 assignment repositories only. Personal Access Token (PAT) with repo and workflow scopes and permission to create repositories in the same organisation as the student repositories. When provided, the action writes a private instructor-only assessment file (questions and answers) to a repository named {assignment-name}-grillmycode-instructor in the same organisation, in a folder named for the student. Both names are read from the Classroom 50 student repository's name (<classroom>-<assignment>-<username>) and its direct collaborators; any other repository skips instructor delivery with a warning. The repository is created automatically on first run if it does not already exist, and its quiz-generation workflow and README are refreshed on every run whenever they differ from the copies shipped with the action. Providing this also turns on multiple-choice distractor generation: the three wrong options per question exist only for the quiz built from the instructor copy, so without this token the action asks the model for the correct answer alone. Leave empty to disable instructor repository delivery.",
+    default: '',
+    required: false,
+    secret: true,
+  },
+  label_repos: {
+    description:
+      'Labels the student repository in GitHub\'s own metadata once questions have been generated, so that assessed repositories stand out in an organisation\'s repository list. When "true", adds the "grillmycode" topic, which makes the repositories findable with org:<org> topic:grillmycode, and appends "· 🔥 GrillMyCode: N questions" to the repository description. "false" (the default) writes nothing. Requires instructor_repo_token: repository metadata is out of reach of GITHUB_TOKEN, whose permissions key has no administration scope to grant. Without that token the labels are skipped with a warning. Existing topics are preserved, and a previously written description label is replaced rather than appended to, so repeated runs leave one accurate label. A failure here never fails the run.',
+    default: 'false',
+    required: false,
+    kind: 'boolean',
+    strict: true,
+  },
+  assignment_context: {
+    description:
+      'Comma-separated file glob(s) whose contents are read from the repository and injected into the AI prompt as assignment context. Useful for automatically including README files, assignment briefs, or style guides. Supported file types: plain text and source files (any UTF-8 text), PDF (.pdf — text layer only, images ignored), and Microsoft Word (.doc/.docx — text content only, images ignored). Globs are matched against the full relative path from the repository root, so subdirectory paths and wildcards work (e.g. "docs/assignment.md", "**/*.md"). If no files match, a workflow warning is emitted and the action continues without assignment context. SECURITY: point this only at instructor-controlled paths. These globs are matched against the student\'s checked-out working tree, so a glob like "README.md" or "**/*.md" can pick up files the student can edit. Assignment context is treated as untrusted reference data that only steers question topics — it cannot override the rubric or reveal answers — but to keep students from influencing question focus, prefer paths they do not control (e.g. an instructor-managed docs/ directory or a file committed only by the instructor). Use instructor_context for instructions that must take effect. Example: "docs/assignment.md, instructor/rubric.md"',
+    default: '',
+    required: false,
+  },
+  assignment_context_max_chars: {
+    description:
+      'Maximum total characters read from all assignment_context files combined. Prevents extremely large context files from flooding the AI prompt. Values below 1 are clamped to 1.',
+    default: '20000',
+    required: false,
+    kind: 'integer',
+    min: 1,
+  },
+  instructor_context: {
+    description:
+      'Free-text context about the assignment or topic being assessed. Helps the AI generate more relevant, targeted questions. Example: "Assignment 3 — Python list comprehensions and lambda functions"',
+    default: '',
+    required: false,
+  },
+  starter_code: {
+    description:
+      'What the repository\'s first commit is, and what the AI does with the starter code in it. One of: "none" — there is no starter code: the repository was created empty (Classroom 50 gh teacher assignment add --empty-repo), so the first commit is the student\'s own first push and is assessed. "ignore" (the default) — the first commit is your starter code and is left out; starter files the student never changed are not sent. "context" — as ignore, but starter files the student never changed are sent as background, so questions about the student\'s code can draw on what it calls, extends or is called by. They are never asked about on their own. "ask" — as context, and some questions may be about the starter code itself: the unchanged starter files and the unchanged starter lines of files the student edited, in this submission or an earlier one. At most one in starter_questions_one_in questions (five by default; at least one once there are two) is about starter code alone, and each is worded as about the provided code. Starter code is the same for every student, so answers to those questions can be shared. In every mode, a file that existed before the assessed range is sent whole with the student\'s added and changed lines marked, and questions about it are limited to those lines (and, under ask, its starter lines). Use additional_exclude_patterns to keep a file out entirely. Files left out by a rule (exclude patterns, commits skipped by skip_committers, binary files) are never sent. Replaces include_initial_commit and include_codebase_context.',
+    default: 'ignore',
+    required: false,
+    kind: 'enum',
+    values: ['none', 'ignore', 'context', 'ask'],
+  },
+  starter_questions_one_in: {
+    description:
+      'Under starter_code ask, up to one in this many questions may be about starter code alone, rounded down but at least one once there are two questions. "5" (the default) allows 4 of 20. Values below 2 are clamped to 2, so at least half the questions stay on the student\'s own work; values above num_questions allow one. Has no effect under other starter_code values.',
+    default: '5',
+    required: false,
+    kind: 'integer',
+    min: 2,
+    max: 50,
+  },
+  previous_work: {
+    description:
+      'Whether the student\'s own earlier work that this submission did not touch is sent to the AI as background: "context" (the default) or "ignore". Earlier work exists only when the assessed range starts after the first commit — tag_diff_base previous-tag or tag:<name>, or base_sha — so this has no effect on other runs. It is never asked about on its own, except the unchanged starter lines of a starter file the student changed earlier, under starter_code ask. Under ignore, such a file is not sent either. Shares codebase_context_max_chars with starter code.',
+    default: 'context',
+    required: false,
+    kind: 'enum',
+    values: ['context', 'ignore'],
+  },
+  include_initial_commit: {
+    description:
+      'Deprecated: use starter_code instead. "true" is read as starter_code: none. Ignored when starter_code is set. Will be removed in the next major version.',
+    default: '',
+    required: false,
+    deprecated: true,
+    kind: 'boolean',
+    replacement: 'starter_code: none',
+  },
+  include_codebase_context: {
+    description:
+      'Deprecated: use starter_code and previous_work instead. "true" is read as starter_code: context and previous_work: context; "false" as previous_work: ignore. Each is ignored when the new input is set. Will be removed in the next major version.',
+    default: '',
+    required: false,
+    deprecated: true,
+    kind: 'boolean',
+    replacement: 'starter_code: context and previous_work',
+  },
+  codebase_context_max_chars: {
+    description:
+      'Maximum total characters sent as codebase context: starter code under starter_code context or ask, and earlier work under previous_work context. Starter code and earlier work share the limit. Files are added whole, those in the same folders as the assessed files first; a file that would exceed the limit is left out and counted in the run summary. Values below 1 are clamped to 1.',
+    default: '50000',
+    required: false,
+    kind: 'integer',
+    min: 1,
+  },
+  fail_on_empty_assessment: {
+    description:
+      'When true, a run that finds nothing to assess fails instead of succeeding. A run ends with nothing to assess when the commit range is empty, or when every changed file is removed by the exclude patterns; either way no questions, issue or PDF are produced. By default such a run reports the reason and succeeds, because both cases occur normally the moment an assignment is accepted — a template repository\'s only commit is its starter code, and a Classroom 50 setup commit contains just the .classroom50.yaml file, which the default exclude patterns remove. Set this to "true" once students have started work, if you would rather an unassessed repository show as a failed run than as a green one you have to open to notice. The run summary explains the reason either way.',
+    default: 'false',
+    required: false,
+    kind: 'boolean',
+  },
+  stack_templates: {
+    description:
+      "The stack templates to apply in every repository, in place of detecting them from each repository's languages and project files, separated by commas or line breaks. Each entry is a github/gitignore template name (Node, Python, Laravel), applied at the repository root, or a name and a project folder joined by @ (Laravel@api), applied inside that folder. Leave it empty (the default) and the stack is detected in each repository. Set, every student's repository gets the same exclude patterns, and a file a student adds can't turn a template on. The always-excluded patterns, additional_exclude_patterns and exclude_pattern_overrides apply as usual. The Workflow Wizard's file preview writes this for you, and the run summary of any run shows the value for that repository's detected stack. A name the action does not know is ignored with a warning. If you're not sure the same stack suits every student's repository, don't set it.",
+    default: '',
+    required: false,
+  },
+  preview_only: {
+    description:
+      'When true, the run stops once it has worked out which files it would assess, and reports them in the run summary: the files that would be assessed, the changed files left out with the pattern or rule that left each one out, and the context files that would be sent. The AI is never called, so the run costs nothing and needs no api_key. No questions, issue, PDF, instructor copy or repository labels are produced, the outputs are empty, and an assessment from an earlier run is left as it is. Use it to check additional_exclude_patterns and exclude_pattern_overrides against a real repository before the first assessed run. A preview that finds nothing to assess says so and succeeds, whatever fail_on_empty_assessment is set to.',
+    default: 'false',
+    required: false,
+    kind: 'boolean',
+    strict: true,
+  },
+  keep_comments: {
+    description:
+      'When false (the default), inline and block comments are stripped from the submitted code before it is sent to the AI. Set to "true" to preserve comments exactly as written.',
+    default: 'false',
+    required: false,
+    kind: 'boolean',
+  },
+  skip_committers: {
+    description:
+      "Comma-separated list of bot account logins (e.g. github-actions[bot]). Any consecutive commits at the start of the assessed range (immediately after the resolved base SHA) that belong to one of these accounts are excluded from the diff. Matching is case-insensitive. Classroom 50's accept-time setup commit is authored under the student's own account rather than a bot, so it has no login for this input to match — its .classroom50.yaml file is excluded by the action's default exclude patterns instead. This input remains useful for any other bot-authored commits (e.g. a template's own CI bot) that land at the start of the assessed range. Only consecutive leading commits are skipped — if a bot commit appears after a student commit it is included as normal. SECURITY: a leading commit is skipped only when its GitHub-verified account login matches one of these values. The local commit author name/email is attacker-controlled, so it is used only as a pre-filter, never as the sole basis for skipping — a student cannot hide their own commits by setting their git author name to a bot's. Consequently these values must be GitHub account logins, not arbitrary display names or emails. Set to an empty string ('') to disable bot-commit skipping entirely.",
+    default: 'github-actions[bot]',
+    required: false,
+  },
+  submission_tags: {
+    description:
+      'Tag names that mark a submission, for workflows triggered by a tag push (on.push.tags). These are the tags you define for the assignment — no tag is recognised unless it is listed here. Give the same entries as the workflow\'s on.push.tags, separated by commas or newlines, e.g. "complete" or "phase1, phase2, final". A wildcard entry is allowed and uses GitHub\'s filter syntax: * (not crossing /), **, ?, + and [ ] classes; ! negation is not supported. Matching is case-sensitive. A run started by a tag (a tag push, or a manual run with a tag selected) fails unless the tag matches one of these entries and points at a commit on the default branch. Each entry is its own delivery group: it has one assessment issue, one PDF and one instructor-repo folder, so phase1 and phase2 are kept apart. Ignored on runs not started by a tag.',
+    default: '',
+    required: false,
+    kind: 'tags',
+  },
+  tag_diff_base: {
+    description:
+      'Diff base for a run started by a submission tag. "cumulative" (the default) uses the same base as any other run, so each tag assesses all of the student\'s work to date. "previous-tag" starts the diff at the nearest earlier commit carrying a submission_tags tag, so each tag assesses only the work since the one before it; with no earlier tag it falls back to the cumulative base. "tag:<name>" (e.g. "tag:phase1") starts the diff at that tag, which need not be in submission_tags; the name is case-sensitive. The run fails if the tag is missing, is not an earlier commit, or is on the assessed commit. A manual base_sha takes precedence over all three. Ignored on runs not started by a tag.',
+    default: 'cumulative',
+    required: false,
+    kind: 'enum',
+    values: ['cumulative', 'previous-tag'],
+    prefix: 'tag:',
+  },
+  base_sha: {
+    description:
+      'Override the base commit SHA for the diff. When provided this takes precedence over starter_code. Auto-detected when not provided.',
+    default: '',
+    required: false,
+  },
+  head_sha: {
+    description:
+      'Override the head commit SHA for the diff. Applies on its own or together with base_sha; when provided it takes precedence over the SHA derived from the event. Auto-detected when not provided.',
+    default: '',
+    required: false,
+  },
+  log_prompt: {
+    description:
+      'Internal diagnostic; not part of the supported interface. When "true", files the prompt sent to the AI in the student\'s instructor-repository folder. Requires instructor_repo_token.',
+    default: 'false',
+    required: false,
+    hidden: true,
+  },
+};

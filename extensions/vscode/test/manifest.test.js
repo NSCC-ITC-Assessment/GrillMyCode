@@ -112,3 +112,22 @@ describe('the view switch', () => {
     for (const command of switches) expect(bound).not.toContain(command);
   });
 });
+
+describe('workflow help', () => {
+  // A workflow file is YAML until the GitHub Actions extension is installed,
+  // which gives it a language of its own. Without both, the help never starts
+  // for whoever has one of them.
+  it('starts the extension when a workflow file is opened, whichever language it has', () => {
+    expect(manifest.activationEvents).toContain('onLanguage:yaml');
+    expect(manifest.activationEvents).toContain('onLanguage:github-actions-workflow');
+  });
+
+  // The name is written out in src/workflow/help.js as well.
+  it('has a setting that switches it off, and is on until then', () => {
+    const setting =
+      manifest.contributes.configuration.properties['grillmycode.workflowHelp.enabled'];
+    expect(setting).toMatchObject({ type: 'boolean', default: true });
+    const source = readFileSync(join(root, 'src', 'workflow', 'help.js'), 'utf-8');
+    expect(source).toContain("'workflowHelp.enabled'");
+  });
+});

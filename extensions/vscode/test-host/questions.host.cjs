@@ -217,4 +217,29 @@ describe('GrillMyCode', () => {
       assert.strictEqual(controller.state, 'ready');
     });
   });
+
+  // Git finds a repository a moment after the window opens, and the questions
+  // load a moment after that. Typing in that moment must not lose the load: it
+  // left the view saying there was no repository until it was refreshed by hand.
+  describe('a repository found while a file is being edited', () => {
+    it('still loads', async () => {
+      const git = vscode.extensions.getExtension('vscode.git').exports.getAPI(1);
+      const [repository] = git.repositories;
+      const root = repository.rootUri;
+      await vscode.commands.executeCommand('git.close', repository);
+      await until(() => controller.state === 'noRepository', 'the repository to close');
+
+      const document = await vscode.workspace.openTextDocument(
+        vscode.Uri.joinPath(root, 'src', 'cart.js'),
+      );
+      const opened = new Promise((resolve) => git.onDidOpenRepository(resolve));
+      await vscode.commands.executeCommand('git.openRepository', root.fsPath);
+      await opened;
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(document.uri, new vscode.Position(0, 0), ' ');
+      assert.ok(await vscode.workspace.applyEdit(edit));
+
+      await until(() => controller.state === 'signedOut', 'the repository to be found again');
+    });
+  });
 });

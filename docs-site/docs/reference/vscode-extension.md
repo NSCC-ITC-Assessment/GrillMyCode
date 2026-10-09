@@ -5,7 +5,7 @@ sidebar_label: The VS Code extension
 
 # The VS Code extension
 
-GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=GrillMyCode.grillmycode)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, and shows an instructor each question's answer as well. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in VS Code](../guides/vscode-extension.md).
+GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=GrillMyCode.grillmycode)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, and shows an instructor each question's answer as well. It also [checks the GrillMyCode step](#workflow-help) of a workflow file as it is written. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in VS Code](../guides/vscode-extension.md).
 
 ## What it needs
 
@@ -132,6 +132,69 @@ A repository with an answer key and no questions issue still gets the instructor
 - **Dropped questions.** The answer key lists the questions the action dropped for not pointing at the student's code. The view shows only the ones that were asked.
 - **Earlier submissions.** The view reads the current answer key, not the [history](instructor-repository.md#spotting-resubmissions) kept for a submission tag.
 - **A repository the action could not identify.** If the student is no longer a direct collaborator, the action filed no answer key and the extension finds none.
+
+## Workflow help
+
+In a file under `.github/workflows`, the extension reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. It works from the text of the file alone: no sign-in, no request to GitHub and no Git. Every other step is left alone. Workflow help is in version 0.3.1 and later.
+
+Opening a YAML file starts the extension, as opening the GrillMyCode view does.
+
+### What it checks
+
+Problems are underlined as the file is typed and listed in the **Problems** panel, each marked **GrillMyCode**. The level follows what the action does with the value, as [Inputs and outputs](inputs-outputs.md) describes it:
+
+- **Error:** the run fails, or the value cannot be used.
+- **Warning:** the run carries on, but not with what was written.
+- **Information:** the input is fine, and has no effect as the workflow stands.
+
+| What is underlined | Level |
+| ------------------ | ----- |
+| A value outside the input's fixed set: `starter_code`, `previous_work`, `question_emphasis`, `ai_reasoning_effort`, `ai_provider`, `tag_diff_base` | Error |
+| Anything but `true` or `false` for `label_repos` or `preview_only` | Error |
+| A `submission_tags` pattern outside the [supported syntax](triggers.md#pattern-syntax) | Error |
+| Text where a whole number belongs | Error |
+| A number below the input's smallest value or above its largest, where the action uses the nearest one it allows | Warning |
+| An `ai_temperature` the action ignores | Warning |
+| Anything but `true` or `false` for `keep_comments`, `include_answers` or `fail_on_empty_assessment`, which the action reads as `false` | Warning |
+| A [deprecated input](inputs-outputs.md#deprecated-inputs) | Warning |
+| An input the action does not declare, with the input it resembles when one is close | Warning |
+
+An unquoted `True` is not underlined: GitHub passes it to the action as `true`.
+
+Some checks compare one input with another, or with the rest of the workflow:
+
+| What is underlined | Level |
+| ------------------ | ----- |
+| No `api_key`, unless `preview_only` is set | Error |
+| A workflow that runs on `on.push.tags` with no `submission_tags` | Error |
+| `submission_tags` and `on.push.tags` that list different entries | Warning |
+| `api_key`, `instructor_repo_token` or `github_token` written into the file, or read from a workflow input | Warning |
+| `label_repos` with no `instructor_repo_token` | Warning |
+| `starter_questions_one_in` when `starter_code` is not `ask` | Information |
+| `previous_work` when neither `tag_diff_base` nor `base_sha` gives the run earlier work | Information |
+| `tag_diff_base` with no `submission_tags` | Information |
+
+A value GitHub works out when the workflow runs, such as `${{ inputs.num_questions }}`, is not checked, and neither is a comparison that depends on one.
+
+### What it offers
+
+- **The values of an input** that has a fixed set, after its name. The default is marked.
+- **The inputs the step does not set yet**, on an empty line of the `with:` block, each with its description from `action.yml`. Deprecated inputs are not offered.
+- **An input's description, values and default**, when the pointer rests on its name.
+
+### With the GitHub Actions extension
+
+GitHub's own [GitHub Actions extension](https://marketplace.visualstudio.com/items?itemName=github.vscode-github-actions) offers and describes the inputs of every action, and reports an input an action does not declare. Where it is installed, GrillMyCode Companion leaves those three to it, so nothing is shown twice, and adds the rest: the checks on values and between inputs, and the values on offer.
+
+### What it does not know
+
+- **Which version the workflow uses.** The extension carries the inputs of the action as they were when the extension was released. In a workflow pinned to an older version, it may offer an input that version lacks. With an extension older than the action, a new input is reported as unknown.
+- **Exclude patterns, stack templates and model IDs.** `additional_exclude_patterns`, `exclude_pattern_overrides`, `stack_templates` and `ai_model` are not checked.
+- **What a repository contains.** Whether a pattern matches a file, or a tag exists, is known only to a run. A [preview run](exclude-patterns.md#previewing-in-a-run) answers the first.
+
+### Switching it off
+
+Set `grillmycode.workflowHelp.enabled` to `false` in VS Code's settings, for the user or for one folder.
 
 ## What it leaves out
 
