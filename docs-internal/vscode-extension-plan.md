@@ -4,8 +4,7 @@
 > version, with what was tried and how, is this file at `10791ec`.
 > **Status:** Phases 1 and 4 and the first-run walkthrough are released.
 > Phase 2 is under way. Phase 3 is out as a pre-release, 0.3.0, without
-> marking. Phase 5 is built, as 0.3.1, and not released. Phase 6 is a
-> proposal.
+> marking. Phase 5 is out as a pre-release, 0.3.1. Phase 6 is a proposal.
 
 GrillMyCode Companion (`GrillMyCode.grillmycode`) shows the questions the
 action posts beside the code they ask about. It lives in `extensions/vscode/`
@@ -26,7 +25,7 @@ steps are in `extensions/README.md`, and the rules for contributors are in
 | 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.2.2 is the stable release; two hand checks, the token and the features are left |
 | 3     | Instructor view: answers beside the student's code, and the view switch                                             | Nothing                                                  | Pre-release: 0.3.0. A stable release, marks and notes, and a real viva are left                |
 | 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                                        |
-| 5     | Workflow help: the action's inputs checked, offered and described in a workflow file                                | A look at what the GitHub Actions extension already does | Built, not released: 0.3.1 is not tagged. A look beside the GitHub Actions extension is left   |
+| 5     | Workflow help: the action's inputs checked, offered and described in a workflow file                                | A look at what the GitHub Actions extension already does | Pre-release: 0.3.1. A stable release and a look beside the GitHub Actions extension are left   |
 | 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                                    |
 
 Phases 2, 3 and 5 do not depend on one another. The suggested order for what
@@ -52,13 +51,13 @@ or changes scope.
   `reference/vscode-extension.md`.
 - **The first-run walkthrough**, released in 0.2.2 on 2026-10-04, outside the
   phases. It is a patch number because 0.3.0 would have been a pre-release.
-- **Phase 5**, built on 2026-10-09 and not released: in a workflow file, the
+- **Phase 5**, released as the pre-release 0.3.1 on 2026-10-09: in a workflow file, the
   GrillMyCode step's inputs are checked as they are typed, and the values of
   an input with a fixed set are offered. What is checked is in the docs
   site's `reference/vscode-extension.md`.
 - **Tags kept apart:** `release.yml` runs on `v[0-9]*` and `branch-build.yml`
   ignores every tag, so a `vscode-v*` tag cannot release the action.
-- **Releases:** the workflow has published 0.1.1, 0.1.2 and 0.3.0 as
+- **Releases:** the workflow has published 0.1.1, 0.1.2, 0.3.0 and 0.3.1 as
   pre-releases, and 0.2.0, 0.2.1 and 0.2.2 as stable. 0.1.0 was published by hand, and is
   stable although its minor number is odd.
 
@@ -220,8 +219,8 @@ Settled while building:
 
 ### Phase 5: what is left
 
-- **A release.** The version is set to 0.3.1, a pre-release, and the tag is
-  not pushed.
+- **A stable release.** 0.3.1 is a pre-release. A stable one is 0.4.0, with
+  phase 3.
 - **A look at it beside the GitHub Actions extension**, and one pass by hand.
   Both are under [Done](#done), as built but never seen working.
 
