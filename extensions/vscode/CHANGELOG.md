@@ -7,6 +7,7 @@ What changed in each version of GrillMyCode Companion. A version marked pre-rele
 - Checks the GrillMyCode step of a workflow file as you type. A value the action would reject or ignore is underlined, as are a missing API key, a key written into the file, and inputs that do not fit together, such as submission tags that differ from the tags the workflow runs on.
 - Offers the values of an input that has a fixed set. Where the GitHub Actions extension is not installed, it also offers the inputs a step can set and describes each one.
 - Adds the setting **Workflow Help: Enabled**, which switches both off.
+- Fixes the GrillMyCode view saying no folder was a clone of a GitHub repository when a file was edited in the moment the repository was being found. It stayed that way until **Refresh Questions** was selected.
 
 ## 0.3.0 (pre-release), 2026-10-04
 
