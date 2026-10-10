@@ -1,0 +1,104 @@
+name: GrillMyCode
+
+on:
+  workflow_dispatch:
+    # Manual-run overrides. Starting this workflow from the Actions tab
+    # shows a form pre-filled with these defaults; anything changed there
+    # applies to that run only. Any run that supplies no value — a cleared
+    # field, or any automatic trigger — uses the fallback baked into the
+    # matching `${{ ... || '...' }}` expression below.
+    #
+    # Keep each default here in sync with its fallback below — they are the
+    # same value in two places, and if they drift, clearing a field on the
+    # form stops matching what leaving it at its default does.
+    inputs:
+      preview_only:
+        description: "preview_only - true lists the files a run would assess and the files left out, then stops: the AI is not called and no questions are produced"
+        type: choice
+        options: ["false", "true"]
+        default: "false"
+      ai_model:
+        description: "ai_model - OpenRouter model ID in provider/model-name format"
+        required: false
+        default: "x-ai/grok-4.6"
+      ai_reasoning_effort:
+        description: "ai_reasoning_effort - How much the model thinks before answering: default keeps the model's own; a level it does not support is mapped to its nearest one, and none fails on a model that always reasons"
+        type: choice
+        options: ["default", "none", "minimal", "low", "medium", "high", "xhigh", "max"]
+        default: "default"
+      num_questions:
+        description: "num_questions - Number of comprehension questions to generate (1-50)"
+        required: false
+        default: "20"
+      question_emphasis:
+        description: "question_emphasis - balanced mixes question types; tracing asks only questions answered by running the code in your head; research only questions that need documentation or edge cases"
+        type: choice
+        options: ["balanced", "tracing", "research"]
+        default: "research"
+      instructor_context:
+        description: "instructor_context - Assignment context given to the AI (clear the field to use the workflow default unchanged)"
+        required: false
+        default: "Focus questions on how each file/module relates to the other"
+      additional_exclude_patterns:
+        description: "additional_exclude_patterns - Comma-separated extra glob patterns to exclude from assessment"
+        required: false
+        default: "*"
+      exclude_pattern_overrides:
+        description: "exclude_pattern_overrides - Comma-separated entries to re-include from the default exclude list"
+        required: false
+        default: "/src, action.yml"
+      keep_comments:
+        description: "keep_comments - Preserve code comments instead of stripping them before analysis"
+        type: choice
+        options: ["false", "true"]
+        default: "false"
+      starter_code:
+        description: "starter_code - What the first commit is, and what the AI does with starter code: none, ignore, context or ask"
+        type: choice
+        options: ["none", "ignore", "context", "ask"]
+        default: "none"
+      starter_questions_one_in:
+        description: "starter_questions_one_in - Under starter_code ask, up to one in this many questions may be about the starter code alone (2 or more)"
+        required: false
+        default: "5"
+
+# A new push cancels any run still in progress for the same branch,
+# so only the latest commit is ever assessed (see FAQ).
+# Do not modify this setting unless you have a compelling reason to.
+concurrency:
+  group: grillmycode-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  generate-questions:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    permissions:
+      contents: write # gmc-assessments release + PDF asset
+      issues: write # assessment issue
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          fetch-depth: 0 # full history required for diff resolution
+
+      - uses: NSCC-ITC-Assessment/GrillMyCode@v0
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          api_key: ${{ secrets.OPENROUTER }}
+          ai_model: "${{ github.event.inputs.ai_model || 'x-ai/grok-4.6' }}"
+          ai_reasoning_effort: "${{ github.event.inputs.ai_reasoning_effort || 'default' }}"
+          num_questions: "${{ github.event.inputs.num_questions || '20' }}"
+          question_emphasis: "${{ github.event.inputs.question_emphasis || 'research' }}"
+          instructor_context: "${{ github.event.inputs.instructor_context || 'Focus questions on how each file/module relates to the other' }}"
+          exclude_pattern_overrides: "${{ github.event.inputs.exclude_pattern_overrides || '/src, action.yml' }}"
+          additional_exclude_patterns: "${{ github.event.inputs.additional_exclude_patterns || '*' }}"
+          preview_only: "${{ github.event.inputs.preview_only || 'false' }}"
+          keep_comments: "${{ github.event.inputs.keep_comments || 'false' }}"
+          starter_code: "${{ github.event.inputs.starter_code || 'none' }}"
+          starter_questions_one_in: "${{ github.event.inputs.starter_questions_one_in || '5' }}"
+          # Classroom 50 assignment repositories only — any other repository
+          # skips instructor repository delivery with a warning.
+          instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}
+          # Adds a grillmycode topic and the question count to the student
+          # repository's description. Uses the PAT above, not GITHUB_TOKEN.
+          label_repos: "true"
