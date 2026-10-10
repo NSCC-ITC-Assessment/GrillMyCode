@@ -3,7 +3,7 @@
 > **Recorded:** 2026-10-03 (`ff56b1d`). Shortened on 2026-10-04 and 2026-10-10.
 > The fuller wording is this file at `ee31e05`. What was tried and how is at
 > `10791ec`.
-> **Status:** 0.4.1 is the stable release, of 2026-10-10. Phases 1, 3, 4, 5
+> **Status:** 0.4.2 is the stable release, of 2026-10-10. Phases 1, 3, 4, 5
 > and 7 are released, 2 is under way and 6 is a proposal. Parts of 3, 5 and 7
 > went out without having been seen working.
 
@@ -62,13 +62,13 @@ flowchart LR
 | Phase 7         | 0.4.0, 2026-10-10 | **Open Workflow Wizard**. The package went from about 100 KB to about 240 KB, most of it React, which every student's install downloads                                                                  |
 | 0.4.0           | 2026-10-10        | The first stable release since 0.2.2. Phases 3, 5 and 7 went to every install with the [hand checks](#built-not-yet-seen-working) undone, to be looked at afterwards                                     |
 | 0.4.1           | 2026-10-10        | **Use the open folder** did not finish on a large folder. Listings now leave out what Git ignores and are asked for 32 at a time: on this repository 77 folders and 460 files, down from 1,473 and 5,000 |
-| 0.4.2           | Not yet tagged    | **Next Question** and **Previous Question**, which step through the list. Outside the phases, from [Further ideas](#further-ideas). Stable, and the first release to sign in with the Entra identity     |
+| 0.4.2           | 2026-10-10        | **Next Question** and **Previous Question**, which step through the list. Outside the phases, from [Further ideas](#further-ideas). Stable, and the first release to sign in with the Entra identity     |
 | Tags kept apart |                   | `release.yml` runs on `v[0-9]*` and `branch-build.yml` ignores every tag, so a `vscode-v*` tag cannot release the action                                                                                 |
 
-| Channel     | Versions                                                                         |
-| ----------- | -------------------------------------------------------------------------------- |
-| Stable      | 0.1.0 (by hand, despite its odd minor number), 0.2.0, 0.2.1, 0.2.2, 0.4.0, 0.4.1 |
-| Pre-release | 0.1.1, 0.1.2, 0.3.0, 0.3.1                                                       |
+| Channel     | Versions                                                                                |
+| ----------- | --------------------------------------------------------------------------------------- |
+| Stable      | 0.1.0 (by hand, despite its odd minor number), 0.2.0, 0.2.1, 0.2.2, 0.4.0, 0.4.1, 0.4.2 |
+| Pre-release | 0.1.1, 0.1.2, 0.3.0, 0.3.1                                                              |
 
 ---
 
@@ -78,7 +78,6 @@ flowchart LR
 | ------- | ---------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2       | An install by hand on Windows, with a GitHub sign-in       | Check   | The tests never sign in. Look at the listing's page in the same sitting                                                                                                                                   |
 | 2       | A pass as a student, in a codespace and in desktop VS Code | Check   | From a template repository that lists the extension, with a test account, by the student guide. Shows whether the walkthrough opens after each kind of install and after an update, with its steps ticked |
-| 2       | The first release published with the Entra identity        | Check   | `vscode-v0.4.2`, built and not yet tagged. See [Accounts and secrets](#accounts-and-secrets)                                                                                                              |
 | 2       | Questions pinned to lines, as read-only comment threads    | Feature | After real use of the moved-code warning: a note on the wrong lines misleads. Weigh "the code as it was" first                                                                                            |
 | 2       | "Studied" ticks, stored locally                            | Feature |                                                                                                                                                                                                           |
 | 2       | Refreshing when the window regains focus                   | Feature |                                                                                                                                                                                                           |
@@ -117,10 +116,10 @@ Every install has had these since 0.4.0. Tests cover each one.
 - **Approval:** the `vscode-marketplace` environment has no required reviewer,
   so a tag publishes as soon as the tests pass.
 
-| Way to sign in             | State                                                                                                                                                                                         | Note                                                                                                                                                                                           |
-| -------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| A Microsoft Entra identity | Set up on 2026-10-10: the publisher check passes. No release has published with it yet. Releases up to 0.4.1 signed in with a `VSCE_PAT` secret, deleted on 2026-10-10 with its token revoked | The workflow uses it whenever the environment names it. Needs a tenant that allows registering an application, and no Azure subscription                                                       |
-| Trusted publishing         | Not open. On 2026-10-03 the Marketplace answered "Trusted Publishing is not supported", and the packaging tool (4.0.0) sent a request it rejects                                              | The publisher check reports the answer on every run. When it opens: raise `@vscode/vsce`, add a policy naming this repository and `vscode-extension-release.yml`, and delete the two variables |
+| Way to sign in             | State                                                                                                                                                                     | Note                                                                                                                                                                                           |
+| -------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A Microsoft Entra identity | Set up on 2026-10-10, and 0.4.2 was published with it the same day. Releases up to 0.4.1 signed in with a `VSCE_PAT` secret, deleted on 2026-10-10 with its token revoked | The workflow uses it whenever the environment names it. Needs a tenant that allows registering an application, and no Azure subscription                                                       |
+| Trusted publishing         | Not open. On 2026-10-03 the Marketplace answered "Trusted Publishing is not supported", and the packaging tool (4.0.0) sent a request it rejects                          | The publisher check reports the answer on every run. When it opens: raise `@vscode/vsce`, add a policy naming this repository and `vscode-extension-release.yml`, and delete the two variables |
 
 Setting up the Entra identity, as done on 2026-10-10:
 
