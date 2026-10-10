@@ -4,7 +4,29 @@ sidebar_position: 11
 
 # Upgrade notes
 
-Notes for anyone upgrading a workflow, or an instructor repository, from an earlier GrillMyCode release. Newest changes first.
+Notes for anyone upgrading a workflow, or an instructor repository, from an earlier GrillMyCode release. The first section covers how releases reach a workflow. The notes follow it, newest changes first.
+
+## Choosing when to upgrade
+
+The `uses:` line of a workflow names the release it runs.
+
+| `uses:` line ends in | Runs | Changes when |
+|---|---|---|
+| `@v0` | The newest v0 release | Any v0 release is published |
+| `@v0.30` | The newest v0.30 release | A fix to v0.30 is published |
+
+**`@v0` is the default.** It is what the Workflow Wizard and every example write. Fixes and new features arrive on their own, and a change that needs action is listed in the notes below.
+
+**Name a minor version to keep an assignment unchanged,** so that every student is assessed the same way from the first push to the last. Find the newest version on the [releases page](https://github.com/NSCC-ITC-Assessment/GrillMyCode/releases) and leave off its last number: release `v0.30.2` is named as `@v0.30`. What it costs:
+
+- **No new features, and in time no fixes.** A minor version normally stops receiving fixes once the next one is released.
+- **These pages describe the newest release.** An input added after the version you named is ignored by it.
+- **Moving up is yours to do.** Change the line in the template repository. Students who have already accepted get the change as they would a new workflow: see [Students who have already accepted](../getting-started/add-to-assignment.md#students-who-have-already-accepted).
+
+Two limits:
+
+- **An exact version is not held.** `@v0.30.2` runs the newest v0 release, as `@v0` does. Name the minor version instead.
+- **Use `v0.30` or later.** An earlier minor version may run the newest v0 release.
 
 ## File patterns are more forgiving, and broad overrides no longer bring back protected files
 

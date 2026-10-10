@@ -46,6 +46,10 @@ One, `OPENROUTER_API_KEY`, saved once as an organization secret. The private ans
 
 Yes. Edit the workflow file, or run the Wizard again and replace the file. To change a setting for one run only, see [Running it yourself](guides/running-manually.md).
 
+### Can I stop GrillMyCode changing partway through an assignment?
+
+Yes. A workflow normally follows the newest release, but it can name one minor version and stay on it, at the cost of new features and later fixes. See [Choosing when to upgrade](reference/upgrade-notes.md#choosing-when-to-upgrade).
+
 ## Questions
 
 ### How many questions are generated?
