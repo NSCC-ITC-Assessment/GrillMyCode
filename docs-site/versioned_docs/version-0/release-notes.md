@@ -5,6 +5,25 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.29.1 — 2026-10-10
+
+### What's Changed
+
+### Features
+
+- **vscode:** open the Workflow Wizard in an editor tab
+- **vscode:** check the action's inputs in a workflow file
+
+### Documentation
+
+- update docs
+- update vscode extension plan
+
+### Chores & Maintenance
+
+- type-check the JavaScript with TypeScript, compiling nothing
+- **vscode:** prepare the stable release 0.4.0
+
 ## v0.29.0 — 2026-10-07
 
 ### What's Changed

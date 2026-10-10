@@ -5,7 +5,7 @@ sidebar_label: The VS Code extension
 
 # The VS Code extension
 
-GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=GrillMyCode.grillmycode)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, and shows an instructor each question's answer as well. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in VS Code](../guides/vscode-extension.md).
+GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=GrillMyCode.grillmycode)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, and shows an instructor each question's answer as well. It also [checks the GrillMyCode step](#workflow-help) of a workflow file as it is written, and opens the [Workflow Wizard](#the-workflow-wizard) in the editor. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in VS Code](../guides/vscode-extension.md).
 
 ## What it needs
 
@@ -81,7 +81,7 @@ A range that runs past the end of the file is cut to fit. A file that no longer 
 
 An account that can read an assignment's answer key gets a second view. It lists the answer key's questions, and **Selected Question** shows each one's answer under its code. Selecting a question still opens the student's file at the lines it asks about.
 
-No setting turns the view on. GitHub decides who can read the [instructor repository](instructor-repository.md), and the extension offers the view only after it has read the answer key with the signed-in account. A student's account cannot read it, so a student's copy shows the questions and nothing else: no answers, no switch, and no mention of another view.
+The instructor view is in version 0.4.0 and later. No setting turns it on. GitHub decides who can read the [instructor repository](instructor-repository.md), and the extension offers the view only after it has read the answer key with the signed-in account. A student's account cannot read it, so a student's copy shows the questions and nothing else: no answers, no switch, and no mention of another view.
 
 ### Where the answer key is read from
 
@@ -133,6 +133,94 @@ A repository with an answer key and no questions issue still gets the instructor
 - **Earlier submissions.** The view reads the current answer key, not the [history](instructor-repository.md#spotting-resubmissions) kept for a submission tag.
 - **A repository the action could not identify.** If the student is no longer a direct collaborator, the action filed no answer key and the extension finds none.
 
+## Workflow help
+
+In a file under `.github/workflows`, the extension reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. It works from the text of the file alone: no sign-in, no request to GitHub and no Git. Every other step is left alone. Workflow help is in version 0.4.0 and later.
+
+Opening a YAML file starts the extension, as opening the GrillMyCode view does.
+
+### What it checks
+
+Problems are underlined as the file is typed and listed in the **Problems** panel, each marked **GrillMyCode**. The level follows what the action does with the value, as [Inputs and outputs](inputs-outputs.md) describes it:
+
+- **Error:** the run fails, or the value cannot be used.
+- **Warning:** the run carries on, but not with what was written.
+- **Information:** the input is fine, and has no effect as the workflow stands.
+
+| What is underlined | Level |
+| ------------------ | ----- |
+| A value outside the input's fixed set: `starter_code`, `previous_work`, `question_emphasis`, `ai_reasoning_effort`, `ai_provider`, `tag_diff_base` | Error |
+| Anything but `true` or `false` for `label_repos` or `preview_only` | Error |
+| A `submission_tags` pattern outside the [supported syntax](triggers.md#pattern-syntax) | Error |
+| Text where a whole number belongs | Error |
+| A number below the input's smallest value or above its largest, where the action uses the nearest one it allows | Warning |
+| An `ai_temperature` the action ignores | Warning |
+| Anything but `true` or `false` for `keep_comments`, `include_answers` or `fail_on_empty_assessment`, which the action reads as `false` | Warning |
+| A [deprecated input](inputs-outputs.md#deprecated-inputs) | Warning |
+| An input the action does not declare, with the input it resembles when one is close | Warning |
+
+An unquoted `True` is not underlined: GitHub passes it to the action as `true`.
+
+Some checks compare one input with another, or with the rest of the workflow:
+
+| What is underlined | Level |
+| ------------------ | ----- |
+| No `api_key`, unless `preview_only` is set | Error |
+| A workflow that runs on `on.push.tags` with no `submission_tags` | Error |
+| `submission_tags` and `on.push.tags` that list different entries | Warning |
+| `api_key`, `instructor_repo_token` or `github_token` written into the file, or read from a workflow input | Warning |
+| `label_repos` with no `instructor_repo_token` | Warning |
+| `starter_questions_one_in` when `starter_code` is not `ask` | Information |
+| `previous_work` when neither `tag_diff_base` nor `base_sha` gives the run earlier work | Information |
+| `tag_diff_base` with no `submission_tags` | Information |
+
+A value GitHub works out when the workflow runs, such as `${{ inputs.num_questions }}`, is not checked, and neither is a comparison that depends on one.
+
+### What it offers
+
+- **The values of an input** that has a fixed set, after its name. The default is marked.
+- **The inputs the step does not set yet**, on an empty line of the `with:` block, each with its description from `action.yml`. Deprecated inputs are not offered.
+- **An input's description, values and default**, when the pointer rests on its name.
+
+### With the GitHub Actions extension
+
+GitHub's own [GitHub Actions extension](https://marketplace.visualstudio.com/items?itemName=github.vscode-github-actions) offers and describes the inputs of every action, and reports an input an action does not declare. Where it is installed, GrillMyCode Companion leaves those three to it, so nothing is shown twice, and adds the rest: the checks on values and between inputs, and the values on offer.
+
+### What it does not know
+
+- **Which version the workflow uses.** The extension carries the inputs of the action as they were when the extension was released. In a workflow pinned to an older version, it may offer an input that version lacks. With an extension older than the action, a new input is reported as unknown.
+- **Exclude patterns, stack templates and model IDs.** `additional_exclude_patterns`, `exclude_pattern_overrides`, `stack_templates` and `ai_model` are not checked.
+- **What a repository contains.** Whether a pattern matches a file, or a tag exists, is known only to a run. A [preview run](exclude-patterns.md#previewing-in-a-run) answers the first.
+
+### Switching it off
+
+Set `grillmycode.workflowHelp.enabled` to `false` in VS Code's settings, for the user or for one folder.
+
+## The Workflow Wizard
+
+**GrillMyCode: Open Workflow Wizard**, in the Command Palette, opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, with the same steps and the same workflow at the end, and it does two things a web page cannot. The Wizard is in version 0.4.0 and later.
+
+- **It reads the folder that is open.** On the **Files** step, **Use the open folder** tries the patterns on the folder open in the editor, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. With several folders open, the extension asks which one.
+- **It writes the workflow file.** On the last step, **Create the workflow file** writes `.github/workflows/grill-my-code.yml` in the open folder and opens it beside the Wizard. If the folder already has that file, the extension asks before replacing what is in it, and the change can be undone in the editor. With no folder open, the workflow opens as a new file that is not saved yet.
+
+[Workflow help](#workflow-help) checks the file the Wizard writes, as it checks any other. The tab keeps its answers while another tab is in front. Closing it discards them.
+
+The command is there for every account, as the Wizard on the docs site is.
+
+### What the Wizard's tab reads
+
+- **The folder, as it is on disk.** That is the same reading as [the preview on the docs site](exclude-patterns.md#previewing-in-the-workflow-wizard) makes, not the list of files Git tracks, so a file Git ignores is listed too. The `.git` folder and dependency folders such as `node_modules` are not opened. A symbolic link is listed as a file and is never followed.
+- **Only that folder.** The tab is given the files of the folder you chose and no others, and nothing it reads leaves the computer.
+- **OpenRouter's public list of models**, for the **AI** step. It is the one address the tab can reach. No key is sent and nothing about the folder is.
+
+The Wizard needs no sign-in to GitHub and reads no issue.
+
+### What it does not do
+
+- **Open a workflow that already exists.** The Wizard starts from its own defaults each time. It does not read a workflow file back into its steps.
+- **Keep up with the docs site between releases.** The extension carries the Wizard as it was when the extension was released, so the Wizard on the docs site can be newer. The same holds for [the inputs workflow help knows](#what-it-does-not-know).
+- **Choose the action's version.** The workflow is written for `@v0`, the action's current major version.
+
 ## What it leaves out
 
 - **Answers, in the student view.** With `include_answers` on, the issue contains them. The student view does not show them.
@@ -152,10 +240,12 @@ With that access the extension makes these requests, each time it loads:
 
 The last two are how it [looks for an answer key](#where-the-answer-key-is-read-from). In a student's own repository that is one extra request, which GitHub refuses.
 
-It writes nothing to GitHub, talks to no other service, and collects no usage data.
+It writes nothing to GitHub and collects no usage data. The one other service it talks to is OpenRouter, and only from [the Workflow Wizard's tab](#what-the-wizards-tab-reads), without the sign-in.
 
 ## Untrusted issue text
 
 Anyone with write access to a student's repository, including the student, can edit the issue. The extension therefore treats its text as untrusted: everything shown is escaped, the page that shows the selected question runs no script, and a file path that is absolute or leaves the repository is never opened.
+
+The Workflow Wizard's tab does run a script, the Wizard itself. No text from an issue or an answer key is ever shown in it.
 
 The answer key is read the same way, although only an account with write access to the instructor repository can change it.

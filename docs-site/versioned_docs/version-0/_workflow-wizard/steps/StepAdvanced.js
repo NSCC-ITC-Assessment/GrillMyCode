@@ -2,6 +2,9 @@ import React from 'react';
 import styles from '../styles.module.css';
 import CodebaseContextLimit, { codebaseLimitStep } from './CodebaseContextLimit';
 
+/** @import { StepProps } from '../index' */
+
+/** @param {StepProps} props */
 export default function StepAdvanced({ cfg, onChange }) {
   return (
     <div>

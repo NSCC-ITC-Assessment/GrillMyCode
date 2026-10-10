@@ -7,6 +7,8 @@ import {
   sendsStarterContext,
 } from '../generateYaml';
 
+/** @import { StepProps } from '../index' */
+
 /**
  * Which step shows the codebase context limit: the first one that switches
  * codebase context on. Starter code comes first, on the Repositories step;
@@ -25,6 +27,7 @@ export function codebaseLimitStep(cfg) {
 // context (see codebaseLimitStep), so it appears only where it applies. The
 // number stays disabled at the default until the checkbox is ticked, and
 // unticking it puts the default back, so the input is emitted only on purpose.
+/** @param {StepProps} props */
 export default function CodebaseContextLimit({ cfg, onChange }) {
   const defaultLimit = DEFAULTS.codebaseContextMaxChars;
   // Starts ticked when the limit was already changed, such as on returning to

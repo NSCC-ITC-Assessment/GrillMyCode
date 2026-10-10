@@ -6,6 +6,8 @@ import {
   starterQuestionsOneInError,
 } from '../generateYaml';
 
+/** @import { StepProps } from '../index' */
+
 const EMPHASES = [
   {
     value: 'balanced',
@@ -27,6 +29,7 @@ const EMPHASES = [
   },
 ];
 
+/** @param {StepProps} props */
 export default function StepQuestions({ cfg, onChange }) {
   const oneInError = starterQuestionsOneInError(cfg);
   const starterMax = maxStarterQuestions(cfg);

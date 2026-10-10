@@ -17,6 +17,8 @@ import {
   readManifests,
 } from '../readFolder';
 
+/** @import { StepProps } from '../index' */
+
 // How long typing in a pattern box must pause before the preview is worked
 // out again. Matching a large folder takes long enough to make typing lag.
 const TYPING_PAUSE_MS = 250;
@@ -50,7 +52,7 @@ function useDebounced(value, ms) {
  */
 export function useFilePreview(cfg) {
   const source = cfg.previewSource;
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(/** @type {{ lists: any, languageFiles: any } | null} */ (null));
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -622,9 +624,13 @@ function Results({ source, result, options, cfg, onChange }) {
  * The Files step's preview: choose a folder, or paste a list of files, and see
  * which a run would assess with the patterns entered, and why each of the rest
  * is left out. `preview` is useFilePreview's answer, worked out by the step so
- * its pattern boxes can show their checks too.
+ * its pattern boxes can show their checks too. `host` is the editor the
+ * wizard is running in, if it is (see index.js): it finds the folder, in place
+ * of the browser.
+ *
+ * @param {StepProps & { preview: ReturnType<typeof useFilePreview> }} props
  */
-export default function FilePreview({ cfg, onChange, preview }) {
+export default function FilePreview({ cfg, onChange, preview, host }) {
   const source = cfg.previewSource;
   const { result, options, loadError } = preview;
   const [busy, setBusy] = useState(false);
@@ -633,9 +639,9 @@ export default function FilePreview({ cfg, onChange, preview }) {
   // Set once mounted: the wizard is also rendered on the server, which has no
   // folder picker to ask about.
   const [usesFileInput, setUsesFileInput] = useState(false);
-  const inputRef = useRef(null);
+  const inputRef = useRef(/** @type {HTMLInputElement | null} */ (null));
 
-  useEffect(() => setUsesFileInput(!canPickFolder()), []);
+  useEffect(() => setUsesFileInput(!host && !canPickFolder()), [host]);
 
   // A new set of files starts from its own language guesses.
   const show = (previewSource) => onChange({ previewSource, previewLanguages: {} });
@@ -658,9 +664,13 @@ export default function FilePreview({ cfg, onChange, preview }) {
     }
   }
 
-  function chooseFolder() {
-    if (canPickFolder()) {
-      loadFolder(async () => readDirectoryHandle(await window.showDirectoryPicker()));
+  // `choose` matters to a host alone: it asks for a folder other than the one
+  // open in the editor.
+  function chooseFolder(choose) {
+    if (host) {
+      loadFolder(async () => readDirectoryHandle(await host.pickFolder({ choose })));
+    } else if (canPickFolder()) {
+      loadFolder(async () => readDirectoryHandle(await /** @type {any} */ (window).showDirectoryPicker()));
     } else {
       inputRef.current?.click();
     }
@@ -696,18 +706,45 @@ export default function FilePreview({ cfg, onChange, preview }) {
       </span>
 
       <div className={styles.previewActions}>
-        <button type="button" className={styles.secondaryBtn} onClick={chooseFolder} disabled={busy}>
-          {busy ? 'Reading…' : source ? 'Choose another folder…' : 'Choose a folder…'}
-        </button>
+        {host?.openFolder ? (
+          <>
+            <button
+              type="button"
+              className={styles.secondaryBtn}
+              onClick={() => chooseFolder(false)}
+              disabled={busy}
+            >
+              {busy ? 'Reading…' : 'Use the open folder'}
+            </button>
+            <button
+              type="button"
+              className={styles.linkBtn}
+              onClick={() => chooseFolder(true)}
+              disabled={busy}
+            >
+              Choose another folder…
+            </button>
+          </>
+        ) : (
+          <button
+            type="button"
+            className={styles.secondaryBtn}
+            onClick={() => chooseFolder(true)}
+            disabled={busy}
+          >
+            {busy ? 'Reading…' : source ? 'Choose another folder…' : 'Choose a folder…'}
+          </button>
+        )}
         {/* For browsers without a folder picker; chooseFolder clicks it. */}
         <input
           ref={inputRef}
           type="file"
+          // @ts-expect-error -- React's types leave out webkitdirectory.
           webkitdirectory=""
           multiple
           hidden
           onChange={(e) => {
-            const fileList = [...e.target.files];
+            const fileList = [...(e.target.files ?? [])];
             // Cleared so choosing the same folder again is still a change.
             e.target.value = '';
             if (fileList.length > 0) loadFolder(async () => readFileInput(fileList));

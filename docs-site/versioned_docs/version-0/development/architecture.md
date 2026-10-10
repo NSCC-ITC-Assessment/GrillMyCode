@@ -264,6 +264,8 @@ The Workflow Wizard runs a generated copy of this module, `docs-site/docs/_workf
 
 The Wizard's Files step uses that copy to preview which files of a folder would be assessed (`filePreview.js`, with `readFolder.js` reading the folder in the browser). It has no Languages API result for a local folder, so it works the languages out from `languageFiles.json`, its copy of `src/data/language-files.json`. `scripts/build-wizard-exclude-lists.js` generates both.
 
+The VS Code extension shows the same Wizard in an editor tab. It bundles `docs-site/docs/_workflow-wizard/` where it stands, so there is no second copy, and gives it a `host` that reads the open folder and writes the workflow file. On the docs site `host` is undefined. `test/extension-wizard.test.js` fails when the Wizard starts to use a package, a static file or a theme colour the extension does not supply.
+
 ### `resolveSHAs(ctx, octokit, inputs)`
 
 Determines the base and head SHAs for the diff. Handles two event types:

@@ -39,7 +39,8 @@ import {
 // move a validation check onto the wrong step. A step with `skippedWhen` is
 // passed over by Next and Back while it returns true, and stays on the
 // progress bar, greyed out with `skippedReason` as its tooltip, so the step
-// numbers don't shift.
+// numbers don't shift. `hostSubtitle` replaces the subtitle where the wizard has
+// a host (see WorkflowWizard below), which changes what the step offers.
 const STEPS = [
   { label: 'Repositories', title: 'Student repositories',                  subtitle: 'Say how students\' repositories are created and what they start with.',                            Component: StepRepositories },
   { label: 'Assignment',   title: 'About your assignment',                 subtitle: 'Point the AI to any assignment documents, if your repositories include one or more.',             Component: StepAssignment,
@@ -53,8 +54,36 @@ const STEPS = [
   { label: 'Trigger',      title: 'When should GrillMyCode run?',          subtitle: 'Choose the GitHub event(s) that starts the workflow.',                                                   Component: StepTrigger },
   { label: 'Manual runs',  title: 'Manual run overrides',                  subtitle: 'Optionally put chosen settings on the Run workflow form, so you can change them for one run without editing the workflow file.', Component: StepManualRuns },
   { label: 'Advanced',     title: 'Other advanced settings',               subtitle: 'Fine-tune edge-case options. Safe to leave at defaults for most setups.',                                Component: StepAdvanced },
-  { label: 'Review',       title: 'Your workflow is ready',                subtitle: 'Copy the generated YAML into your assignment repository.',                                              Component: StepReview },
+  { label: 'Review',       title: 'Your workflow is ready',                subtitle: 'Copy the generated YAML into your assignment repository.',                                              Component: StepReview,
+    hostSubtitle: 'Create the workflow file in your assignment repository, or copy the YAML into it.' },
 ];
+
+/**
+ * The Wizard's answers so far, as INITIAL_CONFIG starts them. Every step is
+ * given it as `cfg`, and generateYaml turns it into the workflow.
+ *
+ * @typedef {typeof INITIAL_CONFIG} WizardConfig
+ */
+
+/**
+ * What every step is given. `onChange` takes the fields to change.
+ *
+ * @typedef {object} StepProps
+ * @property {WizardConfig} cfg
+ * @property {(patch: Partial<WizardConfig>) => void} onChange
+ * @property {string} [actionRef]
+ * @property {string} [docsBase]
+ * @property {WizardHost} [host]
+ */
+
+/**
+ * What the Wizard can ask of where it runs (see WorkflowWizard below).
+ *
+ * @typedef {object} WizardHost
+ * @property {string} openFolder
+ * @property {(options?: { choose?: boolean }) => Promise<any>} pickFolder
+ * @property {(yaml: string) => Promise<boolean>} saveWorkflow
+ */
 
 const INITIAL_CONFIG = {
   triggerEvent: 'workflow_dispatch',
@@ -71,12 +100,12 @@ const INITIAL_CONFIG = {
   // The Manual runs step's Yes/No: null until answered, and the step cannot
   // be left until it is. No leaves every override out of the workflow without
   // clearing dispatchOverrides, so Yes brings the ticks back.
-  dispatchOverridesEnabled: null,
+  dispatchOverridesEnabled: /** @type {boolean | null} */ (null),
 
   aiProvider: 'openrouter',
   // null until a model is chosen, so the AI step can't be passed without one;
   // '' once "Own Choice" is selected and nothing is picked from its list yet.
-  aiModel: null,
+  aiModel: /** @type {string | null} */ (null),
   // OpenRouter routing variant appended to the model ID: '', 'nitro' or 'floor'.
   aiModelVariant: '',
   // ai_reasoning_effort: 'default' leaves reasoning to the model. The AI step
@@ -103,7 +132,7 @@ const INITIAL_CONFIG = {
   // Instructor repository delivery works only in Classroom 50 assignment
   // repositories, so the Repositories step asks first: null until answered, and the
   // step cannot be left until it is. See instructorRepoActive in generateYaml.js.
-  usesClassroom50: null,
+  usesClassroom50: /** @type {boolean | null} */ (null),
   instructorRepoEnabled: true,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
@@ -114,8 +143,8 @@ const INITIAL_CONFIG = {
   // the list pasted — { kind, label, paths, unopened, truncated, texts } — or
   // null; previewLanguages holds the languages the instructor ticked or
   // unticked against the preview's own guess (name → true or false).
-  previewSource: null,
-  previewLanguages: {},
+  previewSource: /** @type {Record<string, any> | null} */ (null),
+  previewLanguages: /** @type {Record<string, boolean>} */ ({}),
   // stack_templates: the stack templates every run applies, in place of
   // detecting them in each repository. '' until the preview's "Use these
   // templates for every student" is ticked, which writes the stack it shows.
@@ -130,14 +159,15 @@ const INITIAL_CONFIG = {
   // the choice is kept separately.
   // Nothing is preselected: null until answered, and the Repositories step
   // cannot be left until it is.
-  repoStart: null,
+  repoStart: /** @type {'empty' | 'template' | null} */ (null),
   // starter_code. "What should the AI do with the starter template?" has no
   // preselected answer either: null until answered, and the Repositories step
   // cannot be left until it is. Empty sets it itself.
-  starterCode: null,
+  starterCode: /** @type {string | null} */ (null),
   // starter_questions_one_in. Asked on the Questions step under ask only,
   // where it can't exceed the number of questions.
-  starterQuestionsOneIn: 5,
+  // '' while its box is empty, which the Questions step reports as an error.
+  starterQuestionsOneIn: /** @type {number | ''} */ (5),
   // previous_work. Offered on the Trigger step when a tag run starts after an
   // earlier tag, the only runs besides a base_sha override with earlier work.
   previousWork: 'context',
@@ -151,6 +181,10 @@ const INITIAL_CONFIG = {
 
 const OPENROUTER_MODEL_VALUES = ['google/gemini-3.5-flash-lite', 'openai/gpt-6-luna-pro', 'deepseek/deepseek-v4-flash', 'minimax/minimax-m2.7', 'stepfun/step-3.7-flash', 'tencent/hy3', 'xiaomi/mimo-v2.5-pro'];
 
+/**
+ * @param {number} stepIndex
+ * @param {WizardConfig} cfg
+ */
 function getStepError(stepIndex, cfg) {
   const label = STEPS[stepIndex]?.label;
   if (label === 'AI') {
@@ -219,7 +253,22 @@ function getStepError(stepIndex, cfg) {
   return null;
 }
 
-export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' }) {
+/**
+ * `host` is given only where the wizard runs somewhere that can do more than a
+ * web page can. Today that is the VS Code extension, which bundles this folder
+ * (see extensions/vscode/src/webview/). On the docs site it is undefined.
+ *
+ *   host.openFolder          the name of the folder open in the editor, or ''
+ *   host.pickFolder({ choose })
+ *                            resolves to a folder to read, shaped like the
+ *                            answer of showDirectoryPicker: the open folder,
+ *                            or with `choose` one the instructor picks
+ *   host.saveWorkflow(yaml)  writes the workflow file. Resolves to true once
+ *                            it is written, and false if that was cancelled
+ *
+ * @param {{ actionRef?: string, docsBase?: string, host?: WizardHost }} props
+ */
+export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs', host }) {
   const [started, setStarted] = useState(false);
   const [step, setStep] = useState(0);
   const [cfg, setCfg] = useState(INITIAL_CONFIG);
@@ -244,7 +293,11 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
             <li>Choose your <strong>trigger</strong>: every push, a submission tag, or manual runs only</li>
             <li>Expose chosen settings as <strong>manual run overrides</strong> you can change from the Actions tab</li>
             <li>Adjust <strong>advanced options</strong> if you need to</li>
-            <li>Copy the finished <strong>YAML</strong> straight into your repository</li>
+            {host ? (
+              <li>Create the finished <strong>workflow file</strong> in the folder you have open</li>
+            ) : (
+              <li>Copy the finished <strong>YAML</strong> straight into your repository</li>
+            )}
           </ul>
           <p className={styles.introNote}>
             The wizard takes about two minutes and walks you through each setting one step at a time.
@@ -258,6 +311,7 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
     );
   }
 
+  /** @param {Partial<WizardConfig>} patch */
   function handleChange(patch) {
     setCfg((prev) => {
       const next = { ...prev, ...patch };
@@ -284,7 +338,8 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
     setStep((s) => nearestStep(s, -1));
   }
 
-  const { title, subtitle, Component } = STEPS[step];
+  const { title, Component } = STEPS[step];
+  const subtitle = (host && STEPS[step].hostSubtitle) || STEPS[step].subtitle;
   const isLast = step === STEPS.length - 1;
   const stepError = getStepError(step, cfg);
 
@@ -327,7 +382,7 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs' })
       <div className={styles.panel}>
         <div className={styles.stepTitle}>{title}</div>
         <div className={styles.stepSubtitle}>{subtitle}</div>
-        <Component cfg={cfg} onChange={handleChange} actionRef={actionRef} docsBase={docsBase} />
+        <Component cfg={cfg} onChange={handleChange} actionRef={actionRef} docsBase={docsBase} host={host} />
       </div>
 
       {/* Navigation */}

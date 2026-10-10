@@ -3,10 +3,14 @@ import styles from '../styles.module.css';
 import { generateYaml, instructorRepoActive, isTagTrigger, submissionTagList } from '../generateYaml';
 import { resolveDispatchOverrides } from '../dispatchInputs';
 
-function buildChecklist(cfg, docsBase) {
+/** @import { StepProps } from '../index' */
+
+function buildChecklist(cfg, docsBase, host) {
   const items = [
     {
-      text: 'Copy the workflow above to `.github/workflows/grill-my-code.yml` in the student (or template) repository.',
+      text: host
+        ? 'Create the workflow file with the button above, or copy the workflow to `.github/workflows/grill-my-code.yml` in the student (or template) repository. Then commit it.'
+        : 'Copy the workflow above to `.github/workflows/grill-my-code.yml` in the student (or template) repository.',
     },
     {
       text: 'Ensure the repository has Actions enabled (Settings → Actions → Allow all actions).',
@@ -80,9 +84,23 @@ function buildChecklist(cfg, docsBase) {
   return items;
 }
 
-export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs' }) {
+// `host` is the editor the wizard is running in, if it is (see index.js). It
+// can write the file, which a web page cannot.
+/** @param {StepProps} props */
+export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs', host }) {
   const yaml = generateYaml(cfg, { actionRef });
   const [copied, setCopied] = useState(false);
+  // 'saving', 'saved', 'failed' or '' — how the host's write went.
+  const [saveState, setSaveState] = useState('');
+
+  function handleSave() {
+    setSaveState('saving');
+    host?.saveWorkflow(yaml).then(
+      // false: the instructor cancelled, which is not a failure.
+      (written) => setSaveState(written ? 'saved' : ''),
+      () => setSaveState('failed'),
+    );
+  }
 
   function handleCopy() {
     navigator.clipboard.writeText(yaml).then(() => {
@@ -91,15 +109,56 @@ export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs' }
     });
   }
 
-  const checklist = buildChecklist(cfg, docsBase);
+  const checklist = buildChecklist(cfg, docsBase, host);
 
   return (
     <div>
-      <p className={styles.hint} style={{ marginBottom: '1rem' }}>
-        Your workflow is ready. Copy it to{' '}
-        <code>.github/workflows/grill-my-code.yml</code> in your assignment template repository and
-        commit it.
-      </p>
+      {host ? (
+        <>
+          <p className={styles.hint} style={{ marginBottom: '1rem' }}>
+            Your workflow is ready.{' '}
+            {host.openFolder ? (
+              <>
+                <strong>Create the workflow file</strong> writes it to{' '}
+                <code>.github/workflows/grill-my-code.yml</code> in the folder open in the editor,
+                and opens it. If that folder is not your assignment template repository, copy the
+                workflow there instead. Then commit it.
+              </>
+            ) : (
+              <>
+                No folder is open in the editor, so <strong>Create the workflow file</strong> opens
+                it as a new file that is not saved yet. Save it as{' '}
+                <code>.github/workflows/grill-my-code.yml</code> in your assignment template
+                repository and commit it.
+              </>
+            )}
+          </p>
+          <div className={styles.previewActions} style={{ marginBottom: '1rem' }}>
+            <button
+              type="button"
+              className={styles.btnPrimary}
+              onClick={handleSave}
+              disabled={saveState === 'saving'}
+            >
+              Create the workflow file
+            </button>
+            <span role="status">
+              {saveState === 'saved' && '✓ Created'}
+              {saveState === 'failed' && (
+                <span className={styles.checkWarn}>
+                  The file couldn’t be written. Copy the workflow below instead.
+                </span>
+              )}
+            </span>
+          </div>
+        </>
+      ) : (
+        <p className={styles.hint} style={{ marginBottom: '1rem' }}>
+          Your workflow is ready. Copy it to{' '}
+          <code>.github/workflows/grill-my-code.yml</code> in your assignment template repository
+          and commit it.
+        </p>
+      )}
 
       <div className={styles.yamlBlock}>
         <button

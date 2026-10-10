@@ -3,7 +3,10 @@ import styles from '../styles.module.css';
 import ExcludeListsDisclosure from './ExcludeListsDisclosure';
 import FilePreview, { PatternChecks, useFilePreview } from './FilePreview';
 
-export default function StepFiles({ cfg, onChange }) {
+/** @import { StepProps } from '../index' */
+
+/** @param {StepProps} props */
+export default function StepFiles({ cfg, onChange, host }) {
   // Worked out here, not in FilePreview, so each pattern box can say what its
   // patterns do to the chosen files.
   const preview = useFilePreview(cfg);
@@ -63,7 +66,7 @@ export default function StepFiles({ cfg, onChange }) {
         />
       </div>
 
-      <FilePreview cfg={cfg} onChange={onChange} preview={preview} />
+      <FilePreview cfg={cfg} onChange={onChange} preview={preview} host={host} />
     </div>
   );
 }

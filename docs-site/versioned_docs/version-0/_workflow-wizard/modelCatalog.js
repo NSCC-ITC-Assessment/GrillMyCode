@@ -45,6 +45,7 @@ export function levelLabel(value) {
 
 // One request per page load, shared by every mount of the AI step, so going
 // back to it never fetches again.
+/** @type {Promise<any> | null} */
 let catalogRequest = null;
 let latest = { status: 'loading' };
 
@@ -438,9 +439,13 @@ function fetchEndpoints(modelId) {
  * (a catalogue ID, routing variant removed) changes: `{ status: 'idle' |
  * 'loading' | 'ready' | 'unavailable', endpoints }`. The routing step simply
  * says less when this fails.
+ *
+ * @returns {{ status: string, endpoints?: any[] }}
  */
 export function useModelEndpoints(modelId) {
-  const [state, setState] = useState({ status: 'idle', modelId: null });
+  const [state, setState] = useState(
+    /** @type {{ status: string, modelId: string | null, endpoints?: any[] }} */ ({ status: 'idle', modelId: null }),
+  );
 
   useEffect(() => {
     if (!modelId) return undefined;
