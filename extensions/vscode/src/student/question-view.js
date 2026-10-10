@@ -51,6 +51,11 @@ export class QuestionView {
     this.#render();
   }
 
+  /** The question showing, if there is one. */
+  get question() {
+    return this.#question;
+  }
+
   /**
    * Shows a question, or the prompt to select one when given undefined.
    *

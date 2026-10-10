@@ -32,7 +32,7 @@ Each step is ticked by what the extension finds, not by its button being selecte
 | **Open your assignment's folder** | The open folder is a clone with a GitHub.com remote |
 | **Sign in to GitHub** | GitHub has accepted the sign-in and found the repository |
 | **Get your questions** | A set of questions is showing |
-| **Go from a question to its code** | A question has been opened from the list |
+| **Go from a question to its code** | A question has been opened, from the list or by [stepping to it](#stepping-through-the-questions) |
 
 A step that is ticked stays ticked, in every folder, until the reader unticks it.
 
@@ -76,6 +76,19 @@ Line numbers in the report are those of the commit the questions were written ab
 - a file the questions point into has changes that are not committed, or edits that are not saved.
 
 A range that runs past the end of the file is cut to fit. A file that no longer exists is reported and not opened.
+
+## Stepping through the questions
+
+**Next Question** and **Previous Question** open the question after or before the one shown in **Selected Question**, as selecting it in the list would. While a set of questions is showing, both are in the Questions view's title bar and in the Command Palette, as **GrillMyCode: Next Question** and **GrillMyCode: Previous Question**. They are in version 0.4.2 and later.
+
+- The order is the list's: file by file, then the broader questions. It is not always the order of the question numbers.
+- With no question selected, **Next Question** opens the first and **Previous Question** the last.
+- A step past either end of the list goes round to the other.
+- A broader question has no lines to open, so the editor stays where it was.
+- A step shows the GrillMyCode view if it is closed.
+- In the [instructor view](#the-instructor-view), they step through the answer key's questions.
+
+Neither command has a keyboard shortcut. A reader who wants one adds it in VS Code's **Keyboard Shortcuts** editor.
 
 ## The instructor view
 

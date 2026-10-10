@@ -2,6 +2,10 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## 0.4.2, 2026-10-10
+
+- Adds **Next Question** and **Previous Question**, which open each question in turn at its code, in the order of the list. Both are at the top of the Questions list and in the Command Palette. Neither has a keyboard shortcut unless you give it one.
+
 ## 0.4.1, 2026-10-10
 
 - Fixes **Use the open folder**, on the Workflow Wizard's **Files** step, taking a very long time on a folder with thousands of files. It was slowest where the folder is on another machine, as in a codespace.

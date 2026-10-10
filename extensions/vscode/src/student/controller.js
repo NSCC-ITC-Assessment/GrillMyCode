@@ -33,7 +33,12 @@ import * as vscode from 'vscode';
 import { GITHUB_SCOPES } from '../shared/constants.js';
 import { GitHubError, listLabelledIssues } from '../shared/github.js';
 import { chooseIssue, describeGroup, findQuestionIssues } from '../shared/issues.js';
-import { describeDrift, openableSnippets, questionFiles } from '../shared/questions.js';
+import {
+  adjacentQuestion,
+  describeDrift,
+  openableSnippets,
+  questionFiles,
+} from '../shared/questions.js';
 import { parseReport } from '../shared/report.js';
 import { findAnswerKey, matchesReport } from '../instructor/answer-key.js';
 import { instructorQuestionToHtml } from '../instructor/html.js';
@@ -153,6 +158,8 @@ export class QuestionsController {
       command('selectIssue', () => this.#selectIssue()),
       command('openIssue', () => this.#openIssue()),
       command('openQuestion', (node) => this.#openQuestion(node)),
+      command('nextQuestion', () => this.#stepQuestion(1)),
+      command('previousQuestion', () => this.#stepQuestion(-1)),
       command('showInstructorView', () => this.#switchView('instructor')),
       command('showStudentView', () => this.#switchView('student')),
       // Covers moving through the list with the keyboard, which runs no command.
@@ -324,10 +331,7 @@ export class QuestionsController {
 
     this.#issue = issue;
     const report = this.#report();
-    this.#tree.show(
-      this.#target?.repository.rootUri,
-      (instructor ? key?.questions : report?.questions) ?? [],
-    );
+    this.#tree.show(this.#target?.repository.rootUri, this.#questions());
     this.#treeView.description = [viewName, issue && describeGroup(issue.group), report?.headSha]
       .filter(Boolean)
       .join(' · ');
@@ -346,6 +350,11 @@ export class QuestionsController {
   #report() {
     const report = this.#issue?.report;
     return report?.needsUpdate ? undefined : report;
+  }
+
+  /** The questions listed: the answer key's in the instructor view, otherwise the issue's. */
+  #questions() {
+    return (this.view === 'instructor' ? this.#key?.questions : this.#report()?.questions) ?? [];
   }
 
   dispose() {
@@ -425,7 +434,7 @@ export class QuestionsController {
     const report = this.#report();
     const { repository } = this.#target;
     const instructor = this.view === 'instructor';
-    const questions = (instructor ? this.#key?.questions : report?.questions) ?? [];
+    const questions = this.#questions();
     // The answer key does not say which commit it was written about. The issue
     // does, and stands in for it while the two hold the same questions.
     const sameRun = report && (!instructor || matchesReport(report.questions, questions));
@@ -454,6 +463,24 @@ export class QuestionsController {
     this.#questionView.show(node.question);
     const snippet = node.snippet ?? openableSnippets(node.question)[0];
     if (snippet) await this.#highlighter.show(this.#target.repository.rootUri, snippet);
+  }
+
+  /**
+   * Opens the question after or before the one showing under the list, as
+   * selecting it in the list would.
+   *
+   * @param {1 | -1} step
+   */
+  async #stepQuestion(step) {
+    if (this.state !== 'ready') return;
+    const current = this.#questionView.question?.number;
+    const question = adjacentQuestion(this.#questions(), current, step);
+    if (!question) return;
+    const node = { question };
+    // Selects the row, which shows the view if it is closed. The list is not
+    // given the keyboard: that goes to the editor the question opens.
+    await this.#treeView.reveal(node, { select: true, focus: false });
+    await this.#openQuestion(node);
   }
 
   /** Workspace-state key for the questions chosen by hand for this repository. */

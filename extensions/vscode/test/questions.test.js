@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { escapeHtml, proseToHtml, questionToHtml } from '../src/shared/html.js';
 import {
+  adjacentQuestion,
   describeDrift,
   describeLines,
   groupQuestions,
@@ -95,6 +96,52 @@ describe('groupQuestions', () => {
 
   it('returns no groups for no questions', () => {
     expect(groupQuestions([])).toEqual([]);
+  });
+});
+
+describe('adjacentQuestion', () => {
+  // Listed as src/b.js (1 and 3), src/a.js (2), then the broader question (4).
+  const questions = [
+    question(1, [snippet('src/b.js', 1)]),
+    question(2, [snippet('src/a.js', 1)]),
+    question(3, [snippet('src/b.js', 9)]),
+    question(4, [], { broader: true }),
+  ];
+  const steps = (current, step, count) =>
+    Array.from({ length: count }, () => {
+      current = adjacentQuestion(questions, current, step)?.number;
+      return current;
+    });
+
+  it('follows the order of the list, not of the numbers', () => {
+    expect(steps(1, 1, 3)).toEqual([3, 2, 4]);
+    expect(steps(4, -1, 3)).toEqual([2, 3, 1]);
+  });
+
+  it('goes round from either end to the other', () => {
+    expect(adjacentQuestion(questions, 4, 1)?.number).toBe(1);
+    expect(adjacentQuestion(questions, 1, -1)?.number).toBe(4);
+  });
+
+  it('starts at the first question going forward, and at the last going back', () => {
+    expect(adjacentQuestion(questions, undefined, 1)?.number).toBe(1);
+    expect(adjacentQuestion(questions, undefined, -1)?.number).toBe(4);
+  });
+
+  it('starts again when the question showing is no longer listed', () => {
+    expect(adjacentQuestion(questions, 9, 1)?.number).toBe(1);
+    expect(adjacentQuestion(questions, 9, -1)?.number).toBe(4);
+  });
+
+  it('stays on the only question there is', () => {
+    const [only] = questions;
+    expect(adjacentQuestion([only], 1, 1)).toBe(only);
+    expect(adjacentQuestion([only], 1, -1)).toBe(only);
+  });
+
+  it('returns nothing for no questions', () => {
+    expect(adjacentQuestion([], undefined, 1)).toBeUndefined();
+    expect(adjacentQuestion([], 1, -1)).toBeUndefined();
   });
 });
 
