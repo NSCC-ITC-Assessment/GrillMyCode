@@ -18,12 +18,14 @@ import { pickGitHubRemote } from '../shared/remote.js';
  * @property {GitRepository[]} repositories
  * @property {vscode.Event<GitRepository>} onDidOpenRepository
  * @property {vscode.Event<GitRepository>} onDidCloseRepository
+ * @property {(uri: vscode.Uri) => GitRepository | null} getRepository
  */
 
 /**
  * @typedef {object} GitRepository
  * @property {vscode.Uri} rootUri
  * @property {GitRepositoryState} state
+ * @property {(paths: string[]) => Promise<Set<string>>} checkIgnore
  */
 
 /**

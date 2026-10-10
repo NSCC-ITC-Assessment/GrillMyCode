@@ -262,7 +262,9 @@ function getStepError(stepIndex, cfg) {
  *   host.pickFolder({ choose })
  *                            resolves to a folder to read, shaped like the
  *                            answer of showDirectoryPicker: the open folder,
- *                            or with `choose` one the instructor picks
+ *                            or with `choose` one the instructor picks. Its
+ *                            `ignoredLeftOut` is true if the host lists it
+ *                            without the files Git ignores
  *   host.saveWorkflow(yaml)  writes the workflow file. Resolves to true once
  *                            it is written, and false if that was cancelled
  *

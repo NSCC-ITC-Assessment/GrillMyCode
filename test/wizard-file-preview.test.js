@@ -696,6 +696,62 @@ describe('readDirectoryHandle', () => {
     expect(source.paths).toHaveLength(PREVIEW_MAX_FILES);
     expect(source.paths.every((path) => path.startsWith('top'))).toBe(true);
   });
+
+  // Where the wizard has a host, a listing is a message there and back, so
+  // folders at the same depth are asked for together.
+  it('lists folders of the same depth together, and finds the same files', async () => {
+    let open = 0;
+    let mostOpen = 0;
+    const slowFolder = (name, entries) => ({
+      kind: 'directory',
+      name,
+      async *values() {
+        open += 1;
+        mostOpen = Math.max(mostOpen, open);
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        open -= 1;
+        yield* entries;
+      },
+    });
+    const source = await readDirectoryHandle(
+      slowFolder('lab-3', [
+        slowFolder('b', [fileHandle('two.js'), slowFolder('deep', [fileHandle('four.js')])]),
+        slowFolder('a', [fileHandle('one.js')]),
+        slowFolder('c', [fileHandle('three.js')]),
+        fileHandle('README.md'),
+      ]),
+    );
+    expect(mostOpen).toBe(3);
+    expect(source.paths).toEqual([
+      'README.md',
+      'a/one.js',
+      'b/deep/four.js',
+      'b/two.js',
+      'c/three.js',
+    ]);
+  });
+
+  it('cuts off the deepest files however many folders are listed together', async () => {
+    const many = (prefix, n) => Array.from({ length: n }, (_, i) => fileHandle(`${prefix}${i}.js`));
+    const source = await readDirectoryHandle(
+      folderHandle('big', [
+        folderHandle('a', [
+          folderHandle('deep', many('d', 10)),
+          ...many('a', PREVIEW_MAX_FILES - 5),
+        ]),
+        folderHandle('b', many('b', 10)),
+      ]),
+    );
+    expect(source.truncated).toBe(true);
+    expect(source.paths.filter((path) => path.startsWith('b/'))).toEqual([
+      'b/b0.js',
+      'b/b1.js',
+      'b/b2.js',
+      'b/b3.js',
+      'b/b4.js',
+    ]);
+    expect(source.paths.some((path) => path.startsWith('a/deep/'))).toBe(false);
+  });
 });
 
 describe('readFileInput', () => {

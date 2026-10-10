@@ -2,6 +2,11 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## 0.4.1, 2026-10-10
+
+- Fixes **Use the open folder**, on the Workflow Wizard's **Files** step, taking a very long time on a folder with thousands of files. It was slowest where the folder is on another machine, as in a codespace.
+- The Wizard's file preview no longer reads the files Git ignores, such as build output. They are never committed, so a run never sees them, and the preview says when it has left them out. A folder that is not in a Git repository is read in full, as before.
+
 ## 0.4.0, 2026-10-10
 
 The first version every install updates to since 0.2.2. It includes everything the 0.3 pre-releases added, listed under them below: the instructor view, and the checks on a workflow file. New in this version:

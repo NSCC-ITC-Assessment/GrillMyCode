@@ -15,7 +15,9 @@ import { OPENROUTER_ORIGIN } from './constants.js';
  * `{ id, ok: false, error: { name, message } }`.
  *
  *   ready                          the Wizard is on screen
- *   pickFolder   { choose }        → { name }: the folder to read
+ *   pickFolder   { choose }        → { name, ignoredLeftOut }: the folder to
+ *                                  read, and whether its listings leave out
+ *                                  what Git ignores
  *   list         { path }          → [{ name, kind }]: what a folder holds
  *   read         { path, bytes }   → the file's text, or its first `bytes` bytes
  *   saveWorkflow { yaml }          → true once written, false if cancelled

@@ -16,6 +16,10 @@
  * the instructor's own files. What it may ask for is still kept narrow. It is
  * given files only from a folder the instructor chose, and only those a
  * listing has named (FolderRecord in ../shared/wizard.js).
+ *
+ * What Git ignores in that folder is left out of its listings: build output,
+ * downloaded tools and the like are never committed, so no run sees them, and
+ * there can be thousands of them.
  */
 
 import { randomBytes } from 'crypto';
@@ -28,6 +32,7 @@ import {
   WIZARD_MAX_WORKFLOW_CHARS,
   WORKFLOW_FILE,
 } from '../shared/constants.js';
+import { getGitApi } from '../student/git.js';
 import {
   CANCELLED,
   FOLDERS_NOTICE,
@@ -37,6 +42,7 @@ import {
 } from '../shared/wizard.js';
 
 /** @import { WizardRequest } from '../shared/wizard.js' */
+/** @import { GitApi } from '../student/git.js' */
 
 const PANEL_TYPE = 'grillmycode.workflowWizard';
 const PANEL_TITLE = 'Workflow Wizard';
@@ -79,6 +85,34 @@ async function readStart(uri, limit) {
   } finally {
     await file.close();
   }
+}
+
+/**
+ * The names in a folder that Git ignores. None where the folder is in no
+ * repository that is open, or Git cannot say, as for a folder inside a
+ * submodule: everything is listed then, as it would be without Git.
+ *
+ * A file that is committed is never ignored, whatever .gitignore says.
+ *
+ * @param {GitApi | undefined} git
+ * @param {vscode.Uri} uri The folder.
+ * @param {string[]} names What it holds.
+ */
+async function ignoredNames(git, uri, names) {
+  /** @type {Set<string>} */
+  const ignored = new Set();
+  const repository = git?.getRepository(uri);
+  if (!repository || names.length === 0) return ignored;
+  const paths = new Map(names.map((name) => [vscode.Uri.joinPath(uri, name).fsPath, name]));
+  try {
+    for (const path of await repository.checkIgnore([...paths.keys()])) {
+      const name = paths.get(path);
+      if (name !== undefined) ignored.add(name);
+    }
+  } catch {
+    // Git could not say, so nothing is left out.
+  }
+  return ignored;
 }
 
 export class WorkflowWizard {
@@ -124,9 +158,10 @@ export class WorkflowWizard {
   /** @type {vscode.WebviewPanel | undefined} */
   #panel;
   /**
-   * The folder the page is reading: `{ uri, record }`.
+   * The folder the page is reading: `{ uri, record, git }`. `git` is what
+   * says which of its files are ignored, and is undefined without Git.
    *
-   * @type {{ uri: vscode.Uri, record: FolderRecord } | undefined}
+   * @type {{ uri: vscode.Uri, record: FolderRecord, git: GitApi | undefined } | undefined}
    */
   #folder;
   /**
@@ -244,7 +279,9 @@ export class WorkflowWizard {
   /**
    * Settles which folder the page reads, and returns its name: the open one,
    * or with `choose`, or with none open, one the instructor picks. From then
-   * on `list` and `read` answer for that folder alone.
+   * on `list` and `read` answer for that folder alone. `ignoredLeftOut` says
+   * the folder is in a Git repository, so its listings leave out what Git
+   * ignores.
    */
   async pickFolder(choose = false) {
     const folders = vscode.workspace.workspaceFolders ?? [];
@@ -261,12 +298,14 @@ export class WorkflowWizard {
       ({ uri, name } = folder ?? {});
     }
     if (!uri) throw cancelled();
-    this.#folder = { uri, record: new FolderRecord() };
-    return { name };
+    const git = await getGitApi();
+    this.#folder = { uri, record: new FolderRecord(), git };
+    return { name, ignoredLeftOut: Boolean(git?.getRepository(uri)) };
   }
 
   /**
-   * What a folder holds, as `[{ name, kind }]`. `path` is '' for the folder picked.
+   * What a folder holds, as `[{ name, kind }]`, without what Git ignores.
+   * `path` is '' for the folder picked.
    *
    * @param {unknown} path
    */
@@ -275,14 +314,21 @@ export class WorkflowWizard {
     if (!folder?.record.hasFolder(path)) throw new Error('Not a folder the Wizard was shown.');
     const uri = path ? vscode.Uri.joinPath(folder.uri, ...path.split('/')) : folder.uri;
     const entries = await vscode.workspace.fs.readDirectory(uri);
+    const ignored = await ignoredNames(
+      folder.git,
+      uri,
+      entries.map(([name]) => name),
+    );
     return folder.record.add(
       path,
-      entries.map(([name, type]) => ({
-        name,
-        isFile: type === vscode.FileType.File,
-        isFolder: type === vscode.FileType.Directory,
-        isLink: (type & vscode.FileType.SymbolicLink) !== 0,
-      })),
+      entries
+        .filter(([name]) => !ignored.has(name))
+        .map(([name, type]) => ({
+          name,
+          isFile: type === vscode.FileType.File,
+          isFolder: type === vscode.FileType.Directory,
+          isLink: (type & vscode.FileType.SymbolicLink) !== 0,
+        })),
     );
   }
 

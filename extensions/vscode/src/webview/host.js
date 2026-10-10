@@ -94,8 +94,8 @@ export function wizardHost(openFolder) {
   return {
     openFolder,
     pickFolder: async ({ choose = false } = {}) => {
-      const { name } = await ask('pickFolder', { choose });
-      return folderHandle(name, '');
+      const { name, ignoredLeftOut } = await ask('pickFolder', { choose });
+      return { ...folderHandle(name, ''), ignoredLeftOut: ignoredLeftOut === true };
     },
     saveWorkflow: (yaml) => ask('saveWorkflow', { yaml }),
   };

@@ -3,9 +3,10 @@
 > **Recorded:** 2026-10-03 (`ff56b1d`), shortened on 2026-10-04. The long
 > version, with what was tried and how, is this file at `10791ec`.
 > **Status:** Phases 1 and 4 and the first-run walkthrough are released.
-> Phase 2 is under way. Phases 3, 5 and 7 are in 0.4.0, the next stable
-> release, which is prepared and not tagged. Phase 3 is without marking, and
-> parts of all three go out without having been seen working. Phase 6 is a
+> Phase 2 is under way. Phases 3, 5 and 7 were released in 0.4.0, a stable
+> release, on 2026-10-10. 0.4.1, which fixes the Wizard's file preview on a
+> large folder, is prepared and not tagged. Phase 3 is without marking, and
+> parts of all three went out without having been seen working. Phase 6 is a
 > proposal.
 
 GrillMyCode Companion (`GrillMyCode.grillmycode`) shows the questions the
@@ -21,15 +22,15 @@ steps are in `extensions/README.md`, and the rules for contributors are in
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                        | Needs first                                              | Status                                                                                                               |
-| ----- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                                  | Published                                                                                                            |
-| 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.2.2 is the stable release until 0.4.0 is tagged; two hand checks, the token and the features are left |
-| 3     | Instructor view: answers beside the student's code, and the view switch                                             | Nothing                                                  | In 0.4.0, stable, not tagged. Marks and notes, and a real viva, are left                                             |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                                                              |
-| 5     | Workflow help: the action's inputs checked, offered and described in a workflow file                                | A look at what the GitHub Actions extension already does | In 0.4.0, stable, not tagged. A look beside the GitHub Actions extension is left                                     |
-| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                                                          |
-| 7     | The Workflow Wizard in an editor tab: the docs site's own, reading the open folder and writing the workflow file    | Nothing                                                  | In 0.4.0, stable, not tagged. A pass by hand is left                                                                 |
+| Phase | What it adds                                                                                                        | Needs first                                              | Status                                                                                               |
+| ----- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                                  | Published                                                                                            |
+| 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.4.0 is the stable release; two hand checks, the token and the features are left       |
+| 3     | Instructor view: answers beside the student's code, and the view switch                                             | Nothing                                                  | Released in 0.4.0, stable. Marks and notes, and a real viva, are left                                |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                                              |
+| 5     | Workflow help: the action's inputs checked, offered and described in a workflow file                                | A look at what the GitHub Actions extension already does | Released in 0.4.0, stable. A look beside the GitHub Actions extension is left                        |
+| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                                          |
+| 7     | The Workflow Wizard in an editor tab: the docs site's own, reading the open folder and writing the workflow file    | Nothing                                                  | Released in 0.4.0, stable. A fix to its file preview is in 0.4.1, not tagged. A pass by hand is left |
 
 Phases 2, 3, 5 and 7 do not depend on one another. The suggested order for what
 remains is 2, 6. Keep this table current when a phase starts, finishes
@@ -61,15 +62,25 @@ or changes scope.
 - **Phase 7**, built on 2026-10-10 and first released in 0.4.0: **Open Workflow Wizard**
   shows the docs site's Wizard in an editor tab. Its file preview reads the
   open folder, and its last step writes the workflow file. How it works is in
-  the docs site's `reference/vscode-extension.md`.
-- **0.4.0**, prepared on 2026-10-10 and not tagged: the first stable release
-  since 0.2.2. It takes phases 3, 5 and 7 to every install. It was decided
-  that day to release them as they are, with what is listed under "Built but
-  never seen working" below still unseen, and to look afterwards.
+  the docs site's `reference/vscode-extension.md`. The package grew from
+  about 100 KB to about 240 KB, most of it React, which every student's
+  install downloads.
+- **0.4.0**, released on 2026-10-10: the first stable release since 0.2.2. It
+  takes phases 3, 5 and 7 to every install. It was decided that day to
+  release them as they are, with what is listed under "Built but never seen
+  working" below still unseen, and to look afterwards.
+- **0.4.1**, prepared on 2026-10-10 and not tagged: the first fault found by
+  looking. **Use the open folder** was tried on this repository, in a
+  codespace, and did not finish in the time anyone would wait. The page asked
+  for 1,473 folders one at a time, then for the first bytes of 5,000 files,
+  3,888 of them the VS Code builds in `.vscode-test`, which Git ignores. Now
+  a listing leaves out what Git ignores, which the built-in Git extension
+  says, and the page asks for 32 folders at a time. This repository comes to
+  77 listings and 460 files.
 - **Tags kept apart:** `release.yml` runs on `v[0-9]*` and `branch-build.yml`
   ignores every tag, so a `vscode-v*` tag cannot release the action.
 - **Releases:** the workflow has published 0.1.1, 0.1.2, 0.3.0 and 0.3.1 as
-  pre-releases, and 0.2.0, 0.2.1 and 0.2.2 as stable. 0.1.0 was published by hand, and is
+  pre-releases, and 0.2.0, 0.2.1, 0.2.2 and 0.4.0 as stable. 0.1.0 was published by hand, and is
   stable although its minor number is odd.
 
 Built but never seen working. 0.4.0 carries every one of these to every
@@ -104,8 +115,11 @@ install:
   real tab on Linux, in a dark and a light theme, by a script: all ten steps,
   the open folder read, the file written and found clean by workflow help.
   The other two systems have only the tests, which do not press its buttons.
-- **The Wizard on a large folder.** The page asks for each file's first bytes
-  one at a time, up to 5,000 files. The largest folder read had three.
+- **The Wizard on a large folder, as fixed in 0.4.1.** 0.4.0 was seen on one,
+  and was too slow to use. The fix was timed with the Wizard's own folder
+  reader and a stand-in for the extension, and the listings are tested in VS
+  Code. Nobody has pressed **Use the open folder** on a large folder since.
+  A large folder in no Git repository still has up to 5,000 files read.
 
 ---
 
@@ -232,9 +246,7 @@ check reports the Marketplace's answer on every run. When it opens: raise
 
 ### Phase 3: what is left
 
-- **The tag.** 0.4.0 is the stable release that carries the view to every
-  install. A student's copy shows no sign of it.
-- **A sign-in against GitHub**, soon after the tag. It is under
+- **A sign-in against GitHub**, now that 0.4.0 is released. It is under
   [Done](#done), as built but never seen working. Of everything in 0.4.0 it
   matters most: every student's copy now asks GitHub about an answer key each
   time it loads, and only the tests have seen GitHub refuse.
@@ -261,9 +273,6 @@ Settled while building:
 
 ### Phase 5: what is left
 
-- **The tag.** 0.4.0 is the stable release that carries it. From then a
-  student's copy starts when any YAML file is opened, and checks a workflow
-  file if the repository has one.
 - **A look at it beside the GitHub Actions extension**, and one pass by hand.
   Both are under [Done](#done), as built but never seen working.
 
@@ -292,9 +301,9 @@ Left out:
 
 ### Phase 7: what is left
 
-- **The tag.** The version is set to 0.4.0, a stable release, and the tag is
-  not pushed. The package grows from about 100 KB to about 240 KB, most of it
-  React, which every student's install downloads.
+- **The tag for 0.4.1.** The version is set to 0.4.1, a stable release, and
+  the tag is not pushed. It carries the fix to the file preview on a large
+  folder, which is under [Done](#done).
 - **A pass by hand**, with the prompts, with no folder open and on Windows or
   macOS. All are under [Done](#done), as built but never seen working.
 

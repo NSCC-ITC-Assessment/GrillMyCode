@@ -4,7 +4,7 @@
 // the tab, and the answers it gives the page.
 
 const assert = require('assert');
-const { readFileSync, rmSync, symlinkSync, writeFileSync } = require('fs');
+const { mkdirSync, mkdtempSync, readFileSync, rmSync, symlinkSync, writeFileSync } = require('fs');
 const { tmpdir } = require('os');
 const { join } = require('path');
 const vscode = require('vscode');
@@ -55,7 +55,10 @@ describe('GrillMyCode Workflow Wizard', () => {
   describe('reading a folder', () => {
     it('gives the open folder without asking', async () => {
       wizard.prompts.chooseFolder = () => assert.fail('asked for a folder');
-      assert.deepStrictEqual(await wizard.pickFolder(), { name: folder.name });
+      assert.deepStrictEqual(await wizard.pickFolder(), {
+        name: folder.name,
+        ignoredLeftOut: true,
+      });
     });
 
     it('lists a folder as files and folders', async () => {
@@ -101,13 +104,58 @@ describe('GrillMyCode Workflow Wizard', () => {
     it('reads another folder when asked to choose one', async () => {
       const elsewhere = vscode.Uri.joinPath(folder.uri, 'src', 'pricing');
       wizard.prompts.chooseFolder = async () => elsewhere;
-      assert.deepStrictEqual(await wizard.pickFolder(true), { name: 'pricing' });
+      assert.deepStrictEqual(await wizard.pickFolder(true), {
+        name: 'pricing',
+        ignoredLeftOut: true,
+      });
       assert.deepStrictEqual(names(await wizard.list(''), 'file'), ['tax.js']);
     });
 
     it('says so when choosing a folder is cancelled', async () => {
       wizard.prompts.chooseFolder = async () => undefined;
       await assert.rejects(wizard.pickFolder(true), { name: 'AbortError' });
+    });
+
+    // Build output and downloaded tools are never committed, so no run sees
+    // them, and a folder of them can hold thousands of files.
+    it('leaves out what Git ignores, but not a committed file', async () => {
+      const root = folder.uri.fsPath;
+      const made = ['.gitignore', 'build', 'debug.log'].map((name) => join(root, name));
+      // src/cart.js is committed, so the rule naming it does not apply to it.
+      writeFileSync(made[0], 'build/\n*.log\ncart.js\n!keep.log\n');
+      mkdirSync(made[1]);
+      writeFileSync(join(made[1], 'bundle.js'), 'built\n');
+      writeFileSync(made[2], 'ignored\n');
+      writeFileSync(join(root, 'keep.log'), 'kept\n');
+      made.push(join(root, 'keep.log'));
+      try {
+        await wizard.pickFolder();
+        const top = await wizard.list('');
+        assert.ok(!names(top, 'directory').includes('build'));
+        assert.ok(!names(top, 'file').includes('debug.log'));
+        assert.ok(names(top, 'file').includes('keep.log'));
+        assert.ok(names(top, 'file').includes('.gitignore'));
+        assert.ok(names(top, 'directory').includes('.git'));
+        assert.deepStrictEqual(names(await wizard.list('src'), 'file'), ['cart.js']);
+        // Not listed, so not to be had by asking for it either.
+        await assert.rejects(wizard.list('build'), /not a folder the Wizard was shown/i);
+        await assert.rejects(wizard.read('debug.log'), /not a file the Wizard was shown/i);
+      } finally {
+        for (const path of made) rmSync(path, { recursive: true, force: true });
+      }
+    });
+
+    it('lists everything in a folder that is in no repository', async () => {
+      const outside = mkdtempSync(join(tmpdir(), 'grillmycode-plain-'));
+      writeFileSync(join(outside, '.gitignore'), '*.log\n');
+      writeFileSync(join(outside, 'debug.log'), 'listed\n');
+      wizard.prompts.chooseFolder = async () => vscode.Uri.file(outside);
+      try {
+        assert.strictEqual((await wizard.pickFolder(true)).ignoredLeftOut, false);
+        assert.deepStrictEqual(names(await wizard.list(''), 'file'), ['.gitignore', 'debug.log']);
+      } finally {
+        rmSync(outside, { recursive: true, force: true });
+      }
     });
 
     // A link is a file to Git, and is listed as one. It is never read: what

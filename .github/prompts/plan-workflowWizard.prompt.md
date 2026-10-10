@@ -228,7 +228,8 @@ second copy. So a change here is a change to the extension, and four things hold
   `index.js`, and passes it to every step. The docs site passes none. A step may offer more when
   it has one: the Files step reads the folder open in the editor (`host.pickFolder`,
   `host.openFolder`) and the Review step writes the file (`host.saveWorkflow`). Every step must
-  work with `host` undefined.
+  work with `host` undefined. The folder a host gives may come without the files Git ignores
+  (`ignoredLeftOut`), and the preview then says so.
 - **No new package without the extension.** The Wizard may import `react`, `clsx` and `minimatch`,
   which the extension's build points at its own copies. Another needs adding to
   `extensions/vscode/package.json` and to `alias` in `extensions/vscode/esbuild.js`.
