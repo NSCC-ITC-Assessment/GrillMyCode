@@ -81,6 +81,27 @@ export function groupQuestions(questions) {
 }
 
 /**
+ * The question a step from the current one lands on, in the order the panel
+ * lists them: file by file, then the questions that show no code. That is not
+ * always the order of their numbers.
+ *
+ * A step past either end goes round to the other, as VS Code's Go to Next
+ * Problem does. With no current question, or one that is no longer listed, a
+ * step forward lands on the first question and a step back on the last.
+ *
+ * @param {Question[]} questions
+ * @param {number | undefined} current - The number of the question showing.
+ * @param {1 | -1} step
+ * @returns {Question | undefined} Undefined when there are no questions.
+ */
+export function adjacentQuestion(questions, current, step) {
+  const ordered = groupQuestions(questions).flatMap((group) => group.questions);
+  const index = ordered.findIndex((question) => question.number === current);
+  if (index === -1) return ordered.at(step === 1 ? 0 : -1);
+  return ordered[(index + step + ordered.length) % ordered.length];
+}
+
+/**
  * The distinct files the questions' snippets name, in order of first use.
  *
  * @param {Question[]} questions

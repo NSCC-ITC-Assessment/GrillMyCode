@@ -2,7 +2,7 @@
   "name": "grillmycode",
   "displayName": "GrillMyCode Companion",
   "description": "The companion to the GrillMyCode GitHub Action. Shows the questions it wrote about your code, beside the code they ask about.",
-  "version": "0.4.1",
+  "version": "0.4.2",
   "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
@@ -161,7 +161,9 @@
               "altText": "The Questions list, grouped by file, with question 1 selected. Beside it, the editor shows cart.js with lines 1 to 9 highlighted."
             },
             "completionEvents": [
-              "onCommand:grillmycode.openQuestion"
+              "onCommand:grillmycode.openQuestion",
+              "onCommand:grillmycode.nextQuestion",
+              "onCommand:grillmycode.previousQuestion"
             ]
           }
         ]
@@ -195,6 +197,18 @@
         "command": "grillmycode.openQuestion",
         "title": "Open Question",
         "category": "GrillMyCode"
+      },
+      {
+        "command": "grillmycode.previousQuestion",
+        "title": "Previous Question",
+        "category": "GrillMyCode",
+        "icon": "$(arrow-up)"
+      },
+      {
+        "command": "grillmycode.nextQuestion",
+        "title": "Next Question",
+        "category": "GrillMyCode",
+        "icon": "$(arrow-down)"
       },
       {
         "command": "grillmycode.showInstructorView",
@@ -233,6 +247,16 @@
           "group": "navigation@3"
         },
         {
+          "command": "grillmycode.previousQuestion",
+          "when": "view == grillmycode.questions && grillmycode.state == ready",
+          "group": "navigation@4"
+        },
+        {
+          "command": "grillmycode.nextQuestion",
+          "when": "view == grillmycode.questions && grillmycode.state == ready",
+          "group": "navigation@5"
+        },
+        {
           "command": "grillmycode.showInstructorView",
           "when": "view == grillmycode.questions && grillmycode.answerKey && grillmycode.view == student",
           "group": "navigation@0"
@@ -247,6 +271,14 @@
         {
           "command": "grillmycode.openQuestion",
           "when": "false"
+        },
+        {
+          "command": "grillmycode.previousQuestion",
+          "when": "grillmycode.state == ready"
+        },
+        {
+          "command": "grillmycode.nextQuestion",
+          "when": "grillmycode.state == ready"
         },
         {
           "command": "grillmycode.selectIssue",

@@ -113,6 +113,25 @@ describe('the view switch', () => {
   });
 });
 
+// The buttons and the Command Palette entries are there only while questions
+// are showing. A state misspelled in one of these hides it for good, and the
+// tests in test-host/ would not notice: they run the commands by name.
+describe('Next Question and Previous Question', () => {
+  const steps = ['grillmycode.nextQuestion', 'grillmycode.previousQuestion'];
+  const { commands, menus } = manifest.contributes;
+
+  it.each(steps)('%s has an icon for its button', (command) => {
+    expect(commands.find((entry) => entry.command === command).icon).toBeTruthy();
+  });
+
+  it.each(steps)('%s is offered only while questions are showing', (command) => {
+    const button = menus['view/title'].find((entry) => entry.command === command);
+    expect(button.when).toBe('view == grillmycode.questions && grillmycode.state == ready');
+    const palette = menus.commandPalette.find((entry) => entry.command === command);
+    expect(palette.when).toBe('grillmycode.state == ready');
+  });
+});
+
 describe('workflow help', () => {
   // A workflow file is YAML until the GitHub Actions extension is installed,
   // which gives it a language of its own. Without both, the help never starts

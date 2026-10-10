@@ -10,6 +10,7 @@ GrillMyCode is a GitHub Action your instructor adds to an assignment. Each time 
 
 - **Lists your questions** in the GrillMyCode view, grouped by file.
 - **Jumps to the code.** Select a question to open the file and highlight the lines it asks about.
+- **Steps through your questions.** **Next Question** and **Previous Question**, at the top of the list, open each one in turn.
 - **Shows the whole question** under the list, with the code as it was when the question was written.
 - **Warns you when the code has moved.** If you have changed a file since the questions were written, the highlighted lines may no longer be the right ones, and the view says so.
 

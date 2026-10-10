@@ -62,6 +62,7 @@ flowchart LR
 | Phase 7         | 0.4.0, 2026-10-10 | **Open Workflow Wizard**. The package went from about 100 KB to about 240 KB, most of it React, which every student's install downloads                                                                  |
 | 0.4.0           | 2026-10-10        | The first stable release since 0.2.2. Phases 3, 5 and 7 went to every install with the [hand checks](#built-not-yet-seen-working) undone, to be looked at afterwards                                     |
 | 0.4.1           | 2026-10-10        | **Use the open folder** did not finish on a large folder. Listings now leave out what Git ignores and are asked for 32 at a time: on this repository 77 folders and 460 files, down from 1,473 and 5,000 |
+| 0.4.2           | Not yet tagged    | **Next Question** and **Previous Question**, which step through the list. Outside the phases, from [Further ideas](#further-ideas). Stable, and the first release to sign in with the Entra identity     |
 | Tags kept apart |                   | `release.yml` runs on `v[0-9]*` and `branch-build.yml` ignores every tag, so a `vscode-v*` tag cannot release the action                                                                                 |
 
 | Channel     | Versions                                                                         |
@@ -77,7 +78,7 @@ flowchart LR
 | ------- | ---------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | 2       | An install by hand on Windows, with a GitHub sign-in       | Check   | The tests never sign in. Look at the listing's page in the same sitting                                                                                                                                   |
 | 2       | A pass as a student, in a codespace and in desktop VS Code | Check   | From a template repository that lists the extension, with a test account, by the student guide. Shows whether the walkthrough opens after each kind of install and after an update, with its steps ticked |
-| 2       | The first release published with the Entra identity        | Check   | The next `vscode-v*` tag. See [Accounts and secrets](#accounts-and-secrets)                                                                                                                               |
+| 2       | The first release published with the Entra identity        | Check   | `vscode-v0.4.2`, built and not yet tagged. See [Accounts and secrets](#accounts-and-secrets)                                                                                                              |
 | 2       | Questions pinned to lines, as read-only comment threads    | Feature | After real use of the moved-code warning: a note on the wrong lines misleads. Weigh "the code as it was" first                                                                                            |
 | 2       | "Studied" ticks, stored locally                            | Feature |                                                                                                                                                                                                           |
 | 2       | Refreshing when the window regains focus                   | Feature |                                                                                                                                                                                                           |
@@ -105,6 +106,7 @@ Every install has had these since 0.4.0. Tests cover each one.
 | 9   | 7     | The Wizard with no folder open, or several        | With none, the workflow should open as an unsaved file. The tests run with one                                                                                                                                                                             |
 | 10  | 7     | The Wizard on Windows and macOS                   | Its buttons pressed. On Linux a script worked all ten steps in a real tab, dark and light                                                                                                                                                                  |
 | 11  | 7     | The Wizard on a large folder, since 0.4.1         | **Use the open folder** pressed. A large folder outside Git still has up to 5,000 files read                                                                                                                                                               |
+| 12  |       | Next and previous, from 0.4.2                     | The two buttons in the title bar, and a step taken with the GrillMyCode view closed. Both commands were run by name                                                                                                                                        |
 
 ---
 
@@ -232,7 +234,6 @@ None of these is planned. "Small" is days and "medium" a week or two.
 | The code as it was        | Opens the file at the commit the questions were written about, read-only        | Nothing                                             | Small     |
 | New-questions notice      | A badge and a notification when a newer set of questions arrives                | Nothing                                             | Small     |
 | Run status                | Shows that the workflow is running after a push, then loads the questions       | Reading the repository's workflow runs              | Small     |
-| Next and previous         | Commands and shortcuts to step through the questions                            | Nothing                                             | Small     |
 | Open from the issue       | A link on each question in the issue that opens it in VS Code                   | An action change, probably a redirect page          | Medium    |
 | Other interface languages | The extension's own text in French and other languages                          | Translations                                        | Small     |
 | Self-practice             | A student generates practice questions before pushing, on their own key or seat | The shared core from phase 6, and a way to reach AI | Not sized |

@@ -64,6 +64,8 @@ describe('GrillMyCode', () => {
       'selectIssue',
       'openIssue',
       'openQuestion',
+      'nextQuestion',
+      'previousQuestion',
       'showInstructorView',
       'showStudentView',
       'openWorkflowWizard',
@@ -155,6 +157,61 @@ describe('GrillMyCode', () => {
       },
     });
     assert.strictEqual(vscode.window.activeTextEditor.document.uri.toString(), before);
+  });
+
+  // The fixture lists src/cart.js with questions 1 and 2, src/pricing/tax.js
+  // with 3 and 4, then question 5, a broader one that shows no code.
+  describe('Next Question and Previous Question', () => {
+    const next = () => vscode.commands.executeCommand('grillmycode.nextQuestion');
+    const previous = () => vscode.commands.executeCommand('grillmycode.previousQuestion');
+    /** Checks which file is in the editor, and the 1-based line the cursor is on. */
+    const assertAt = (file, line) => {
+      const editor = vscode.window.activeTextEditor;
+      assert.ok(editor.document.uri.path.endsWith(`/${file}`), editor.document.uri.path);
+      assert.strictEqual(editor.selection.active.line, line - 1);
+    };
+
+    // Loading a set of questions leaves none showing under the list, so each
+    // test starts from there.
+    const load = () => controller.showIssues([fixtureIssue()]);
+
+    it('step through the questions in the order of the list', async () => {
+      load();
+      await next();
+      assertAt('src/cart.js', 1);
+      await next();
+      assertAt('src/cart.js', 16);
+      await next();
+      assertAt('src/pricing/tax.js', 3);
+      await previous();
+      assertAt('src/cart.js', 16);
+    });
+
+    it('go round from the first question to the last', async () => {
+      load();
+      await next();
+      assertAt('src/cart.js', 1);
+      // Question 5 has no lines to open, so the editor stays where it was.
+      await previous();
+      assertAt('src/cart.js', 1);
+      await previous();
+      assertAt('src/pricing/tax.js', 4);
+    });
+
+    it('do nothing when no questions are showing', async () => {
+      load();
+      await next();
+      await next();
+      assertAt('src/cart.js', 16);
+      controller.showIssues([{ ...fixtureIssue(), body: 'Not a report.' }]);
+      assert.strictEqual(controller.state, 'noIssue');
+      await next();
+      assertAt('src/cart.js', 16);
+      await previous();
+      assertAt('src/cart.js', 16);
+    });
+
+    after(load);
   });
 
   // The tests from here on run in order: the view chosen by hand is remembered

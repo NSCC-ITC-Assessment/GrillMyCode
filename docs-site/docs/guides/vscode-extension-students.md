@@ -30,6 +30,7 @@ Your questions appear once you have pushed your work and GrillMyCode has finishe
 ![VS Code with the GrillMyCode view open. The questions list is grouped by file, with question 1 selected. The editor shows cart.js with lines 1 to 9 highlighted, and the whole question is shown under the list with its code.](/img/screenshots/vscode-extension-questions.png)
 
 - **Select a question** to open its file with the lines it asks about highlighted. The whole question is shown under the list, with the code as it was when the question was written.
+- **To go through your questions one at a time**, select **Next Question** or **Previous Question**, the two arrows at the top of the list.
 - **Broader questions**, at the end of the list, are about your work as a whole and don't point at particular lines.
 - **After you push again**, select **Refresh Questions** at the top of the list to load the new set.
 - **If you have more than one set of questions**, for example one for each submission, select **Choose Which Questions to Show**.
