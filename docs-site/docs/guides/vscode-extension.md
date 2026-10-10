@@ -62,6 +62,8 @@ A student's repository is a copy of the template at the moment they accepted, an
 
 If you keep a [private answer key](instructor-setup.md), open a student's repository and sign in: each question comes with its answer, beside the student's code. Students never see this. In your own test repository, a button switches between the students' view and yours.
 
+The [Workflow Wizard](../workflow-wizard.mdx) opens inside VS Code too: press <kbd>F1</kbd> and run **GrillMyCode: Open Workflow Wizard**. There it can try your choice of files on the folder you have open, and create the workflow file in it for you.
+
 When you edit your workflow file in VS Code, the extension underlines a setting GrillMyCode would reject or ignore, before you push it.
 
 ## What to tell your students
@@ -84,4 +86,4 @@ The extension uses it to read the questions issue, and to ask GitHub whether the
 
 ---
 
-**Go deeper:** [The VS Code extension](../reference/vscode-extension.md): how it finds the questions, which set it shows, the instructor view, what it checks in a workflow file, and what the sign-in is used for
+**Go deeper:** [The VS Code extension](../reference/vscode-extension.md): how it finds the questions, which set it shows, the instructor view, the Workflow Wizard in the editor, what it checks in a workflow file, and what the sign-in is used for

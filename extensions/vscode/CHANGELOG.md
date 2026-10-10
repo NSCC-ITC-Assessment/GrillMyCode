@@ -2,6 +2,13 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## 0.4.0, 2026-10-10
+
+The first version every install updates to since 0.2.2. It includes everything the 0.3 pre-releases added, listed under them below: the instructor view, and the checks on a workflow file. New in this version:
+
+- Adds the command **GrillMyCode: Open Workflow Wizard**, which opens GrillMyCode's Workflow Wizard in an editor tab. It is the Wizard from the docs site, with the same steps.
+- In the editor, the Wizard's **Files** step can try your patterns on the folder that is open, and its last step creates the workflow file in that folder. It asks before replacing one that is there.
+
 ## 0.3.1 (pre-release), 2026-10-09
 
 - Checks the GrillMyCode step of a workflow file as you type. A value the action would reject or ignore is underlined, as are a missing API key, a key written into the file, and inputs that do not fit together, such as submission tags that differ from the tags the workflow runs on.

@@ -33,6 +33,8 @@ GitHub decides who sees this: the extension shows answers only to an account tha
 
 When you edit a workflow that uses GrillMyCode, the extension checks the action's inputs as you type. It underlines a value GrillMyCode would reject or ignore, an API key written into the file, and inputs that do not fit together, and it offers the values of an input that has a fixed set. To switch this off, clear **Workflow Help: Enabled** in the extension's settings.
 
+To write that workflow in the first place, run **GrillMyCode: Open Workflow Wizard** from the Command Palette. It opens GrillMyCode's [Workflow Wizard](https://grillmycode.org/docs/workflow-wizard) in an editor tab, which asks about your assignment one step at a time. In the editor it can try your choice of files on the folder you have open, and it creates the workflow file there. Its model step reads OpenRouter's public list of models. Nothing about your folder is sent anywhere.
+
 ## What it needs
 
 The extension reads the questions issue in your repository through your GitHub account. GitHub offers one permission for reading a private repository this way, which is full access to your repositories, so that is what the sign-in asks for. The extension uses it to read the questions issue, and to check whether the account can read the assignment's answer key. It changes nothing on GitHub and sends nothing anywhere else.

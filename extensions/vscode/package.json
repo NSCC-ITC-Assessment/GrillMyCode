@@ -2,7 +2,7 @@
   "name": "grillmycode",
   "displayName": "GrillMyCode Companion",
   "description": "The companion to the GrillMyCode GitHub Action. Shows the questions it wrote about your code, beside the code they ask about.",
-  "version": "0.3.1",
+  "version": "0.4.0",
   "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
@@ -207,6 +207,12 @@
         "title": "Show Student View",
         "category": "GrillMyCode",
         "icon": "$(mortar-board)"
+      },
+      {
+        "command": "grillmycode.openWorkflowWizard",
+        "title": "Open Workflow Wizard",
+        "category": "GrillMyCode",
+        "icon": "$(wand)"
       }
     ],
     "menus": {
@@ -275,7 +281,11 @@
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
     "@vscode/vsce": "^4.0.0",
+    "clsx": "^2.1.1",
     "esbuild": "^0.28.2",
+    "minimatch": "^10.2.6",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
     "yaml": "^2.9.1"
   }
 }

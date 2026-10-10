@@ -131,3 +131,38 @@ describe('workflow help', () => {
     expect(source).toContain("'workflowHelp.enabled'");
   });
 });
+
+describe('the Workflow Wizard', () => {
+  const read = (...path) => readFileSync(join(root, ...path), 'utf-8');
+
+  // The name is written out in src/workflow/wizard.js as well.
+  it('is a command anyone can run from the Command Palette', () => {
+    const { commands, menus } = manifest.contributes;
+    const command = 'grillmycode.openWorkflowWizard';
+    expect(commands.find((entry) => entry.command === command)).toMatchObject({
+      title: 'Open Workflow Wizard',
+      category: 'GrillMyCode',
+    });
+    expect(menus.commandPalette.some((entry) => entry.command === command)).toBe(false);
+    expect(read('src', 'workflow', 'wizard.js')).toContain(`'${command}'`);
+  });
+
+  // The page is a bundle of its own. One of its two files left out of the
+  // package is a blank tab for whoever installs the extension, and nothing
+  // else fails: the tests in test-host/ run from dist/, not from the package.
+  it.each(['wizard.js', 'wizard.css'])('packages dist/%s, which the tab loads', (file) => {
+    expect(read('.vscodeignore').split('\n')).toContain(`!dist/${file}`);
+    expect(read('src', 'workflow', 'wizard.js')).toContain(`'${file}'`);
+  });
+
+  it('builds the page to those two files', () => {
+    // esbuild writes the stylesheet beside the script, under the same name.
+    expect(read('esbuild.js')).toContain("outfile: 'dist/wizard.js'");
+  });
+
+  // What the page is built from is bundled, so none of it is installed with
+  // the extension.
+  it('needs nothing installed beside it', () => {
+    expect(manifest.dependencies).toBeUndefined();
+  });
+});

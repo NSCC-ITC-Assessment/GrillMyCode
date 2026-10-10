@@ -66,6 +66,7 @@ describe('GrillMyCode', () => {
       'openQuestion',
       'showInstructorView',
       'showStudentView',
+      'openWorkflowWizard',
     ]) {
       assert.ok(commands.includes(`grillmycode.${name}`), `grillmycode.${name}`);
     }

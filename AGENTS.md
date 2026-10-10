@@ -6,7 +6,7 @@ Any change to the action's functionality — including new inputs, changed defau
 
 1. **Documentation updates** — Update all affected files under `docs-site/docs/` **and** `README.md` to reflect the change accurately. Both must stay in sync — `README.md` is the first thing users see on GitHub and must not lag behind the docs site.
 2. **Example workflow updates** — Update any affected example workflows under `docs-site/docs/example-workflows/`, and add a new example if the change introduces a capability not covered by an existing one.
-3. **Workflow Wizard updates** — Update the Workflow Wizard (`docs-site/docs/_workflow-wizard/`) so the generated YAML and UI stay consistent with the change. This includes the `DEFAULTS` object in `generateYaml.js`, any relevant step component under `steps/`, and the planning prompt at `.github/prompts/plan-workflowWizard.prompt.md`.
+3. **Workflow Wizard updates** — Update the Workflow Wizard (`docs-site/docs/_workflow-wizard/`) so the generated YAML and UI stay consistent with the change. This includes the `DEFAULTS` object in `generateYaml.js`, any relevant step component under `steps/`, and the planning prompt at `.github/prompts/plan-workflowWizard.prompt.md`. The VS Code extension bundles this folder, so the change reaches the editor with the extension's next release (see [Editor Extensions](#editor-extensions)).
 
 Do not implement a functional change in isolation. Documentation and example workflows are part of the same deliverable.
 
@@ -192,10 +192,25 @@ under `extensions/` is copied into the action's container image.
 - **`extensions/vscode/src/shared/` must not import `vscode`.** That is what lets its tests, in
   `extensions/vscode/test/`, run under the root `pnpm test`. Code that needs the editor goes in
   `src/student/` or `src/workflow/`, and its tests in `test-host/` (`pnpm test:host`, from
-  `extensions/vscode/`).
+  `extensions/vscode/`). Code that runs in the Workflow Wizard's page goes in `src/webview/`,
+  which is a bundle of its own and imports neither `vscode` nor anything from Node.
+- **The Workflow Wizard in the editor is the docs site's.** `extensions/vscode/esbuild.js`
+  bundles `docs-site/docs/_workflow-wizard/` where it stands. Never copy Wizard code into the
+  extension. What only the editor can do reaches a step through the Wizard's optional `host`
+  prop, documented in the Wizard's `index.js`, and every step must still work without one, as
+  on the docs site. A package, a docs-site import, a static file or an `--ifm-`/`--gmc-` colour
+  variable that is new to the Wizard has to be supplied by the extension as well
+  (`esbuild.js`, `src/webview/use-base-url.js`, `src/webview/wizard.css`);
+  `test/extension-wizard.test.js` fails until it is.
 - **Issue text is untrusted.** Anyone with write access to a student repository can edit the
-  issue. Escape it before it reaches a webview, never enable scripts in one, and never open a
-  path from it without `isSafeRelativePath`.
+  issue. Escape it before it reaches a webview, never show it in a webview that runs scripts,
+  and never open a path from it without `isSafeRelativePath`. The Selected Question view runs
+  none.
+- **The Workflow Wizard's tab is the one webview that runs a script.** Keep it that way, and keep
+  it apart: nothing from an issue or an answer key is ever sent to it, its content security
+  policy (`wizardPage` in `src/shared/wizard.js`) names every address it may reach, and it is
+  given files only from a folder the instructor chose, and only those a listing has named
+  (`FolderRecord`, same file). A path the page sends is looked up there, never parsed.
 - **`@types/vscode` must not pass `engines.vscode`**, or the extension will not package. Raise
   both together, deliberately: a higher minimum drops support for older editors.
 - **Releases use their own tag prefix** (`vscode-v*`), never `v*`, which releases the action.
@@ -222,7 +237,7 @@ The same script writes the file extensions and file names GitHub's Linguist give
 - **Keep it pure.** It may import only `minimatch` and `./constants.js` — no `git`, `fs`, network or `@actions/core`. Reading and logging belong in `src/stack-detection.js` and `src/main.js`.
 - **The Wizard's copy is generated.** `docs-site/docs/_workflow-wizard/fileSelection.js` is `src/file-selection.js` with its constants written in (do not edit by hand). After changing `src/file-selection.js`, or a constant it imports, run `node scripts/build-wizard-file-selection.js`; `test/wizard-file-selection.test.js` fails until you do.
 - **The Wizard's file preview asks these rules; it does not repeat them.** `docs-site/docs/_workflow-wizard/filePreview.js` prepares the input and sorts the answers for display. A new rule goes in `src/file-selection.js`, never in the preview. That includes rules that only warn, such as `mayBeOwnWork`, which the run summary and the preview both show. Keep `filePreview.js` free of React and browser APIs, so `test/wizard-file-preview.test.js` can run it; reading a folder belongs in `readFolder.js`.
-- **`minimatch` must be the same range in `package.json` and `docs-site/package.json`**, so a pattern matches the same way in both. Raise them together; the same test checks this.
+- **`minimatch` must be the same range in `package.json`, `docs-site/package.json` and `extensions/vscode/package.json`**, so a pattern matches the same way in the action, on the docs site and in the Wizard the VS Code extension bundles. Raise them together; the same test checks the first two, and `test/extension-wizard.test.js` the third.
 
 ## No Shell Interpolation
 

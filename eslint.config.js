@@ -36,6 +36,21 @@ export default [
         globalThis: 'readonly',
         URLSearchParams: 'readonly',
         clearTimeout: 'readonly',
+        Buffer: 'readonly',
+        TextDecoder: 'readonly',
+        TextEncoder: 'readonly',
+        URL: 'readonly',
+      },
+    },
+  },
+  {
+    // The Workflow Wizard's page runs in a browser, inside an editor tab.
+    files: ['extensions/vscode/src/webview/**/*.js'],
+    languageOptions: {
+      globals: {
+        window: 'readonly',
+        document: 'readonly',
+        MutationObserver: 'readonly',
       },
     },
   },
@@ -51,6 +66,7 @@ export default [
         describe: 'readonly',
         it: 'readonly',
         before: 'readonly',
+        after: 'readonly',
       },
     },
   },

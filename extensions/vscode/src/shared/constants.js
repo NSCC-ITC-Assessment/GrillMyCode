@@ -88,3 +88,38 @@ export const ACTION_REPOSITORY = 'NSCC-ITC-Assessment/GrillMyCode';
  * still be offered as what was meant: `num_question` for `num_questions`.
  */
 export const INPUT_NAME_MAX_EDITS = 2;
+
+/**
+ * The version of the action the Workflow Wizard writes after the `@`: its
+ * current major, as the docs site's own Wizard writes. test/extension-wizard.test.js
+ * fails when the docs site moves to a new one.
+ */
+export const ACTION_REF = 'v0';
+
+/**
+ * Where the Workflow Wizard's links to the docs lead: the docs of the latest
+ * release of the action.
+ */
+export const DOCS_URL = 'https://grillmycode.org/docs';
+
+/**
+ * The workflow file the Workflow Wizard writes, inside the open folder. The
+ * Wizard's Review step and the docs give the file this name.
+ */
+export const WORKFLOW_FILE = '.github/workflows/grill-my-code.yml';
+
+/**
+ * The longest workflow the Workflow Wizard's page may ask to have written, in
+ * characters. The Wizard's own are a few thousand.
+ */
+export const WIZARD_MAX_WORKFLOW_CHARS = 200_000;
+
+/**
+ * The largest file the Workflow Wizard's page is given in full, in bytes. It
+ * reads only dependency manifests that way, such as package.json; a larger one
+ * is left out, as one that cannot be read is.
+ */
+export const WIZARD_MAX_FILE_BYTES = 1_000_000;
+
+/** OpenRouter, which the Workflow Wizard's page asks for its list of models. */
+export const OPENROUTER_ORIGIN = 'https://openrouter.ai';
