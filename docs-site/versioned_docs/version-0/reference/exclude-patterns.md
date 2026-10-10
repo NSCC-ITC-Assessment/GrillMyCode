@@ -333,7 +333,7 @@ It is an estimate, because some things are only known at run time:
 | Detects the stack of each student's repository separately, unless [`stack_templates` names it](#using-the-same-stack-for-every-student) | Shows the result for the folder you chose. A student who adds another language or framework gets its patterns too. Tick **Use these templates for every student**, and every run applies the stack shown instead |
 | Considers only the files changed in the [commit range](code-selection.md), and skips deleted files | Treats every file as changed |
 | Skips binary files, such as images, whatever the patterns say | Does the same for a folder, by reading the first 8,000 bytes of each file. A pasted list has no file contents, so its binary files are listed as assessed |
-| Sees only committed files | Sees everything in the folder, committed or not. A pasted `git ls-files` list is exact, but has no file contents, so frameworks named only in a manifest aren't detected |
+| Sees only committed files | Sees everything in the folder, committed or not. The Wizard in the [VS Code extension](vscode-extension.md#the-workflow-wizard) leaves out what Git ignores. A pasted `git ls-files` list is exact, but has no file contents, so frameworks named only in a manifest aren't detected |
 
 To keep large folders quick, the preview does not open `.git` or the dependency folders `node_modules`, `bower_components`, `vendor`, `.venv` and `venv`. It says whether a rule leaves each of those out. It reads at most 5,000 files, shallowest folders first.
 

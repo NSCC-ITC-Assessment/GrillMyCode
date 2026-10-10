@@ -200,7 +200,7 @@ Set `grillmycode.workflowHelp.enabled` to `false` in VS Code's settings, for the
 
 **GrillMyCode: Open Workflow Wizard**, in the Command Palette, opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, with the same steps and the same workflow at the end, and it does two things a web page cannot. The Wizard is in version 0.4.0 and later.
 
-- **It reads the folder that is open.** On the **Files** step, **Use the open folder** tries the patterns on the folder open in the editor, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. With several folders open, the extension asks which one.
+- **It reads the folder that is open.** On the **Files** step, **Use the open folder** tries the patterns on the folder open in the editor, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. With several folders open, the extension asks which one. In a Git repository, the files Git ignores, such as build output, are left out: they are never committed, so a run never sees them.
 - **It writes the workflow file.** On the last step, **Create the workflow file** writes `.github/workflows/grill-my-code.yml` in the open folder and opens it beside the Wizard. If the folder already has that file, the extension asks before replacing what is in it, and the change can be undone in the editor. With no folder open, the workflow opens as a new file that is not saved yet.
 
 [Workflow help](#workflow-help) checks the file the Wizard writes, as it checks any other. The tab keeps its answers while another tab is in front. Closing it discards them.
@@ -219,7 +219,7 @@ The Wizard needs no sign-in to GitHub and reads no issue.
 
 - **Open a workflow that already exists.** The Wizard starts from its own defaults each time. It does not read a workflow file back into its steps.
 - **Keep up with the docs site between releases.** The extension carries the Wizard as it was when the extension was released, so the Wizard on the docs site can be newer. The same holds for [the inputs workflow help knows](#what-it-does-not-know).
-- **Choose the action's version.** The workflow is written for `@v0`, the action's current major version.
+- **Choose the action's version.** The workflow is written for `@v0`, the action's current major version. To stay on one minor version, edit that line afterward: see [Choosing when to upgrade](upgrade-notes.md#choosing-when-to-upgrade).
 
 ## What it leaves out
 

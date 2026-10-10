@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.30.0 — 2026-10-10
+
+### What's Changed
+
+### Bug Fixes
+
+- **vscode:** keep the Wizard's file preview quick on a large folder
+
+### Chores & Maintenance
+
+- **release:** enhance versioning and release workflow documentation
+- add gmc
+
 ## v0.29.1 — 2026-10-10
 
 ### What's Changed

@@ -463,6 +463,11 @@ function Warnings({ source, result, cfg, onChange }) {
           first. Choose a smaller folder for a complete answer.
         </div>
       )}
+      {source.ignoredLeftOut && (
+        <span className={styles.hint}>
+          Files Git ignores are not listed. They are never committed, so a run never sees them.
+        </span>
+      )}
       {result.foldersFound > result.foldersScanned && (
         <div className={styles.previewWarning}>
           Found {result.foldersFound} project folders. A run scans the {result.foldersScanned}{' '}
@@ -651,11 +656,11 @@ export default function FilePreview({ cfg, onChange, preview, host }) {
     setBusy(true);
     try {
       const folder = await read();
-      const { label, paths, unopened, truncated } = folder;
+      const { label, paths, unopened, truncated, ignoredLeftOut = false } = folder;
       const texts = await readManifests(folder);
       const binary = await readBinaryFiles(folder);
       if (paths.length === 0) setError('That folder has no files to check.');
-      else show({ kind: 'folder', label, paths, unopened, truncated, texts, binary });
+      else show({ kind: 'folder', label, paths, unopened, truncated, ignoredLeftOut, texts, binary });
     } catch (err) {
       // Closing the picker without choosing is not an error.
       if (err?.name !== 'AbortError') setError('That folder couldn’t be read.');
@@ -665,10 +670,14 @@ export default function FilePreview({ cfg, onChange, preview, host }) {
   }
 
   // `choose` matters to a host alone: it asks for a folder other than the one
-  // open in the editor.
+  // open in the editor. A host may also say its folder comes without the files
+  // Git ignores, which a browser's folder picker cannot tell apart.
   function chooseFolder(choose) {
     if (host) {
-      loadFolder(async () => readDirectoryHandle(await host.pickFolder({ choose })));
+      loadFolder(async () => {
+        const picked = await host.pickFolder({ choose });
+        return { ...(await readDirectoryHandle(picked)), ignoredLeftOut: picked.ignoredLeftOut === true };
+      });
     } else if (canPickFolder()) {
       loadFolder(async () => readDirectoryHandle(await /** @type {any} */ (window).showDirectoryPicker()));
     } else {

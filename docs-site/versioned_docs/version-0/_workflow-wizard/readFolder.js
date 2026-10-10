@@ -19,6 +19,10 @@ import { isBinary } from './fileSelection';
 // Files read at once when checking for binary ones.
 const READS_AT_ONCE = 32;
 
+// Folders listed at once when walking a picked folder. Where the wizard has a
+// host, each listing is a message there and back, so one at a time is slow.
+const LISTINGS_AT_ONCE = 32;
+
 /** Whether the browser has the folder picker (the File System Access API). */
 export function canPickFolder() {
   // Not every browser has it, so the page's own types leave it out.
@@ -36,6 +40,13 @@ const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
 
 const start = (file) => file.slice(0, PREVIEW_BINARY_CHECK_BYTES).text();
 
+/** What a picked folder holds, in name order. */
+async function entriesOf(folder) {
+  const entries = [];
+  for await (const entry of folder.values()) entries.push(entry);
+  return entries.sort(byName);
+}
+
 /**
  * Walks a folder picked with showDirectoryPicker. Shallower folders are read
  * first, so the files that are cut off above the limit are the deepest ones.
@@ -45,25 +56,34 @@ export async function readDirectoryHandle(root) {
   const files = new Map();
   const unopened = [];
   let truncated = false;
-  const queue = [['', root]];
-  while (queue.length > 0 && !truncated) {
-    const [prefix, folder] = /** @type {[string, any]} */ (queue.shift());
-    const entries = [];
-    for await (const entry of folder.values()) entries.push(entry);
-    for (const entry of entries.sort(byName)) {
-      const path = prefix + entry.name;
-      if (entry.kind === 'file') {
-        if (files.size >= PREVIEW_MAX_FILES) {
-          truncated = true;
-          break;
+  // The folders at one depth, then those at the next. A few are listed at
+  // once and taken in the order they were found, so the answer is the same as
+  // listing them one by one.
+  let level = [['', root]];
+  while (level.length > 0 && !truncated) {
+    const next = [];
+    for (let i = 0; i < level.length && !truncated; i += LISTINGS_AT_ONCE) {
+      const batch = level.slice(i, i + LISTINGS_AT_ONCE);
+      const listings = await Promise.all(batch.map(([, folder]) => entriesOf(folder)));
+      for (let n = 0; n < batch.length && !truncated; n += 1) {
+        const [prefix] = batch[n];
+        for (const entry of listings[n]) {
+          const path = prefix + entry.name;
+          if (entry.kind === 'file') {
+            if (files.size >= PREVIEW_MAX_FILES) {
+              truncated = true;
+              break;
+            }
+            files.set(path, entry);
+          } else if (isDependencyFolder(entry.name)) {
+            unopened.push(path);
+          } else if (entry.name !== '.git') {
+            next.push([`${path}/`, entry]);
+          }
         }
-        files.set(path, entry);
-      } else if (isDependencyFolder(entry.name)) {
-        unopened.push(path);
-      } else if (entry.name !== '.git') {
-        queue.push([`${path}/`, entry]);
       }
     }
+    level = next;
   }
   return {
     label: root.name,
