@@ -43,13 +43,32 @@ import { Highlighter } from './highlighter.js';
 import { QuestionView } from './question-view.js';
 import { QuestionsTree } from './questions-tree.js';
 
+/** @import { AnswerKey } from '../instructor/answer-key.js' */
+/** @import { GitHubIssue } from '../shared/github.js' */
+/** @import { QuestionIssue } from '../shared/issues.js' */
+/** @import { NewerReport, Report } from '../shared/report.js' */
+/** @import { GitApi, Target } from './git.js' */
+/** @import { TreeNode } from './questions-tree.js' */
+
+/**
+ * A questions issue that reads as a report, with the report.
+ *
+ * @typedef {QuestionIssue & { report: Report | NewerReport }} LoadedIssue
+ */
+
+/** @typedef {'student' | 'instructor'} View */
+
 /** How long the folder must be quiet before the warning is worked out again. */
 const SETTLE_MS = 300;
 
 export class QuestionsController {
   /** The state shown, as listed above. Read by test-host/. */
   state = 'loading';
-  /** The view showing, `student` or `instructor`. Read by test-host/. */
+  /**
+   * The view showing, `student` or `instructor`. Read by test-host/.
+   *
+   * @type {View}
+   */
   view = 'student';
 
   #context;
@@ -61,36 +80,71 @@ export class QuestionsController {
   });
   #questionView = new QuestionView();
   #highlighter = new Highlighter();
+  /** @type {vscode.Disposable[]} */
   #disposables = [this.#log, this.#treeView, this.#highlighter];
 
+  /** @type {GitApi | undefined} */
   #api;
-  /** `{ repository, owner, repo }` for the folder the questions belong to. */
+  /**
+   * `{ repository, owner, repo }` for the folder the questions belong to.
+   *
+   * @type {Target | undefined}
+   */
   #target;
+  /** @type {vscode.Disposable | undefined} */
   #targetListener;
-  /** Listeners on repositories that have shown no GitHub remote so far. */
+  /**
+   * Listeners on repositories that have shown no GitHub remote so far.
+   *
+   * @type {vscode.Disposable[]}
+   */
   #waiting = [];
-  /** The branch the folder was on when the questions were loaded. */
+  /**
+   * The branch the folder was on when the questions were loaded.
+   *
+   * @type {string | undefined}
+   */
   #branch;
-  /** Every questions issue that reads as a report, each with its `report`. */
+  /**
+   * Every questions issue that reads as a report, each with its `report`.
+   *
+   * @type {LoadedIssue[]}
+   */
   #issues = [];
-  /** The one showing, or behind the answer key that is. */
+  /**
+   * The one showing, or behind the answer key that is.
+   *
+   * @type {LoadedIssue | undefined}
+   */
   #issue;
   /**
    * The answer key for those questions, as findAnswerKey returns it, when the
    * signed-in account can read it.
+   *
+   * @type {AnswerKey | undefined}
    */
   #key;
   /** Counts loads, so a slow one that has been overtaken can tell and stop. */
   #load = 0;
-  /** The pending load, and the pending look at what changed in the folder. */
+  /**
+   * The pending load, and the pending look at what changed in the folder.
+   *
+   * @type {ReturnType<typeof setTimeout> | undefined}
+   */
   #reload;
+  /** @type {ReturnType<typeof setTimeout> | undefined} */
   #settle;
 
+  /** @param {vscode.ExtensionContext} context */
   constructor(context) {
     this.#context = context;
   }
 
   start() {
+    /**
+     * @param {string} name
+     * @param {(...args: any[]) => unknown} run
+     */
     const command = (name, run) => vscode.commands.registerCommand(`grillmycode.${name}`, run);
     this.#disposables.push(
       vscode.window.registerWebviewViewProvider('grillmycode.question', this.#questionView),
@@ -199,7 +253,7 @@ export class QuestionsController {
     if (overtaken()) return;
     // At debug level: for a student there is never one, and that is no fault.
     if (found.reason) this.#log.debug(`No answer key for ${owner}/${repo}: ${found.reason}`);
-    this.#key = found.reason ? undefined : found;
+    this.#key = found.reason === undefined ? found : undefined;
     this.#show();
   }
 
@@ -208,6 +262,9 @@ export class QuestionsController {
    * lists them, and from its answer key, as findAnswerKey returns it, for an
    * account that can read one. Split from load() so test-host/ can supply both
    * without a GitHub sign-in.
+   *
+   * @param {GitHubIssue[]} issues
+   * @param {AnswerKey} [key]
    */
   showIssues(issues, key) {
     if (!this.#target) return this.#setState('noRepository');
@@ -216,11 +273,15 @@ export class QuestionsController {
     this.#show();
   }
 
-  /** Keeps the questions issues among a repository's issues, each with its report. */
+  /**
+   * Keeps the questions issues among a repository's issues, each with its report.
+   *
+   * @param {GitHubIssue[]} issues
+   */
   #readIssues(issues) {
     this.#issues = findQuestionIssues(issues)
       .map((issue) => ({ ...issue, report: parseReport(issue.body) }))
-      .filter((issue) => issue.report);
+      .filter(/** @returns {issue is LoadedIssue} */ (issue) => Boolean(issue.report));
     vscode.commands.executeCommand(
       'setContext',
       'grillmycode.severalIssues',
@@ -263,7 +324,10 @@ export class QuestionsController {
 
     this.#issue = issue;
     const report = this.#report();
-    this.#tree.show(this.#target.repository.rootUri, instructor ? key.questions : report.questions);
+    this.#tree.show(
+      this.#target?.repository.rootUri,
+      (instructor ? key?.questions : report?.questions) ?? [],
+    );
     this.#treeView.description = [viewName, issue && describeGroup(issue.group), report?.headSha]
       .filter(Boolean)
       .join(' · ');
@@ -274,9 +338,14 @@ export class QuestionsController {
     this.#updateWarning();
   }
 
-  /** The report of the issue showing, when this extension can read its layout. */
+  /**
+   * The report of the issue showing, when this extension can read its layout.
+   *
+   * @returns {Report | undefined}
+   */
   #report() {
-    return this.#issue?.report.needsUpdate ? undefined : this.#issue?.report;
+    const report = this.#issue?.report;
+    return report?.needsUpdate ? undefined : report;
   }
 
   dispose() {
@@ -287,13 +356,18 @@ export class QuestionsController {
     for (const disposable of this.#disposables) disposable.dispose();
   }
 
-  /** Says which view is showing, and whether there is another to switch to. */
+  /**
+   * Says which view is showing, and whether there is another to switch to.
+   *
+   * @param {View} view
+   */
   #setView(view) {
     this.view = view;
     vscode.commands.executeCommand('setContext', 'grillmycode.view', view);
     vscode.commands.executeCommand('setContext', 'grillmycode.answerKey', Boolean(this.#key));
   }
 
+  /** @param {string} state */
   #setState(state) {
     this.state = state;
     vscode.commands.executeCommand('setContext', 'grillmycode.state', state);
@@ -309,7 +383,11 @@ export class QuestionsController {
     }
   }
 
-  /** Follows the repository the questions belong to, for commits, checkouts and edits. */
+  /**
+   * Follows the repository the questions belong to, for commits, checkouts and edits.
+   *
+   * @param {Target | undefined} target
+   */
   #watch(target) {
     if (target?.repository === this.#target?.repository) {
       this.#target = target;
@@ -343,11 +421,11 @@ export class QuestionsController {
 
   /** Says, above the list, when the highlighted lines may not be the ones asked about. */
   #updateWarning() {
-    if (this.state !== 'ready') return;
+    if (this.state !== 'ready' || !this.#target) return;
     const report = this.#report();
     const { repository } = this.#target;
     const instructor = this.view === 'instructor';
-    const questions = instructor ? this.#key.questions : report.questions;
+    const questions = (instructor ? this.#key?.questions : report?.questions) ?? [];
     // The answer key does not say which commit it was written about. The issue
     // does, and stands in for it while the two hold the same questions.
     const sameRun = report && (!instructor || matchesReport(report.questions, questions));
@@ -363,13 +441,14 @@ export class QuestionsController {
             files: questionFiles(questions),
           })
         : '',
-      !instructor && report.truncated
+      !instructor && report?.truncated
         ? 'This report was too long to show in full, so its last questions are missing here. The PDF linked from the issue has them all.'
         : '',
     ];
     this.#treeView.message = notes.filter(Boolean).join(' ') || undefined;
   }
 
+  /** @param {TreeNode | undefined} node */
   async #openQuestion(node) {
     if (!node?.question || !this.#target) return;
     this.#questionView.show(node.question);
@@ -387,7 +466,11 @@ export class QuestionsController {
     return `view:${this.#target?.owner}/${this.#target?.repo}`;
   }
 
-  /** Changes the view, for an account that has both, and remembers it for this repository. */
+  /**
+   * Changes the view, for an account that has both, and remembers it for this repository.
+   *
+   * @param {View} view
+   */
   async #switchView(view) {
     if (!this.#key) return;
     await this.#context.workspaceState.update(this.#viewKey(), view);
@@ -396,6 +479,7 @@ export class QuestionsController {
 
   async #selectIssue() {
     if (this.#issues.length === 0) return;
+    /** @type {vscode.QuickPickItem & { issue?: LoadedIssue }} */
     const follow = {
       label: '$(git-branch) Follow the checked-out branch',
       detail: 'Show the questions for whichever branch this folder is on.',

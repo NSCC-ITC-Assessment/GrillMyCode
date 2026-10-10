@@ -2,12 +2,15 @@ import React from 'react';
 import styles from '../styles.module.css';
 import CodebaseContextLimit, { codebaseLimitStep } from './CodebaseContextLimit';
 
+/** @import { StepProps } from '../index' */
+
 // Facts about the student repositories, which later steps depend on: the
 // Delivery step offers the instructor repository only for Classroom 50
 // repositories, which the action identifies by their naming, and the starter
 // code choice decides whether codebase context is sent, with its size limit
 // shown here when it is. The required Classroom 50 question comes first so it
 // isn't missed.
+/** @param {StepProps} props */
 export default function StepRepositories({ cfg, onChange }) {
   return (
     <div>

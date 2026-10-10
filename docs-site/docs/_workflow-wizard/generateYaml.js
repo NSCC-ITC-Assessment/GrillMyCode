@@ -6,6 +6,8 @@
 import { DISPATCH_OVERRIDES_BY_KEY, resolveDispatchOverrides } from './dispatchInputs';
 import { splitPatternList } from './fileSelection';
 
+/** @import { WizardConfig } from './index' */
+
 /**
  * Normalises a pattern string that may use commas, newlines, or a mix as
  * delimiters. Returns a single comma-separated string with each entry trimmed
@@ -37,6 +39,8 @@ export const MODEL_ROUTING_VARIANTS = ['nitro', 'floor'];
  * A model the instructor typed with a variant already on it is left alone —
  * OpenRouter would let the last sorting suffix win, but `model:nitro:floor`
  * reads like a mistake in a workflow file someone else has to maintain.
+ *
+ * @param {WizardConfig} cfg
  */
 export function effectiveAiModel(cfg) {
   const model = (cfg.aiModel || '').trim();
@@ -58,6 +62,8 @@ export function effectiveAiModel(cfg) {
  * assessed range — which only a base later than the first commit leaves: a tag
  * run diffed from an earlier tag, or a base_sha override. previous_work has no
  * effect otherwise, so it is neither offered nor emitted.
+ *
+ * @param {WizardConfig} cfg
  */
 export function hasEarlierWork(cfg) {
   return (isTagTrigger(cfg) && (cfg.tagDiffBase || 'cumulative') !== 'cumulative') || Boolean(cfg.baseSha);
@@ -70,10 +76,12 @@ export const MIN_STARTER_QUESTIONS_ONE_IN = 2;
  * How many questions may be about starter code alone under starter_code: ask,
  * as maxStarterQuestions in src/prompt/prompt.js: one in starterQuestionsOneIn,
  * rounded down, but at least one once there are two questions.
+ *
+ * @param {WizardConfig} cfg
  */
 export function maxStarterQuestions(cfg) {
   if (cfg.numQuestions < 2) return 0;
-  return Math.max(1, Math.floor(cfg.numQuestions / cfg.starterQuestionsOneIn));
+  return Math.max(1, Math.floor(cfg.numQuestions / Number(cfg.starterQuestionsOneIn)));
 }
 
 /**
@@ -81,11 +89,13 @@ export function maxStarterQuestions(cfg) {
  * It is asked only under starter_code: ask with two or more questions, and
  * runs from MIN_STARTER_QUESTIONS_ONE_IN to the number of questions, where it
  * allows one.
+ *
+ * @param {WizardConfig} cfg
  */
 export function starterQuestionsOneInError(cfg) {
   if (cfg.starterCode !== 'ask' || cfg.numQuestions < 2) return '';
   const n = cfg.starterQuestionsOneIn;
-  if (!Number.isInteger(n) || n < MIN_STARTER_QUESTIONS_ONE_IN || n > cfg.numQuestions) {
+  if (typeof n !== 'number' || !Number.isInteger(n) || n < MIN_STARTER_QUESTIONS_ONE_IN || n > cfg.numQuestions) {
     return `Enter a whole number from ${MIN_STARTER_QUESTIONS_ONE_IN} to ${cfg.numQuestions}, the number of questions.`;
   }
   return '';
@@ -100,16 +110,22 @@ export const MAX_STARTER_QUESTIONS_ONE_IN = 50;
  * starter code answer isn't ask, so it is only the run form's pre-filled value:
  * the run may also change the number of questions, so it is checked against
  * the action's own range rather than the number of questions.
+ *
+ * @param {WizardConfig} cfg
  */
 export function starterShareDefaultError(cfg) {
   const n = cfg.starterQuestionsOneIn;
-  if (!Number.isInteger(n) || n < MIN_STARTER_QUESTIONS_ONE_IN || n > MAX_STARTER_QUESTIONS_ONE_IN) {
+  if (typeof n !== 'number' || !Number.isInteger(n) || n < MIN_STARTER_QUESTIONS_ONE_IN || n > MAX_STARTER_QUESTIONS_ONE_IN) {
     return `Enter a whole number from ${MIN_STARTER_QUESTIONS_ONE_IN} to ${MAX_STARTER_QUESTIONS_ONE_IN} for the starter code question share.`;
   }
   return '';
 }
 
-/** Whether the starter code answer sends starter code as codebase context. */
+/**
+ * Whether the starter code answer sends starter code as codebase context.
+ *
+ * @param {WizardConfig} cfg
+ */
 export function sendsStarterContext(cfg) {
   return cfg.starterCode === 'context' || cfg.starterCode === 'ask';
 }
@@ -118,18 +134,25 @@ export function sendsStarterContext(cfg) {
  * Whether the run sends any codebase context, and so whether its size limit
  * matters: starter code under context or ask, or earlier work where there is
  * any. Shared with codebaseLimitStep, which shows the limit only then.
+ *
+ * @param {WizardConfig} cfg
  */
 export function sendsCodebaseContext(cfg) {
   return sendsStarterContext(cfg) || (cfg.previousWork === 'context' && hasEarlierWork(cfg));
 }
 
+/** @param {WizardConfig} cfg */
 export function instructorRepoActive(cfg) {
   return cfg.usesClassroom50 === true && cfg.instructorRepoEnabled;
 }
 
 // ── Submission tags ──────────────────────────────────────────────────────────
 
-/** True when the workflow is triggered by submission tags rather than pushes. */
+/**
+ * True when the workflow is triggered by submission tags rather than pushes.
+ *
+ * @param {WizardConfig} cfg
+ */
 export function isTagTrigger(cfg) {
   return cfg.triggerEvent === 'tag+workflow_dispatch';
 }
@@ -138,6 +161,8 @@ export function isTagTrigger(cfg) {
  * The tag patterns the workflow fires on, in the order the instructor listed
  * them — order is kept because the action files an overlapping tag under the
  * first pattern it matches.
+ *
+ * @param {WizardConfig} cfg
  */
 export function submissionTagList(cfg) {
   const typed = (cfg.submissionTags || '')
@@ -152,7 +177,11 @@ export function submissionTagList(cfg) {
 const TAG_PATTERN_CHARSET_RE = /^[A-Za-z0-9._/*?+[\]-]+$/;
 const STACKED_QUANTIFIER_RE = /^[?+]|[*?+]\+/;
 
-/** Patterns from the instructor's list that the action would reject. */
+/**
+ * Patterns from the instructor's list that the action would reject.
+ *
+ * @param {WizardConfig} cfg
+ */
 export function invalidSubmissionTags(cfg) {
   return submissionTagList(cfg).filter(
     (p) => !TAG_PATTERN_CHARSET_RE.test(p) || STACKED_QUANTIFIER_RE.test(p),
@@ -166,6 +195,8 @@ const TAG_NAME_RE = /^[A-Za-z0-9._][A-Za-z0-9._/-]*$/;
 /**
  * Why the "tag:<name>" diff base cannot be emitted, or '' when it can (or when
  * another mode is chosen). The action fails every run on a bad name.
+ *
+ * @param {WizardConfig} cfg
  */
 export function namedDiffBaseTagError(cfg) {
   const value = cfg.tagDiffBase || '';
@@ -196,6 +227,8 @@ const TEMPERATURE_FORMAT_RE = /^(\d+(\.\d{0,2})?|\.\d{1,2})$/;
  * Validation message for the AI step's temperature box, or '' when it is fine.
  * A temperature is only emitted once the instructor opts in, so an unticked box
  * is never an error; a ticked one must hold a number in range.
+ *
+ * @param {WizardConfig} cfg
  */
 export function temperatureError(cfg) {
   if (!cfg.aiTemperatureEnabled) return '';
@@ -243,6 +276,7 @@ export const DEFAULTS = {
   headSha: '',
 };
 
+/** @param {WizardConfig} cfg */
 function differ(cfg, key) {
   return cfg[key] !== DEFAULTS[key];
 }
@@ -271,6 +305,8 @@ function yamlSingle(val) {
  * Inputs carrying an `envFallback` never reach here with a multi-line value —
  * usesEnvFallback routes those to a job-level env var instead, so nothing is
  * silently flattened.
+ *
+ * @param {WizardConfig} cfg
  */
 function overrideValue(cfg, meta) {
   const raw = cfg[meta.cfgKey];
@@ -286,6 +322,8 @@ function overrideValue(cfg, meta) {
  * expression string literal can hold.
  *
  * A single-line value needs none of this and is inlined like any other input.
+ *
+ * @param {WizardConfig} cfg
  */
 function usesEnvFallback(cfg, meta) {
   if (!meta.envFallback) return false;
@@ -307,7 +345,7 @@ function usesEnvFallback(cfg, meta) {
  * The whole expression is double-quoted so a fallback containing ': ' or a
  * leading special character cannot break the YAML.
  */
-function dispatchExpr(key, fallback, { envVar = null } = {}) {
+function dispatchExpr(key, fallback, { envVar = /** @type {string | null | undefined} */ (null) } = {}) {
   if (envVar) {
     // env is available in a step's `with:`, so a multi-line default can be held
     // in a block scalar and referenced here without being flattened.
@@ -317,7 +355,11 @@ function dispatchExpr(key, fallback, { envVar = null } = {}) {
   return `"\${{ github.event.inputs.${key} || '${literal}' }}"`;
 }
 
-/** The `on.workflow_dispatch.inputs:` block for the selected override keys. */
+/**
+ * The `on.workflow_dispatch.inputs:` block for the selected override keys.
+ *
+ * @param {WizardConfig} cfg
+ */
 function dispatchInputLines(cfg, overrideKeys) {
   const lines = [];
   lines.push('    # Manual-run overrides. Starting this workflow from the Actions tab');
@@ -347,7 +389,8 @@ function dispatchInputLines(cfg, overrideKeys) {
       // A value outside the fixed options — tag_diff_base's "tag:<name>" form —
       // is offered as an extra option rather than dropped, so the form's
       // default still matches what an automatic run uses.
-      const options = meta.options.includes(value) || !value ? meta.options : [...meta.options, value];
+      const fixed = meta.options ?? [];
+      const options = fixed.includes(value) || !value ? fixed : [...fixed, value];
       lines.push('        type: choice');
       lines.push(`        options: [${options.map(yamlSingle).join(', ')}]`);
       lines.push(`        default: ${yamlSingle(options.includes(value) ? value : options[0])}`);

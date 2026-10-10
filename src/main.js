@@ -108,6 +108,22 @@ import {
 // already do in the issue, but the reason stays in the log and the instructor
 // copy so a prompt-injection attempt gets no feedback signal.
 
+/** @import { PatternOrigin } from './file-selection.js' */
+/** @import { Inputs } from './inputs.js' */
+
+/**
+ * A changed file an exclude pattern removed, with the pattern and where it
+ * comes from.
+ *
+ * @typedef {{ filepath: string, pattern: string, origin?: PatternOrigin }} ExcludedFile
+ */
+
+/**
+ * What a run has found so far, as createRunState starts it.
+ *
+ * @typedef {ReturnType<typeof createRunState>} RunState
+ */
+
 function createRunState() {
   return {
     // Set by reportEmptyAssessment, which writes its own summary. Suppresses
@@ -132,52 +148,52 @@ function createRunState() {
     // submitted under this tag, including this run when it counts. null when
     // the record was unavailable. tagMoved is the push payload's own signal
     // that an existing tag was re-pushed, used when there is no record.
-    submissionCount: null,
+    submissionCount: /** @type {number | null} */ (null),
     submissionCounted: true,
     tagMoved: false,
     baseSha: '',
     headSha: '',
 
-    allFiles: [],
-    files: [],
-    fileStats: [],
-    excludePatterns: [],
-    excludePatternOverrides: [],
+    allFiles: /** @type {string[]} */ ([]),
+    files: /** @type {string[]} */ ([]),
+    fileStats: /** @type {ReturnType<typeof getDiffStat>} */ ([]),
+    excludePatterns: /** @type {string[]} */ ([]),
+    excludePatternOverrides: /** @type {string[]} */ ([]),
     // The stack behind the exclude patterns: whether stack_templates set it,
     // and the stack_templates entries that name it (see detectExcludePatterns).
-    stack: { pinned: false, entries: [] },
+    stack: { pinned: false, entries: /** @type {string[]} */ ([]) },
     // Changed files the exclude patterns removed, each with the first pattern
     // that matched it and where that pattern comes from (see detectStack):
     // [{ filepath, pattern, origin }].
-    excludedFiles: [],
+    excludedFiles: /** @type {ExcludedFile[]} */ ([]),
     // Those of them that may be the student's own work all the same: source
     // files a pattern from the stack left out (see mayBeOwnWork).
-    ownWorkFiles: [],
+    ownWorkFiles: /** @type {ExcludedFile[]} */ ([]),
     // Those of them an override matched without naming the protected pattern
     // that keeps them out: [{ filepath, guard }] (see createFileFilter).
-    protectedFiles: [],
+    protectedFiles: /** @type {{ filepath: string, guard?: string }[]} */ ([]),
     // Changed files the patterns let through that have no text to assess, each
     // with why: [{ filepath, reason }] (see collectRawFiles).
-    skippedFiles: [],
-    assignmentContextFiles: [],
+    skippedFiles: /** @type {{ filepath: string, reason: string }[]} */ ([]),
+    assignmentContextFiles: /** @type {string[]} */ ([]),
     // Assessed files that existed before the range, sent with the student's
     // lines marked (see buildAssessedCodeContent).
-    markedFiles: [],
+    markedFiles: /** @type {string[]} */ ([]),
     // Codebase context (starter_code: context or ask, previous_work: context):
     // the starter files and the files of earlier work sent, those left out to
     // stay within the size limit, and the characters sent.
     // codebaseContextChars stays null when nothing asks for it.
-    codebaseStarterFiles: [],
-    codebaseEarlierFiles: [],
-    codebaseContextOmitted: [],
-    codebaseContextChars: null,
+    codebaseStarterFiles: /** @type {string[]} */ ([]),
+    codebaseEarlierFiles: /** @type {string[]} */ ([]),
+    codebaseContextOmitted: /** @type {string[]} */ ([]),
+    codebaseContextChars: /** @type {number | null} */ (null),
 
-    diffChars: null,
-    rawChars: null,
-    strippedChars: null,
+    diffChars: /** @type {number | null} */ (null),
+    rawChars: /** @type {number | null} */ (null),
+    strippedChars: /** @type {number | null} */ (null),
 
-    questionsRequested: null,
-    questionsGenerated: null,
+    questionsRequested: /** @type {number | null} */ (null),
+    questionsGenerated: /** @type {number | null} */ (null),
     questionsWithheld: 0,
     // starter_code: ask — how many questions may be, and are, about starter
     // code alone.
@@ -185,7 +201,7 @@ function createRunState() {
     starterQuestions: 0,
 
     issueUrl: '',
-    issueNumber: null,
+    issueNumber: /** @type {number | null} */ (null),
     pdfUrl: '',
     pdfError: '',
     instructorDelivery: 'skipped',
@@ -198,10 +214,10 @@ function createRunState() {
 
     // A preview_only run that found nothing it would assess: why, with what
     // to check (see explainEmptyAssessment), or null.
-    previewEmpty: null,
+    previewEmpty: /** @type {{ cause: string, detail: string, checks: string[] } | null} */ (null),
 
-    inputs: null,
-    diagnostics: [],
+    inputs: /** @type {Inputs | null} */ (null),
+    diagnostics: /** @type {string[]} */ ([]),
     failureMessage: '',
   };
 }
@@ -301,7 +317,11 @@ function fileLists(groups) {
   });
 }
 
-/** "7 of 19 changed files", with the number left out when there are any. */
+/**
+ * "7 of 19 changed files", with the number left out when there are any.
+ *
+ * @param {RunState} state
+ */
 function fileCounts(state) {
   const changed = state.allFiles.length;
   const leftOut = changed - state.files.length;
@@ -311,6 +331,7 @@ function fileCounts(state) {
   };
 }
 
+/** @param {RunState} state */
 function renderHeadline(state) {
   const { assessed, leftOut } = fileCounts(state);
   const counts = [];
@@ -332,6 +353,8 @@ function renderHeadline(state) {
  * The banner of a preview_only run: what would be assessed, and that nothing
  * was. The second part is said every time, so nobody takes a preview's green
  * tick for an assessment.
+ *
+ * @param {RunState} state
  */
 function renderPreviewHeadline(state) {
   const { assessed, leftOut } = fileCounts(state);
@@ -375,6 +398,8 @@ function describeOrigin(origin) {
  * The stack templates behind a run's exclude patterns, for the configuration
  * table. A run that detected them shows the stack_templates value that would
  * set the same ones, so an instructor can copy it from a preview run.
+ *
+ * @param {RunState} state
  */
 function renderStackSetting(state) {
   const { pinned, entries } = state.stack;
@@ -394,6 +419,8 @@ function renderStackSetting(state) {
  * mayBeOwnWork). It sits under the headline because it is the one thing in a
  * summary an instructor may need to act on, and the detected patterns that
  * cause it are the ones nobody wrote down.
+ *
+ * @param {RunState} state
  */
 function renderOwnWorkWarning(state) {
   const flagged = state.ownWorkFiles;
@@ -419,6 +446,7 @@ function renderOwnWorkWarning(state) {
   );
 }
 
+/** @param {RunState} state */
 function renderOverview(state) {
   const rows = [
     ['Assignment', state.assignmentName ? `\`${state.assignmentName}\`` : '—'],
@@ -445,6 +473,7 @@ function renderOverview(state) {
   return table(['', ''], rows);
 }
 
+/** @param {RunState} state */
 function renderAssessedFiles(state) {
   if (state.files.length === 0) return '';
 
@@ -499,6 +528,8 @@ function renderAssessedFiles(state) {
  * diffed out of the workflow YAML across every student repository. Nothing here
  * is secret — all of it is already readable in that workflow file — but a value
  * that has drifted from the assignment's intent is far easier to spot here.
+ *
+ * @param {RunState} state
  */
 function renderConfiguration(state) {
   const i = state.inputs;
@@ -572,6 +603,8 @@ function renderConfiguration(state) {
  * pattern comes from, then the files with no text to assess, by why. A student
  * asking why a file was not assessed, or an instructor checking their
  * patterns, finds the answer and the pattern to override in one place.
+ *
+ * @param {RunState} state
  */
 function renderLeftOutFiles(state) {
   const excluded = state.excludedFiles;
@@ -636,9 +669,11 @@ function renderLeftOutFiles(state) {
 /**
  * The starter_code row of the configuration table. Under ask it also counts
  * the questions about starter code alone, once there are questions.
+ *
+ * @param {RunState} state
  */
 function renderStarterCodeSetting(state) {
-  const mode = state.inputs.starterCode;
+  const mode = state.inputs?.starterCode;
   if (mode !== 'ask' || state.questionsGenerated === null) return `\`${mode}\``;
   return (
     `\`ask\` — ${fmtNum(state.starterQuestions)} question${state.starterQuestions === 1 ? '' : 's'} ` +
@@ -651,6 +686,8 @@ function renderStarterCodeSetting(state) {
  * set large enough to allow any (see maxStarterQuestions). Otherwise starter
  * lines are neither marked nor askable, so the prompt never shows an `s`
  * marker it does not explain.
+ *
+ * @param {Inputs} inputs
  */
 function asksAboutStarter(inputs) {
   return (
@@ -659,7 +696,11 @@ function asksAboutStarter(inputs) {
   );
 }
 
-/** Whether a run's settings send any codebase context: starter code or earlier work. */
+/**
+ * Whether a run's settings send any codebase context: starter code or earlier work.
+ *
+ * @param {Inputs} inputs
+ */
 function wantsCodebaseContext(inputs) {
   return (
     inputs.starterCode === 'context' ||
@@ -668,9 +709,13 @@ function wantsCodebaseContext(inputs) {
   );
 }
 
-/** The codebase context row of the configuration table. */
+/**
+ * The codebase context row of the configuration table.
+ *
+ * @param {RunState} state
+ */
 function renderCodebaseContextSetting(state) {
-  if (!wantsCodebaseContext(state.inputs)) return 'off';
+  if (!state.inputs || !wantsCodebaseContext(state.inputs)) return 'off';
   if (state.codebaseContextChars === null) return 'on — not used by this run';
   const starter = state.codebaseStarterFiles.length;
   const earlier = state.codebaseEarlierFiles.length;
@@ -694,6 +739,8 @@ function renderCodebaseContextSetting(state) {
  * separately because they are separate API calls that can disagree — a topic
  * can be written while the description is refused — and a single combined
  * status would hide which of the two actually landed.
+ *
+ * @param {RunState} state
  */
 function renderRepoLabels(state) {
   const label = {
@@ -714,6 +761,7 @@ function renderRepoLabels(state) {
   return '— not configured';
 }
 
+/** @param {RunState} state */
 function renderDelivery(state) {
   const rows = [
     [
@@ -740,6 +788,7 @@ function renderDelivery(state) {
   return `### Delivery\n\n${table(['Output', 'Status'], rows)}`;
 }
 
+/** @param {RunState} state */
 function renderNotes(state) {
   const notes = [...state.diagnostics];
   if (state.tagName && state.submissionCount !== null) {
@@ -766,6 +815,8 @@ function renderNotes(state) {
 /**
  * Writes the job summary. Never throws: a summary is a convenience, and losing
  * it must not cost the run or mask the real diagnosis.
+ *
+ * @param {RunState} state
  */
 async function writeRunSummary(state) {
   if (state.handled) return;
@@ -828,6 +879,14 @@ async function writeRunSummary(state) {
  *
  * Failing is opt-in via fail_on_empty_assessment because both reasons occur
  * normally at accept time — see that input's description in action.yml.
+ *
+ * @param {object} found
+ * @param {string} found.reason
+ * @param {string} found.baseSha
+ * @param {string} found.headSha
+ * @param {string[]} found.allFiles
+ * @param {string[]} found.excludePatterns
+ * @param {Inputs} found.inputs
  */
 async function reportEmptyAssessment({
   reason,
@@ -880,6 +939,14 @@ async function reportEmptyAssessment({
  * a clause, a sentence or two of explanation, and what to check. Shared by
  * reportEmptyAssessment and the summary of a preview_only run, which reports
  * the same finding without it being an outcome.
+ *
+ * @param {object} found
+ * @param {string} found.reason
+ * @param {string} found.baseSha
+ * @param {string} found.headSha
+ * @param {string[]} found.allFiles
+ * @param {string[]} found.excludePatterns
+ * @param {Inputs} found.inputs
  */
 function explainEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePatterns, inputs }) {
   const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
@@ -947,6 +1014,8 @@ function explainEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePat
  * Ends a preview_only run: says in the log, and in a notice on the run page,
  * what it found and that it produced nothing. The summary, written when the
  * run finishes, carries the detail.
+ *
+ * @param {RunState} state
  */
 function reportPreview(state) {
   const changed = state.allFiles.length;
@@ -984,6 +1053,16 @@ function reportPreview(state) {
  * Records what it chose on `state` and returns `{ starterContent,
  * earlierContent, sources, earlierFromStarter, earlierStarterLines }` ('' for
  * a kind with nothing to send; see selectCodebaseContext).
+ *
+ * @param {object} run
+ * @param {RunState} run.state
+ * @param {Inputs} run.inputs
+ * @param {string} run.baseSha
+ * @param {string} run.headSha
+ * @param {{ from: string, to: string } | null} run.skippedRange
+ * @param {string[]} run.files
+ * @param {string[]} run.excludePatterns
+ * @param {string[]} run.caseInsensitivePatterns
  */
 function loadCodebaseContext({
   state,
@@ -1413,6 +1492,7 @@ async function run() {
     // Under starter_code: ask, the unchanged lines that are also unchanged
     // since the first commit are marked as starter code the AI may ask about.
     // When the base is the first commit, that is every unchanged line.
+    /** @type {Map<string, string> | null} */
     let starterByPath = null;
     if (asksAboutStarter(inputs) && baseSha !== GIT_EMPTY_TREE_SHA) {
       const firstCommit = getFirstCommit();
@@ -1773,7 +1853,9 @@ async function run() {
     // A tag run adds its group, so each milestone keeps its own PDF rather than
     // replacing the last one.
     const pdfFilename = `grill-my-code-${safeFilePart(ctx.repo.repo)}${tagSlug ? `-${tagSlug}` : ''}.pdf`;
+    /** @type {string | null} */
     let pdfUrl = null;
+    /** @type {Buffer | null} */
     let pdfBuffer = null;
     try {
       pdfBuffer = await generatePdf(baseReport);
@@ -1887,6 +1969,7 @@ async function run() {
       // ── Submission record (tag runs only) ─────────────────────────────────
       // Read before the report is built so the instructor copy's header can
       // flag a resubmission. A failed read skips the record, never the delivery.
+      /** @type {object | null} */
       let submission = null;
       let resubmissionNote = '';
       if (tagSlug) {

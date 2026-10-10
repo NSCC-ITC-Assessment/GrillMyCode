@@ -18,19 +18,48 @@ import { INPUT_NAME_MAX_EDITS } from './constants.js';
 import { isSafeTagName, isSafeTagPattern, splitTagList } from './tags.js';
 import { readWorkflow } from './workflow.js';
 
+/** @import { ActionInput } from './action-inputs.js' */
+/** @import { InputValue, Span, StepInput, WorkflowStep } from './workflow.js' */
+
+/**
+ * What is wrong, and how much it matters. `deprecated` marks an input that is
+ * on its way out, which the editor strikes through.
+ *
+ * @typedef {object} Finding
+ * @property {'error' | 'warning' | 'info'} severity
+ * @property {string} code
+ * @property {string} message
+ * @property {boolean} [deprecated]
+ */
+
+/**
+ * A finding, with where in the text it is.
+ *
+ * @typedef {Span & Finding} Problem
+ */
+
 /** A secret read from a workflow input, which a run records as plain text. */
 const INPUT_EXPRESSION_RE = /\$\{\{[^}]*\binputs\./;
 
-const quote = (value) => `"${value}"`;
+const quote = (/** @type {unknown} */ value) => `"${value}"`;
 
-/** `"a", "b" or "c"`. */
+/**
+ * `"a", "b" or "c"`.
+ *
+ * @param {string[]} values
+ */
 function listValues(values) {
   const quoted = values.map(quote);
   if (quoted.length < 2) return quoted.join('');
   return `${quoted.slice(0, -1).join(', ')} or ${quoted.at(-1)}`;
 }
 
-/** How many single-letter edits turn `a` into `b`. */
+/**
+ * How many single-letter edits turn `a` into `b`.
+ *
+ * @param {string} a
+ * @param {string} b
+ */
 function editDistance(a, b) {
   let previous = Array.from({ length: b.length + 1 }, (_, i) => i);
   for (let i = 1; i <= a.length; i++) {
@@ -47,8 +76,13 @@ function editDistance(a, b) {
   return previous[b.length];
 }
 
-/** The input a misspelled name most likely meant, if one is close enough. */
+/**
+ * The input a misspelled name most likely meant, if one is close enough.
+ *
+ * @param {string} name
+ */
 export function closestInput(name) {
+  /** @type {{ known: string, edits: number } | undefined} */
   let best;
   for (const known of Object.keys(ACTION_INPUTS)) {
     if (ACTION_INPUTS[known].hidden) continue;
@@ -58,7 +92,14 @@ export function closestInput(name) {
   return best?.known;
 }
 
-/** What is wrong with one value, as `{ severity, code, message }`, or undefined. */
+/**
+ * What is wrong with one value, as `{ severity, code, message }`, or undefined.
+ *
+ * @param {string} name
+ * @param {ActionInput} rule
+ * @param {string} raw
+ * @returns {Finding | undefined}
+ */
 function checkValue(name, rule, raw) {
   // The action trims every input, and treats an empty one as not set.
   const value = raw.trim();
@@ -170,22 +211,36 @@ function checkValue(name, rule, raw) {
   return undefined;
 }
 
-/** The problems with one step, each as `{ start, end, severity, code, message }`. */
+/**
+ * The problems with one step, each as `{ start, end, severity, code, message }`.
+ *
+ * @param {WorkflowStep} step
+ * @param {{ tagFilters: string[] | undefined, unknownInputs: boolean }} options
+ */
 function checkStep(step, { tagFilters, unknownInputs }) {
+  /** @type {Problem[]} */
   const problems = [];
+  /**
+   * @param {Span} where
+   * @param {Finding} problem
+   */
   const at = (where, problem) => problems.push({ start: where.start, end: where.end, ...problem });
+  /**
+   * @param {InputValue} input
+   * @param {Finding} problem
+   */
   const atValue = (input, problem) => at({ start: input.valueStart, end: input.valueEnd }, problem);
 
   // GitHub ignores letter case in an input's name. The last of a repeated
   // name is the one it keeps.
   const set = new Map(step.inputs.map((input) => [input.name.toLowerCase(), input]));
   /** The text of an input that is set to something the file spells out. */
-  const literal = (name) => {
+  const literal = (/** @type {string} */ name) => {
     const input = set.get(name);
     return input?.value !== undefined && !input.expression ? input.value.trim() : undefined;
   };
   /** True when an input is absent or empty, so the action uses its default. */
-  const unset = (name) => !set.has(name) || literal(name) === '';
+  const unset = (/** @type {string} */ name) => !set.has(name) || literal(name) === '';
   const starterCode = literal('starter_code')?.toLowerCase();
   const previousWork = literal('previous_work');
 
@@ -271,7 +326,7 @@ function checkStep(step, { tagFilters, unknownInputs }) {
   }
 
   if (literal('label_repos')?.toLowerCase() === 'true' && unset('instructor_repo_token')) {
-    at(set.get('label_repos'), {
+    at(set.get('label_repos') ?? stepItself, {
       severity: 'warning',
       code: 'needs-other-input',
       message:
@@ -282,7 +337,7 @@ function checkStep(step, { tagFilters, unknownInputs }) {
 
   const shareSet = set.has('starter_questions_one_in') && !unset('starter_questions_one_in');
   if (shareSet && (unset('starter_code') || (starterCode && starterCode !== 'ask'))) {
-    at(set.get('starter_questions_one_in'), {
+    at(set.get('starter_questions_one_in') ?? stepItself, {
       severity: 'info',
       code: 'no-effect',
       message: 'starter_questions_one_in has no effect unless starter_code is "ask".',
@@ -294,7 +349,7 @@ function checkStep(step, { tagFilters, unknownInputs }) {
   const diffBase = literal('tag_diff_base')?.toLowerCase();
   const fromEarlierTag = set.has('tag_diff_base') && diffBase !== '' && diffBase !== 'cumulative';
   if (set.has('previous_work') && !unset('previous_work') && !fromEarlierTag && unset('base_sha')) {
-    at(set.get('previous_work'), {
+    at(set.get('previous_work') ?? stepItself, {
       severity: 'info',
       code: 'no-effect',
       message:
@@ -316,7 +371,7 @@ function checkStep(step, { tagFilters, unknownInputs }) {
           'submission_tags.',
       });
     } else if (diffBase && diffBase !== 'cumulative') {
-      at(set.get('tag_diff_base'), {
+      at(set.get('tag_diff_base') ?? stepItself, {
         severity: 'info',
         code: 'no-effect',
         message:
@@ -327,12 +382,14 @@ function checkStep(step, { tagFilters, unknownInputs }) {
   } else if (tagFilters && literal('submission_tags') !== undefined) {
     // The two are copies of one list. GitHub's own `!` entries have no
     // counterpart in submission_tags, so they are left out of the comparison.
+    // literal() gave its text, so it is set, and to a value.
+    const tags = /** @type {InputValue} */ (set.get('submission_tags'));
     const listed = splitTagList(literal('submission_tags'));
     const filters = tagFilters.filter((filter) => !filter.startsWith('!'));
     const notListed = filters.filter((filter) => !listed.includes(filter));
     const notFiltered = listed.filter((pattern) => !filters.includes(pattern));
     if (notListed.length > 0) {
-      atValue(set.get('submission_tags'), {
+      atValue(tags, {
         severity: 'warning',
         code: 'tag-lists-differ',
         message:
@@ -342,7 +399,7 @@ function checkStep(step, { tagFilters, unknownInputs }) {
       });
     }
     if (notFiltered.length > 0) {
-      atValue(set.get('submission_tags'), {
+      atValue(tags, {
         severity: 'warning',
         code: 'tag-lists-differ',
         message:
@@ -362,6 +419,9 @@ function checkStep(step, { tagFilters, unknownInputs }) {
  *
  * `unknownInputs: false` leaves out inputs the action does not declare, for
  * when something else in the editor already reports them.
+ *
+ * @param {string} text
+ * @param {{ unknownInputs?: boolean }} [options]
  */
 export function checkWorkflow(text, { unknownInputs = true } = {}) {
   const { steps, tagFilters } = readWorkflow(text);

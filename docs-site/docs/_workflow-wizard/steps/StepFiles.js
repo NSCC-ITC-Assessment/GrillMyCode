@@ -3,6 +3,9 @@ import styles from '../styles.module.css';
 import ExcludeListsDisclosure from './ExcludeListsDisclosure';
 import FilePreview, { PatternChecks, useFilePreview } from './FilePreview';
 
+/** @import { StepProps } from '../index' */
+
+/** @param {StepProps} props */
 export default function StepFiles({ cfg, onChange, host }) {
   // Worked out here, not in FilePreview, so each pattern box can say what its
   // patterns do to the chosen files.

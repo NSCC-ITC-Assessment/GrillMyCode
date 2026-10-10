@@ -142,6 +142,7 @@ export function findMatchingTagPattern(patterns, tagName) {
  */
 export function pickPreviousSubmissionTag({ tags, ancestors, patterns, headSha }) {
   const position = new Map(ancestors.map((sha, idx) => [sha, idx]));
+  /** @type {{ name: string, commit: string } | null} */
   let best = null;
   let bestPos = Infinity;
   for (const tag of tags) {
@@ -150,7 +151,7 @@ export function pickPreviousSubmissionTag({ tags, ancestors, patterns, headSha }
     if (pos === undefined) continue;
     if (!findMatchingTagPattern(patterns, tag.name)) continue;
     // Ties (two tags on one commit) break by name so the choice is stable.
-    if (pos < bestPos || (pos === bestPos && tag.name < best.name)) {
+    if (pos < bestPos || (pos === bestPos && best !== null && tag.name < best.name)) {
       best = tag;
       bestPos = pos;
     }

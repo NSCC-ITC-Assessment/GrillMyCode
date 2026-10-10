@@ -12,9 +12,12 @@ import {
   starterShareDefaultError,
 } from '../generateYaml';
 
+/** @import { StepProps } from '../index' */
+
 // Its own step, after every setting it can expose has been chosen, so the
 // instructor ticks a setting they have already seen. Every trigger allows a
 // manual run, so the step applies whichever trigger was picked.
+/** @param {StepProps} props */
 export default function StepManualRuns({ cfg, onChange }) {
   const offer = {
     tagTrigger: isTagTrigger(cfg),

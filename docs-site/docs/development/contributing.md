@@ -63,6 +63,29 @@ Lint (ESLint) and formatting (Prettier) are also run automatically on staged fil
 
 ---
 
+## Type checking
+
+The code is JavaScript, with its types written as JSDoc comments. TypeScript checks them without compiling anything, so the action still runs `src/` as it is written.
+
+Each project is checked with its own packages installed, by the same command run from its folder:
+
+```bash
+# The action (src/)
+pnpm typecheck
+
+# The VS Code extension
+cd extensions/vscode && pnpm typecheck
+
+# The Workflow Wizard
+cd docs-site && pnpm typecheck
+```
+
+All three run on a pull request. They are not part of the pre-commit hooks.
+
+In `extensions/vscode/` every parameter must have a type. In `src/` and the Workflow Wizard a parameter may still go without one, and is then not checked, so give a type to any parameter of a function you add or change. Shared shapes have a named type to use: `Inputs` (`src/inputs.js`), `RunState` (`src/main.js`), and `WizardConfig` and `StepProps` (the Wizard's `index.js`).
+
+---
+
 ## Commit message conventions
 
 This project enforces [Conventional Commits](https://www.conventionalcommits.org/) via `commitlint`. Every commit message must follow the pattern:

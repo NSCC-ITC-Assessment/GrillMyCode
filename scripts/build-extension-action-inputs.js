@@ -51,6 +51,32 @@ const BANNER = `// GENERATED FILE — do not edit. This is what action.yml decla
 // input, with what src/inputs.js accepts for it. To change it, edit those files
 // and run: node scripts/build-extension-action-inputs.js
 
+/**
+ * What a value of an input may be, by its \`kind\`. An input that is free text
+ * has none.
+ *
+ * @typedef {{ kind: 'enum', values: string[], caseSensitive?: boolean, prefix?: string }
+ *   | { kind: 'boolean', strict?: boolean }
+ *   | { kind: 'integer', min: number, max?: number }
+ *   | { kind: 'number', min: number, max: number }
+ *   | { kind: 'tags' }
+ *   | { kind?: undefined }} InputRule
+ */
+
+/**
+ * One input: what action.yml declares for it, and its rule.
+ *
+ * @typedef {{
+ *   description: string,
+ *   default: string,
+ *   required: boolean,
+ *   deprecated?: boolean,
+ *   secret?: boolean,
+ *   replacement?: string,
+ *   hidden?: boolean,
+ * } & InputRule} ActionInput
+ */
+
 `;
 
 /**
@@ -158,7 +184,7 @@ export function buildActionInputs(actionYaml) {
 // `pnpm format:check` expects it.
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const built = buildActionInputs(readFileSync(ACTION_PATH, 'utf-8'));
-  const source = `${BANNER}export const ACTION_INPUTS = ${JSON.stringify(built)};\n`;
+  const source = `${BANNER}/** @type {Record<string, ActionInput>} */\nexport const ACTION_INPUTS = ${JSON.stringify(built)};\n`;
   const options = await resolveConfig(OUT_PATH);
   writeFileSync(OUT_PATH, await format(source, { ...options, filepath: OUT_PATH }));
   console.log(`Wrote ${OUT_PATH} (${Object.keys(built).length} inputs)`);

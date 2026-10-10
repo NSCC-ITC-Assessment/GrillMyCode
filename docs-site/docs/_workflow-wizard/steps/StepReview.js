@@ -3,6 +3,8 @@ import styles from '../styles.module.css';
 import { generateYaml, instructorRepoActive, isTagTrigger, submissionTagList } from '../generateYaml';
 import { resolveDispatchOverrides } from '../dispatchInputs';
 
+/** @import { StepProps } from '../index' */
+
 function buildChecklist(cfg, docsBase, host) {
   const items = [
     {
@@ -84,6 +86,7 @@ function buildChecklist(cfg, docsBase, host) {
 
 // `host` is the editor the wizard is running in, if it is (see index.js). It
 // can write the file, which a web page cannot.
+/** @param {StepProps} props */
 export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs', host }) {
   const yaml = generateYaml(cfg, { actionRef });
   const [copied, setCopied] = useState(false);
@@ -92,7 +95,7 @@ export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs', 
 
   function handleSave() {
     setSaveState('saving');
-    host.saveWorkflow(yaml).then(
+    host?.saveWorkflow(yaml).then(
       // false: the instructor cancelled, which is not a failure.
       (written) => setSaveState(written ? 'saved' : ''),
       () => setSaveState('failed'),

@@ -23,18 +23,51 @@ import {
   tagGroupSlug,
 } from '../shared/identity.js';
 
+/** @import { RepoRequest } from '../shared/github.js' */
+/** @import { SubmissionIdentity } from '../shared/identity.js' */
+/** @import { IssueGroup } from '../shared/issues.js' */
+/** @import { Question, Snippet } from '../shared/report.js' */
+
+/**
+ * A question from an answer key, which always has its answer and distractors.
+ *
+ * @typedef {Question & { answer: string, distractors: string[] }} KeyQuestion
+ */
+
+/**
+ * An answer key the signed-in account can read, as findAnswerKey returns it.
+ *
+ * @typedef {object} AnswerKey
+ * @property {KeyQuestion[]} questions
+ * @property {boolean} own
+ * @property {string} repo
+ * @property {string} path
+ * @property {undefined} [reason]
+ */
+
 /**
  * Where an identity's answer key is: `{ repo, path }` in the student
  * repository's organization. `group` is the questions issue's, from
  * parseIssueTitle, and names the tag pattern for a submission tag's questions.
+ *
+ * @param {Pick<SubmissionIdentity, 'assignment' | 'submitter'>} identity
+ * @param {IssueGroup} [group]
  */
 export function answerKeyLocation({ assignment, submitter }, group) {
   const folder = group?.kind === 'tag' ? `${submitter}/${tagGroupSlug(group.name)}` : submitter;
   return { repo: `${assignment}${INSTRUCTOR_REPO_SUFFIX}`, path: `${folder}/${ANSWER_KEY_FILE}` };
 }
 
+/**
+ * @param {unknown} value
+ * @returns {value is string}
+ */
 const isText = (value) => typeof value === 'string';
 
+/**
+ * @param {any} snippet
+ * @returns {Snippet | undefined}
+ */
 function readSnippet(snippet) {
   if (!isText(snippet?.file)) return undefined;
   if (!Number.isInteger(snippet.start_line) || !Number.isInteger(snippet.end_line)) {
@@ -49,6 +82,10 @@ function readSnippet(snippet) {
   };
 }
 
+/**
+ * @param {any} entry
+ * @returns {KeyQuestion | undefined}
+ */
 function readQuestion(entry) {
   // A dropped question was never asked: it has no number and is in no report.
   if (!entry || entry.dropped === true) return undefined;
@@ -74,6 +111,9 @@ function readQuestion(entry) {
  *
  * The file is the action's, but it is read as carefully as the issue: an entry
  * that does not fit is left out, and nothing in it is evaluated.
+ *
+ * @param {string} text
+ * @returns {KeyQuestion[] | undefined}
  */
 export function parseAnswerKey(text) {
   let record;
@@ -87,7 +127,7 @@ export function parseAnswerKey(text) {
   return questions.length > 0 ? questions : undefined;
 }
 
-const lines = (question) =>
+const lines = (/** @type {Question} */ question) =>
   question.snippets.map((s) => `${s.file}:${s.start_line}-${s.end_line}`).join('\n');
 
 /**
@@ -98,6 +138,9 @@ const lines = (question) =>
  * They differ when the key was written by another run. An instructor
  * repository keeps one key per student, or per submission tag, while a student
  * repository keeps an issue per branch.
+ *
+ * @param {Question[]} reportQuestions
+ * @param {Question[]} keyQuestions
  */
 export function matchesReport(reportQuestions, keyQuestions) {
   const byNumber = new Map(keyQuestions.map((question) => [question.number, question]));
@@ -117,6 +160,9 @@ export function matchesReport(reportQuestions, keyQuestions) {
  * In the account's own repository this is one request, which GitHub refuses an
  * ordinary student. In anyone else's the student is found first, from the
  * repository's direct collaborators, as the action finds them.
+ *
+ * @param {RepoRequest & { login?: string, group?: IssueGroup }} request
+ * @returns {Promise<AnswerKey | { reason: string }>}
  */
 export async function findAnswerKey({ owner, repo, login, group, token, fetch }) {
   try {
@@ -124,7 +170,7 @@ export async function findAnswerKey({ owner, repo, login, group, token, fetch })
     const identity =
       own ??
       matchSubmissionIdentity(repo, await listDirectCollaborators({ owner, repo, token, fetch }));
-    if (identity.error) return { reason: identity.error };
+    if (identity.error !== undefined) return { reason: identity.error };
 
     const location = answerKeyLocation(identity, group);
     const questions = parseAnswerKey(await readFile({ owner, ...location, token, fetch }));

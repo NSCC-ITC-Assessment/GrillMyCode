@@ -23,6 +23,25 @@ import { OPENROUTER_ORIGIN } from './constants.js';
 export const REQUESTS = ['ready', 'pickFolder', 'list', 'read', 'saveWorkflow'];
 
 /**
+ * A message isRequest has passed. Only `type` and `id` are checked: the rest
+ * is whatever the page sent, and is checked where it is used.
+ *
+ * @typedef {object} WizardRequest
+ * @property {string} type
+ * @property {number} [id]
+ * @property {unknown} [choose]
+ * @property {unknown} [path]
+ * @property {unknown} [bytes]
+ * @property {unknown} [yaml]
+ */
+
+/**
+ * One thing a folder holds, as the editor's file system describes it.
+ *
+ * @typedef {{ name: string, isFile: boolean, isFolder: boolean, isLink: boolean }} FolderEntry
+ */
+
+/**
  * What the extension sends the page unasked: `{ type: 'folders', openFolder }`,
  * the name of the folder open in the editor, the names of several, or '' when
  * none is.
@@ -32,14 +51,24 @@ export const FOLDERS_NOTICE = 'folders';
 /** The name of the error a request is refused with when the instructor cancels. */
 export const CANCELLED = 'AbortError';
 
-/** True for a message shaped like a request from the page. */
+/**
+ * True for a message shaped like a request from the page.
+ *
+ * @param {any} message
+ * @returns {message is WizardRequest}
+ */
 export function isRequest(message) {
   if (!message || typeof message !== 'object') return false;
   if (!REQUESTS.includes(message.type)) return false;
   return message.type === 'ready' || Number.isSafeInteger(message.id);
 }
 
-/** A path inside a folder, as the page names it: `src/app.js`. */
+/**
+ * A path inside a folder, as the page names it: `src/app.js`.
+ *
+ * @param {string} folder
+ * @param {string} name
+ */
 export const joinPath = (folder, name) => (folder ? `${folder}/${name}` : name);
 
 /**
@@ -52,14 +81,19 @@ export const joinPath = (folder, name) => (folder ? `${folder}/${name}` : name);
  */
 export class FolderRecord {
   #folders = new Set(['']);
+  /** @type {Set<string>} */
   #files = new Set();
 
   /**
    * Records what `folder` holds and returns it as the page is told it.
    * `entries` is `[{ name, isFile, isFolder, isLink }]`; one that is neither a
    * file, a folder nor a link, such as a socket, is left out.
+   *
+   * @param {string} folder
+   * @param {FolderEntry[]} entries
    */
   add(folder, entries) {
+    /** @type {{ name: string, kind: 'file' | 'directory' }[]} */
     const listed = [];
     for (const { name, isFile, isFolder, isLink } of entries) {
       const path = joinPath(folder, name);
@@ -76,18 +110,32 @@ export class FolderRecord {
     return listed;
   }
 
-  /** True for the folder itself (''), and for a folder a listing named. */
+  /**
+   * True for the folder itself (''), and for a folder a listing named.
+   *
+   * @param {unknown} path
+   * @returns {path is string}
+   */
   hasFolder(path) {
-    return this.#folders.has(path);
+    return typeof path === 'string' && this.#folders.has(path);
   }
 
-  /** True for a file a listing named, other than a link. */
+  /**
+   * True for a file a listing named, other than a link.
+   *
+   * @param {unknown} path
+   * @returns {path is string}
+   */
   hasFile(path) {
-    return this.#files.has(path);
+    return typeof path === 'string' && this.#files.has(path);
   }
 }
 
-/** Text as an HTML attribute's value. */
+/**
+ * Text as an HTML attribute's value.
+ *
+ * @param {unknown} text
+ */
 const attribute = (text) =>
   String(text).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;');
 
@@ -98,6 +146,14 @@ const attribute = (text) =>
  * else: no other script, frame or address.
  *
  * `source` is what VS Code calls the page's own origin (webview.cspSource).
+ *
+ * @param {object} page
+ * @param {string} page.nonce
+ * @param {string} page.source
+ * @param {{ toString(): string }} page.scriptUri
+ * @param {{ toString(): string }} page.styleUri
+ * @param {string} page.actionRef
+ * @param {string} page.docsBase
  */
 export function wizardPage({ nonce, source, scriptUri, styleUri, actionRef, docsBase }) {
   const policy = [

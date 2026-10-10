@@ -3,6 +3,8 @@ import styles from '../styles.module.css';
 import { isTagTrigger } from '../generateYaml';
 import CodebaseContextLimit, { codebaseLimitStep } from './CodebaseContextLimit';
 
+/** @import { StepProps } from '../index' */
+
 const TRIGGERS = [
   {
     value: 'push+workflow_dispatch',
@@ -21,6 +23,7 @@ const TRIGGERS = [
   },
 ];
 
+/** @param {StepProps} props */
 export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
   const showBranchOption = cfg.triggerEvent === 'push+workflow_dispatch';
   const branchMode = cfg.branchMode || 'specify';

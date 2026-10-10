@@ -114,7 +114,7 @@ export function diffLines(oldRaw, newRaw) {
     );
     if (result.error) throw result.error;
     // --no-index exits 1 when the files differ; only 2 and above are errors.
-    if (result.status > 1) throw new Error(`git diff --no-index failed:\n${result.stderr}`);
+    if ((result.status ?? 0) > 1) throw new Error(`git diff --no-index failed:\n${result.stderr}`);
 
     const lines = result.stdout.split('\n');
     const start = lines.findIndex((line) => line.startsWith('@@'));
@@ -122,6 +122,7 @@ export function diffLines(oldRaw, newRaw) {
       return splitLines(newText).map((text) => ({ marker: LINE_MARKERS.unchanged, text }));
     }
     // The diff's own markers only: LINE_MARKERS.starter is GrillMyCode's, not git's.
+    /** @type {Set<string>} */
     const markers = new Set([LINE_MARKERS.added, LINE_MARKERS.removed, LINE_MARKERS.unchanged]);
     return lines
       .slice(start + 1)

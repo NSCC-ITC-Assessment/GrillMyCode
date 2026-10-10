@@ -36,6 +36,8 @@ import {
   wizardPage,
 } from '../shared/wizard.js';
 
+/** @import { WizardRequest } from '../shared/wizard.js' */
+
 const PANEL_TYPE = 'grillmycode.workflowWizard';
 const PANEL_TITLE = 'Workflow Wizard';
 
@@ -50,6 +52,7 @@ function cancelled() {
   return err;
 }
 
+/** @param {vscode.Uri} uri */
 async function exists(uri) {
   try {
     await vscode.workspace.fs.stat(uri);
@@ -63,6 +66,9 @@ async function exists(uri) {
  * The first `limit` bytes of a file. A folder on this computer is read
  * through Node, which can stop there; the editor's own file system reads a
  * file whole.
+ *
+ * @param {vscode.Uri} uri
+ * @param {number} limit
  */
 async function readStart(uri, limit) {
   if (uri.scheme !== 'file') return (await vscode.workspace.fs.readFile(uri)).subarray(0, limit);
@@ -81,7 +87,11 @@ export class WorkflowWizard {
    * answer them: a test cannot press a button in a dialog.
    */
   prompts = {
-    /** Which of several open folders: resolves to one, or undefined. */
+    /**
+     * Which of several open folders: resolves to one, or undefined.
+     *
+     * @param {string} placeHolder
+     */
     pickOpenFolder: (placeHolder) => vscode.window.showWorkspaceFolderPick({ placeHolder }),
     /** A folder from anywhere on the computer: resolves to its URI, or undefined. */
     chooseFolder: async () => {
@@ -94,7 +104,11 @@ export class WorkflowWizard {
       });
       return chosen?.[0];
     },
-    /** Whether to replace the workflow file a folder already has. */
+    /**
+     * Whether to replace the workflow file a folder already has.
+     *
+     * @param {string} folderName
+     */
     confirmReplace: async (folderName) => {
       const replace = 'Replace';
       const answer = await vscode.window.showWarningMessage(
@@ -107,13 +121,24 @@ export class WorkflowWizard {
   };
 
   #extensionUri;
+  /** @type {vscode.WebviewPanel | undefined} */
   #panel;
-  /** The folder the page is reading: `{ uri, record }`. */
+  /**
+   * The folder the page is reading: `{ uri, record }`.
+   *
+   * @type {{ uri: vscode.Uri, record: FolderRecord } | undefined}
+   */
   #folder;
-  /** `{ promise, resolve }`: settled when the page says the Wizard is on screen. */
+  /**
+   * `{ promise, resolve }`: settled when the page says the Wizard is on screen.
+   *
+   * @type {{ promise: Promise<void>, resolve: () => void } | undefined}
+   */
   #mounted;
+  /** @type {vscode.Disposable[]} */
   #disposables = [];
 
+  /** @param {vscode.ExtensionContext} context */
   constructor(context) {
     this.#extensionUri = context.extensionUri;
   }
@@ -138,7 +163,7 @@ export class WorkflowWizard {
   open() {
     if (this.#panel) {
       this.#panel.reveal();
-      return this.#mounted.promise;
+      return this.#mounted?.promise;
     }
     const dist = vscode.Uri.joinPath(this.#extensionUri, 'dist');
     const panel = vscode.window.createWebviewPanel(
@@ -149,8 +174,11 @@ export class WorkflowWizard {
       { enableScripts: true, retainContextWhenHidden: true, localResourceRoots: [dist] },
     );
     this.#panel = panel;
-    this.#mounted = {};
-    this.#mounted.promise = new Promise((resolve) => (this.#mounted.resolve = resolve));
+    /** @type {() => void} */
+    let resolve = () => {};
+    /** @type {Promise<void>} */
+    const promise = new Promise((settle) => (resolve = settle));
+    this.#mounted = { promise, resolve };
     panel.onDidDispose(() => {
       this.#panel = undefined;
       this.#folder = undefined;
@@ -164,13 +192,17 @@ export class WorkflowWizard {
       actionRef: ACTION_REF,
       docsBase: DOCS_URL,
     });
-    return this.#mounted.promise;
+    return promise;
   }
 
+  /**
+   * @param {vscode.WebviewPanel} panel
+   * @param {unknown} message
+   */
   async #receive(panel, message) {
     if (!isRequest(message)) return;
     if (message.type === 'ready') {
-      this.#mounted.resolve();
+      this.#mounted?.resolve();
       this.#tellFolders();
       return;
     }
@@ -184,6 +216,7 @@ export class WorkflowWizard {
     if (this.#panel === panel) panel.webview.postMessage(reply);
   }
 
+  /** @param {WizardRequest} message */
   #answer(message) {
     switch (message.type) {
       case 'pickFolder':
@@ -232,7 +265,11 @@ export class WorkflowWizard {
     return { name };
   }
 
-  /** What a folder holds, as `[{ name, kind }]`. `path` is '' for the folder picked. */
+  /**
+   * What a folder holds, as `[{ name, kind }]`. `path` is '' for the folder picked.
+   *
+   * @param {unknown} path
+   */
   async list(path) {
     const folder = this.#folder;
     if (!folder?.record.hasFolder(path)) throw new Error('Not a folder the Wizard was shown.');
@@ -253,12 +290,15 @@ export class WorkflowWizard {
    * A file's text, or with `bytes` the text of that many of its first bytes.
    * A file too large to give in full is refused, which the Wizard takes as a
    * file it could not read.
+   *
+   * @param {unknown} path
+   * @param {unknown} [bytes]
    */
   async read(path, bytes) {
     const folder = this.#folder;
     if (!folder?.record.hasFile(path)) throw new Error('Not a file the Wizard was shown.');
     const uri = vscode.Uri.joinPath(folder.uri, ...path.split('/'));
-    const whole = !Number.isSafeInteger(bytes) || bytes <= 0;
+    const whole = typeof bytes !== 'number' || !Number.isSafeInteger(bytes) || bytes <= 0;
     const limit = whole ? WIZARD_MAX_FILE_BYTES + 1 : Math.min(bytes, WIZARD_MAX_FILE_BYTES);
     const content = await readStart(uri, limit);
     if (whole && content.length > WIZARD_MAX_FILE_BYTES) throw new Error('The file is too large.');
@@ -269,6 +309,8 @@ export class WorkflowWizard {
    * Writes the workflow to WORKFLOW_FILE in the open folder and shows it.
    * Resolves to false if the instructor backs out. With no folder open there
    * is nowhere to write it, so it is shown as a new file to save.
+   *
+   * @param {unknown} yaml
    */
   async saveWorkflow(yaml) {
     if (typeof yaml !== 'string' || !yaml.trim() || yaml.length > WIZARD_MAX_WORKFLOW_CHARS) {
@@ -309,7 +351,11 @@ export class WorkflowWizard {
     return true;
   }
 
-  /** Shows a file beside the Wizard, whose last step says what to do next. */
+  /**
+   * Shows a file beside the Wizard, whose last step says what to do next.
+   *
+   * @param {vscode.TextDocument} document
+   */
   #show(document) {
     return vscode.window.showTextDocument(document, {
       viewColumn: vscode.ViewColumn.Beside,

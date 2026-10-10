@@ -7,7 +7,15 @@
 
 import { SHORT_SHA_LENGTH } from './constants.js';
 
-/** A snippet's lines as the report captions them: `line 12` or `lines 28–37`. */
+/** @import { Question, Snippet } from './report.js' */
+
+/** @typedef {{ file: string | null, questions: Question[] }} QuestionGroup */
+
+/**
+ * A snippet's lines as the report captions them: `line 12` or `lines 28–37`.
+ *
+ * @param {Pick<Snippet, 'start_line' | 'end_line'>} snippet
+ */
 export function describeLines(snippet) {
   return snippet.start_line === snippet.end_line
     ? `line ${snippet.start_line}`
@@ -18,6 +26,8 @@ export function describeLines(snippet) {
  * True when a snippet's file name is a plain path inside the repository. The
  * name comes from the issue, which anyone with write access can edit, so one
  * that is absolute or climbs out with `..` is never opened.
+ *
+ * @param {unknown} file
  */
 export function isSafeRelativePath(file) {
   if (typeof file !== 'string' || !file || file.includes('\0')) return false;
@@ -25,7 +35,11 @@ export function isSafeRelativePath(file) {
   return !file.split(/[/\\]/).includes('..');
 }
 
-/** The snippets of a question that can be opened: a safe path and a real line range. */
+/**
+ * The snippets of a question that can be opened: a safe path and a real line range.
+ *
+ * @param {Question} question
+ */
 export function openableSnippets(question) {
   return question.snippets.filter(
     (snippet) =>
@@ -42,9 +56,14 @@ export function openableSnippets(question) {
  * broader questions.
  *
  * Returns `[{ file, questions }]`, where `file` is null for that last group.
+ *
+ * @param {Question[]} questions
+ * @returns {QuestionGroup[]}
  */
 export function groupQuestions(questions) {
+  /** @type {Map<string, Question[]>} */
   const groups = new Map();
+  /** @type {Question[]} */
   const withoutCode = [];
   for (const question of questions) {
     const [first] = openableSnippets(question);
@@ -53,14 +72,19 @@ export function groupQuestions(questions) {
       continue;
     }
     if (!groups.has(first.file)) groups.set(first.file, []);
-    groups.get(first.file).push(question);
+    groups.get(first.file)?.push(question);
   }
+  /** @type {QuestionGroup[]} */
   const result = [...groups].map(([file, grouped]) => ({ file, questions: grouped }));
   if (withoutCode.length > 0) result.push({ file: null, questions: withoutCode });
   return result;
 }
 
-/** The distinct files the questions' snippets name, in order of first use. */
+/**
+ * The distinct files the questions' snippets name, in order of first use.
+ *
+ * @param {Question[]} questions
+ */
 export function questionFiles(questions) {
   return [...new Set(questions.flatMap((q) => openableSnippets(q).map((s) => s.file)))];
 }
@@ -83,7 +107,7 @@ export function questionFiles(questions) {
  */
 export function describeDrift({ headSha, folderCommit, changedFiles, files }) {
   if (folderCommit && headSha && !folderCommit.startsWith(headSha)) {
-    const short = (sha) => sha.slice(0, SHORT_SHA_LENGTH);
+    const short = (/** @type {string} */ sha) => sha.slice(0, SHORT_SHA_LENGTH);
     return (
       `These questions were written for commit ${short(headSha)}, and this folder is at ` +
       `${short(folderCommit)}. The highlighted lines may have moved.`

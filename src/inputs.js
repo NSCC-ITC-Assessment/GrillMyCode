@@ -287,6 +287,14 @@ function readStarterQuestionsOneIn() {
   return Math.min(MAX_QUESTIONS, Math.max(MIN_STARTER_QUESTIONS_ONE_IN, raw));
 }
 
+/**
+ * The action's inputs as the rest of the code receives them: read, given their
+ * defaults and clamped. This is what readInputs returns, so a field is
+ * documented where it is read, below.
+ *
+ * @typedef {ReturnType<typeof readInputs>} Inputs
+ */
+
 export function readInputs() {
   const rawNumQuestions = Math.max(
     MIN_QUESTIONS,

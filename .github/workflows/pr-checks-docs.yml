@@ -25,6 +25,11 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: docs-site
 
+      # The Workflow Wizard, the only JavaScript here that is type-checked.
+      - name: Check types
+        run: pnpm typecheck
+        working-directory: docs-site
+
       - name: Build site
         run: pnpm build
         working-directory: docs-site

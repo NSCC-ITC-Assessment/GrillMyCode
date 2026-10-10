@@ -8,7 +8,13 @@
 
 import { describeLines } from './questions.js';
 
-/** Escapes text for use in HTML content or a double-quoted attribute. */
+/** @import { Question } from './report.js' */
+
+/**
+ * Escapes text for use in HTML content or a double-quoted attribute.
+ *
+ * @param {unknown} text
+ */
 export function escapeHtml(text) {
   return String(text)
     .replace(/&/g, '&amp;')
@@ -18,7 +24,11 @@ export function escapeHtml(text) {
     .replace(/'/g, '&#39;');
 }
 
-/** A line of prose as HTML, with its `inline code` spans as <code> elements. */
+/**
+ * A line of prose as HTML, with its `inline code` spans as <code> elements.
+ *
+ * @param {string} text
+ */
 export function proseToHtml(text) {
   return text
     .split(/(`[^`]+`)/)
@@ -28,7 +38,11 @@ export function proseToHtml(text) {
     .join('');
 }
 
-/** The body of the Question view for one question, or a prompt when none is selected. */
+/**
+ * The body of the Question view for one question, or a prompt when none is selected.
+ *
+ * @param {Question | undefined} question
+ */
 export function questionToHtml(question) {
   if (!question) return '<p class="hint">Select a question to read it here.</p>';
   const snippets = question.snippets

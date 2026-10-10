@@ -11,14 +11,33 @@
 import * as vscode from 'vscode';
 import { describeLines, groupQuestions, openableSnippets } from '../shared/questions.js';
 
+/** @import { QuestionGroup } from '../shared/questions.js' */
+/** @import { Question, Snippet } from '../shared/report.js' */
+
+/**
+ * @typedef {{ group: QuestionGroup, question?: undefined, snippet?: undefined }} GroupNode
+ * @typedef {{ question: Question, snippet?: undefined, group?: undefined }} QuestionNode
+ * @typedef {{ question: Question, snippet: Snippet, group?: undefined }} SnippetNode
+ * @typedef {GroupNode | QuestionNode | SnippetNode} TreeNode
+ */
+
+/** @implements {vscode.TreeDataProvider<TreeNode>} */
 export class QuestionsTree {
+  /** @type {vscode.EventEmitter<void>} */
   #changed = new vscode.EventEmitter();
   onDidChangeTreeData = this.#changed.event;
 
+  /** @type {vscode.Uri | undefined} */
   #root;
+  /** @type {QuestionGroup[]} */
   #groups = [];
 
-  /** Shows a report's questions, with `root` the repository their paths are relative to. */
+  /**
+   * Shows a report's questions, with `root` the repository their paths are relative to.
+   *
+   * @param {vscode.Uri | undefined} root
+   * @param {Question[]} questions
+   */
   show(root, questions) {
     this.#root = root;
     this.#groups = groupQuestions(questions);
@@ -29,6 +48,10 @@ export class QuestionsTree {
     this.show(undefined, []);
   }
 
+  /**
+   * @param {TreeNode} [node]
+   * @returns {TreeNode[]}
+   */
   getChildren(node) {
     if (!node) return this.#groups.map((group) => ({ group }));
     if (node.group) return node.group.questions.map((question) => ({ question }));
@@ -37,6 +60,10 @@ export class QuestionsTree {
     return snippets.length > 1 ? snippets.map((snippet) => ({ ...node, snippet })) : [];
   }
 
+  /**
+   * @param {TreeNode} node
+   * @returns {TreeNode | undefined}
+   */
   getParent(node) {
     if (node.group) return undefined;
     if (node.snippet) return { question: node.question };
@@ -44,11 +71,13 @@ export class QuestionsTree {
     return group && { group };
   }
 
+  /** @param {TreeNode} node */
   getTreeItem(node) {
     if (node.group) return this.#groupItem(node.group);
     return node.snippet ? this.#snippetItem(node) : this.#questionItem(node);
   }
 
+  /** @param {QuestionGroup} group */
   #groupItem({ file }) {
     const { Expanded } = vscode.TreeItemCollapsibleState;
     if (file === null) {
@@ -58,7 +87,9 @@ export class QuestionsTree {
       return item;
     }
     // Built from the URI, so the row takes the file's name and its icon.
-    const item = new vscode.TreeItem(vscode.Uri.joinPath(this.#root, file), Expanded);
+    // A file's group is there only while show() has a root for it.
+    const root = /** @type {vscode.Uri} */ (this.#root);
+    const item = new vscode.TreeItem(vscode.Uri.joinPath(root, file), Expanded);
     item.id = `file:${file}`;
     item.iconPath = vscode.ThemeIcon.File;
     const folder = file.includes('/') ? file.slice(0, file.lastIndexOf('/')) : '';
@@ -66,6 +97,7 @@ export class QuestionsTree {
     return item;
   }
 
+  /** @param {QuestionNode} node */
   #questionItem(node) {
     const { question } = node;
     const several = openableSnippets(question).length > 1;
@@ -87,6 +119,7 @@ export class QuestionsTree {
     return item;
   }
 
+  /** @param {SnippetNode} node */
   #snippetItem(node) {
     const item = new vscode.TreeItem(node.snippet.file, vscode.TreeItemCollapsibleState.None);
     item.description = describeLines(node.snippet);

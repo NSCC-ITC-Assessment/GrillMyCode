@@ -23,6 +23,9 @@ import { QuestionsController } from './student/controller.js';
 import { WorkflowHelp } from './workflow/help.js';
 import { WorkflowWizard } from './workflow/wizard.js';
 
+/** @import { ExtensionContext } from 'vscode' */
+
+/** @param {ExtensionContext} context */
 export function activate(context) {
   const controller = new QuestionsController(context);
   const workflowHelp = new WorkflowHelp();
