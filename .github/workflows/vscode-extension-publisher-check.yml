@@ -19,8 +19,8 @@ jobs:
   check:
     name: Check the Marketplace sign-in
     runs-on: ubuntu-latest
-    # The same environment as the publish job, so the same variables, secret
-    # and Entra federated credential apply.
+    # The same environment as the publish job, so the same variables and
+    # Entra federated credential apply.
     environment: vscode-marketplace
     permissions:
       contents: read
@@ -59,21 +59,18 @@ jobs:
           echo "::notice::The Marketplace knows the Entra identity as $id. Add that ID to the publisher's members, as a Contributor."
 
       # Asks the Marketplace which roles the sign-in has on the publisher
-      # named in package.json. It fails when there are none.
+      # named in package.json. It fails when there are none. Its messages say
+      # "Personal Access Token" whatever the sign-in.
       - name: Check the sign-in can publish
         working-directory: extensions/vscode
         env:
           ENTRA_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
         run: |
           if [ -n "$ENTRA_CLIENT_ID" ]; then
             echo "Checking the Microsoft Entra identity."
-            env -u VSCE_PAT pnpm exec vsce verify-pat --azure-credential
-          elif [ -n "$VSCE_PAT" ]; then
-            echo "::warning::Checking the VSCE_PAT secret, which stops working on 2026-12-01."
-            pnpm exec vsce verify-pat
+            pnpm exec vsce verify-pat --azure-credential
           else
-            echo "::error::No Entra identity and no VSCE_PAT secret. The release workflow would use trusted publishing, which can only be tried by publishing."
+            echo "::error::No Entra identity. The release workflow would use trusted publishing, which can only be tried by publishing."
             exit 1
           fi
 

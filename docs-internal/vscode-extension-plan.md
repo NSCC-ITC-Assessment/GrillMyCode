@@ -1,20 +1,19 @@
 # VS Code extension — plan
 
-> **Recorded:** 2026-10-03 (`ff56b1d`), shortened on 2026-10-04. The long
-> version, with what was tried and how, is this file at `10791ec`.
-> **Status:** Phases 1 and 4 and the first-run walkthrough are released.
-> Phase 2 is under way. Phases 3, 5 and 7 were released in 0.4.0, a stable
-> release, on 2026-10-10. 0.4.1, which fixes the Wizard's file preview on a
-> large folder, is prepared and not tagged. Phase 3 is without marking, and
-> parts of all three went out without having been seen working. Phase 6 is a
-> proposal.
+> **Recorded:** 2026-10-03 (`ff56b1d`). Shortened on 2026-10-04 and 2026-10-10.
+> The fuller wording is this file at `ee31e05`. What was tried and how is at
+> `10791ec`.
+> **Status:** 0.4.1 is the stable release, of 2026-10-10. Phases 1, 3, 4, 5
+> and 7 are released, 2 is under way and 6 is a proposal. Parts of 3, 5 and 7
+> went out without having been seen working.
 
 GrillMyCode Companion (`GrillMyCode.grillmycode`) shows the questions the
 action posts beside the code they ask about. It lives in `extensions/vscode/`
-and releases on its own `vscode-v*` tags. This note says what is left to do
-and gives one line to each thing that is done. The commands and the release
-steps are in `extensions/README.md`, and the rules for contributors are in
-`AGENTS.md`.
+and releases on its own `vscode-v*` tags.
+
+Elsewhere: commands and release steps in `extensions/README.md`, rules for
+contributors in `AGENTS.md`, and how each feature works in the docs site's
+`reference/vscode-extension.md`.
 
 ![The student side: the action posts an issue of questions, and the extension finds it, reads each question and matches it to lines in the open folder.](student-extension-overview.svg)
 
@@ -22,336 +21,204 @@ steps are in `extensions/README.md`, and the rules for contributors are in
 
 ## Phases at a glance
 
-| Phase | What it adds                                                                                                        | Needs first                                              | Status                                                                                               |
-| ----- | ------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ---------------------------------------------------------------------------------------------------- |
-| 1     | From a question to its code: the questions list, the selected question, the jump to code and the moved-code warning | Nothing                                                  | Published                                                                                            |
-| 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks      | Nothing                                                  | In progress: 0.4.0 is the stable release; two hand checks, the token and the features are left       |
-| 3     | Instructor view: answers beside the student's code, and the view switch                                             | Nothing                                                  | Released in 0.4.0, stable. Marks and notes, and a real viva, are left                                |
-| 4     | Action changes: hidden data in the issue, and the marker check                                                      | An action release                                        | Released: the action in v0.25.0, the extension in 0.2.1                                              |
-| 5     | Workflow help: the action's inputs checked, offered and described in a workflow file                                | A look at what the GitHub Actions extension already does | Released in 0.4.0, stable. A look beside the GitHub Actions extension is left                        |
-| 6     | Assessed-files preview and local trial runs                                                                         | The action's core extracted from the Actions toolkit     | Not started                                                                                          |
-| 7     | The Workflow Wizard in an editor tab: the docs site's own, reading the open folder and writing the workflow file    | Nothing                                                  | Released in 0.4.0, stable. A fix to its file preview is in 0.4.1, not tagged. A pass by hand is left |
+| Phase | What it adds                                                                                                     | Needs first                                          | Status                                     |
+| ----- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------- | ------------------------------------------ |
+| 1     | From a question to its code: the questions list, the selected question, the jump to code, the moved-code warning | Nothing                                              | Published                                  |
+| 2     | Ready for a class: publishing, guides and a stable release, then questions pinned to lines and "studied" ticks   | Nothing                                              | In progress                                |
+| 3     | Instructor view: answers beside the student's code, and the view switch                                          | Nothing                                              | Released in 0.4.0, without marks and notes |
+| 4     | Action changes: hidden data in the issue, and the marker check                                                   | An action release                                    | Released: action v0.25.0, extension 0.2.1  |
+| 5     | Workflow help: the action's inputs checked, offered and described in a workflow file                             | A look at what the GitHub Actions extension does     | Released in 0.4.0                          |
+| 6     | Assessed-files preview and local trial runs                                                                      | The action's core extracted from the Actions toolkit | Not started                                |
+| 7     | The docs site's Workflow Wizard in an editor tab, reading the open folder and writing the workflow file          | Nothing                                              | Released in 0.4.0, fixed in 0.4.1          |
 
-Phases 2, 3, 5 and 7 do not depend on one another. The suggested order for what
-remains is 2, 6. Keep this table current when a phase starts, finishes
-or changes scope.
+Keep this table current when a phase starts, finishes or changes scope. What
+each phase still lacks is under [What is left](#what-is-left). The suggested
+order is 2, then 6.
+
+```mermaid
+flowchart LR
+  core["The action's core, apart from the Actions toolkit"] --> p6["Phase 6: preview and trial runs"]
+  p6 --> self["Self-practice"]
+  p3["Phase 3: instructor view"] --> inst["Ideas for instructors"]
+  p3 --> marks["Marks and notes, viva helpers"]
+  store{{"Decision: where marks are stored"}} --> marks
+  p7["Phase 7: the Wizard in the editor"] --> reader["A reader from workflow to Wizard settings"]
+  reader --> wf["Ideas from the workflow file"]
+  reader -. "settings for a trial run" .-> p6
+```
 
 ---
 
 ## Done
 
-- **Phase 1**, published on 2026-10-03: sign-in, the questions list, the
-  selected question in full, the jump to code and the moved-code warning.
-- **Phase 2, so far:** the Marketplace publisher, the release workflow, the
-  name, two guides and a reference page, both install routes tried, a message
-  in Restricted Mode, and the stable release 0.2.0.
-- **Phase 4**, released on 2026-10-04: the issue carries a `gmc:questions`
-  comment with a layout version, the action touches only issues it wrote, and
-  the extension reads both layouts and asks for an update when the version is
-  newer than it knows.
-- **Phase 3**, released as the pre-release 0.3.0 on 2026-10-04: an account
-  that can read the answer key sees each question's answer, and can
-  switch to the student view. How the view is chosen is in the docs site's
-  `reference/vscode-extension.md`.
-- **The first-run walkthrough**, released in 0.2.2 on 2026-10-04, outside the
-  phases. It is a patch number because 0.3.0 would have been a pre-release.
-- **Phase 5**, released as the pre-release 0.3.1 on 2026-10-09: in a workflow file, the
-  GrillMyCode step's inputs are checked as they are typed, and the values of
-  an input with a fixed set are offered. What is checked is in the docs
-  site's `reference/vscode-extension.md`.
-- **Phase 7**, built on 2026-10-10 and first released in 0.4.0: **Open Workflow Wizard**
-  shows the docs site's Wizard in an editor tab. Its file preview reads the
-  open folder, and its last step writes the workflow file. How it works is in
-  the docs site's `reference/vscode-extension.md`. The package grew from
-  about 100 KB to about 240 KB, most of it React, which every student's
-  install downloads.
-- **0.4.0**, released on 2026-10-10: the first stable release since 0.2.2. It
-  takes phases 3, 5 and 7 to every install. It was decided that day to
-  release them as they are, with what is listed under "Built but never seen
-  working" below still unseen, and to look afterwards.
-- **0.4.1**, prepared on 2026-10-10 and not tagged: the first fault found by
-  looking. **Use the open folder** was tried on this repository, in a
-  codespace, and did not finish in the time anyone would wait. The page asked
-  for 1,473 folders one at a time, then for the first bytes of 5,000 files,
-  3,888 of them the VS Code builds in `.vscode-test`, which Git ignores. Now
-  a listing leaves out what Git ignores, which the built-in Git extension
-  says, and the page asks for 32 folders at a time. This repository comes to
-  77 listings and 460 files.
-- **Tags kept apart:** `release.yml` runs on `v[0-9]*` and `branch-build.yml`
-  ignores every tag, so a `vscode-v*` tag cannot release the action.
-- **Releases:** the workflow has published 0.1.1, 0.1.2, 0.3.0 and 0.3.1 as
-  pre-releases, and 0.2.0, 0.2.1, 0.2.2 and 0.4.0 as stable. 0.1.0 was published by hand, and is
-  stable although its minor number is odd.
+| What            | Released          | In one line                                                                                                                                                                                              |
+| --------------- | ----------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Phase 1         | 2026-10-03        | Sign-in, the questions list, the selected question, the jump to code, the moved-code warning                                                                                                             |
+| Phase 2, so far | 0.2.0             | The publisher, the release workflow, the name, two guides and a reference page, both install routes tried, a message in Restricted Mode                                                                  |
+| Phase 4         | 2026-10-04        | The issue carries a `gmc:questions` comment with a layout version. The action touches only issues it wrote. The extension reads both layouts, and asks for an update on a newer one                      |
+| Walkthrough     | 0.2.2, 2026-10-04 | Outside the phases. A patch number, because 0.3.0 would have been a pre-release                                                                                                                          |
+| Phase 3         | 0.3.0, 2026-10-04 | An account that can read the answer key sees each answer, and can switch to the student view                                                                                                             |
+| Phase 5         | 0.3.1, 2026-10-09 | The GrillMyCode step's inputs are checked as they are typed, and the values of a fixed set offered                                                                                                       |
+| Phase 7         | 0.4.0, 2026-10-10 | **Open Workflow Wizard**. The package went from about 100 KB to about 240 KB, most of it React, which every student's install downloads                                                                  |
+| 0.4.0           | 2026-10-10        | The first stable release since 0.2.2. Phases 3, 5 and 7 went to every install with the [hand checks](#built-not-yet-seen-working) undone, to be looked at afterwards                                     |
+| 0.4.1           | 2026-10-10        | **Use the open folder** did not finish on a large folder. Listings now leave out what Git ignores and are asked for 32 at a time: on this repository 77 folders and 460 files, down from 1,473 and 5,000 |
+| Tags kept apart |                   | `release.yml` runs on `v[0-9]*` and `branch-build.yml` ignores every tag, so a `vscode-v*` tag cannot release the action                                                                                 |
 
-Built but never seen working. 0.4.0 carries every one of these to every
-install:
-
-- **An issue from before `v0.25.0` updated in place** on GitHub, not left
-  beside a new one. Tests cover it against a stand-in.
-- **The update message in an installed copy**, where it should offer
-  **Update**. A development copy offers **Install**.
-- **The "Run Extension" launch entry.**
-- **The instructor view against GitHub.** The tests hand it an answer key, and
-  it was looked at in VS Code 1.140.0 on Linux that way. Nobody has signed in
-  and opened a student's repository. That pass shows whether an instructor's
-  account may list a repository's direct collaborators, which the view needs
-  in anyone's repository but the account's own.
-- **The two switch buttons in the view's title bar.** Both commands were run
-  by name. The buttons show only under a pointer, which the test display
-  lacks.
-- **Workflow help beside the GitHub Actions extension.** The tests run with
-  that extension absent. With it installed, input names, hover text and
-  unknown inputs are left to it, and nobody has looked at the two together,
-  signed in or not.
-- **Workflow help by hand.** The tests ask VS Code for the problems, the
-  completions and the hover text. Nobody has typed in a workflow file and
-  watched them appear.
-- **The Wizard's prompts.** The folder dialog, the choice between several
-  open folders and the question before a file is replaced are answered by the
-  tests in place of a person. Nobody has seen one.
-- **The Wizard with no folder open, or several.** With none, the workflow
-  should open as an unsaved file. The tests run with one folder open.
-- **The Wizard on Windows and macOS, by hand.** Every step was worked in a
-  real tab on Linux, in a dark and a light theme, by a script: all ten steps,
-  the open folder read, the file written and found clean by workflow help.
-  The other two systems have only the tests, which do not press its buttons.
-- **The Wizard on a large folder, as fixed in 0.4.1.** 0.4.0 was seen on one,
-  and was too slow to use. The fix was timed with the Wizard's own folder
-  reader and a stand-in for the extension, and the listings are tested in VS
-  Code. Nobody has pressed **Use the open folder** on a large folder since.
-  A large folder in no Git repository still has up to 5,000 files read.
+| Channel     | Versions                                                                         |
+| ----------- | -------------------------------------------------------------------------------- |
+| Stable      | 0.1.0 (by hand, despite its odd minor number), 0.2.0, 0.2.1, 0.2.2, 0.4.0, 0.4.1 |
+| Pre-release | 0.1.1, 0.1.2, 0.3.0, 0.3.1                                                       |
 
 ---
 
-## Phase 2: what is left
+## What is left
 
-To be ready for a class:
-
-1. **One install by hand on Windows**, with a GitHub sign-in, which the tests
-   never do. Look at the listing's page in a browser in the same sitting.
-2. **A replacement for the publishing token** before 2026-12-01. See
-   [Accounts and secrets](#accounts-and-secrets).
-3. **One pass as a student**, from a template repository that lists the
-   extension: accept the assignment with a test account, then follow the
-   student guide in a codespace and in desktop VS Code. It also shows whether
-   the walkthrough opens after each kind of install and after an update to
-   0.2.2, and whether its steps are ticked.
-
-Features:
-
-- **Questions pinned to lines**, as read-only comment threads. A pinned note
-  on the wrong lines misleads for as long as the file is open, so this follows
-  real use of the moved-code warning. Weigh "the code as it was", under
-  [Further ideas](#further-ideas), first.
-- **"Studied" ticks**, stored locally.
-- **Refreshing when the window regains focus.**
+| Phase   | What                                                                 | Kind    | Note                                                                                                                                                                                                      |
+| ------- | -------------------------------------------------------------------- | ------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 2       | An install by hand on Windows, with a GitHub sign-in                 | Check   | The tests never sign in. Look at the listing's page in the same sitting                                                                                                                                   |
+| 2       | A pass as a student, in a codespace and in desktop VS Code           | Check   | From a template repository that lists the extension, with a test account, by the student guide. Shows whether the walkthrough opens after each kind of install and after an update, with its steps ticked |
+| 2       | The first release published with the Entra identity                  | Check   | The next `vscode-v*` tag. See [Accounts and secrets](#accounts-and-secrets)                                                                                                                               |
+| 2       | The `VSCE_PAT` secret deleted, and its token revoked in Azure DevOps | Account | Nothing reads it since 2026-10-10. Deleting the secret does not cancel the token                                                                                                                          |
+| 2       | Questions pinned to lines, as read-only comment threads              | Feature | After real use of the moved-code warning: a note on the wrong lines misleads. Weigh "the code as it was" first                                                                                            |
+| 2       | "Studied" ticks, stored locally                                      | Feature |                                                                                                                                                                                                           |
+| 2       | Refreshing when the window regains focus                             | Feature |                                                                                                                                                                                                           |
+| 3       | Marks and notes per question                                         | Feature | Waits on where they are stored                                                                                                                                                                            |
+| 3       | A real viva                                                          | Check   | Done when an instructor runs one from the student's repository without leaving the editor, and a student account there sees no sign of the instructor view                                                |
+| 3, 5, 7 | The hand checks below                                                | Check   | Check 4 matters most                                                                                                                                                                                      |
+| 6       | All of it                                                            |         | See [Phase 6](#phase-6-assessed-files-preview-and-local-trial-runs)                                                                                                                                       |
 
 No trial with a class is planned. It was dropped on 2026-10-04.
+
+### Built, not yet seen working
+
+Every install has had these since 0.4.0. Tests cover each one.
+
+| #   | Phase | What                                              | What nobody has seen                                                                                                                                                                                                                                       |
+| --- | ----- | ------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 1   | 4     | An issue from before `v0.25.0` updated in place   | On GitHub. The tests use a stand-in                                                                                                                                                                                                                        |
+| 2   | 4     | The update message                                | An installed copy, which should offer **Update**. A development copy offers **Install**                                                                                                                                                                    |
+| 3   |       | The "Run Extension" launch entry                  | Run at all                                                                                                                                                                                                                                                 |
+| 4   | 3     | The instructor view against GitHub                | A sign-in, and a student's repository opened. Every student's copy asks GitHub about an answer key each time it loads, and only the tests have seen GitHub refuse. Also shows whether an instructor's account may list a repository's direct collaborators |
+| 5   | 3     | The two switch buttons in the view's title bar    | The buttons, which show only under a pointer. Both commands were run by name                                                                                                                                                                               |
+| 6   | 5     | Workflow help beside the GitHub Actions extension | The two together, signed in or not. The tests run without it                                                                                                                                                                                               |
+| 7   | 5     | Workflow help by hand                             | Problems, completions and hover text appear as someone types                                                                                                                                                                                               |
+| 8   | 7     | The Wizard's prompts                              | The folder dialog, the choice between open folders, the question before a file is replaced                                                                                                                                                                 |
+| 9   | 7     | The Wizard with no folder open, or several        | With none, the workflow should open as an unsaved file. The tests run with one                                                                                                                                                                             |
+| 10  | 7     | The Wizard on Windows and macOS                   | Its buttons pressed. On Linux a script worked all ten steps in a real tab, dark and light                                                                                                                                                                  |
+| 11  | 7     | The Wizard on a large folder, since 0.4.1         | **Use the open folder** pressed. A large folder outside Git still has up to 5,000 files read                                                                                                                                                               |
 
 ---
 
 ## Accounts and secrets
 
-- **The publisher is `GrillMyCode`.** Verification of `grillmycode.org`, which
-  earns the verified badge, was requested on 2026-10-03.
-- **Publishing uses the `VSCE_PAT` secret, which stops working on
-  2026-12-01.** Azure DevOps retires those tokens then.
-- **The `vscode-marketplace` environment has no required reviewer**, so a tag
-  publishes as soon as the tests pass.
+- **Publisher:** `GrillMyCode`. Verification of `grillmycode.org`, for the
+  verified badge, was requested on 2026-10-03.
+- **Approval:** the `vscode-marketplace` environment has no required reviewer,
+  so a tag publishes as soon as the tests pass.
 
-**A Microsoft Entra identity is the replacement that can be set up today.**
-The workflow already uses one whenever the environment names it, ahead of the
-secret. The account steps are due by 2026-11-02. They need a tenant in which
-an application can be registered, and no Azure subscription.
+| Way to sign in             | State                                                                                                                                                                                              | Note                                                                                                                                                                                           |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| A Microsoft Entra identity | Set up on 2026-10-10: the publisher check passes. No release has published with it yet. Releases up to 0.4.1 signed in with a `VSCE_PAT` secret, which the workflows stopped reading on 2026-10-10 | The workflow uses it whenever the environment names it. Needs a tenant that allows registering an application, and no Azure subscription                                                       |
+| Trusted publishing         | Not open. On 2026-10-03 the Marketplace answered "Trusted Publishing is not supported", and the packaging tool (4.0.0) sent a request it rejects                                                   | The publisher check reports the answer on every run. When it opens: raise `@vscode/vsce`, add a policy naming this repository and `vscode-extension-release.yml`, and delete the two variables |
+
+Setting up the Entra identity, as done on 2026-10-10:
 
 1. Register an application in the tenant. It needs no secret and no role.
-2. Give it a federated credential for GitHub Actions, with the issuer
-   `https://token.actions.githubusercontent.com` and the subject
-   `repo:NSCC-ITC-Assessment/GrillMyCode:environment:vscode-marketplace`.
-   Entra compares the subject letter for letter, capitals included.
+2. Give it a federated credential for GitHub Actions. Entra compares the
+   subject letter for letter, capitals included.
+   - Issuer: `https://token.actions.githubusercontent.com`
+   - Subject: `repo:NSCC-ITC-Assessment/GrillMyCode:environment:vscode-marketplace`
+   - The portal's form writes the subject with IDs in it
+     (`repo:NSCC-ITC-Assessment@278432436/GrillMyCode@1218117237:…`), and the
+     sign-in then fails with `AADSTS700213`. This repository sends the subject
+     above until it opts in to GitHub's immutable subjects. Enter it with
+     **Edit (optional)**, beside the subject.
 3. On the `vscode-marketplace` environment, set the variables
    `AZURE_CLIENT_ID` and `AZURE_TENANT_ID`. Neither is a secret.
-4. Run **VS Code Extension Publisher Check**. It prints the ID the
-   Marketplace knows the identity by, then fails, because the identity is not
-   a member of the publisher yet.
+4. Run **VS Code Extension Publisher Check**. It prints the ID the Marketplace
+   knows the identity by, then fails, because the identity is not yet a member
+   of the publisher.
 5. On the publisher's page, add that ID as a member with the Contributor role.
-6. Run the check again. When it passes, delete the `VSCE_PAT` secret.
+6. Run the check again. It passes once the membership is in place.
 
-Do steps 3 to 6 in one sitting, with no tag pushed in between. This route has
-not been tried end to end.
-
-**Trusted publishing is simpler and is not open yet.** On 2026-10-03 the
-Marketplace answered "Trusted Publishing is not supported", and the stable
-packaging tool (4.0.0) sent the request in a form it rejects. The publisher
-check reports the Marketplace's answer on every run. When it opens: raise
-`@vscode/vsce`, add a policy naming this repository and
-`vscode-extension-release.yml`, and delete the secret or the two variables.
+Do steps 3 to 6 in one sitting, with no tag pushed in between.
 
 ---
 
 ## Rules that outlast the phases
 
-- **Even minor numbers are stable, odd ones are pre-releases.** Students'
-  installs update on their own, so a stable release mid-term changes what
-  every student sees. A version number can be published only once, so a
-  fault found in 0.4.0 is fixed by 0.4.1, not by taking 0.4.0 back.
-- **The report format ties the extension to the action, not the version
-  number.** Most workflows float on `@v0`, so a layout change reaches every
-  repository on the day the action is released, while installs update at
-  their own pace. The extension must read every layout a supported action
-  version has written. The fixtures enforce that.
-- **A new listing screenshot** has to be on the deployed docs site before the
-  tag is pushed, and cropped again for the walkthrough's image.
-- **A new docs page is under "Next" until the action is tagged**, so the
-  listing must not link to it before then.
-- **One extension serves both sides.** Split it in two if the package slows
-  student installs, or if handling an API key in a tool every student has
-  becomes hard to justify. The code is kept in a folder per side, so a split
-  is a packaging change.
-- **The extension's input list is generated**, by
-  `scripts/build-extension-action-inputs.js`, and every check follows what
-  `src/inputs.js` does with the value. `test/extension-action-inputs.test.js`
-  fails when the list is stale, and when a check fires on a workflow the docs
-  show.
-- **The extension knows the inputs of the action as it was at the
-  extension's release.** An older extension reports a new input as unknown,
-  so that check is a warning that says to update, never an error.
-- **A student's copy shows no sign of the instructor view.** The two switch
-  commands appear nowhere unless an answer key was read, and
-  `test/manifest.test.js` guards it.
-- **The answer key's format is part of the contract.** Each fixture carries
-  the `questions.json` its run files, and the extension keeps its own copy of
-  the action's rules for where that file is. `test/extension-fixtures.test.js`
-  fails when either drifts.
-- **The extension must not depend on VS Code's Git extension**, which is off
-  in Restricted Mode. `test/manifest.test.js` guards it.
-- **There is one Workflow Wizard.** The extension bundles
-  `docs-site/docs/_workflow-wizard/` where it stands, and what only the editor
-  can do reaches a step through the Wizard's optional `host`. Nothing is
-  copied. `test/extension-wizard.test.js` fails when the Wizard uses a
-  package, a static file or a colour the extension does not supply.
-- **An extension release carries main's Wizard and main's inputs.** Release
-  the action first when an input has changed since the last `v*` tag, or the
-  Wizard writes an input the released action lacks. The Wizard on the docs
-  site can be newer than the one in an installed extension.
-- **One page runs a script: the Wizard's.** The Selected Question view never
-  does, because it shows issue text. Nothing from an issue or an answer key is
-  sent to the Wizard's page, its content security policy names the one address
-  it may reach, and it is given files only from a folder the instructor
-  chose.
+| Rule                                                                        | Why, and what follows                                                                                                                                                                                          | Guarded by                             |
+| --------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------- |
+| Even minor numbers are stable, odd ones pre-releases                        | Installs update on their own, so a stable release mid-term changes what every student sees. A number is published once: 0.4.1 fixes 0.4.0                                                                      |                                        |
+| The report format, not the version number, ties the extension to the action | Workflows float on `@v0`, so a new layout reaches every repository at once while installs lag. The extension reads every layout a supported action has written                                                 | `test/extension-fixtures.test.js`      |
+| The answer key's format is part of that contract                            | Each fixture carries its run's `questions.json`, and the extension keeps a copy of the action's rules for where that file is                                                                                   | `test/extension-fixtures.test.js`      |
+| The input list is generated                                                 | By `scripts/build-extension-action-inputs.js`. Every check follows what `src/inputs.js` does with the value                                                                                                    | `test/extension-action-inputs.test.js` |
+| An unknown input is a warning, never an error                               | The extension knows the inputs as they were at its release. The warning says to update                                                                                                                         |                                        |
+| A release carries main's Wizard and main's inputs                           | Release the action first when an input has changed since the last `v*` tag. The docs site's Wizard can be newer than an installed one                                                                          |                                        |
+| There is one Workflow Wizard                                                | Bundled from `docs-site/docs/_workflow-wizard/` where it stands, nothing copied. What only the editor can do comes through the optional `host`                                                                 | `test/extension-wizard.test.js`        |
+| One page runs a script: the Wizard's                                        | The Selected Question view shows issue text, so it never does. The Wizard's page is sent nothing from an issue or an answer key, may reach one address, and gets files only from a folder the instructor chose |                                        |
+| A student's copy shows no sign of the instructor view                       | The switch commands appear only once an answer key is read                                                                                                                                                     | `test/manifest.test.js`                |
+| No dependence on VS Code's Git extension                                    | It is off in Restricted Mode                                                                                                                                                                                   | `test/manifest.test.js`                |
+| One extension serves both sides                                             | Split it if the package slows student installs, or an API key in every student's tool becomes hard to justify. The code is in a folder per side, so a split is a packaging change                              |                                        |
+
+Before a `vscode-v*` tag is pushed:
+
+```mermaid
+flowchart TD
+  input{"Has an input changed since the last v* tag?"}
+  input -- Yes --> action["Release the action first"]
+  input -- No --> shot
+  action --> shot{"Is there a new listing screenshot?"}
+  shot -- Yes --> deploy["Deploy it on the docs site, and crop it again for the walkthrough"]
+  shot -- No --> page
+  deploy --> page{"Does the listing link to a new docs page?"}
+  page -- Yes --> wait["Wait for the action's tag: the page is under Next until then"]
+  page -- No --> who
+  wait --> who{"Is it for every install?"}
+  who -- Yes --> even["Even minor number: stable"]
+  who -- No --> odd["Odd minor number: pre-release"]
+  even --> push["Push the tag. It publishes when the tests pass"]
+  odd --> push
+```
 
 ---
 
-## Phases still to come
+## Settled while building
 
-### Phase 3: what is left
+| Phase | About                             | What was settled                                                                                                                                                             |
+| ----- | --------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 3     | Who the student is                | A direct collaborator, as the action finds them. In the account's own repository, the login. An account that may not list collaborators gets the student view                |
+| 3     | A team repository                 | Nobody's own: an account that can read its answer key starts in the instructor view                                                                                          |
+| 3     | Who gets the switch               | Any account that can read the answer key                                                                                                                                     |
+| 3     | Distractors                       | Read and not shown: a spoken check has no use for them                                                                                                                       |
+| 3     | Answer key and issue              | Compared by question number and lines. When they differ the view says so, and makes no moved-code claim                                                                      |
+| 5     | The GitHub Actions extension      | Where it is installed, input names, descriptions and unknown inputs are left to it. It does not report a missing `api_key`, because `action.yml` gives that an empty default |
+| 5     | Values, and checks between inputs | Built either way                                                                                                                                                             |
+| 5     | Reading the file                  | With the `yaml` package, as GitHub's own parser does, so a value is read as the action receives it                                                                           |
+| 5     | Not checked                       | A value GitHub works out at run time. Exclude patterns and stack templates, until phase 6 brings in `src/file-selection.js`                                                  |
+| 5     | Students                          | They get it too, where the repository holds the workflow. One setting switches it off                                                                                        |
+| 7     | Bundled, not rebuilt              | A Wizard made of VS Code's pickers would have to follow every change to the first                                                                                            |
+| 7     | Colours                           | Each `--ifm-` variable is given the editor's value, so the Wizard's own stylesheet follows the theme                                                                         |
+| 7     | Walking the folder                | The page asks the extension for a folder's entries, so the rules for what is skipped stay in the Wizard's `readFolder.js`                                                    |
+| 7     | What is read                      | The folder as it is on disk, as on the docs site, less what Git ignores. A file neither tracked nor ignored is listed, though a run never sees it                            |
+| 7     | Writing the file                  | As an edit, after asking, so it can be undone                                                                                                                                |
+| 7     | Who has the command               | Everyone: the Wizard is public on the docs site. It is in the Command Palette alone, until instructor tools have somewhere to live                                           |
+| 7     | The tab after a restart           | Not brought back. Its answers are lost when it closes                                                                                                                        |
 
-- **A sign-in against GitHub**, now that 0.4.0 is released. It is under
-  [Done](#done), as built but never seen working. Of everything in 0.4.0 it
-  matters most: every student's copy now asks GitHub about an answer key each
-  time it loads, and only the tests have seen GitHub refuse.
-- **Marks and notes per question.** Left out on 2026-10-04, until where they
-  are stored is decided.
-- **A real viva.** The phase is done when an instructor runs one from the
-  student's repository without leaving the editor, and a student account on
-  the same repository sees no sign of the instructor view.
+---
 
-Settled while building:
-
-- **The student is found from the repository's direct collaborators**, as the
-  action finds them, except in the account's own repository, where the login
-  is the student and nothing is listed. An account that may not list them
-  gets the student view.
-- **A team repository is nobody's own.** An account that can read its answer
-  key starts in the instructor view.
-- **Any account that can read the answer key gets the switch**, not only one
-  in its own repository.
-- **Distractors are not shown.** They are written for the quiz, and a spoken
-  check has no use for them. The reader still keeps them.
-- **The answer key and the issue are compared by each question's number and
-  lines.** When they differ the view says so, and makes no moved-code claim.
-
-### Phase 5: what is left
-
-- **A look at it beside the GitHub Actions extension**, and one pass by hand.
-  Both are under [Done](#done), as built but never seen working.
-
-Settled while building:
-
-- **What the GitHub Actions extension already does is left to it.** It
-  offers and describes every action's inputs, and reports one the action
-  does not declare, from the `action.yml` it fetches. Where it is installed,
-  this extension does none of the three. It does not report a missing
-  `api_key`, because `action.yml` gives that input an empty default.
-- **Checks on values and between inputs are built either way**, with the
-  values of an input that has a fixed set.
-- **The file is read with the `yaml` package**, which GitHub's own workflow
-  parser uses, so a value is read as the action receives it.
-- **A value GitHub works out at run time is not checked.**
-- **Exclude patterns and stack templates are not checked.** Their rules are
-  in `src/file-selection.js`, which the extension does not carry yet. Phase 6
-  brings it in.
-- **Students get it too**, in a repository that holds the workflow. One
-  setting switches it off.
-
-Left out:
-
-- **Quick fixes**, such as replacing a misspelled input with the one meant.
-- **The Workflow Wizard in the editor.** It became phase 7.
-
-### Phase 7: what is left
-
-- **The tag for 0.4.1.** The version is set to 0.4.1, a stable release, and
-  the tag is not pushed. It carries the fix to the file preview on a large
-  folder, which is under [Done](#done).
-- **A pass by hand**, with the prompts, with no folder open and on Windows or
-  macOS. All are under [Done](#done), as built but never seen working.
-
-Settled while building:
-
-- **The Wizard is bundled, not rebuilt.** A second Wizard made of VS Code's
-  own pickers would have to follow every change to the first.
-- **The editor's colours, through the docs site's variables.** The Wizard's
-  stylesheet is used as it is, and each `--ifm-` variable is given the
-  editor's value, so it follows the colour theme.
-- **The Wizard walks the folder itself.** The page asks the extension for one
-  folder's entries at a time, in the shape a browser's folder picker gives,
-  so the rules for which folders are skipped and where the walk stops stay in
-  the Wizard's `readFolder.js`.
-- **The folder is read as it is on disk**, as on the docs site, not as Git
-  tracks it.
-- **The workflow file is replaced as an edit**, after asking, so it can be
-  undone.
-- **Everyone has the command**, students included. The Wizard is public on
-  the docs site.
-- **The Wizard is not on a menu or in the GrillMyCode view.** It is in the
-  Command Palette alone, until there is somewhere for instructor tools to
-  live.
-
-Left out:
-
-- **Opening an existing workflow in the Wizard.** It is under
-  [Further ideas](#further-ideas).
-- **Only the files Git tracks**, in the file preview. A file Git ignores is
-  listed, which a run never sees.
-- **Bringing the tab back** after VS Code restarts. Its answers are lost when
-  it closes.
-
-### Phase 6: assessed-files preview and local trial runs
+## Phase 6: assessed-files preview and local trial runs
 
 Marks each file as assessed, excluded or starter code, and runs the pipeline
 against a sample repository to show the questions with token use and cost.
 
-- **Needs first:** the action's core separated from the Actions toolkit.
-  Eleven modules import `@actions/core` and need a logger and a settings
-  object passed in. It changes no behaviour and can be released on its own.
-- **Also needs:** VS Code's secret storage for the API key, builds of the
-  comment stripper (`rmcm`) for Windows and macOS or a run without stripping,
-  and code that runs on VS Code's Node, not only Node 24. PDF generation is
-  left out.
-- **Size:** large.
-- **Done when** an instructor sees what a workflow would assess, and what a
-  run would cost, without pushing.
+|                 |                                                                                                                                                                                                    |
+| --------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Needs first** | The action's core apart from the Actions toolkit: eleven modules import `@actions/core` and need a logger and a settings object passed in. No behaviour changes, and it can be released on its own |
+| **Also needs**  | VS Code's secret storage for the API key. The comment stripper (`rmcm`) built for Windows and macOS, or a run without stripping. Code that runs on VS Code's Node, not only Node 24                |
+| **Left out**    | PDF generation                                                                                                                                                                                     |
+| **Size**        | Large                                                                                                                                                                                              |
+| **Done when**   | An instructor sees what a workflow would assess, and what a run would cost, without pushing                                                                                                        |
 
 ---
 
@@ -387,40 +254,41 @@ All build on phase 3.
 
 ### From the workflow file
 
-The extension reads a workflow file today for where things are: the steps that
-run the action, their inputs and the tag filters (`readWorkflow`, in
-`src/shared/workflow.js`). Most of these need it read for what it means: a
-reader from YAML to the Wizard's settings, `WizardConfig`. Phase 6's trial run
-would take its settings from the same reader.
+The extension reads a workflow file today for where things are. Most of these
+need it read for what it means.
 
-| Idea                          | What it does                                                                                                         | Needs                                                                                                                         | Size   |
-| ----------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
-| Open a workflow in the Wizard | Reads an existing workflow file back into the Wizard's steps, to change one setting without answering them all again | The reader                                                                                                                    | Medium |
-| Summary in plain words        | Says what a workflow does: what starts it, the model, how many questions and where they go                           | The reader                                                                                                                    | Small  |
-| Assessed-files marks          | Marks each file in the Explorer as assessed, excluded or starter code, by the workflow's own patterns                | The reader, and the file selection rules outside the Wizard's page. It is the preview of phase 6 without the trial run        | Medium |
-| Checks on patterns            | Reports an exclude pattern or a stack template the action would not accept, which phase 5 left out                   | The file selection rules outside the Wizard's page                                                                            | Small  |
-| When questions arrive         | Tells a student with no questions yet what starts a run: every push, a tag such as `submit-1`, or the instructor     | Nothing: the trigger and the tag filters are in the file. Run status, above, would learn which workflow to watch the same way | Small  |
-| Setup checklist               | Checks that the secrets the workflow names exist, before the first run fails for want of one                         | An account allowed to list a repository's secrets, which is an administrator's                                                | Small  |
-| Quick fixes                   | Replaces a misspelled input with the one meant, which phase 5 left out                                               | Nothing: where each input is has been read                                                                                    | Small  |
-| Upgrade a workflow            | Rewrites an input that a later version of the action renames or removes                                              | A record of what each version changed                                                                                         | Small  |
+```mermaid
+flowchart LR
+  file["Workflow file"] --> where["readWorkflow, today: where each step, input and tag filter is"]
+  file --> means["A reader, proposed: the Wizard's settings, and what it could not read"]
+  where --> help["Workflow help"]
+  where --> small["Quick fixes. When questions arrive"]
+  means --> wizard["Open a workflow in the Wizard"]
+  means --> summary["Summary in plain words"]
+  means --> marks["Assessed-files marks"]
+  means --> trial["Phase 6: settings for a trial run"]
+```
 
-What to settle before building the reader:
+| Idea                          | What it does                                                                                                                                                                  | Needs                                                                 | Size   |
+| ----------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------- | ------ |
+| Open a workflow in the Wizard | Reads a workflow file back into the Wizard's steps, to change one setting without answering them all again                                                                    | The reader                                                            | Medium |
+| Summary in plain words        | Says what a workflow does: what starts it, the model, how many questions and where they go                                                                                    | The reader                                                            | Small  |
+| Assessed-files marks          | Marks each file in the Explorer as assessed, excluded or starter code. Phase 6's preview without the trial run                                                                | The reader, and the file selection rules outside the Wizard's page    | Medium |
+| Checks on patterns            | Reports an exclude pattern or a stack template the action would not accept                                                                                                    | The file selection rules outside the Wizard's page                    | Small  |
+| When questions arrive         | Tells a student with no questions yet what starts a run: every push, a tag such as `submit-1`, or the instructor. Run status would learn which workflow to watch the same way | Nothing                                                               | Small  |
+| Setup checklist               | Checks that the secrets the workflow names exist, before the first run fails for want of one                                                                                  | An account allowed to list a repository's secrets: an administrator's | Small  |
+| Quick fixes                   | Replaces a misspelled input with the one meant                                                                                                                                | Nothing                                                               | Small  |
+| Upgrade a workflow            | Rewrites an input that a later version of the action renames or removes                                                                                                       | A record of what each version changed                                 | Small  |
 
-- **Reading back loses things.** The Wizard writes a manual-run override as
-  `${{ github.event.inputs.x || 'default' }}`, and a file edited by hand may
-  hold comments, other steps and values the Wizard has no setting for. The
-  reader gives the settings and a list of what it could not read. Before
-  anything is saved, the workflow is written again from what was read and
-  compared with the file, and the instructor is told what would go.
-- **It is tested by going round.** For every set of answers the tests have,
-  reading the YAML the Wizard writes gives the same answers back.
-- **It lives in the Wizard's folder**, beside `generateYaml.js`, so the docs
-  site can read a pasted workflow too. The docs site does not have the `yaml`
-  package yet. The root and the extension do.
-- **A student's copy is a hint.** A student can edit the workflow in their own
-  repository, so what is read from it there is shown and nothing more.
-- **The summary comes first.** It reads and writes nothing, so it cannot harm
-  a file while the reader is still new.
+To settle before building the reader:
+
+| Question                      | Proposed answer                                                                                                                                                                                                                                                                   |
+| ----------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| What is lost on reading back? | Manual-run overrides, written as `${{ github.event.inputs.x \|\| 'default' }}`, and what a hand edit added: comments, other steps, values with no setting. Before saving, the workflow is written again from what was read and compared, and the instructor is told what would go |
+| How is it tested?             | By going round: reading the YAML the Wizard writes gives the same answers back                                                                                                                                                                                                    |
+| Where does it live?           | Beside `generateYaml.js`, so the docs site can read a pasted workflow too. The docs site lacks the `yaml` package. The root and the extension have it                                                                                                                             |
+| Is a student's copy trusted?  | No. A student can edit it, so what is read there is shown and nothing more                                                                                                                                                                                                        |
+| What is built first?          | The summary. It writes nothing, so it cannot harm a file while the reader is new                                                                                                                                                                                                  |
 
 ### Reach and upkeep
 
@@ -433,32 +301,24 @@ What to settle before building the reader:
 
 ### Set aside
 
-- **An AI helper that answers the questions.** They are study prompts, and an
-  answer on demand removes the reason to study.
-- **Recording how code was written**, to target pasted or AI-inserted code. It
-  is surveillance of students.
-- **Re-matching questions after the code is edited.** Comments are stripped by
-  default, so the snippet often does not match the file.
-- **Writing answers in the editor.** Where they are kept and who sees them is
-  a product decision.
-- **Reading the repository without Git**, so questions show in Restricted
-  Mode. Each piece of Git state would need its own reader.
+| Idea                                                                     | Why                                                                            |
+| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
+| An AI helper that answers the questions                                  | They are study prompts, and an answer on demand removes the reason to study    |
+| Recording how code was written, to target pasted or AI-inserted code     | It is surveillance of students                                                 |
+| Re-matching questions after the code is edited                           | Comments are stripped by default, so the snippet often does not match the file |
+| Writing answers in the editor                                            | Where they are kept and who sees them is a product decision                    |
+| Reading the repository without Git, so questions show in Restricted Mode | Each piece of Git state would need its own reader                              |
 
 ---
 
 ## Open decisions
 
-- **Who approves a publish.** Today a pushed tag publishes on its own.
-- **Which tenant holds the Entra identity:** the college's, if it allows
-  registering an application, or another.
-- **Whether students may be asked for the `repo` permission.** There is no
-  narrower one for private repositories.
-- **A release freeze during term** for stable versions.
-- **Where viva marks and notes are stored:** locally, or committed to the
-  instructor repository. And what a mark is: levels, a number, or a note
-  alone.
-- **How the extension tells that an account administers a repository.** Which
-  permission Classroom 50 gives each role has not been checked.
-- **Whether self-practice is wanted at all.** The questions would differ from
-  the instructor's.
-- **Whether the extension stays free of usage data.** It collects none today.
+| Decision                                                         | What is known                                                                                             |
+| ---------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- |
+| Who approves a publish                                           | Today a pushed tag publishes on its own                                                                   |
+| Which tenant holds the Entra identity                            | The college's, if it allows registering an application, or another                                        |
+| Whether students may be asked for the `repo` permission          | There is no narrower one for private repositories                                                         |
+| A release freeze during term                                     | For stable versions                                                                                       |
+| Where viva marks and notes are stored                            | Locally, or committed to the instructor repository. And what a mark is: levels, a number, or a note alone |
+| How the extension tells that an account administers a repository | Which permission Classroom 50 gives each role has not been checked                                        |
+| Whether self-practice is wanted at all                           | The questions would differ from the instructor's                                                          |

@@ -8,7 +8,7 @@ name: VS Code Extension Release
 # minor number (0.1.x, 0.3.x) is published as a pre-release and an even one
 # (0.2.x) as a stable release, which is VS Code's own convention.
 #
-# The publish job signs in to the Marketplace in the first of three ways that
+# The publish job signs in to the Marketplace in the first of two ways that
 # is set up. vscode-extension-publisher-check.yml tries the same sign-in
 # without publishing, and docs-internal/vscode-extension-plan.md, under
 # "Accounts and secrets", has the steps for setting each one up.
@@ -16,14 +16,11 @@ name: VS Code Extension Release
 # 1. A Microsoft Entra identity, when the vscode-marketplace environment has
 #    the variables AZURE_CLIENT_ID and AZURE_TENANT_ID. GitHub vouches for the
 #    job to Entra, so nothing is stored.
-# 2. The VSCE_PAT secret, an Azure DevOps personal access token with the
-#    Marketplace "Manage" scope. Azure DevOps retires those tokens on
-#    2026-12-01.
-# 3. Trusted publishing: GitHub vouches for the job to the Marketplace itself.
+# 2. Trusted publishing: GitHub vouches for the job to the Marketplace itself.
 #    On 2026-10-03 the Marketplace did not offer it yet, and it needs a newer
 #    @vscode/vsce than 4.0.0. Once it does: raise @vscode/vsce, add a trusted
 #    publishing policy for this repository and this workflow file on the
-#    publisher's Marketplace page, and delete the variables or the secret.
+#    publisher's Marketplace page, and delete the variables.
 #
 # The publish job runs in the vscode-marketplace environment. Give that
 # environment a required reviewer and every publish waits for approval.
@@ -167,26 +164,19 @@ jobs:
       # --skip-duplicate lets a re-run carry on to the GitHub Release when the
       # Marketplace already has this version. --pre-release makes the tool
       # refuse a package that was not built as one.
-      #
-      # The packaging tool prefers VSCE_PAT to --azure-credential, so the
-      # Entra sign-in runs it without that variable.
       - name: Publish to the Visual Studio Marketplace
         working-directory: extensions/vscode
         env:
           ENTRA_CLIENT_ID: ${{ vars.AZURE_CLIENT_ID }}
-          VSCE_PAT: ${{ secrets.VSCE_PAT }}
           PRERELEASE: ${{ needs.build.outputs.prerelease }}
         run: |
           set -- --skip-duplicate --packagePath dist/grillmycode.vsix
           if [ "$PRERELEASE" = "true" ]; then set -- --pre-release "$@"; fi
           if [ -n "$ENTRA_CLIENT_ID" ]; then
             echo "Signing in with the Microsoft Entra identity."
-            env -u VSCE_PAT pnpm exec vsce publish --azure-credential "$@"
-          elif [ -n "$VSCE_PAT" ]; then
-            echo "::warning::Signing in with the VSCE_PAT secret, which stops working on 2026-12-01. docs-internal/vscode-extension-plan.md, under \"Accounts and secrets\", says what replaces it."
-            pnpm exec vsce publish "$@"
+            pnpm exec vsce publish --azure-credential "$@"
           else
-            echo "No Entra identity and no VSCE_PAT secret. Signing in with trusted publishing."
+            echo "No Entra identity. Signing in with trusted publishing."
             pnpm exec vsce publish --oidc "$@" || {
               echo "::error::Trusted publishing failed. Until the Marketplace offers it, set up the Microsoft Entra identity: docs-internal/vscode-extension-plan.md, under \"Accounts and secrets\"."
               exit 1

@@ -76,11 +76,10 @@ The extension has its own version numbers and its own tags, `vscode-v*`. A
    required reviewer. Once approved it publishes to the Marketplace and creates
    a GitHub Release with the `.vsix` attached.
 
-The workflow signs in to the Marketplace with a Microsoft Entra identity when
-the `vscode-marketplace` environment names one, and with the `VSCE_PAT` secret
-otherwise. That token stops working on 2026-12-01.
-`docs-internal/vscode-extension-plan.md`, under "Accounts and secrets", has the
-steps for replacing it.
+The workflow signs in to the Marketplace with a Microsoft Entra identity, which
+the `vscode-marketplace` environment names in two variables. No secret is
+stored. `docs-internal/vscode-extension-plan.md`, under "Accounts and secrets",
+has the steps for setting one up.
 
 To try the sign-in without publishing, run **VS Code Extension Publisher
 Check** from the Actions tab. Do that after any change to the sign-in, before
