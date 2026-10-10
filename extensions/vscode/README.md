@@ -12,6 +12,7 @@ GrillMyCode is a GitHub Action your instructor adds to an assignment. Each time 
 - **Jumps to the code.** Select a question to open the file and highlight the lines it asks about. A question about several files opens each one in a tab of its own.
 - **Steps through your questions.** **Next Question** and **Previous Question**, at the top of the list, open each one in turn.
 - **Shows the whole question** under the list, with the code as it was when the question was written.
+- **Tells you when questions arrive.** Your first set appears in the list on its own. After a later push, a notification says a newer set is there, and the list changes when you ask for it.
 - **Warns you when the code has moved.** If you have changed a file since the questions were written, the highlighted lines may no longer be the right ones, and the view says so.
 
 ## Getting started
@@ -20,7 +21,7 @@ GrillMyCode is a GitHub Action your instructor adds to an assignment. Each time 
 2. Select the GrillMyCode icon in the Activity Bar.
 3. Choose **Sign in to GitHub** and approve the request.
 
-Your questions appear once you have pushed and the GrillMyCode workflow has finished. Use **Refresh Questions** after a later push.
+Your questions appear on their own once you have pushed and the GrillMyCode workflow has finished. After a later push, a notification tells you when the new set has arrived.
 
 VS Code opens a walkthrough of these steps when the extension is installed. To see it again, run **Welcome: Open Walkthrough...** from the Command Palette and choose **Get Started with GrillMyCode Companion**.
 

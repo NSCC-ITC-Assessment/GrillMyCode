@@ -3,7 +3,7 @@
 > **Recorded:** 2026-10-03 (`ff56b1d`). Shortened on 2026-10-04 and 2026-10-10.
 > The fuller wording is this file at `ee31e05`. What was tried and how is at
 > `10791ec`.
-> **Status:** 0.4.2 is the stable release, of 2026-10-10. Phases 1, 3, 4, 5
+> **Status:** 0.4.4 is the stable release, of 2026-10-10. Phases 1, 3, 4, 5
 > and 7 are released, 2 is under way and 6 is a proposal. Parts of 3, 5 and 7
 > went out without having been seen working.
 
@@ -63,13 +63,14 @@ flowchart LR
 | 0.4.0           | 2026-10-10        | The first stable release since 0.2.2. Phases 3, 5 and 7 went to every install with the [hand checks](#built-not-yet-seen-working) undone, to be looked at afterwards                                     |
 | 0.4.1           | 2026-10-10        | **Use the open folder** did not finish on a large folder. Listings now leave out what Git ignores and are asked for 32 at a time: on this repository 77 folders and 460 files, down from 1,473 and 5,000 |
 | 0.4.2           | 2026-10-10        | **Next Question** and **Previous Question**, which step through the list. Outside the phases, from [Further ideas](#further-ideas). Stable, and the first release to sign in with the Entra identity     |
-| 0.4.3           | Not yet tagged    | A question about several files opens each in a tab of its own, and the tabs it opened close at the next question. Outside the phases. Stable                                                             |
+| 0.4.3           | 2026-10-10        | A question about several files opens each in a tab of its own, and the tabs it opened close at the next question. Outside the phases. Stable                                                             |
+| 0.4.4           | 2026-10-10        | The new-questions notice, from [Further ideas](#further-ideas): a check each minute, and on focus, loads a first set of questions and announces a newer one without changing the list. Stable            |
 | Tags kept apart |                   | `release.yml` runs on `v[0-9]*` and `branch-build.yml` ignores every tag, so a `vscode-v*` tag cannot release the action                                                                                 |
 
-| Channel     | Versions                                                                                |
-| ----------- | --------------------------------------------------------------------------------------- |
-| Stable      | 0.1.0 (by hand, despite its odd minor number), 0.2.0, 0.2.1, 0.2.2, 0.4.0, 0.4.1, 0.4.2 |
-| Pre-release | 0.1.1, 0.1.2, 0.3.0, 0.3.1                                                              |
+| Channel     | Versions                                                                                              |
+| ----------- | ----------------------------------------------------------------------------------------------------- |
+| Stable      | 0.1.0 (by hand, despite its odd minor number), 0.2.0, 0.2.1, 0.2.2, 0.4.0, 0.4.1, 0.4.2, 0.4.3, 0.4.4 |
+| Pre-release | 0.1.1, 0.1.2, 0.3.0, 0.3.1                                                                            |
 
 ---
 
@@ -81,7 +82,6 @@ flowchart LR
 | 2       | A pass as a student, in a codespace and in desktop VS Code | Check   | From a template repository that lists the extension, with a test account, by the student guide. Shows whether the walkthrough opens after each kind of install and after an update, with its steps ticked |
 | 2       | Questions pinned to lines, as read-only comment threads    | Feature | After real use of the moved-code warning: a note on the wrong lines misleads. Weigh "the code as it was" first                                                                                            |
 | 2       | "Studied" ticks, stored locally                            | Feature |                                                                                                                                                                                                           |
-| 2       | Refreshing when the window regains focus                   | Feature |                                                                                                                                                                                                           |
 | 3       | Marks and notes per question                               | Feature | Waits on where they are stored                                                                                                                                                                            |
 | 3       | A real viva                                                | Check   | Done when an instructor runs one from the student's repository without leaving the editor, and a student account there sees no sign of the instructor view                                                |
 | 3, 5, 7 | The hand checks below                                      | Check   | Check 4 matters most                                                                                                                                                                                      |
@@ -108,6 +108,7 @@ Every install has had these since 0.4.0. Tests cover each one.
 | 11  | 7     | The Wizard on a large folder, since 0.4.1         | **Use the open folder** pressed. A large folder outside Git still has up to 5,000 files read                                                                                                                                                               |
 | 12  |       | Next and previous, from 0.4.2                     | The two buttons in the title bar, and a step taken with the GrillMyCode view closed. Both commands were run by name                                                                                                                                        |
 | 13  |       | Several files, from 0.4.3                         | The tabs opening and closing, and the highlight in each as it comes to the front. The tests count the tabs and cannot see a highlight                                                                                                                      |
+| 14  |       | The new-questions notice, from 0.4.4              | A check against GitHub: the tests hand it the issues, and never sign in. The notification and its button, the badge on the icon, the note above the list. Whether a minute is soon enough after a push                                                     |
 
 ---
 
@@ -206,6 +207,7 @@ flowchart TD
 | 7     | Writing the file                  | As an edit, after asking, so it can be undone                                                                                                                                |
 | 7     | Who has the command               | Everyone: the Wizard is public on the docs site. It is in the Command Palette alone, until instructor tools have somewhere to live                                           |
 | 7     | The tab after a restart           | Not brought back. Its answers are lost when it closes                                                                                                                        |
+|       | New questions                     | The first set loads by itself. A newer one is announced and loaded when asked for, so the list never changes under a reader. New means the chosen issue's text differs       |
 
 ---
 
@@ -233,8 +235,7 @@ None of these is planned. "Small" is days and "medium" a week or two.
 | Idea                      | What it does                                                                    | Needs                                               | Size      |
 | ------------------------- | ------------------------------------------------------------------------------- | --------------------------------------------------- | --------- |
 | The code as it was        | Opens the file at the commit the questions were written about, read-only        | Nothing                                             | Small     |
-| New-questions notice      | A badge and a notification when a newer set of questions arrives                | Nothing                                             | Small     |
-| Run status                | Shows that the workflow is running after a push, then loads the questions       | Reading the repository's workflow runs              | Small     |
+| Run status                | Shows that the workflow is running after a push, until its questions arrive     | Reading the repository's workflow runs              | Small     |
 | Open from the issue       | A link on each question in the issue that opens it in VS Code                   | An action change, probably a redirect page          | Medium    |
 | Other interface languages | The extension's own text in French and other languages                          | Translations                                        | Small     |
 | Self-practice             | A student generates practice questions before pushing, on their own key or seat | The shared core from phase 6, and a way to reach AI | Not sized |

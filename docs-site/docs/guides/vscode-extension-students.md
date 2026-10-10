@@ -25,7 +25,7 @@ After the install, VS Code may open a page called **Get Started with GrillMyCode
 2. Select the GrillMyCode icon in the Activity Bar.
 3. If you're asked, select **Sign in to GitHub** and approve the request.
 
-Your questions appear once you have pushed your work and GrillMyCode has finished, which takes a few minutes.
+Your questions appear once you have pushed your work and GrillMyCode has finished, which takes a few minutes. They show up in the list on their own, and VS Code tells you when they arrive.
 
 ![VS Code with the GrillMyCode view open. The questions list is grouped by file, with question 1 selected. The editor shows cart.js with lines 1 to 9 highlighted, and the whole question is shown under the list with its code.](/img/screenshots/vscode-extension-questions.png)
 
@@ -33,7 +33,7 @@ Your questions appear once you have pushed your work and GrillMyCode has finishe
 - **A question about several files** opens each one in a tab of its own. Those tabs close when you move to another question, unless you have edited the file.
 - **To go through your questions one at a time**, select **Next Question** or **Previous Question**, the two arrows at the top of the list.
 - **Broader questions**, at the end of the list, are about your work as a whole and don't point at particular lines.
-- **After you push again**, select **Refresh Questions** at the top of the list to load the new set.
+- **After you push again**, VS Code tells you when the new set has arrived. The list stays as it is until you select **Show New Questions** in that message, or **Refresh Questions** at the top of the list.
 - **If you have more than one set of questions**, for example one for each submission, select **Choose Which Questions to Show**.
 
 ## When the highlighted lines look wrong
@@ -52,4 +52,4 @@ The GrillMyCode view says what it is waiting for:
 - **"Open a folder that is a clone of a GitHub repository…"** Open the assignment's folder itself, not a folder above it or a copy you downloaded as a ZIP file.
 - **"GitHub could not find this repository for the account that is signed in."** You're signed in to VS Code with a different GitHub account from the one that owns the assignment. Sign in with the right one.
 - **"These questions were written by a newer version of GrillMyCode than this extension can read."** Your copy of the extension is out of date. Select **Show GrillMyCode Companion** and update it there, then select **Refresh**. Until then, your questions are in the repository's **Issues** tab on GitHub.
-- **"No GrillMyCode questions were found for this repository."** Check that you have pushed, wait a few minutes, then select **Refresh**. If there is no **GrillMyCode Questions** issue in the repository's **Issues** tab on GitHub either, ask your instructor.
+- **"No GrillMyCode questions were found for this repository."** Check that you have pushed, and wait a few minutes. Select **Refresh** to look straight away. If there is no **GrillMyCode Questions** issue in the repository's **Issues** tab on GitHub either, ask your instructor.

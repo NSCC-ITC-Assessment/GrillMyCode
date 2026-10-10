@@ -2,6 +2,11 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## 0.4.4, 2026-10-10
+
+- Looks for new questions by itself, about once a minute while you are working in VS Code. Your first set appears in the list as soon as it is found, and a notification says so. Before, nothing appeared until you selected **Refresh Questions**.
+- When a newer set replaces the questions in the list, a notification, a note above the list and a badge on the GrillMyCode icon say so. The list changes when you select **Show New Questions** or **Refresh Questions**, and not before.
+
 ## 0.4.3, 2026-10-10
 
 - A question that shows code from several files now opens each file in a tab of its own, with its lines highlighted and the first file in front. Before, it opened the first file alone.

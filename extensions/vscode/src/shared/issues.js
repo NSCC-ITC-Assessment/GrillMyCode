@@ -2,7 +2,7 @@
  * Questions issues
  *
  * Picks the GrillMyCode questions issues out of a repository's open issues,
- * and chooses which one to show.
+ * chooses which one to show, and tells when a later look finds another.
  *
  * The action keeps one open issue per branch and one per submission tag
  * pattern, told apart by title (postIssue in src/delivery/issue.js):
@@ -116,4 +116,25 @@ export function chooseIssue(issues, { branch, preferredTitle } = {}) {
     ) ??
     issues[0]
   );
+}
+
+/**
+ * What a later look at a repository found, against what was loaded. Both are
+ * what chooseIssue picked, from the issues as they were then and as they are
+ * now, so this says whether loading again would show other questions:
+ *
+ *   'first'  nothing was loaded, and there are questions now;
+ *   'newer'  the questions loaded have been replaced. The action writes each
+ *            run's report over the issue's body, so a body that differs is
+ *            another run's, or the same one edited by hand;
+ *   undefined  nothing has changed, or the issue is gone.
+ *
+ * @param {Pick<QuestionIssue, 'number' | 'body'> | undefined} loaded
+ * @param {Pick<QuestionIssue, 'number' | 'body'> | undefined} latest
+ * @returns {'first' | 'newer' | undefined}
+ */
+export function whatArrived(loaded, latest) {
+  if (!latest) return undefined;
+  if (!loaded) return 'first';
+  return loaded.number === latest.number && loaded.body === latest.body ? undefined : 'newer';
 }

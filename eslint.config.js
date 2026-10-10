@@ -36,6 +36,8 @@ export default [
         globalThis: 'readonly',
         URLSearchParams: 'readonly',
         clearTimeout: 'readonly',
+        setInterval: 'readonly',
+        clearInterval: 'readonly',
         Buffer: 'readonly',
         TextDecoder: 'readonly',
         TextEncoder: 'readonly',
