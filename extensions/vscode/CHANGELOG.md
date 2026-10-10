@@ -2,6 +2,11 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## 0.4.3, 2026-10-10
+
+- A question that shows code from several files now opens each file in a tab of its own, with its lines highlighted and the first file in front. Before, it opened the first file alone.
+- The tabs opened for a question close when you open another question. A tab is left open if it was open already, if you have pinned it, or if you have edited its file.
+
 ## 0.4.2, 2026-10-10
 
 - Adds **Next Question** and **Previous Question**, which open each question in turn at its code, in the order of the list. Both are at the top of the Questions list and in the Command Palette. Neither has a keyboard shortcut unless you give it one.

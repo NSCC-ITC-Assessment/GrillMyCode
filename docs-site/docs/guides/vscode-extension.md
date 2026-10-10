@@ -12,7 +12,7 @@ It's optional. The [issue and PDF](what-students-see.md) work the same with or w
 ## What students get
 
 - **A list of their questions**, grouped by file.
-- **A jump to the code.** Selecting a question opens the file and highlights the lines it asks about.
+- **A jump to the code.** Selecting a question opens the file and highlights the lines it asks about. A question about several files opens each one in a tab of its own.
 - **The whole question**, shown under the list with the code as it was when the question was written.
 - **A warning when the code has changed** since the questions were written, because the highlighted lines may no longer be the right ones.
 

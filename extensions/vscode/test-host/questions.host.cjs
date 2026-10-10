@@ -137,9 +137,10 @@ describe('GrillMyCode', () => {
   });
 
   it('cuts a range that runs past the end of the file', async () => {
+    const snippet = { file: 'src/pricing/tax.js', start_line: 400, end_line: 410 };
     await vscode.commands.executeCommand('grillmycode.openQuestion', {
-      question: { number: 3, broader: false, question: 'Past the end?', snippets: [] },
-      snippet: { file: 'src/pricing/tax.js', start_line: 400, end_line: 410 },
+      question: { number: 3, broader: false, question: 'Past the end?', snippets: [snippet] },
+      snippet,
     });
     const editor = vscode.window.activeTextEditor;
     assert.ok(editor.document.uri.path.endsWith('/src/pricing/tax.js'));
@@ -157,6 +158,86 @@ describe('GrillMyCode', () => {
       },
     });
     assert.strictEqual(vscode.window.activeTextEditor.document.uri.toString(), before);
+  });
+
+  // Question 3 of the fixture shows lines of src/pricing/tax.js and then of
+  // src/cart.js. Question 4 shows src/pricing/tax.js alone.
+  describe('a question that shows several files', () => {
+    const tax = {
+      file: 'src/pricing/tax.js',
+      start_line: 3,
+      end_line: 6,
+      language: 'js',
+      code: '',
+    };
+    const cart = { file: 'src/cart.js', start_line: 11, end_line: 17, language: 'js', code: '' };
+    const three = { number: 3, broader: false, question: 'Together?', snippets: [tax, cart] };
+    const four = {
+      number: 4,
+      broader: false,
+      question: 'Why this rate?',
+      snippets: [{ ...tax, start_line: 4, end_line: 4 }],
+    };
+    const open = (node) => vscode.commands.executeCommand('grillmycode.openQuestion', node);
+    const uriOf = ({ file }) => vscode.Uri.joinPath(vscode.workspace.workspaceFolders[0].uri, file);
+    /** True when some tab shows the snippet's file. */
+    const hasTab = ({ file }) =>
+      vscode.window.tabGroups.all
+        .flatMap((group) => group.tabs)
+        .some(
+          (tab) =>
+            tab.input instanceof vscode.TabInputText && tab.input.uri.path.endsWith(`/${file}`),
+        );
+    /** Checks which snippet's file is in front, with the cursor at its first line. */
+    const assertAt = ({ file, start_line }) => {
+      const editor = vscode.window.activeTextEditor;
+      assert.ok(editor.document.uri.path.endsWith(`/${file}`), editor.document.uri.path);
+      assert.strictEqual(editor.selection.active.line, start_line - 1);
+    };
+
+    beforeEach(() => vscode.commands.executeCommand('workbench.action.closeAllEditors'));
+
+    it('opens each file in a tab of its own, with the first in front', async () => {
+      await open({ question: three });
+      await until(() => hasTab(tax) && hasTab(cart), 'both tabs');
+      assertAt(tax);
+    });
+
+    it("brings a snippet's file to the front from its own row", async () => {
+      await open({ question: three });
+      await open({ question: three, snippet: cart });
+      assertAt(cart);
+      assert.ok(hasTab(tax));
+    });
+
+    it('closes the tabs it opened when another question is opened', async () => {
+      await open({ question: three });
+      await until(() => hasTab(cart), "the second file's tab");
+      await open({ question: four });
+      await until(() => !hasTab(cart), "the second file's tab to close");
+      assert.ok(hasTab(tax));
+      assertAt(four.snippets[0]);
+    });
+
+    it('leaves open a tab that was open before the question', async () => {
+      await vscode.window.showTextDocument(uriOf(cart), { preview: false });
+      await open({ question: three });
+      await open({ question: four });
+      await until(() => hasTab(tax), "the question's tab");
+      assert.ok(hasTab(cart));
+    });
+
+    it('leaves open a tab whose file has been edited since', async () => {
+      await open({ question: three });
+      const edit = new vscode.WorkspaceEdit();
+      edit.insert(uriOf(cart), new vscode.Position(0, 0), ' ');
+      assert.ok(await vscode.workspace.applyEdit(edit));
+      await open({ question: four });
+      assert.ok(hasTab(cart));
+      // Put back, so the tab can be closed without a question about saving it.
+      await vscode.window.showTextDocument(uriOf(cart));
+      await vscode.commands.executeCommand('workbench.action.files.revert');
+    });
   });
 
   // The fixture lists src/cart.js with questions 1 and 2, src/pricing/tax.js
