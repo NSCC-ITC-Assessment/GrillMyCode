@@ -81,7 +81,7 @@ A range that runs past the end of the file is cut to fit. A file that no longer 
 
 An account that can read an assignment's answer key gets a second view. It lists the answer key's questions, and **Selected Question** shows each one's answer under its code. Selecting a question still opens the student's file at the lines it asks about.
 
-No setting turns the view on. GitHub decides who can read the [instructor repository](instructor-repository.md), and the extension offers the view only after it has read the answer key with the signed-in account. A student's account cannot read it, so a student's copy shows the questions and nothing else: no answers, no switch, and no mention of another view.
+The instructor view is in version 0.4.0 and later. No setting turns it on. GitHub decides who can read the [instructor repository](instructor-repository.md), and the extension offers the view only after it has read the answer key with the signed-in account. A student's account cannot read it, so a student's copy shows the questions and nothing else: no answers, no switch, and no mention of another view.
 
 ### Where the answer key is read from
 
@@ -135,7 +135,7 @@ A repository with an answer key and no questions issue still gets the instructor
 
 ## Workflow help
 
-In a file under `.github/workflows`, the extension reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. It works from the text of the file alone: no sign-in, no request to GitHub and no Git. Every other step is left alone. Workflow help is in version 0.3.1 and later.
+In a file under `.github/workflows`, the extension reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. It works from the text of the file alone: no sign-in, no request to GitHub and no Git. Every other step is left alone. Workflow help is in version 0.4.0 and later.
 
 Opening a YAML file starts the extension, as opening the GrillMyCode view does.
 
@@ -198,7 +198,7 @@ Set `grillmycode.workflowHelp.enabled` to `false` in VS Code's settings, for the
 
 ## The Workflow Wizard
 
-**GrillMyCode: Open Workflow Wizard**, in the Command Palette, opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, with the same steps and the same workflow at the end, and it does two things a web page cannot. The Wizard is in version 0.3.2 and later.
+**GrillMyCode: Open Workflow Wizard**, in the Command Palette, opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, with the same steps and the same workflow at the end, and it does two things a web page cannot. The Wizard is in version 0.4.0 and later.
 
 - **It reads the folder that is open.** On the **Files** step, **Use the open folder** tries the patterns on the folder open in the editor, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. With several folders open, the extension asks which one.
 - **It writes the workflow file.** On the last step, **Create the workflow file** writes `.github/workflows/grill-my-code.yml` in the open folder and opens it beside the Wizard. If the folder already has that file, the extension asks before replacing what is in it, and the change can be undone in the editor. With no folder open, the workflow opens as a new file that is not saved yet.
