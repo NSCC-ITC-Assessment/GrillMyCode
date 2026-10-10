@@ -397,6 +397,7 @@ export function folderDistance(a, b) {
  * @param {string[]} [range.caseInsensitivePatterns]
  * @param {string[]} range.assessedFiles
  * @param {{ from: string, to: string } | null} [range.skippedRange]
+ * @returns {{ filepath: string, content: string, kind: string, starterCopy?: string }[]}
  */
 export function findCodebaseContextFiles({
   baseSha,

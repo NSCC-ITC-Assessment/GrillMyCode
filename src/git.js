@@ -77,7 +77,7 @@ export function readFileAt(sha, filepath) {
  * them after comment stripping — marking lines of the unstripped file would
  * point the AI at lines it never sees. git does the diffing (`--no-index`
  * works on any two files), with enough context lines that the whole file
- * lands in a single hunk, so everything after the first @@ header is the file.
+ * lands in a single hunk, so everything after the first `@@` header is the file.
  */
 export function diffLines(oldRaw, newRaw) {
   // A missing final newline or a switch to CRLF line endings would otherwise

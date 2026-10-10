@@ -337,6 +337,7 @@ export async function callAI({
     // A 200 whose body will not parse is almost always a transport failure — a
     // connection dropped mid-body, or a proxy's HTML page — so it is retried
     // like a network error.
+    /** @type {any} */
     let data;
     try {
       data = await response.json();
