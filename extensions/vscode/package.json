@@ -2,7 +2,7 @@
   "name": "grillmycode",
   "displayName": "GrillMyCode Companion",
   "description": "The companion to the GrillMyCode GitHub Action. Shows the questions it wrote about your code, beside the code they ask about.",
-  "version": "0.4.3",
+  "version": "0.4.4",
   "publisher": "GrillMyCode",
   "private": true,
   "license": "BSD-3-Clause",
@@ -99,7 +99,7 @@
       },
       {
         "view": "grillmycode.questions",
-        "contents": "No GrillMyCode questions were found for this repository. They appear after you push and the GrillMyCode workflow finishes.\n[Refresh](command:grillmycode.refresh)",
+        "contents": "No GrillMyCode questions were found for this repository. They appear here on their own once you have pushed and the GrillMyCode workflow has finished.\n[Refresh](command:grillmycode.refresh)",
         "when": "grillmycode.state == noIssue"
       },
       {
@@ -144,7 +144,7 @@
           {
             "id": "questionsSource",
             "title": "Get your questions",
-            "description": "GrillMyCode writes your questions when it runs on your repository, which is usually when you push or tag your work. They take a few minutes to arrive, and this step is ticked once they are showing.\n[Show the GrillMyCode View](command:grillmycode.questions.focus)\nWaited a few minutes? [Refresh Questions](command:grillmycode.refresh)",
+            "description": "GrillMyCode writes your questions when it runs on your repository, which is usually when you push or tag your work. They take a few minutes to arrive, and appear in the GrillMyCode view on their own. This step is ticked once they are showing.\n[Show the GrillMyCode View](command:grillmycode.questions.focus)\nWaited a few minutes? [Refresh Questions](command:grillmycode.refresh)",
             "media": {
               "markdown": "media/walkthrough/questions-source.md"
             },

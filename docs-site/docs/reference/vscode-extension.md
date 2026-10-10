@@ -65,8 +65,22 @@ Picking **Follow the checked-out branch** in that list clears the remembered cho
 - When the reader selects **Refresh Questions**.
 - When the folder is switched to another branch.
 - When the GitHub account signed in to VS Code changes.
+- When a first set of questions [arrives](#when-new-questions-arrive).
 
-It does not check GitHub on a timer or after a push, so a new set of questions appears only after a refresh. Each load also checks again for an answer key, which decides whether the [instructor view](#the-instructor-view) is offered.
+Each load also checks again for an answer key, which decides whether the [instructor view](#the-instructor-view) is offered.
+
+## When new questions arrive
+
+Between loads, the extension asks GitHub whether the questions have changed: once a minute, and when the VS Code window regains the focus, unless it asked in the 15 seconds before. Each check is one request, for the same list of issues a load reads. Checking is in version 0.4.4 and later. Earlier versions show a new set only after a refresh.
+
+It checks only while the window has the focus, and only once the repository has been read with the signed-in account. A check that fails says nothing, and the next one asks again.
+
+A set counts as new when loading again would show other questions: the issue behind [the set being shown](#which-set-of-questions-it-shows) has other text, or another issue would be chosen in its place. What happens next depends on the list:
+
+- **No questions are showing.** The new set is loaded at once. A notification says "GrillMyCode questions have arrived for this repository.", and its **Show Questions** button opens the Questions view. If that view is not on screen, the GrillMyCode icon in the Activity Bar carries a badge until it is.
+- **Questions are showing.** The list is left as it is, so it never changes under someone who is reading it. A notification says "A newer set of GrillMyCode questions has arrived for this repository.", a note above the list says the same, and the GrillMyCode icon carries a badge. **Show New Questions** in the notification loads the new set, as **Refresh Questions** does. Each set is announced once.
+
+A set that arrives for another branch or submission tag than the one being shown is not announced. It is offered by **Choose Which Questions to Show** after the next load.
 
 ## Opening a question's code
 
@@ -265,6 +279,8 @@ With that access the extension makes these requests, each time it loads:
 | The answer key, one file in the instructor repository | Whenever the student could be worked out |
 
 The last two are how it [looks for an answer key](#where-the-answer-key-is-read-from). In a student's own repository that is one extra request, which GitHub refuses.
+
+Between loads it repeats the first request alone, to learn [when new questions arrive](#when-new-questions-arrive).
 
 It writes nothing to GitHub and collects no usage data. The one other service it talks to is OpenRouter, and only from [the Workflow Wizard's tab](#what-the-wizards-tab-reads), without the sign-in.
 

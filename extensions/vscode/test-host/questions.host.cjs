@@ -357,6 +357,54 @@ describe('GrillMyCode', () => {
     });
   });
 
+  // What a check for new questions does with the issues GitHub lists. The
+  // tests hand them over, as the check would. Nobody is signed in, so a load
+  // that follows ends at the sign-in prompt, and that is how one is seen here.
+  describe('questions that arrive after the load', () => {
+    /** The fixture after another run of the action, which writes over the body. */
+    const laterIssue = () => {
+      const issue = fixtureIssue();
+      const body = issue.body.replace(/\*\*Question 1:\*\*/, '**Question 1:** ');
+      assert.notStrictEqual(body, issue.body);
+      return { ...issue, body };
+    };
+
+    it('finds nothing in the issue that is showing', async () => {
+      controller.showIssues([fixtureIssue()]);
+      assert.strictEqual(await controller.noticeIssues([fixtureIssue()]), undefined);
+      assert.strictEqual(controller.state, 'ready');
+    });
+
+    it('leaves the list as it is when a newer set arrives', async () => {
+      controller.showIssues([fixtureIssue()]);
+      assert.strictEqual(await controller.noticeIssues([laterIssue()]), 'newer');
+      assert.strictEqual(controller.state, 'ready');
+      // The same set found by the next check changes nothing either.
+      assert.strictEqual(await controller.noticeIssues([laterIssue()]), 'newer');
+      assert.strictEqual(controller.state, 'ready');
+    });
+
+    it('finds nothing new once the newer set has been loaded', async () => {
+      controller.showIssues([laterIssue()]);
+      assert.strictEqual(await controller.noticeIssues([laterIssue()]), undefined);
+    });
+
+    it('loads the first set by itself', async () => {
+      controller.showIssues([]);
+      assert.strictEqual(controller.state, 'noIssue');
+      assert.strictEqual(await controller.noticeIssues([fixtureIssue()]), 'first');
+      assert.strictEqual(controller.state, 'signedOut');
+    });
+
+    it('finds nothing in a repository that still has no questions', async () => {
+      controller.showIssues([]);
+      assert.strictEqual(await controller.noticeIssues([]), undefined);
+      assert.strictEqual(controller.state, 'noIssue');
+    });
+
+    after(() => controller.showIssues([fixtureIssue()]));
+  });
+
   // Git finds a repository a moment after the window opens, and the questions
   // load a moment after that. Typing in that moment must not lose the load: it
   // left the view saying there was no repository until it was refreshed by hand.

@@ -45,6 +45,21 @@ export const GITHUB_API_VERSION = '2026-03-10';
 export const ISSUES_PER_PAGE = 100;
 
 /**
+ * How often GitHub is asked whether a set of questions has arrived since the
+ * last load, while the window has the focus. A run of the action takes a few
+ * minutes, so a minute's wait at the end of one is not noticed, and sixty
+ * requests an hour is a small part of what GitHub allows an account.
+ */
+export const NEW_QUESTIONS_CHECK_MS = 60_000;
+
+/**
+ * A window that regains the focus asks at once, unless it last asked less than
+ * this long ago: someone switching between two windows should not send a
+ * request each time.
+ */
+export const NEW_QUESTIONS_FOCUS_GAP_MS = 15_000;
+
+/**
  * The scope asked of VS Code's GitHub sign-in. `repo` is the only scope that
  * lets an OAuth token read issues in a private repository.
  */

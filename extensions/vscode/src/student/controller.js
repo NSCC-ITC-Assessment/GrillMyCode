@@ -11,6 +11,12 @@
  * that cannot gets the student view alone, built from the issue as before,
  * with nothing to show that another view exists.
  *
+ * While the window has the focus it asks GitHub now and then whether a set of
+ * questions has arrived since the last load (#check). The first set is loaded
+ * at once, since the list is empty. A set that replaces the one showing is
+ * announced and left on GitHub until the reader asks for it, so the list never
+ * changes under someone who is reading it.
+ *
  * What the Questions view shows when it has no questions is chosen by the
  * `grillmycode.state` context key (see viewsWelcome in package.json):
  *
@@ -30,9 +36,13 @@
  */
 
 import * as vscode from 'vscode';
-import { GITHUB_SCOPES } from '../shared/constants.js';
+import {
+  GITHUB_SCOPES,
+  NEW_QUESTIONS_CHECK_MS,
+  NEW_QUESTIONS_FOCUS_GAP_MS,
+} from '../shared/constants.js';
 import { GitHubError, listLabelledIssues } from '../shared/github.js';
-import { chooseIssue, describeGroup, findQuestionIssues } from '../shared/issues.js';
+import { chooseIssue, describeGroup, findQuestionIssues, whatArrived } from '../shared/issues.js';
 import {
   adjacentQuestion,
   describeDrift,
@@ -65,6 +75,28 @@ import { QuestionsTree } from './questions-tree.js';
 
 /** How long the folder must be quiet before the warning is worked out again. */
 const SETTLE_MS = 300;
+
+/**
+ * The states in which a set of questions can arrive: the repository has been
+ * read with the account signed in, and may since have been given other issues.
+ */
+const WATCHED_STATES = new Set(['noIssue', 'needsUpdate', 'ready']);
+
+/** Shown on the GrillMyCode icon while there are questions the reader has not seen. */
+const NEW_QUESTIONS_BADGE = { value: 1, tooltip: 'New questions' };
+
+/**
+ * Keeps the questions issues among a repository's issues, as the GitHub REST
+ * API lists them, each with its report.
+ *
+ * @param {GitHubIssue[]} issues
+ * @returns {LoadedIssue[]}
+ */
+function readReports(issues) {
+  return findQuestionIssues(issues)
+    .map((issue) => ({ ...issue, report: parseReport(issue.body) }))
+    .filter(/** @returns {issue is LoadedIssue} */ (issue) => Boolean(issue.report));
+}
 
 export class QuestionsController {
   /** The state shown, as listed above. Read by test-host/. */
@@ -129,8 +161,19 @@ export class QuestionsController {
    * @type {AnswerKey | undefined}
    */
   #key;
+  /**
+   * A set of questions GitHub has in place of the one showing: found by a
+   * check, and left there until the reader asks for it.
+   *
+   * @type {LoadedIssue | undefined}
+   */
+  #arrived;
   /** Counts loads, so a slow one that has been overtaken can tell and stop. */
   #load = 0;
+  /** True while a check for new questions is waiting on GitHub. */
+  #checking = false;
+  /** When the last check started, as Date.now() gives it. */
+  #checked = 0;
   /**
    * The pending load, and the pending look at what changed in the folder.
    *
@@ -176,7 +219,18 @@ export class QuestionsController {
       vscode.extensions.onDidChange(() => {
         if (!this.#api) this.#loadSoon();
       }),
+      // Someone coming back from watching the run on GitHub should not wait
+      // for the timer.
+      vscode.window.onDidChangeWindowState(({ focused }) => {
+        if (focused && Date.now() - this.#checked >= NEW_QUESTIONS_FOCUS_GAP_MS) this.#check();
+      }),
+      // Questions loaded on their own count as seen once the list is looked at.
+      this.#treeView.onDidChangeVisibility(({ visible }) => {
+        if (visible && !this.#arrived) this.#treeView.badge = undefined;
+      }),
     );
+    const timer = setInterval(() => this.#check(), NEW_QUESTIONS_CHECK_MS);
+    this.#disposables.push({ dispose: () => clearInterval(timer) });
     return this.load();
   }
 
@@ -191,6 +245,7 @@ export class QuestionsController {
     for (const listener of this.#waiting.splice(0)) listener.dispose();
     this.#issues = [];
     this.#key = undefined;
+    this.#setArrived(undefined);
     this.#setView('student');
     this.#setState('loading');
 
@@ -275,9 +330,115 @@ export class QuestionsController {
    */
   showIssues(issues, key) {
     if (!this.#target) return this.#setState('noRepository');
+    this.#setArrived(undefined);
     this.#readIssues(issues);
     this.#key = key;
     this.#show();
+  }
+
+  /**
+   * Asks GitHub whether a set of questions has arrived since the last load.
+   * Nothing is asked while the window is in the background, or in a state
+   * where the repository could not be read in the first place.
+   *
+   * A check that fails says nothing: the next one asks again, and Refresh
+   * Questions is there to report a fault.
+   */
+  async #check() {
+    const target = this.#target;
+    if (this.#checking || !target || !WATCHED_STATES.has(this.state)) return;
+    if (!vscode.window.state.focused) return;
+    this.#checking = true;
+    this.#checked = Date.now();
+    const load = this.#load;
+    const { owner, repo } = target;
+    try {
+      const session = await vscode.authentication.getSession('github', GITHUB_SCOPES, {
+        silent: true,
+      });
+      if (!session) return;
+      const issues = await listLabelledIssues({
+        owner,
+        repo,
+        token: session.accessToken,
+        fetch: globalThis.fetch,
+      });
+      // A load that started meanwhile has read the same issues, or newer ones.
+      if (load === this.#load) await this.noticeIssues(issues);
+    } catch (err) {
+      this.#log.debug(`Could not check ${owner}/${repo} for new questions: ${err.message}`);
+    } finally {
+      this.#checking = false;
+    }
+  }
+
+  /**
+   * Compares a repository's issues, as the GitHub REST API lists them now,
+   * with the ones loaded, and acts on a set of questions that has arrived
+   * since. With no questions in the list it loads them and says they are
+   * there. With some, it leaves the list as it is and says a newer set can be
+   * shown. Returns what whatArrived found. Split from #check() so test-host/
+   * can supply the issues.
+   *
+   * @param {GitHubIssue[]} issues
+   */
+  async noticeIssues(issues) {
+    const options = {
+      branch: this.#branch,
+      preferredTitle: this.#context.workspaceState.get(this.#preferenceKey()),
+    };
+    const latest = chooseIssue(readReports(issues), options);
+    const arrival = whatArrived(this.#chooseIssue(), latest);
+    if (!latest || !arrival) return arrival;
+
+    if (this.state !== 'ready') {
+      await this.load();
+      // Still nothing to show when, say, the set is in a layout this version cannot read.
+      if (this.state !== 'ready') return arrival;
+      if (!this.#treeView.visible) this.#treeView.badge = NEW_QUESTIONS_BADGE;
+      this.#announce('GrillMyCode questions have arrived for this repository.', 'Show Questions');
+      return arrival;
+    }
+
+    // Said once for each set, however many checks find it.
+    if (!whatArrived(this.#arrived, latest)) return arrival;
+    this.#setArrived(latest);
+    this.#announce(
+      'A newer set of GrillMyCode questions has arrived for this repository.',
+      'Show New Questions',
+      () => this.load(),
+    );
+    return arrival;
+  }
+
+  /**
+   * Says, in a notification, that questions have arrived. Its button shows the
+   * Questions view, after `before` when that is given. Nothing waits on the
+   * notification, which may be left open or closed unanswered.
+   *
+   * @param {string} message
+   * @param {string} button
+   * @param {() => unknown} [before]
+   */
+  #announce(message, button, before) {
+    vscode.window.showInformationMessage(message, button).then(async (chosen) => {
+      if (chosen !== button) return;
+      await before?.();
+      vscode.commands.executeCommand('grillmycode.questions.focus');
+    });
+  }
+
+  /**
+   * Records the newer set a check found, or with undefined that there is none
+   * any more, and shows or clears the signs of it: the badge on the icon and
+   * the note above the list.
+   *
+   * @param {LoadedIssue | undefined} issue
+   */
+  #setArrived(issue) {
+    this.#arrived = issue;
+    this.#treeView.badge = issue ? NEW_QUESTIONS_BADGE : undefined;
+    this.#updateWarning();
   }
 
   /**
@@ -286,9 +447,7 @@ export class QuestionsController {
    * @param {GitHubIssue[]} issues
    */
   #readIssues(issues) {
-    this.#issues = findQuestionIssues(issues)
-      .map((issue) => ({ ...issue, report: parseReport(issue.body) }))
-      .filter(/** @returns {issue is LoadedIssue} */ (issue) => Boolean(issue.report));
+    this.#issues = readReports(issues);
     vscode.commands.executeCommand(
       'setContext',
       'grillmycode.severalIssues',
@@ -439,6 +598,9 @@ export class QuestionsController {
     // does, and stands in for it while the two hold the same questions.
     const sameRun = report && (!instructor || matchesReport(report.questions, questions));
     const notes = [
+      this.#arrived
+        ? 'A newer set of questions has arrived. Select Refresh Questions, at the top of this list, to show it.'
+        : '',
       instructor && report && !sameRun
         ? "The answer key and the questions issue showing are from different runs of GrillMyCode. These are the answer key's questions, and their lines may not be the ones in this folder."
         : '',

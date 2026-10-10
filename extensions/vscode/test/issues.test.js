@@ -5,6 +5,7 @@ import {
   describeGroup,
   findQuestionIssues,
   parseIssueTitle,
+  whatArrived,
 } from '../src/shared/issues.js';
 import { parseGitHubRemote, pickGitHubRemote } from '../src/shared/remote.js';
 
@@ -182,6 +183,33 @@ describe('chooseIssue', () => {
 
   it('returns undefined when there are none', () => {
     expect(chooseIssue([], { branch: 'main' })).toBeUndefined();
+  });
+});
+
+describe('whatArrived', () => {
+  const loaded = { number: 1, body: 'The report of one run.' };
+
+  it('finds nothing new in the issue that was loaded', () => {
+    expect(whatArrived(loaded, { ...loaded })).toBeUndefined();
+  });
+
+  it('finds a first set where nothing was loaded', () => {
+    expect(whatArrived(undefined, loaded)).toBe('first');
+  });
+
+  // The action writes each run's report over the same issue.
+  it('finds a newer set in the same issue with another body', () => {
+    expect(whatArrived(loaded, { number: 1, body: 'The report of the next run.' })).toBe('newer');
+  });
+
+  it('finds a newer set in another issue', () => {
+    expect(whatArrived(loaded, { ...loaded, number: 2 })).toBe('newer');
+  });
+
+  // Closing the issue is not news, and the questions loaded stay in the list.
+  it('finds nothing when the issue is gone', () => {
+    expect(whatArrived(loaded, undefined)).toBeUndefined();
+    expect(whatArrived(undefined, undefined)).toBeUndefined();
   });
 });
 
