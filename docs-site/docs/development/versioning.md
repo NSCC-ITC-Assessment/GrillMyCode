@@ -14,6 +14,8 @@ This action follows [Semantic Versioning](https://semver.org/) (`MAJOR.MINOR.PAT
 
 Consumers pin to a major tag (e.g. `@v0`) and automatically receive both bug fixes and non-breaking new features. A major bump is reserved for changes that would genuinely break existing workflow files — this means instructors are not forced to update mid-semester unless something they rely on has been removed or fundamentally changed.
 
+A consumer who wants nothing to change for the length of an assignment can name a minor tag instead (e.g. `@v0.30`), which stays on that minor line. See [What a workflow's `uses:` line runs](#what-a-workflows-uses-line-runs).
+
 Previous major versions enter **maintenance mode** when a new major is released — they continue to receive bug fixes but no new functionality.
 
 ---
@@ -22,7 +24,7 @@ Previous major versions enter **maintenance mode** when a new major is released 
 
 Every push to the repository triggers one of three build pipelines, depending on where the code lives. Together these form a DEV → STAGING → PROD lifecycle.
 
-![Three boxes joined by arrows. DEV: a push to a branch runs branch-build.yml, which pushes the image tagged branch-name, for validation only. STAGING: a merge to main runs staging-build.yml, which pushes the image tagged next, for integration testing only. PROD: pushing a v* tag runs release.yml, which pushes the image tagged vX.Y.Z, vX.Y, vX and latest. Below, what release.yml does after git push origin vX.Y.Z: 1, it builds and pushes the image with four tags on ghcr.io; 2, it creates the GitHub Release with generated release notes; 3, it moves the floating git tags vX and vX.Y; 4, it snapshots the docs and commits the snapshot to main. A footnote says action.yml references the major tag, such as v0, and a release never changes it.](/img/release-pipeline.svg)
+![Three boxes joined by arrows. DEV: a push to a branch runs branch-build.yml, which pushes the image tagged branch-name, for validation only. STAGING: a merge to main runs staging-build.yml, which pushes the image tagged next, for integration testing only. PROD: pushing a v* tag runs release.yml, which pushes the image tagged vX.Y.Z, vX.Y, vX and latest. Below, what release.yml does after git push origin vX.Y.Z: 1, it builds and pushes the image with four tags on ghcr.io; 2, it creates the GitHub Release with generated release notes; 3, it moves the floating git tags vX and vX.Y; 4, it snapshots the docs and commits the snapshot to main. A footnote says action.yml on main runs the major image, such as v0, and the vX.Y git tag carries a copy that runs the vX.Y image.](/img/release-pipeline.svg)
 
 | Environment | Trigger | Image tag produced | Purpose |
 |---|---|---|---|
@@ -56,10 +58,26 @@ When you push a tag like `v2.1.3`, the release workflow produces four image tags
 | `latest` | Any release | Always the newest stable build — not recommended for consumers |
 | `next` | Any merge to `main` | Pre-release staging build — for integration testing only |
 
-All consumer repos should reference the **major** tag (e.g. `v0`) in their workflow files. This is the value hard-coded in `action.yml` — it only changes when a new major version is released.
+`v2` and `latest` follow the **newest** release only. A patch to an older minor line (see [Patching an older minor line](#patching-an-older-minor-line)) pushes its exact and minor image tags and leaves the other two alone.
+
+### What a workflow's `uses:` line runs
+
+A workflow names a **git** tag, and the `action.yml` at that tag names the image that runs. The release workflow keeps three kinds of git tag:
+
+| `uses:` ref | Sits on | Image it runs | Result |
+|---|---|---|---|
+| `@v2` | The newest release's commit | `:v2` | Follows every `v2.x.x` release (recommended) |
+| `@v2.1` | A commit of its own, one past the newest `v2.1.x` release | `:v2.1` | Stays on the `v2.1` line |
+| `@v2.1.3` | That release's commit | `:v2` | Follows every `v2.x.x` release — **not pinned** |
+
+On `main`, `action.yml` always names the **major** image (e.g. `:v0`). The release workflow never changes it there, and the `action-image-tag` PR check fails if a branch does. It is only updated by hand when a breaking-change major version is released.
+
+For the minor tag, the release workflow makes one commit on top of the release commit, on no branch, in which that line names the minor image instead, and moves the minor git tag to it. So `@v2.1` gets both the code and the input declarations of the `v2.1` line. The release fails before publishing anything if `action.yml` at the tagged commit does not name the major image.
+
+An exact tag stays where it was pushed, on a commit whose `action.yml` names the major image, so it is not a pin. Consumers who want a fixed version name the minor tag.
 
 :::note
-`action.yml` always references the **major** tag (e.g. `:v0`) and is **never modified by the release workflow**. It is only updated manually when a breaking-change major version is released.
+This holds for `v0.30` and later. Earlier minor tags were placed on their release commits, and one that has not been moved since runs the major image.
 :::
 
 ---
@@ -71,8 +89,10 @@ Pushing a tag is the single action that triggers everything. When you run `git p
 1. The `release.yml` workflow fires
 2. It builds the Docker image and pushes it to `ghcr.io` with four version tags (`vX.Y.Z`, `vX.Y`, `vX`, `latest`)
 3. It automatically creates a **GitHub Release** with auto-generated release notes
-4. It moves the floating `vX` and `vX.Y` git tags to the new release
+4. It moves the floating `vX` git tag to the new release, and the `vX.Y` git tag to a commit that runs the `vX.Y` image (see [What a workflow's `uses:` line runs](#what-a-workflows-uses-line-runs))
 5. It snapshots the docs and commits the snapshot to `main` (see [Docs versioning](#docs-versioning))
+
+When the tag is not the highest version released so far, `vX`, `latest` and the docs snapshot are left as they are: see [Patching an older minor line](#patching-an-older-minor-line).
 
 You do not need to manually create the GitHub Release through the UI.
 
@@ -99,6 +119,31 @@ git push origin v0.13.3
 ```
 
 **What happens:** `v0.13.3` is created, `v0` and `latest` are updated. Consumers referencing `v0` get the fix on their next run automatically.
+
+---
+
+## Patching an older minor line
+
+Use when: a consumer who names a minor tag needs a fix and cannot move to the newest release. This should be rare; the default answer is to move to the newest release.
+
+```bash
+# Example: v0.32.0 is the newest release, and the v0.30 line needs a fix
+
+# 1. Branch from the line's newest exact tag and bring the fix over
+git checkout -b release/v0.30 v0.30.2
+git cherry-pick <commit-with-the-fix>
+git push origin release/v0.30
+
+# 2. Tag the patch from that branch
+git tag v0.30.3
+git push origin v0.30.3
+```
+
+**What happens:** the `:v0.30.3` and `:v0.30` images are pushed and the `v0.30` git tag moves. Because a higher version exists, `v0`, `:latest` and the docs snapshot stay on `v0.32.0`. The GitHub Release is created, and its entry is still added to the release notes.
+
+:::warning
+A tag push runs `release.yml` as it stands **at the tagged commit**, not the one on `main`. A line that was released before the workflow checked for the highest version would move `v0` and `:latest` back to the patch. Before tagging, confirm the branch's `release.yml` has the `newest` output, and bring the current workflow over if it does not.
+:::
 
 ---
 

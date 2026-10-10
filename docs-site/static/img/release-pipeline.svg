@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 520" role="img" aria-labelledby="gmc-rel-title">
-  <title id="gmc-rel-title">Build and release pipeline. DEV: a push to a branch runs branch-build.yml, which pushes the image tagged branch-name. STAGING: a merge to main runs staging-build.yml, which pushes the image tagged next. PROD: pushing a v-star tag runs release.yml. A release then: 1, builds and pushes the image with four tags, vX.Y.Z, vX.Y, vX and latest; 2, creates the GitHub Release with generated notes; 3, moves the floating vX and vX.Y git tags; 4, snapshots the docs and commits the snapshot to main. action.yml references the major tag and is never changed by a release.</title>
+  <title id="gmc-rel-title">Build and release pipeline. DEV: a push to a branch runs branch-build.yml, which pushes the image tagged branch-name. STAGING: a merge to main runs staging-build.yml, which pushes the image tagged next. PROD: pushing a v-star tag runs release.yml. A release then: 1, builds and pushes the image with four tags, vX.Y.Z, vX.Y, vX and latest; 2, creates the GitHub Release with generated notes; 3, moves the floating vX and vX.Y git tags; 4, snapshots the docs and commits the snapshot to main. action.yml on main runs the major image, and the vX.Y git tag carries a copy that runs the vX.Y image.</title>
   <style>
     .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -121,5 +121,5 @@
   </g>
 
   <!-- footnote -->
-  <text class="txt sub" x="500" y="480" text-anchor="middle" style="font-size:14px"><tspan class="mono" style="font-weight:700;fill:#1E293B">action.yml</tspan> references the major tag, such as <tspan class="mono" style="font-weight:700;fill:#1E293B">:v0</tspan>, and a release never changes it.</text>
+  <text class="txt sub" x="500" y="480" text-anchor="middle" style="font-size:14px"><tspan class="mono" style="font-weight:700;fill:#1E293B">action.yml</tspan> on <tspan class="mono" style="font-weight:700;fill:#1E293B">main</tspan> runs the major image, such as <tspan class="mono" style="font-weight:700;fill:#1E293B">:v0</tspan>. The <tspan class="mono" style="font-weight:700;fill:#1E293B">vX.Y</tspan> git tag carries a copy that runs <tspan class="mono" style="font-weight:700;fill:#1E293B">:vX.Y</tspan>.</text>
 </svg>

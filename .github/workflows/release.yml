@@ -60,8 +60,11 @@ jobs:
         run: pnpm install --frozen-lockfile
         working-directory: docs-site
 
+      # Skipped for a patch to an older minor line: main's docs describe a
+      # newer release than that one, and are already in the snapshot. Its
+      # release notes entry is still added below.
       - name: Update existing major version snapshot
-        if: steps.detect.outputs.new_major == 'false'
+        if: steps.detect.outputs.new_major == 'false' && needs.release.outputs.newest == 'true'
         run: |
           MAJOR=${{ steps.version.outputs.major }}
           echo "Updating existing v${MAJOR} snapshot"
@@ -124,25 +127,66 @@ jobs:
     permissions:
       contents: write
       packages: write
+    outputs:
+      newest: ${{ steps.version.outputs.newest }}
 
     steps:
       - uses: actions/checkout@v6
         with:
           fetch-depth: 0
 
+      # "newest" says whether this is the highest version released so far. The
+      # major tag, :latest and the docs snapshot follow the newest release
+      # only, so a patch to an older minor line (v0.27.1 pushed after v0.29.0)
+      # leaves all three where they are.
       - name: Extract version from tag
         id: version
         run: |
           TAG="${GITHUB_REF#refs/tags/}"
           MAJOR=$(echo "$TAG" | cut -d. -f1)
           MINOR=$(echo "$TAG" | cut -d. -f1-2)
+          HIGHEST=$(git tag --list 'v[0-9]*.[0-9]*.[0-9]*' --sort=-v:refname | head -n1)
+          if [[ "$TAG" == "$HIGHEST" ]]; then NEWEST=true; else NEWEST=false; fi
           echo "tag=$TAG" >> "$GITHUB_OUTPUT"
           echo "major=$MAJOR" >> "$GITHUB_OUTPUT"
           echo "minor=$MINOR" >> "$GITHUB_OUTPUT"
+          echo "newest=$NEWEST" >> "$GITHUB_OUTPUT"
+
+      # The minor git tag is given its own action.yml further down, made by
+      # rewriting this line. Fail here, before anything is published, if the
+      # line is not the one that step expects.
+      - name: Check action.yml runs the major image
+        env:
+          MAJOR: ${{ steps.version.outputs.major }}
+        run: |
+          if ! grep -Eq "^  image: \"docker://[^\"]+:${MAJOR}\"\$" action.yml; then
+            echo "::error file=action.yml::runs.image must end in ':${MAJOR}' at the commit being released."
+            exit 1
+          fi
 
       - name: Lowercase repository name
         id: repo
         run: echo "name=$(echo '${{ github.repository }}' | tr '[:upper:]' '[:lower:]')" >> $GITHUB_OUTPUT
+
+      - name: List image tags
+        id: image
+        env:
+          IMAGE: ghcr.io/${{ steps.repo.outputs.name }}
+          TAG: ${{ steps.version.outputs.tag }}
+          MAJOR: ${{ steps.version.outputs.major }}
+          MINOR: ${{ steps.version.outputs.minor }}
+          NEWEST: ${{ steps.version.outputs.newest }}
+        run: |
+          {
+            echo "tags<<EOF"
+            echo "${IMAGE}:${TAG}"
+            echo "${IMAGE}:${MINOR}"
+            if [[ "$NEWEST" == "true" ]]; then
+              echo "${IMAGE}:${MAJOR}"
+              echo "${IMAGE}:latest"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Log in to GitHub Container Registry
         uses: docker/login-action@v4
@@ -156,11 +200,7 @@ jobs:
         with:
           context: .
           push: true
-          tags: |
-            ghcr.io/${{ steps.repo.outputs.name }}:${{ steps.version.outputs.tag }}
-            ghcr.io/${{ steps.repo.outputs.name }}:${{ steps.version.outputs.minor }}
-            ghcr.io/${{ steps.repo.outputs.name }}:${{ steps.version.outputs.major }}
-            ghcr.io/${{ steps.repo.outputs.name }}:latest
+          tags: ${{ steps.image.outputs.tags }}
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}
 
@@ -182,23 +222,40 @@ jobs:
           name: ${{ steps.version.outputs.tag }}
           body_path: /tmp/release-body.txt
 
+      # The major tag goes on the release commit, whose action.yml runs the
+      # major image, so @v0 always runs the newest release. The minor tag goes
+      # on a commit made here, one past the release commit and on no branch,
+      # whose action.yml runs the minor image instead. A workflow that names
+      # @v0.29 therefore stays on v0.29.x, with the inputs v0.29 declares.
       - name: Update floating version tags
+        env:
+          TAG: ${{ steps.version.outputs.tag }}
+          MAJOR: ${{ steps.version.outputs.major }}
+          MINOR: ${{ steps.version.outputs.minor }}
+          NEWEST: ${{ steps.version.outputs.newest }}
         run: |
-          MAJOR=${{ steps.version.outputs.major }}
-          MINOR=${{ steps.version.outputs.minor }}
-          SHA=$(git rev-list -n1 "${{ steps.version.outputs.tag }}")
+          SHA=$(git rev-list -n1 "${TAG}")
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          git tag -f "${MAJOR}" "${SHA}"
-          git tag -f "${MINOR}" "${SHA}"
-          git push origin "${MAJOR}" "${MINOR}" --force
+
+          git checkout --quiet --detach "${SHA}"
+          sed -i -E "s#^(  image: \"docker://[^\"]+):${MAJOR}\"\$#\\1:${MINOR}\"#" action.yml
+          git commit --quiet -m "chore(release): run the ${MINOR} image from the ${MINOR} tag" action.yml
+          git tag -f "${MINOR}" HEAD
+          REFS=("${MINOR}")
+
+          if [[ "${NEWEST}" == "true" ]]; then
+            git tag -f "${MAJOR}" "${SHA}"
+            REFS+=("${MAJOR}")
+          fi
+          git push origin "${REFS[@]}" --force
 
       # TEMPORARY: keep @v1 working as an alias of v0 for existing workflows that
       # reference it. To drop it, remove this step and delete the tag
       # (git push origin --delete v1); workflows still on @v1 then fail with
       # "Unable to resolve action", so do it at a term boundary.
       - name: Update legacy v1 alias
-        if: steps.version.outputs.major == 'v0'
+        if: steps.version.outputs.major == 'v0' && steps.version.outputs.newest == 'true'
         run: |
           git tag -f v1 "$(git rev-list -n1 "${{ steps.version.outputs.tag }}")"
           git push origin v1 --force

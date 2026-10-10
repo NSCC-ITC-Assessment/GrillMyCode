@@ -467,10 +467,11 @@ outputs:
 
 runs:
   using: "docker"
-  # action.yml always references the major tag (e.g. :v0). The release workflow
-  # never modifies this file — the major tag on ghcr.io is updated atomically
-  # as part of each release push. Only a major-version bump (breaking change)
-  # should change this value.
+  # On main, action.yml always references the major tag (e.g. :v0), which each
+  # release moves on ghcr.io. Only a major-version bump (breaking change)
+  # should change this value. The release workflow never changes this file on
+  # main; it gives the minor git tag (e.g. v0.29) a commit of its own in which
+  # this line names the minor image (:v0.29), so @v0.29 stays on that minor.
   image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:v0"
   env:
     INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}

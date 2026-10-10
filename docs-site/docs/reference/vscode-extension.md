@@ -219,7 +219,7 @@ The Wizard needs no sign-in to GitHub and reads no issue.
 
 - **Open a workflow that already exists.** The Wizard starts from its own defaults each time. It does not read a workflow file back into its steps.
 - **Keep up with the docs site between releases.** The extension carries the Wizard as it was when the extension was released, so the Wizard on the docs site can be newer. The same holds for [the inputs workflow help knows](#what-it-does-not-know).
-- **Choose the action's version.** The workflow is written for `@v0`, the action's current major version.
+- **Choose the action's version.** The workflow is written for `@v0`, the action's current major version. To stay on one minor version, edit that line afterward: see [Choosing when to upgrade](upgrade-notes.md#choosing-when-to-upgrade).
 
 ## What it leaves out
 
