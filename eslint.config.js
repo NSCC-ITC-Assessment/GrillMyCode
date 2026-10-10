@@ -66,6 +66,7 @@ export default [
         describe: 'readonly',
         it: 'readonly',
         before: 'readonly',
+        beforeEach: 'readonly',
         after: 'readonly',
       },
     },

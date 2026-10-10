@@ -461,8 +461,11 @@ export class QuestionsController {
   async #openQuestion(node) {
     if (!node?.question || !this.#target) return;
     this.#questionView.show(node.question);
-    const snippet = node.snippet ?? openableSnippets(node.question)[0];
-    if (snippet) await this.#highlighter.show(this.#target.repository.rootUri, snippet);
+    // Every file the question shows is opened. A snippet's own row leaves that
+    // snippet in front, and the question's row its first.
+    const snippets = openableSnippets(node.question);
+    const target = node.snippet && snippets.includes(node.snippet) ? node.snippet : snippets[0];
+    if (target) await this.#highlighter.show(this.#target.repository.rootUri, snippets, target);
   }
 
   /**

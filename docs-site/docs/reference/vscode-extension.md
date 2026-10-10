@@ -68,6 +68,19 @@ Picking **Follow the checked-out branch** in that list clears the remembered cho
 
 It does not check GitHub on a timer or after a push, so a new set of questions appears only after a refresh. Each load also checks again for an answer key, which decides whether the [instructor view](#the-instructor-view) is offered.
 
+## Opening a question's code
+
+Selecting a question opens the file it asks about, in the editor group that is active, and highlights the lines. A question that shows code from several files opens each file in a tab of its own, in the order the question shows them, and leaves the first in front. Under such a question the list has a row for each piece of code, and selecting one brings its file to the front at those lines. Versions before 0.4.3 opened one file at a time.
+
+When another question is opened, the tabs the extension opened for the one before are closed, except those on a file the new question shows too. A tab is left open when any of these is true:
+
+- it was open before the question was;
+- its file has been edited since, whether or not the edit was saved;
+- the reader has pinned it;
+- the reader closed it and opened it again.
+
+Loading the questions again removes the highlights and leaves the tabs, which close when the next question is opened.
+
 ## The moved-code warning
 
 Line numbers in the report are those of the commit the questions were written about, and the extension does not try to follow code that has moved. It highlights the original lines and shows a note above the list when either is true:
