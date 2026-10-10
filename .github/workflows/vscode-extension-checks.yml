@@ -9,17 +9,24 @@ name: VS Code Extension Checks
 #
 # Nothing is published. Releases will get their own workflow, on vscode-v* tags.
 
+# The extension bundles the docs site's Workflow Wizard, so a change to the
+# Wizard is a change to the extension and runs these checks too.
+
 on:
   pull_request:
     branches: [main]
     paths:
       - "extensions/**"
+      - "docs-site/docs/_workflow-wizard/**"
+      - "docs-site/static/img/grillmycode-wizard.svg"
       - ".github/workflows/vscode-extension-checks.yml"
   # On main too, so the latest merged build is always there to download.
   push:
     branches: [main]
     paths:
       - "extensions/**"
+      - "docs-site/docs/_workflow-wizard/**"
+      - "docs-site/static/img/grillmycode-wizard.svg"
       - ".github/workflows/vscode-extension-checks.yml"
 
 permissions:

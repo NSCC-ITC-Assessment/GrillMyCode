@@ -18,7 +18,7 @@ From `extensions/vscode/`:
 
 ```bash
 pnpm install          # once
-pnpm build            # bundle to dist/extension.cjs
+pnpm build            # bundle to dist/: the extension, and the Workflow Wizard's page
 pnpm test:host        # the tests that need a running VS Code
 pnpm package          # dist/grillmycode.vsix, installable by hand
 pnpm package:pre-release   # the same, marked as a pre-release for the Marketplace
@@ -37,20 +37,33 @@ The extension's list of the action's inputs, `vscode/src/shared/action-inputs.js
 is generated from `action.yml`. After changing an input, run
 `node scripts/build-extension-action-inputs.js` from the repository root.
 
+The Workflow Wizard's tab is the docs site's Wizard. `pnpm build` bundles it
+from `docs-site/docs/_workflow-wizard/` where it stands, with this project's
+own React, so `docs-site/` need not be installed. After changing the Wizard,
+run `pnpm build` and `pnpm test:host` here: the first test of the Wizard fails
+if it no longer opens. What only the editor can do reaches the Wizard through
+its `host` (`vscode/src/webview/host.js`), and is answered by
+`vscode/src/workflow/wizard.js`.
+
 ## Releasing the VS Code extension
 
 The extension has its own version numbers and its own tags, `vscode-v*`. A
 `v*` tag releases the action and must not be used here.
 
-1. Choose the version. An odd minor number (`0.1.x`, `0.3.x`) is a
+1. Check what main holds. A release carries the action's inputs and the
+   Workflow Wizard as they stand on main. If an input has changed there since
+   the last `v*` tag, release the action first: otherwise workflow help
+   describes, and the Wizard writes, an input the released action does not
+   have.
+2. Choose the version. An odd minor number (`0.1.x`, `0.3.x`) is a
    pre-release, which only people who opt in receive. An even one (`0.2.x`) is
    a stable release, which every student's install updates to.
-2. Set `version` in `extensions/vscode/package.json`, add the version to
+3. Set `version` in `extensions/vscode/package.json`, add the version to
    `extensions/vscode/CHANGELOG.md`, which the Marketplace shows on the
    listing's Changelog tab, and merge both to main. If the screenshot in
    `extensions/vscode/README.md` is new or changed, wait for the docs site to
    deploy before tagging: the listing loads the image from there.
-3. Tag that commit on main and push the tag:
+4. Tag that commit on main and push the tag:
 
    ```bash
    git checkout main && git pull
@@ -58,7 +71,7 @@ The extension has its own version numbers and its own tags, `vscode-v*`. A
    git push origin vscode-v0.2.0
    ```
 
-4. `vscode-extension-release.yml` builds, tests and packages the extension,
+5. `vscode-extension-release.yml` builds, tests and packages the extension,
    then waits for approval if the `vscode-marketplace` environment has a
    required reviewer. Once approved it publishes to the Marketplace and creates
    a GitHub Release with the `.vsix` attached.

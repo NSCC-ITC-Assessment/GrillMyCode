@@ -1,0 +1,121 @@
+/*
+ * The Workflow Wizard in the editor
+ *
+ * The Wizard's own stylesheet (docs-site/docs/_workflow-wizard/styles.module.css)
+ * is bundled as it is. It takes its colours, fonts and corners from the docs
+ * site's theme, through the variables below. Here each one is given the
+ * editor's value, so the Wizard follows whatever colour theme is in use.
+ *
+ * A variable the Wizard starts to use and this list lacks falls back to
+ * nothing: a missing border or a transparent background. The list is every
+ * `--ifm-` and `--gmc-` name in that folder; test/extension-wizard.test.js
+ * fails when one is missing.
+ */
+
+:root {
+  /* Text and surfaces. */
+  --ifm-color-content: var(--vscode-foreground);
+  --ifm-color-content-secondary: var(--vscode-descriptionForeground);
+  --ifm-background-color: var(--vscode-input-background, var(--vscode-editor-background));
+  --ifm-background-surface-color: var(--vscode-editorWidget-background);
+  --ifm-card-background-color: var(--vscode-editorWidget-background);
+  --ifm-pre-background: var(--vscode-textCodeBlock-background);
+  --ifm-link-color: var(--vscode-textLink-foreground);
+
+  /* The site's greys, from faint to strong, as shares of the text colour. */
+  --ifm-color-emphasis-100: color-mix(in srgb, var(--vscode-foreground) 7%, transparent);
+  --ifm-color-emphasis-200: color-mix(in srgb, var(--vscode-foreground) 16%, transparent);
+  --ifm-color-emphasis-300: color-mix(in srgb, var(--vscode-foreground) 28%, transparent);
+  --ifm-color-emphasis-400: color-mix(in srgb, var(--vscode-foreground) 40%, transparent);
+  --ifm-color-emphasis-700: color-mix(in srgb, var(--vscode-foreground) 80%, transparent);
+
+  /*
+   * The site's primary colour is a neutral one, close to its text colour: it
+   * is drawn as text and outlines on the page, and as a fill with text on it.
+   * Its orange is kept for the buttons that move on. So here the primary is the
+   * editor's text colour, with the editor's background for text on it.
+   */
+  --ifm-color-primary: var(--vscode-foreground);
+  --ifm-color-primary-dark: color-mix(
+    in srgb,
+    var(--vscode-foreground) 82%,
+    var(--vscode-editor-background)
+  );
+  --ifm-color-primary-lighter: color-mix(in srgb, var(--vscode-foreground) 50%, transparent);
+  --ifm-color-primary-lightest: color-mix(in srgb, var(--vscode-foreground) 28%, transparent);
+  --gmc-on-primary: var(--vscode-editor-background);
+
+  /* The buttons that move the Wizard on are the editor's own buttons. */
+  --gmc-accent: var(--vscode-button-background);
+  --gmc-accent-dark: var(--vscode-button-hoverBackground);
+  --gmc-on-accent: var(--vscode-button-foreground);
+
+  /* Notices. */
+  --ifm-color-danger: var(--vscode-errorForeground);
+  --ifm-color-warning: var(--vscode-editorWarning-foreground);
+  --ifm-color-warning-contrast-foreground: var(--vscode-foreground);
+  --ifm-color-info: var(--vscode-editorInfo-foreground);
+  --ifm-color-info-contrast-background: color-mix(
+    in srgb,
+    var(--vscode-editorInfo-foreground) 14%,
+    transparent
+  );
+  --ifm-color-success-contrast-foreground: var(--vscode-foreground);
+  --ifm-color-success-contrast-background: color-mix(
+    in srgb,
+    var(--vscode-testing-iconPassed, #2ea043) 22%,
+    transparent
+  );
+
+  /* Type and corners. */
+  --ifm-font-family-base: var(--vscode-font-family);
+  --ifm-font-family-monospace: var(--vscode-editor-font-family, monospace);
+  --ifm-global-radius: 4px;
+  --ifm-card-border-radius: 6px;
+}
+
+/*
+ * What the docs site's base styles give every page, and the Wizard counts on.
+ * The editor's own page styles cover links and `code`.
+ */
+
+*,
+::before,
+::after {
+  box-sizing: border-box;
+}
+
+/* The editor gives a page the colour of code, which a theme may tint. */
+body {
+  padding: 0;
+  color: var(--vscode-foreground);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+button,
+input,
+select,
+textarea {
+  font-family: inherit;
+}
+
+button:disabled {
+  cursor: default;
+  opacity: 0.6;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.25;
+}
+
+pre {
+  font-family: var(--vscode-editor-font-family, monospace);
+}
+
+summary {
+  cursor: pointer;
+}

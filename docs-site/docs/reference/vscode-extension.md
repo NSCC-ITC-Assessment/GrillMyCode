@@ -5,7 +5,7 @@ sidebar_label: The VS Code extension
 
 # The VS Code extension
 
-GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=GrillMyCode.grillmycode)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, and shows an instructor each question's answer as well. It also [checks the GrillMyCode step](#workflow-help) of a workflow file as it is written. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in VS Code](../guides/vscode-extension.md).
+GrillMyCode Companion (`GrillMyCode.grillmycode` on the [Visual Studio Marketplace](https://marketplace.visualstudio.com/items?itemName=GrillMyCode.grillmycode)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, and shows an instructor each question's answer as well. It also [checks the GrillMyCode step](#workflow-help) of a workflow file as it is written, and opens the [Workflow Wizard](#the-workflow-wizard) in the editor. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in VS Code](../guides/vscode-extension.md).
 
 ## What it needs
 
@@ -196,6 +196,31 @@ GitHub's own [GitHub Actions extension](https://marketplace.visualstudio.com/ite
 
 Set `grillmycode.workflowHelp.enabled` to `false` in VS Code's settings, for the user or for one folder.
 
+## The Workflow Wizard
+
+**GrillMyCode: Open Workflow Wizard**, in the Command Palette, opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, with the same steps and the same workflow at the end, and it does two things a web page cannot. The Wizard is in version 0.3.2 and later.
+
+- **It reads the folder that is open.** On the **Files** step, **Use the open folder** tries the patterns on the folder open in the editor, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. With several folders open, the extension asks which one.
+- **It writes the workflow file.** On the last step, **Create the workflow file** writes `.github/workflows/grill-my-code.yml` in the open folder and opens it beside the Wizard. If the folder already has that file, the extension asks before replacing what is in it, and the change can be undone in the editor. With no folder open, the workflow opens as a new file that is not saved yet.
+
+[Workflow help](#workflow-help) checks the file the Wizard writes, as it checks any other. The tab keeps its answers while another tab is in front. Closing it discards them.
+
+The command is there for every account, as the Wizard on the docs site is.
+
+### What the Wizard's tab reads
+
+- **The folder, as it is on disk.** That is the same reading as [the preview on the docs site](exclude-patterns.md#previewing-in-the-workflow-wizard) makes, not the list of files Git tracks, so a file Git ignores is listed too. The `.git` folder and dependency folders such as `node_modules` are not opened. A symbolic link is listed as a file and is never followed.
+- **Only that folder.** The tab is given the files of the folder you chose and no others, and nothing it reads leaves the computer.
+- **OpenRouter's public list of models**, for the **AI** step. It is the one address the tab can reach. No key is sent and nothing about the folder is.
+
+The Wizard needs no sign-in to GitHub and reads no issue.
+
+### What it does not do
+
+- **Open a workflow that already exists.** The Wizard starts from its own defaults each time. It does not read a workflow file back into its steps.
+- **Keep up with the docs site between releases.** The extension carries the Wizard as it was when the extension was released, so the Wizard on the docs site can be newer. The same holds for [the inputs workflow help knows](#what-it-does-not-know).
+- **Choose the action's version.** The workflow is written for `@v0`, the action's current major version.
+
 ## What it leaves out
 
 - **Answers, in the student view.** With `include_answers` on, the issue contains them. The student view does not show them.
@@ -215,10 +240,12 @@ With that access the extension makes these requests, each time it loads:
 
 The last two are how it [looks for an answer key](#where-the-answer-key-is-read-from). In a student's own repository that is one extra request, which GitHub refuses.
 
-It writes nothing to GitHub, talks to no other service, and collects no usage data.
+It writes nothing to GitHub and collects no usage data. The one other service it talks to is OpenRouter, and only from [the Workflow Wizard's tab](#what-the-wizards-tab-reads), without the sign-in.
 
 ## Untrusted issue text
 
 Anyone with write access to a student's repository, including the student, can edit the issue. The extension therefore treats its text as untrusted: everything shown is escaped, the page that shows the selected question runs no script, and a file path that is absolute or leaves the repository is never opened.
+
+The Workflow Wizard's tab does run a script, the Wizard itself. No text from an issue or an answer key is ever shown in it.
 
 The answer key is read the same way, although only an account with write access to the instructor repository can change it.

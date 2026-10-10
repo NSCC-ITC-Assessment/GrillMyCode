@@ -1,7 +1,10 @@
 # Everything not listed with a leading ! is left out of the packaged extension.
-# The bundle in dist/ holds all the code, so the source and tests stay behind.
+# The bundles in dist/ hold all the code, so the source and tests stay behind:
+# the extension, and the Workflow Wizard's page with its stylesheet.
 **
 !dist/extension.cjs
+!dist/wizard.js
+!dist/wizard.css
 !media/**
 !package.json
 !README.md
