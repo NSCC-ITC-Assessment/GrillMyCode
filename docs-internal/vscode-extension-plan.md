@@ -373,18 +373,54 @@ None of these is planned. "Small" is days and "medium" a week or two.
 
 ### For instructors
 
-All build on phase 3, except the last, which builds on phase 7.
+All build on phase 3.
 
-| Idea                          | What it does                                                          | Needs                                       | Size   |
-| ----------------------------- | --------------------------------------------------------------------- | ------------------------------------------- | ------ |
-| Class list                    | Every student in the assignment, with who has questions yet           | Nothing more                                | Medium |
-| Resubmission history          | Earlier question sets and the log of runs, for submission tags        | Nothing more                                | Small  |
-| Viva helpers                  | A random pick, answers hidden until revealed, a timer, marks exported | The decision on where marks are stored      | Medium |
-| Starter-code markers          | Shows which questions are about starter code alone                    | Nothing more                                | Small  |
-| Flag a poor question          | Records that a question was unclear or wrong, for tuning the prompt   | Somewhere to keep the flags                 | Small  |
-| Build the quiz                | Starts the instructor repository's quiz workflow from the editor      | Nothing more                                | Small  |
-| Cost of each run              | Token use and cost per student and per assignment                     | The action to record them as data           | Medium |
-| Open a workflow in the Wizard | Reads an existing workflow file back into the Wizard's steps          | A reader from YAML to the Wizard's settings | Medium |
+| Idea                 | What it does                                                          | Needs                                  | Size   |
+| -------------------- | --------------------------------------------------------------------- | -------------------------------------- | ------ |
+| Class list           | Every student in the assignment, with who has questions yet           | Nothing more                           | Medium |
+| Resubmission history | Earlier question sets and the log of runs, for submission tags        | Nothing more                           | Small  |
+| Viva helpers         | A random pick, answers hidden until revealed, a timer, marks exported | The decision on where marks are stored | Medium |
+| Starter-code markers | Shows which questions are about starter code alone                    | Nothing more                           | Small  |
+| Flag a poor question | Records that a question was unclear or wrong, for tuning the prompt   | Somewhere to keep the flags            | Small  |
+| Build the quiz       | Starts the instructor repository's quiz workflow from the editor      | Nothing more                           | Small  |
+| Cost of each run     | Token use and cost per student and per assignment                     | The action to record them as data      | Medium |
+
+### From the workflow file
+
+The extension reads a workflow file today for where things are: the steps that
+run the action, their inputs and the tag filters (`readWorkflow`, in
+`src/shared/workflow.js`). Most of these need it read for what it means: a
+reader from YAML to the Wizard's settings, `WizardConfig`. Phase 6's trial run
+would take its settings from the same reader.
+
+| Idea                          | What it does                                                                                                         | Needs                                                                                                                         | Size   |
+| ----------------------------- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | ------ |
+| Open a workflow in the Wizard | Reads an existing workflow file back into the Wizard's steps, to change one setting without answering them all again | The reader                                                                                                                    | Medium |
+| Summary in plain words        | Says what a workflow does: what starts it, the model, how many questions and where they go                           | The reader                                                                                                                    | Small  |
+| Assessed-files marks          | Marks each file in the Explorer as assessed, excluded or starter code, by the workflow's own patterns                | The reader, and the file selection rules outside the Wizard's page. It is the preview of phase 6 without the trial run        | Medium |
+| Checks on patterns            | Reports an exclude pattern or a stack template the action would not accept, which phase 5 left out                   | The file selection rules outside the Wizard's page                                                                            | Small  |
+| When questions arrive         | Tells a student with no questions yet what starts a run: every push, a tag such as `submit-1`, or the instructor     | Nothing: the trigger and the tag filters are in the file. Run status, above, would learn which workflow to watch the same way | Small  |
+| Setup checklist               | Checks that the secrets the workflow names exist, before the first run fails for want of one                         | An account allowed to list a repository's secrets, which is an administrator's                                                | Small  |
+| Quick fixes                   | Replaces a misspelled input with the one meant, which phase 5 left out                                               | Nothing: where each input is has been read                                                                                    | Small  |
+| Upgrade a workflow            | Rewrites an input that a later version of the action renames or removes                                              | A record of what each version changed                                                                                         | Small  |
+
+What to settle before building the reader:
+
+- **Reading back loses things.** The Wizard writes a manual-run override as
+  `${{ github.event.inputs.x || 'default' }}`, and a file edited by hand may
+  hold comments, other steps and values the Wizard has no setting for. The
+  reader gives the settings and a list of what it could not read. Before
+  anything is saved, the workflow is written again from what was read and
+  compared with the file, and the instructor is told what would go.
+- **It is tested by going round.** For every set of answers the tests have,
+  reading the YAML the Wizard writes gives the same answers back.
+- **It lives in the Wizard's folder**, beside `generateYaml.js`, so the docs
+  site can read a pasted workflow too. The docs site does not have the `yaml`
+  package yet. The root and the extension do.
+- **A student's copy is a hint.** A student can edit the workflow in their own
+  repository, so what is read from it there is shown and nothing more.
+- **The summary comes first.** It reads and writes nothing, so it cannot harm
+  a file while the reader is still new.
 
 ### Reach and upkeep
 
