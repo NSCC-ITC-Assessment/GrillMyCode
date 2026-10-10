@@ -49,6 +49,11 @@ import { findMatchingTagPattern, namedDiffBaseTag, pickPreviousSubmissionTag } f
  * null. The span is kept even when a later base supersedes it, so the files
  * those commits wrote can be kept out of the codebase context as well as out
  * of the assessment.
+ *
+ * @param {typeof import('@actions/github').context} ctx
+ * @param {ReturnType<typeof import('@actions/github').getOctokit>} octokit
+ * @param {import('./inputs.js').Inputs} inputs
+ * @param {{ tagName?: string }} [options]
  */
 export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // Validate both overrides up front so a malformed SHA is rejected with the
@@ -118,6 +123,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // Replaces the base chosen above rather than combining with it: an earlier
   // submission tag is always later in history than the first commit or the
   // empty tree, so it is the tighter of the two whenever one exists.
+  /** @type {{ name: string, commit: string } | null} */
   let previousTag = null;
   if (tagName && inputs.tagDiffBase === 'previous-tag') {
     previousTag = pickPreviousSubmissionTag({
@@ -180,6 +186,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   }
 
   // ── Apply skip_committers ────────────────────────────────────────────────
+  /** @type {{ from: string, to: string } | null} */
   let skippedRange = null;
   // Advance baseSha past any consecutive leading commits by bot accounts so
   // that automated Classroom/Actions commits are excluded from the diff.
@@ -202,7 +209,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
           ref: candidate.sha,
         });
         const logins = [data.author?.login, data.committer?.login]
-          .filter(Boolean)
+          .filter(/** @returns {l is string} */ (l) => Boolean(l))
           .map((l) => l.toLowerCase());
         verified = logins.some((login) => skipLower.some((sc) => login.includes(sc)));
       } catch (err) {

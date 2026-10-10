@@ -329,7 +329,7 @@ export function buildPrompt({
   instructorContext,
   assignmentContext,
   includeDistractors = true,
-  markedFiles = [],
+  markedFiles = /** @type {string[]} */ ([]),
   starterContext = '',
   earlierContext = '',
   starterQuestions = 0,

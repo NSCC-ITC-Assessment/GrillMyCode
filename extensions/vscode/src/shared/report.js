@@ -33,6 +33,66 @@
 
 import { ISSUE_LAYOUT_VERSION } from './constants.js';
 
+/**
+ * One piece of code a question shows, with where it is in the repository.
+ *
+ * @typedef {object} Snippet
+ * @property {string} file
+ * @property {number} start_line
+ * @property {number} end_line
+ * @property {string} language
+ * @property {string} code
+ */
+
+/**
+ * A question, as the report gives it. An answer key's adds `distractors`
+ * (parseAnswerKey in instructor/answer-key.js).
+ *
+ * @typedef {object} Question
+ * @property {number} number
+ * @property {boolean} broader
+ * @property {Snippet[]} snippets
+ * @property {string} question
+ * @property {string} [answer]
+ * @property {string[]} [distractors]
+ */
+
+/**
+ * A report this extension reads, as parseReport describes it.
+ *
+ * @typedef {object} Report
+ * @property {string} baseSha
+ * @property {string} headSha
+ * @property {string} [headCommit]
+ * @property {string | null} branch
+ * @property {string | null} tag
+ * @property {string[]} files
+ * @property {Question[]} questions
+ * @property {boolean} truncated
+ * @property {undefined} [needsUpdate]
+ */
+
+/**
+ * A report in a layout newer than this extension reads.
+ *
+ * @typedef {{ needsUpdate: true, questions: Question[] }} NewerReport
+ */
+
+/**
+ * The hidden data comment of a layout this extension reads.
+ *
+ * @typedef {object} ReportData
+ * @property {number} version
+ * @property {string} headSha
+ * @property {{ number: number, broader: boolean, snippets: Pick<Snippet, 'file' | 'start_line' | 'end_line'>[] }[]} questions
+ */
+
+/**
+ * The hidden data comment of a newer layout: its version, and nothing else.
+ *
+ * @typedef {{ version: number, questions?: undefined }} NewerReportData
+ */
+
 /** Zero-width space, which the action puts after `@` and `#` to stop GitHub linking them. */
 const ZWSP = '​';
 
@@ -52,20 +112,30 @@ const CUT_NOTICE = /^> \[!WARNING\]\s*$/;
 const DATA_COMMENT = /^<!-- gmc:questions (.*) -->\s*$/;
 const FULL_SHA = /^[0-9a-f]{40,64}$/;
 
+/** @param {any} value */
 const isCount = (value) => Number.isInteger(value) && value >= 0;
+
+/**
+ * @param {ReportData | NewerReportData} data
+ * @returns {data is NewerReportData}
+ */
+const isNewer = (data) => data.version > ISSUE_LAYOUT_VERSION;
 
 /**
  * Reads the hidden data comment: the first line that is one, wherever it is,
  * since a later layout may move it. Returns `{ version }` alone for a version
  * this extension does not know, whose other fields may mean something else,
  * and null when there is no comment or it is not what the action writes.
+ *
+ * @param {string[]} lines
+ * @returns {ReportData | NewerReportData | null}
  */
 function readData(lines) {
   const line = lines.find((candidate) => DATA_COMMENT.test(candidate));
   if (!line) return null;
   let data;
   try {
-    data = JSON.parse(line.match(DATA_COMMENT)[1]);
+    data = JSON.parse(line.match(DATA_COMMENT)?.[1] ?? '');
   } catch {
     return null;
   }
@@ -77,12 +147,13 @@ function readData(lines) {
     FULL_SHA.test(data.headSha) &&
     Array.isArray(data.questions) &&
     data.questions.every(
-      (q) =>
+      (/** @type {any} */ q) =>
         isCount(q?.number) &&
         typeof q.broader === 'boolean' &&
         Array.isArray(q.snippets) &&
         q.snippets.every(
-          (s) => typeof s?.file === 'string' && isCount(s.start_line) && isCount(s.end_line),
+          (/** @type {any} */ s) =>
+            typeof s?.file === 'string' && isCount(s.start_line) && isCount(s.end_line),
         ),
     );
   return sound ? data : null;
@@ -93,6 +164,10 @@ function readData(lines) {
  * whether it is a broader one, and each snippet's file and lines. A question
  * the data does not list, or lists with another number of snippets, has been
  * edited by hand and is left as the Markdown has it.
+ *
+ * @param {Question[]} questions
+ * @param {ReportData} data
+ * @returns {Question[]}
  */
 function withData(questions, data) {
   const listed = new Map(data.questions.map((q) => [q.number, q]));
@@ -117,6 +192,8 @@ function withData(questions, data) {
  * the bold it wraps around a question's text, and the zero-width space that
  * defuses a mention or an issue reference. Inline code spans are left as they
  * are, as the action leaves them.
+ *
+ * @param {string} text
  */
 function plainProse(text) {
   return text
@@ -130,7 +207,11 @@ function plainProse(text) {
     .trim();
 }
 
-/** Reads the report's header block, or returns null when it is not a report. */
+/**
+ * Reads the report's header block, or returns null when it is not a report.
+ *
+ * @param {string[]} lines
+ */
 function readHeader(lines) {
   const first = lines.findIndex((line) => line.trim() !== '');
   if (first === -1 || !HEADING.test(lines[first])) return null;
@@ -138,6 +219,7 @@ function readHeader(lines) {
   const end = lines.findIndex((line, i) => i > first && RULE.test(line));
   if (end === -1) return null;
 
+  /** @type {Pick<Report, 'baseSha' | 'headSha' | 'branch' | 'tag' | 'files'>} */
   const header = { baseSha: '', headSha: '', branch: null, tag: null, files: [] };
   for (const line of lines.slice(first + 1, end)) {
     const commits = line.match(COMMITS);
@@ -171,18 +253,24 @@ function readHeader(lines) {
  * An issue in a layout newer than this extension reads comes back as
  * `{ needsUpdate: true, questions: [] }` and nothing else: its Markdown may
  * have changed too, so none of it is read.
+ *
+ * @param {unknown} body
+ * @returns {Report | NewerReport | null}
  */
 export function parseReport(body) {
   if (typeof body !== 'string') return null;
   const lines = body.split(/\r?\n/);
   const data = readData(lines);
-  if (data && data.version > ISSUE_LAYOUT_VERSION) return { needsUpdate: true, questions: [] };
+  if (data && isNewer(data)) return { needsUpdate: true, questions: [] };
   const read = readHeader(lines);
   if (!read) return null;
 
+  /** @type {Question[]} */
   const questions = [];
+  /** @type {Question | null} */
   let current = null;
   let broader = false;
+  /** @type {{ file: string, start: number, end: number } | null} */
   let caption = null;
   let awaitingAnswer = false;
   let sawFooter = false;
@@ -192,7 +280,7 @@ export function parseReport(body) {
 
   const finish = () => {
     const complete = Boolean(current?.question);
-    if (complete) questions.push(current);
+    if (current && complete) questions.push(current);
     current = null;
     caption = null;
     awaitingAnswer = false;

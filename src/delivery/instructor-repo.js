@@ -425,7 +425,7 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * Writes the instructor assessment file to the instructor repository.
  *
  * @param {object} params
- * @param {import('@octokit/rest').Octokit} params.octokit  - Instructor PAT Octokit instance.
+ * @param {ReturnType<typeof import('@actions/github').getOctokit>} params.octokit - Instructor PAT Octokit instance.
  * @param {string}  params.owner               - GitHub org/user owning the instructor repo.
  * @param {string}  params.instructorRepoName  - Instructor repository name (no owner prefix).
  * @param {string}  params.studentLogin        - GitHub login of the assessed student.
@@ -445,7 +445,7 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * @param {string} [params.prompt]             - The prompt sent to the model (log_prompt),
  *                                               filed beside the assessment without a word
  *                                               in the log. Omitted means no prompt copy.
- * @param {object} [params.submission]         - Tag runs only: `{ history, entry }`, the
+ * @param {object | null} [params.submission]  - Tag runs only: `{ history, entry }`, the
  *                                               record from readSubmissionHistory and this
  *                                               run's log row. Archives the questions.md
  *                                               being replaced and appends the row.

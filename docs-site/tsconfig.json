@@ -1,0 +1,25 @@
+// Type-checks the Workflow Wizard's JavaScript as it stands: `pnpm typecheck`.
+// Nothing is compiled, and Docusaurus does not read this file. Types are
+// written as JSDoc.
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    // Off until every parameter in the Wizard has a type: a function with none
+    // is unchecked, not an error.
+    "noImplicitAny": false,
+    // A caught error is read as `err.message` throughout.
+    "useUnknownInCatchVariables": false,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022", "dom", "dom.iterable"],
+    "jsx": "react-jsx",
+    "types": ["@docusaurus/module-type-aliases"],
+    "skipLibCheck": true,
+    "resolveJsonModule": true
+  },
+  "include": ["docs/_workflow-wizard"]
+}

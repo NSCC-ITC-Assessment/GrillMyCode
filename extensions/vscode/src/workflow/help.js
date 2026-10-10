@@ -20,6 +20,8 @@ import * as vscode from 'vscode';
 import { checkWorkflow } from '../shared/input-checks.js';
 import { completionsAt, describeInput, escapeMarkdown, inputAt } from '../shared/workflow-help.js';
 
+/** @import { InputDescription } from '../shared/workflow-help.js' */
+
 /**
  * Workflow files, whatever language the editor gives them: the GitHub Actions
  * extension takes them over from YAML when it is installed.
@@ -42,7 +44,11 @@ const SEVERITIES = {
   info: vscode.DiagnosticSeverity.Information,
 };
 
-/** An input's description, default and values, as hover and completion show them. */
+/**
+ * An input's description, default and values, as hover and completion show them.
+ *
+ * @param {InputDescription} input
+ */
 function documentation(input) {
   const text = new vscode.MarkdownString(escapeMarkdown(input.description));
   if (input.values.length > 0) {
@@ -55,8 +61,13 @@ function documentation(input) {
 
 export class WorkflowHelp {
   #problems = vscode.languages.createDiagnosticCollection('grillmycode');
-  /** The pending check of each file that has changed, by its URI. */
+  /**
+   * The pending check of each file that has changed, by its URI.
+   *
+   * @type {Map<string, ReturnType<typeof setTimeout>>}
+   */
   #pending = new Map();
+  /** @type {vscode.Disposable[]} */
   #disposables = [this.#problems];
 
   start() {
@@ -82,6 +93,7 @@ export class WorkflowHelp {
     this.#checkAll();
   }
 
+  /** @param {vscode.TextDocument} document */
   #enabled(document) {
     return (
       vscode.languages.match(WORKFLOW_FILES, document) > 0 &&
@@ -98,6 +110,7 @@ export class WorkflowHelp {
     for (const document of vscode.workspace.textDocuments) this.#check(document);
   }
 
+  /** @param {vscode.TextDocument} document */
   #checkSoon(document) {
     const key = document.uri.toString();
     clearTimeout(this.#pending.get(key));
@@ -107,6 +120,7 @@ export class WorkflowHelp {
     );
   }
 
+  /** @param {vscode.TextDocument} document */
   #check(document) {
     const key = document.uri.toString();
     clearTimeout(this.#pending.get(key));
@@ -131,12 +145,17 @@ export class WorkflowHelp {
     );
   }
 
+  /** @param {vscode.TextDocument} document */
   #forget(document) {
     clearTimeout(this.#pending.get(document.uri.toString()));
     this.#pending.delete(document.uri.toString());
     this.#problems.delete(document.uri);
   }
 
+  /**
+   * @param {vscode.TextDocument} document
+   * @param {vscode.Position} position
+   */
   #complete(document, position) {
     if (!this.#enabled(document)) return undefined;
     const offered = completionsAt(document.getText(), document.offsetAt(position), {
@@ -157,8 +176,8 @@ export class WorkflowHelp {
       // Kept in the order the action declares them, not sorted by name.
       item.sortText = String(index).padStart(3, '0');
       if (isDefault) item.detail = 'default';
-      if (kind === 'input') {
-        const input = describeInput(label);
+      const input = kind === 'input' ? describeInput(label) : undefined;
+      if (input) {
         item.documentation = documentation(input);
         // An input with a fixed set of values goes straight on to offer them.
         if (input.values.length > 0 && insert !== label) {
@@ -169,6 +188,10 @@ export class WorkflowHelp {
     });
   }
 
+  /**
+   * @param {vscode.TextDocument} document
+   * @param {vscode.Position} position
+   */
   #hover(document, position) {
     if (!this.#enabled(document) || this.#hasGitHubActions()) return undefined;
     const found = inputAt(document.getText(), document.offsetAt(position));

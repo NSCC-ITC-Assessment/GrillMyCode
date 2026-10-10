@@ -1,10 +1,13 @@
 import React from 'react';
 import styles from '../styles.module.css';
 
+/** @import { StepProps } from '../index' */
+
 // What the AI should know about the assignment: the brief or rubric files in
 // the repository. Before the AI step, so how much is sent to the model is
 // largely decided before choosing one. The instructor's own instructions are
 // on the Questions step, with the other settings that steer the questions.
+/** @param {StepProps} props */
 export default function StepAssignment({ cfg, onChange }) {
   return (
     <div>

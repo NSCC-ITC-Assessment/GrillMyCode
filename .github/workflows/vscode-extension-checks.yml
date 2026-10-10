@@ -5,7 +5,8 @@ name: VS Code Extension Checks
 # install it by hand ("Extensions: Install from VSIX…").
 #
 # Lint, formatting and the extension's unit tests are not run here: they run
-# from the repository root, in pr-checks.yml, with the action's own.
+# from the repository root, in pr-checks.yml, with the action's own. The type
+# check is run here, because it needs the extension's own packages.
 #
 # Nothing is published. Releases will get their own workflow, on vscode-v* tags.
 
@@ -52,6 +53,9 @@ jobs:
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
+
+      - name: Check types
+        run: pnpm typecheck
 
       - name: Build
         run: pnpm build

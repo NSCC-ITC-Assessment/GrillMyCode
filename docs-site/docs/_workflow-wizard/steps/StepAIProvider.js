@@ -21,6 +21,8 @@ import {
   useModelEndpoints,
 } from '../modelCatalog';
 
+/** @import { StepProps } from '../index' */
+
 // OpenRouter is currently the only supported provider, so the wizard no longer
 // offers a provider choice — it configures the model and the API key secret.
 // The first entry is the action's default model.
@@ -106,6 +108,7 @@ function RoutingNotes({ routing }) {
   );
 }
 
+/** @param {StepProps} props */
 export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
   const modelUnchosen = cfg.aiModel === null;
   const isKnownModel = OPENROUTER_MODELS.some((m) => m.value === cfg.aiModel);
@@ -265,7 +268,7 @@ export default function StepAIProvider({ cfg, onChange, docsBase = '/docs' }) {
         <select
           className={styles.select}
           style={{ borderColor: modelUnchosen ? 'var(--ifm-color-danger)' : undefined }}
-          value={modelUnchosen ? '' : isKnownModel ? cfg.aiModel : '__custom__'}
+          value={modelUnchosen ? '' : isKnownModel ? (cfg.aiModel ?? '') : '__custom__'}
           onChange={(e) => {
             if (e.target.value !== '__custom__') onChange({ aiModel: e.target.value });
             else onChange({ aiModel: '' });

@@ -215,6 +215,38 @@ under `extensions/` is copied into the action's container image.
   both together, deliberately: a higher minimum drops support for older editors.
 - **Releases use their own tag prefix** (`vscode-v*`), never `v*`, which releases the action.
 - Lint, formatting and unit tests run from the repository root. `pnpm lint` covers `extensions/`.
+  The type check does not: run `pnpm typecheck` from `extensions/vscode/` (see
+  [Type Checking](#type-checking)).
+
+## Type Checking
+
+The code is JavaScript with JSDoc types, checked by TypeScript with nothing compiled. Do not
+add `.ts` source files or a build step: the action runs `src/` as written, and the Wizard is
+snapshotted and bundled as `.js`.
+
+- **Three projects, three checks.** `pnpm typecheck` from the repository root checks `src/`,
+  from `extensions/vscode/` the extension, and from `docs-site/` the Workflow Wizard
+  (`docs/_workflow-wizard/`). Each has its own `tsconfig.json` and needs its own packages
+  installed. Run the ones your change touches; all three run on a pull request.
+- **Give every new or changed function its parameter types.** `extensions/vscode/` requires
+  them. `src/` and the Wizard do not yet (`noImplicitAny` is off there), and a parameter with
+  no type is unchecked, not an error, so the check passing does not mean a call is right.
+- **Use the named types** for shapes that cross modules, and extend them where they are
+  declared: `Inputs` (`src/inputs.js`), `RunState` (`src/main.js`), `Verdict` and
+  `PatternOrigin` (`src/file-selection.js`), `WizardConfig`, `StepProps` and `WizardHost` (the
+  Wizard's `index.js`), and in the extension `Question`, `Report` (`shared/report.js`),
+  `WorkflowStep` (`shared/workflow.js`) and `ActionInput` (`shared/action-inputs.js`).
+  `Inputs`, `RunState` and `WizardConfig` are read from the object each describes, so a new
+  field is added to the object, with a JSDoc cast where it starts as `null` or empty.
+- **Do not change behaviour to satisfy the checker.** Prefer a type that says what the code
+  already guarantees. Where the code is right and the checker cannot follow it, narrow with
+  the check the code already makes, or use a JSDoc cast with a comment saying why it holds.
+- **A generated file's types come from its generator.** `action-inputs.js` gets `ActionInput`
+  from the banner in `scripts/build-extension-action-inputs.js`; the Wizard's
+  `fileSelection.js` carries whatever `src/file-selection.js` declares.
+- **`@types/node` follows the oldest Node a project runs on**, not the newest: `engines.node`
+  at the root, and the esbuild target in `extensions/vscode/`. Raise it only with that
+  minimum. `@types/vscode` works the same way (see [Editor Extensions](#editor-extensions)).
 
 ## Constants vs Magic Numbers
 

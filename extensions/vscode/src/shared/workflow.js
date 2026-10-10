@@ -9,10 +9,41 @@
 import { isMap, isScalar, isSeq, parseDocument, visit } from 'yaml';
 import { ACTION_REPOSITORY } from './constants.js';
 
+/** @import { Document, Pair, Scalar } from 'yaml' */
+
+/**
+ * Where something is in the text: the offsets it starts and ends at.
+ *
+ * @typedef {{ start: number, end: number }} Span
+ */
+
+/**
+ * An input's value, where it is, and whether GitHub works it out at run time.
+ *
+ * @typedef {{ value: string, valueStart: number, valueEnd: number, expression?: boolean }} InputValue
+ */
+
+/**
+ * An input a step sets: where its name is, and its value when that is one an
+ * input can have.
+ *
+ * @typedef {Span & { name: string } & (InputValue | { value?: undefined, expression?: undefined })} StepInput
+ */
+
+/**
+ * A step that runs the action, as readWorkflow describes it.
+ *
+ * @typedef {{ uses: Span, with?: Span, inputs: StepInput[] }} WorkflowStep
+ */
+
 /** What marks a value GitHub works out when the workflow runs. */
 const EXPRESSION = '${{';
 
-/** True when a step's `uses` names the GrillMyCode action, at any version. */
+/**
+ * True when a step's `uses` names the GrillMyCode action, at any version.
+ *
+ * @param {unknown} uses
+ */
 export function isGrillMyCodeAction(uses) {
   const [repository] = String(uses ?? '')
     .trim()
@@ -24,18 +55,27 @@ export function isGrillMyCodeAction(uses) {
  * A scalar as the action receives it. GitHub hands every input over as text:
  * `true` and `True` both arrive as "true", `20` as "20", and an empty value as
  * nothing. A quoted value arrives as written.
+ *
+ * @param {Scalar} node
  */
 function scalarText(node) {
   if (typeof node.value === 'string') return node.value;
   return node.value === null || node.value === undefined ? '' : String(node.value);
 }
 
-/** The inputs a step's `with` mapping sets, in the order they are written. */
+/**
+ * The inputs a step's `with` mapping sets, in the order they are written.
+ *
+ * @param {unknown} withNode
+ * @returns {StepInput[]}
+ */
 function readInputs(withNode) {
   if (!isMap(withNode)) return [];
+  /** @type {StepInput[]} */
   const inputs = [];
   for (const { key, value } of withNode.items) {
     if (!isScalar(key) || !key.range) continue;
+    /** @type {StepInput} */
     const input = { name: scalarText(key), start: key.range[0], end: key.range[1] };
     // Anything but a scalar is not a value an input can have, and GitHub's own
     // checks say so. An input written with no value at all is an empty one.
@@ -55,7 +95,11 @@ function readInputs(withNode) {
   return inputs;
 }
 
-/** The tag patterns of `on.push.tags`, or undefined when the workflow has none. */
+/**
+ * The tag patterns of `on.push.tags`, or undefined when the workflow has none.
+ *
+ * @param {Document} document
+ */
 function readTagFilters(document) {
   const tags = document.getIn(['on', 'push', 'tags'], true);
   const nodes = isSeq(tags) ? tags.items : [tags];
@@ -76,22 +120,28 @@ function readTagFilters(document) {
  *
  * A file that cannot be read as YAML gives whatever was read before the
  * mistake, which may be nothing.
+ *
+ * @param {string} text
  */
 export function readWorkflow(text) {
+  /** @type {WorkflowStep[]} */
   const steps = [];
   let tagFilters;
   try {
     const document = parseDocument(text, { logLevel: 'silent' });
     visit(document, {
       Map(_key, map) {
-        const pair = (name) => map.items.find(({ key }) => isScalar(key) && key.value === name);
+        const pair = (/** @type {string} */ name) =>
+          /** @type {Pair<Scalar, unknown> | undefined} */ (
+            map.items.find(({ key }) => isScalar(key) && key.value === name)
+          );
         const uses = pair('uses');
         if (!isScalar(uses?.value) || !uses.value.range) return;
         if (!isGrillMyCodeAction(scalarText(uses.value))) return;
         const withPair = pair('with');
         steps.push({
           uses: { start: uses.value.range[0], end: uses.value.range[1] },
-          ...(withPair
+          ...(withPair?.key.range
             ? { with: { start: withPair.key.range[0], end: withPair.key.range[1] } }
             : {}),
           inputs: readInputs(withPair?.value),

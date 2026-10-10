@@ -12,6 +12,18 @@
 
 import { TAG_GROUP_FALLBACK } from './constants.js';
 
+/**
+ * Which assignment a repository belongs to and whose it is.
+ *
+ * @typedef {{ assignment: string, submitter: string, studentLogin: string, error?: undefined }} SubmissionIdentity
+ */
+
+/**
+ * Why a repository's assignment and student could not be told.
+ *
+ * @typedef {{ error: string, studentLogin?: undefined }} IdentityError
+ */
+
 /** `<assignment>-group-<n>`: Classroom 50's name for a team's repository. */
 const TEAM_REPO_NAME = /^(.+)-(group-\d+)$/i;
 
@@ -23,6 +35,10 @@ const TEAM_REPO_NAME = /^(.+)-(group-\d+)$/i;
  * The student is the one direct collaborator whose login ends the name after a
  * hyphen. A name that ends in `-group-<n>` with no such collaborator is a
  * team's: the submitter is `group-<n>` and `studentLogin` is ''.
+ *
+ * @param {string} repoName
+ * @param {string[]} collaboratorLogins
+ * @returns {SubmissionIdentity | IdentityError}
  */
 export function matchSubmissionIdentity(repoName, collaboratorLogins) {
   const lowerRepo = repoName.toLowerCase();
@@ -65,15 +81,21 @@ export function matchSubmissionIdentity(repoName, collaboratorLogins) {
  * `{ assignment, submitter, studentLogin }`, or undefined when the name ends
  * some other way. It needs no request, so an ordinary student's collaborators
  * are never listed.
+ *
+ * @param {string} repoName
+ * @param {string | undefined} login
+ * @returns {SubmissionIdentity | undefined}
  */
 export function ownSubmissionIdentity(repoName, login) {
-  const identity = login ? matchSubmissionIdentity(repoName, [login]) : {};
-  return identity.studentLogin ? identity : undefined;
+  const identity = login ? matchSubmissionIdentity(repoName, [login]) : undefined;
+  return identity?.studentLogin ? identity : undefined;
 }
 
 /**
  * The folder a submission tag pattern's answer key is filed under: `submit/*`
  * gives `submit`.
+ *
+ * @param {unknown} pattern
  */
 export function tagGroupSlug(pattern) {
   const slug = String(pattern ?? '')

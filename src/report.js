@@ -52,8 +52,11 @@ function commentJson(record) {
  * `version` is ISSUE_LAYOUT_VERSION, which covers the Markdown around the
  * comment as well. `headSha` is the full SHA the report prints the start of.
  *
- * @param {object[]} questions - The numbered questions the report shows, less
- *   any the answer-leak guard withheld.
+ * @param {object} data
+ * @param {string} data.headSha
+ * @param {{ number: number, broader: boolean, snippets: { file: string, start: number, end: number }[] }[]} data.questions -
+ *   The numbered questions the report shows, less any the answer-leak guard
+ *   withheld.
  */
 export function questionsComment({ headSha, questions }) {
   const record = {
@@ -88,6 +91,27 @@ export function questionsComment({ headSha, questions }) {
  * questionsComment). It sits at the top so a report cut short for length
  * keeps it, and after the heading because a reader written before the comment
  * existed expects the heading first.
+ *
+ * @param {object} report
+ * @param {string} report.questions - The questions, already rendered as Markdown.
+ * @param {string[]} report.files
+ * @param {string} report.baseSha
+ * @param {string} report.headSha
+ * @param {string} report.provider
+ * @param {string} report.model
+ * @param {string} [report.branchName]
+ * @param {string} [report.tagName]
+ * @param {string} [report.previousTagName]
+ * @param {string[]} [report.assignmentContextFiles]
+ * @param {string[]} [report.codebaseContextFiles]
+ * @param {number} [report.starterQuestions]
+ * @param {string} [report.contextSummary]
+ * @param {string} [report.studentLogin]
+ * @param {string} [report.sourceRepo]
+ * @param {string[]} [report.allChangedFiles]
+ * @param {string | null} [report.pdfUrl]
+ * @param {string} [report.submissionNote]
+ * @param {Parameters<typeof questionsComment>[0]['questions']} [report.issueQuestions]
  */
 export function formatReport({
   questions,
@@ -232,11 +256,19 @@ function provenanceComment(record) {
  * full SHAs, for tooling. The comment renders as nothing. Its `version` field
  * is bumped whenever a field changes meaning or is removed.
  *
- * @param {object} [opts.request]  - What was asked for: `numQuestions`,
+ * @param {object} opts
+ * @param {string} opts.rawOutput
+ * @param {string} opts.baseSha
+ * @param {string} opts.headSha
+ * @param {string} opts.provider
+ * @param {string} opts.model
+ * @param {string} [opts.studentLogin]
+ * @param {string} [opts.sourceRepo]
+ * @param {any} [opts.request]  - What was asked for: `numQuestions`,
  *   `questionsAsked` (num_questions plus the spares the prompt asked for),
  *   `questionEmphasis`, `temperature` (null when none was sent),
  *   `reasoningEffort`, `promptHash`, `actionRef`
- * @param {object} [opts.response] - The metadata callAI returns
+ * @param {any} [opts.response] - The metadata callAI returns
  */
 export function formatRawOutput({
   rawOutput,
@@ -377,7 +409,12 @@ export function formatRawOutput({
  * message, so the student's code and the prompt's own examples cannot close it
  * early.
  *
+ * @param {object} opts
  * @param {Array<{role: string, content: string}>} opts.messages - As sent to callAI
+ * @param {string} opts.baseSha
+ * @param {string} opts.headSha
+ * @param {string} opts.model
+ * @param {string} [opts.studentLogin]
  */
 export function formatPrompt({ messages, baseSha, headSha, model, studentLogin }) {
   const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';

@@ -13,12 +13,35 @@
 
 import { ISSUE_LABEL, ISSUE_TITLE } from './constants.js';
 
+/** @import { GitHubIssue } from './github.js' */
+
+/**
+ * What a questions issue is for, as parseIssueTitle reads it from the title.
+ *
+ * @typedef {{ kind: 'branch' | 'tag', name: string } | { kind: 'unnamed', name?: undefined }} IssueGroup
+ */
+
+/**
+ * A questions issue, as findQuestionIssues lists it.
+ *
+ * @typedef {object} QuestionIssue
+ * @property {number} number
+ * @property {string} title
+ * @property {string} url
+ * @property {string} updatedAt
+ * @property {string} body
+ * @property {IssueGroup} group
+ */
+
 /**
  * What a questions issue's title says it is for: `{ kind: 'branch', name }`,
  * `{ kind: 'tag', name }` with the tag pattern, or `{ kind: 'unnamed' }` for a
  * run that had no branch. Undefined for any other title.
  *
  * A colon cannot appear in a branch name, so `(tag: …)` is never a branch.
+ *
+ * @param {unknown} title
+ * @returns {IssueGroup | undefined}
  */
 export function parseIssueTitle(title) {
   if (typeof title !== 'string') return undefined;
@@ -31,7 +54,11 @@ export function parseIssueTitle(title) {
     : { kind: 'branch', name: group };
 }
 
-/** How an issue's group reads in a list: `main`, or `tag submit/*`. */
+/**
+ * How an issue's group reads in a list: `main`, or `tag submit/*`.
+ *
+ * @param {IssueGroup} group
+ */
 export function describeGroup(group) {
   if (group.kind === 'tag') return `tag ${group.name}`;
   return group.kind === 'branch' ? group.name : 'no branch';
@@ -41,6 +68,9 @@ export function describeGroup(group) {
  * The questions issues among a repository's issues, as the GitHub REST API
  * returns them: labelled, titled as the action titles them, and not a pull
  * request (which the issues endpoint also lists). Newest update first.
+ *
+ * @param {GitHubIssue[]} issues
+ * @returns {QuestionIssue[]}
  */
 export function findQuestionIssues(issues) {
   return issues
@@ -58,7 +88,7 @@ export function findQuestionIssues(issues) {
       body: issue.body ?? '',
       group: parseIssueTitle(issue.title),
     }))
-    .filter((issue) => issue.group)
+    .filter(/** @returns {issue is QuestionIssue} */ (issue) => issue.group !== undefined)
     .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt));
 }
 
@@ -72,6 +102,11 @@ export function findQuestionIssues(issues) {
  *   3. the most recently updated.
  *
  * Undefined when there are none.
+ *
+ * @template {QuestionIssue} T
+ * @param {T[]} issues
+ * @param {{ branch?: string, preferredTitle?: string }} [options]
+ * @returns {T | undefined}
  */
 export function chooseIssue(issues, { branch, preferredTitle } = {}) {
   return (

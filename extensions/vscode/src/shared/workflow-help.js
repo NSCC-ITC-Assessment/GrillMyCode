@@ -10,12 +10,22 @@
 import { ACTION_INPUTS } from './action-inputs.js';
 import { readWorkflow } from './workflow.js';
 
+/** @import { ActionInput } from './action-inputs.js' */
+/** @import { WorkflowStep } from './workflow.js' */
+
+/**
+ * What describeInput says of an input.
+ *
+ * @typedef {NonNullable<ReturnType<typeof describeInput>>} InputDescription
+ */
+
 /** An input's name being typed: the indent, then what there is of the name. */
 const NAME_BEFORE_RE = /^(\s*)([A-Za-z_][\w-]*)?$/;
 /** An input's value being typed: the indent, the name, then what there is of the value. */
 const VALUE_BEFORE_RE = /^(\s*)([A-Za-z_][\w-]*):[ \t]+["']?([\w:-]*)$/;
 /** The rest of a name or value, to the right of the cursor. */
 const REST_OF_WORD_RE = /^[\w:-]*/;
+const restOfWord = (/** @type {string} */ after) => after.match(REST_OF_WORD_RE)?.[0] ?? '';
 
 /** A line that is blank or holds only a comment, which ends no block. */
 const EMPTY_LINE_RE = /^\s*(#.*)?$/;
@@ -23,12 +33,18 @@ const EMPTY_LINE_RE = /^\s*(#.*)?$/;
 /**
  * Text as Markdown shows it unchanged. The descriptions are the action's own,
  * and hold characters Markdown reads as formatting: `**\/*.md`, `<username>`.
+ *
+ * @param {unknown} text
  */
 export function escapeMarkdown(text) {
   return String(text).replace(/[\\`*_{}[\]()#+\-.!|<>~&]/g, '\\$&');
 }
 
-/** What is known about an input, or undefined for a name the action does not declare. */
+/**
+ * What is known about an input, or undefined for a name the action does not declare.
+ *
+ * @param {unknown} name
+ */
 export function describeInput(name) {
   const key = String(name).toLowerCase();
   if (!Object.hasOwn(ACTION_INPUTS, key)) return undefined;
@@ -43,23 +59,31 @@ export function describeInput(name) {
   };
 }
 
-/** The values an input can take, when it has a fixed set of them. */
+/**
+ * The values an input can take, when it has a fixed set of them.
+ *
+ * @param {ActionInput} input
+ */
 function inputValues(input) {
   if (input.kind === 'boolean') return ['true', 'false'];
   if (input.kind === 'enum') return [...input.values, ...(input.prefix ? [input.prefix] : [])];
   return [];
 }
 
-/** Where each line of `text` starts, and the line an offset is on. */
+/**
+ * Where each line of `text` starts, and the line an offset is on.
+ *
+ * @param {string} text
+ */
 function lineIndex(text) {
   const starts = [0];
   for (let i = text.indexOf('\n'); i !== -1; i = text.indexOf('\n', i + 1)) starts.push(i + 1);
-  const lineOf = (offset) => {
+  const lineOf = (/** @type {number} */ offset) => {
     let line = starts.length - 1;
     while (starts[line] > offset) line--;
     return line;
   };
-  const textOf = (line) =>
+  const textOf = (/** @type {number} */ line) =>
     text.slice(starts[line], starts[line + 1] ?? text.length).replace(/\r?\n$/, '');
   return { starts, lineOf, textOf };
 }
@@ -69,6 +93,11 @@ function lineIndex(text) {
  * line's own text starts at. The line is in the block when it comes after the
  * `with` key, is indented further than it, lines up with the inputs already
  * there, and nothing indented as little as `with` comes between.
+ *
+ * @param {WorkflowStep[]} steps
+ * @param {ReturnType<typeof lineIndex>} lines
+ * @param {number} line
+ * @param {number} column
  */
 function enclosingStep(steps, lines, line, column) {
   return steps.find((step) => {
@@ -98,6 +127,10 @@ function enclosingStep(steps, lines, line, column) {
  *
  * `names: false` leaves out input names, for when something else in the editor
  * already offers them.
+ *
+ * @param {string} text
+ * @param {number} offset
+ * @param {{ names?: boolean }} [options]
  */
 export function completionsAt(text, offset, { names = true } = {}) {
   const lines = lineIndex(text);
@@ -124,7 +157,7 @@ export function completionsAt(text, offset, { names = true } = {}) {
     if (!input || input.values.length === 0) return undefined;
     return {
       start: offset - typed.length,
-      end: offset + after.match(REST_OF_WORD_RE)[0].length,
+      end: offset + restOfWord(after).length,
       items: input.values.map((label) => ({
         kind: 'value',
         label,
@@ -137,7 +170,7 @@ export function completionsAt(text, offset, { names = true } = {}) {
   const name = names && before.match(NAME_BEFORE_RE);
   if (!name) return undefined;
   const [, indent, typed = ''] = name;
-  const rest = after.match(REST_OF_WORD_RE)[0];
+  const rest = restOfWord(after);
   const tail = after.slice(rest.length);
   // Offered on a line with nothing else on it, or over the name of an input
   // that is already written out.
@@ -165,6 +198,9 @@ export function completionsAt(text, offset, { names = true } = {}) {
  * The input named at an offset in a workflow file's text, as
  * `{ start, end, input }` with `input` as describeInput gives it, or undefined
  * when the offset is not on the name of an input the action declares.
+ *
+ * @param {string} text
+ * @param {number} offset
  */
 export function inputAt(text, offset) {
   for (const step of readWorkflow(text).steps) {

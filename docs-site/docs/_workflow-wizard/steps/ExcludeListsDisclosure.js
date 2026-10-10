@@ -293,7 +293,7 @@ function Lists({ lists }) {
 // loaded only when opened, since they hold thousands of patterns.
 export default function ExcludeListsDisclosure() {
   const [open, setOpen] = useState(false);
-  const [lists, setLists] = useState(null);
+  const [lists, setLists] = useState(/** @type {any} */ (null));
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {

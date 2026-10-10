@@ -2,6 +2,33 @@
 // input, with what src/inputs.js accepts for it. To change it, edit those files
 // and run: node scripts/build-extension-action-inputs.js
 
+/**
+ * What a value of an input may be, by its `kind`. An input that is free text
+ * has none.
+ *
+ * @typedef {{ kind: 'enum', values: string[], caseSensitive?: boolean, prefix?: string }
+ *   | { kind: 'boolean', strict?: boolean }
+ *   | { kind: 'integer', min: number, max?: number }
+ *   | { kind: 'number', min: number, max: number }
+ *   | { kind: 'tags' }
+ *   | { kind?: undefined }} InputRule
+ */
+
+/**
+ * One input: what action.yml declares for it, and its rule.
+ *
+ * @typedef {{
+ *   description: string,
+ *   default: string,
+ *   required: boolean,
+ *   deprecated?: boolean,
+ *   secret?: boolean,
+ *   replacement?: string,
+ *   hidden?: boolean,
+ * } & InputRule} ActionInput
+ */
+
+/** @type {Record<string, ActionInput>} */
 export const ACTION_INPUTS = {
   github_token: {
     description:

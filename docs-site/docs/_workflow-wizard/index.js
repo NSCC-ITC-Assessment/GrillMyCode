@@ -58,6 +58,33 @@ const STEPS = [
     hostSubtitle: 'Create the workflow file in your assignment repository, or copy the YAML into it.' },
 ];
 
+/**
+ * The Wizard's answers so far, as INITIAL_CONFIG starts them. Every step is
+ * given it as `cfg`, and generateYaml turns it into the workflow.
+ *
+ * @typedef {typeof INITIAL_CONFIG} WizardConfig
+ */
+
+/**
+ * What every step is given. `onChange` takes the fields to change.
+ *
+ * @typedef {object} StepProps
+ * @property {WizardConfig} cfg
+ * @property {(patch: Partial<WizardConfig>) => void} onChange
+ * @property {string} [actionRef]
+ * @property {string} [docsBase]
+ * @property {WizardHost} [host]
+ */
+
+/**
+ * What the Wizard can ask of where it runs (see WorkflowWizard below).
+ *
+ * @typedef {object} WizardHost
+ * @property {string} openFolder
+ * @property {(options?: { choose?: boolean }) => Promise<any>} pickFolder
+ * @property {(yaml: string) => Promise<boolean>} saveWorkflow
+ */
+
 const INITIAL_CONFIG = {
   triggerEvent: 'workflow_dispatch',
   branchMode: 'specify',
@@ -73,12 +100,12 @@ const INITIAL_CONFIG = {
   // The Manual runs step's Yes/No: null until answered, and the step cannot
   // be left until it is. No leaves every override out of the workflow without
   // clearing dispatchOverrides, so Yes brings the ticks back.
-  dispatchOverridesEnabled: null,
+  dispatchOverridesEnabled: /** @type {boolean | null} */ (null),
 
   aiProvider: 'openrouter',
   // null until a model is chosen, so the AI step can't be passed without one;
   // '' once "Own Choice" is selected and nothing is picked from its list yet.
-  aiModel: null,
+  aiModel: /** @type {string | null} */ (null),
   // OpenRouter routing variant appended to the model ID: '', 'nitro' or 'floor'.
   aiModelVariant: '',
   // ai_reasoning_effort: 'default' leaves reasoning to the model. The AI step
@@ -105,7 +132,7 @@ const INITIAL_CONFIG = {
   // Instructor repository delivery works only in Classroom 50 assignment
   // repositories, so the Repositories step asks first: null until answered, and the
   // step cannot be left until it is. See instructorRepoActive in generateYaml.js.
-  usesClassroom50: null,
+  usesClassroom50: /** @type {boolean | null} */ (null),
   instructorRepoEnabled: true,
   instructorRepoTokenSecret: 'INSTRUCTOR_REPO_TOKEN',
 
@@ -116,8 +143,8 @@ const INITIAL_CONFIG = {
   // the list pasted — { kind, label, paths, unopened, truncated, texts } — or
   // null; previewLanguages holds the languages the instructor ticked or
   // unticked against the preview's own guess (name → true or false).
-  previewSource: null,
-  previewLanguages: {},
+  previewSource: /** @type {Record<string, any> | null} */ (null),
+  previewLanguages: /** @type {Record<string, boolean>} */ ({}),
   // stack_templates: the stack templates every run applies, in place of
   // detecting them in each repository. '' until the preview's "Use these
   // templates for every student" is ticked, which writes the stack it shows.
@@ -132,14 +159,15 @@ const INITIAL_CONFIG = {
   // the choice is kept separately.
   // Nothing is preselected: null until answered, and the Repositories step
   // cannot be left until it is.
-  repoStart: null,
+  repoStart: /** @type {'empty' | 'template' | null} */ (null),
   // starter_code. "What should the AI do with the starter template?" has no
   // preselected answer either: null until answered, and the Repositories step
   // cannot be left until it is. Empty sets it itself.
-  starterCode: null,
+  starterCode: /** @type {string | null} */ (null),
   // starter_questions_one_in. Asked on the Questions step under ask only,
   // where it can't exceed the number of questions.
-  starterQuestionsOneIn: 5,
+  // '' while its box is empty, which the Questions step reports as an error.
+  starterQuestionsOneIn: /** @type {number | ''} */ (5),
   // previous_work. Offered on the Trigger step when a tag run starts after an
   // earlier tag, the only runs besides a base_sha override with earlier work.
   previousWork: 'context',
@@ -153,6 +181,10 @@ const INITIAL_CONFIG = {
 
 const OPENROUTER_MODEL_VALUES = ['google/gemini-3.5-flash-lite', 'openai/gpt-6-luna-pro', 'deepseek/deepseek-v4-flash', 'minimax/minimax-m2.7', 'stepfun/step-3.7-flash', 'tencent/hy3', 'xiaomi/mimo-v2.5-pro'];
 
+/**
+ * @param {number} stepIndex
+ * @param {WizardConfig} cfg
+ */
 function getStepError(stepIndex, cfg) {
   const label = STEPS[stepIndex]?.label;
   if (label === 'AI') {
@@ -233,6 +265,8 @@ function getStepError(stepIndex, cfg) {
  *                            or with `choose` one the instructor picks
  *   host.saveWorkflow(yaml)  writes the workflow file. Resolves to true once
  *                            it is written, and false if that was cancelled
+ *
+ * @param {{ actionRef?: string, docsBase?: string, host?: WizardHost }} props
  */
 export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs', host }) {
   const [started, setStarted] = useState(false);
@@ -277,6 +311,7 @@ export default function WorkflowWizard({ actionRef = 'v0', docsBase = '/docs', h
     );
   }
 
+  /** @param {Partial<WizardConfig>} patch */
   function handleChange(patch) {
     setCfg((prev) => {
       const next = { ...prev, ...patch };

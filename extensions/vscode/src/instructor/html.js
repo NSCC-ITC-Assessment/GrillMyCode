@@ -11,14 +11,24 @@
 
 import { proseToHtml, questionToHtml } from '../shared/html.js';
 
-/** The answer of an answer key's question, or '' when it has none. */
+/** @import { Question } from '../shared/report.js' */
+
+/**
+ * The answer of an answer key's question, or '' when it has none.
+ *
+ * @param {Question} question
+ */
 export function answerToHtml(question) {
   return question.answer
     ? `<h3>Answer</h3><p class="answer">${proseToHtml(question.answer)}</p>`
     : '';
 }
 
-/** The body of the Question view in the instructor view. */
+/**
+ * The body of the Question view in the instructor view.
+ *
+ * @param {Question | undefined} question
+ */
 export function instructorQuestionToHtml(question) {
   return questionToHtml(question) + (question ? answerToHtml(question) : '');
 }

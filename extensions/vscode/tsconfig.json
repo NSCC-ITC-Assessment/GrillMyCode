@@ -1,0 +1,25 @@
+// Type-checks the extension's JavaScript as it stands: `pnpm typecheck`.
+// Nothing is compiled; esbuild.js still builds the extension. Types are written
+// as JSDoc.
+//
+// @types/vscode is the version of engines.vscode, so this is also what catches
+// a call to an API the oldest supported editor does not have.
+{
+  "compilerOptions": {
+    "allowJs": true,
+    "checkJs": true,
+    "noEmit": true,
+    "strict": true,
+    // A caught error is read as `err.message` throughout.
+    "useUnknownInCatchVariables": false,
+    "target": "es2022",
+    "module": "esnext",
+    "moduleResolution": "bundler",
+    "lib": ["es2022"],
+    "types": ["node", "vscode"],
+    "skipLibCheck": true
+  },
+  // src/webview/ is left out: it runs in a page and imports the docs site's
+  // Workflow Wizard, which docs-site/ checks.
+  "include": ["src/extension.js", "src/instructor", "src/shared", "src/student", "src/workflow"]
+}

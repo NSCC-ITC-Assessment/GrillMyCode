@@ -6,6 +6,8 @@
 
 import * as vscode from 'vscode';
 
+/** @import { Snippet } from '../shared/report.js' */
+
 export class Highlighter {
   #decoration = vscode.window.createTextEditorDecorationType({
     isWholeLine: true,
@@ -13,6 +15,7 @@ export class Highlighter {
     overviewRulerColor: new vscode.ThemeColor('editorOverviewRuler.rangeHighlightForeground'),
     overviewRulerLane: vscode.OverviewRulerLane.Full,
   });
+  /** @type {vscode.TextEditor | undefined} */
   #editor;
   #subscription = vscode.workspace.onDidChangeTextDocument((event) => {
     // An edit can move the lines out from under the highlight, so it goes.
@@ -26,6 +29,9 @@ export class Highlighter {
    * changed since the report, which the moved-code warning says.
    *
    * Returns false, after telling the reader, when the file cannot be opened.
+   *
+   * @param {vscode.Uri} root
+   * @param {Snippet} snippet
    */
   async show(root, snippet) {
     const uri = vscode.Uri.joinPath(root, snippet.file);

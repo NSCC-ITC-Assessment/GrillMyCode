@@ -21,7 +21,8 @@ const READS_AT_ONCE = 32;
 
 /** Whether the browser has the folder picker (the File System Access API). */
 export function canPickFolder() {
-  return typeof window !== 'undefined' && typeof window.showDirectoryPicker === 'function';
+  // Not every browser has it, so the page's own types leave it out.
+  return typeof window !== 'undefined' && typeof (/** @type {any} */ (window).showDirectoryPicker) === 'function';
 }
 
 const byName = (a, b) => (a.name < b.name ? -1 : a.name > b.name ? 1 : 0);
@@ -46,7 +47,7 @@ export async function readDirectoryHandle(root) {
   let truncated = false;
   const queue = [['', root]];
   while (queue.length > 0 && !truncated) {
-    const [prefix, folder] = queue.shift();
+    const [prefix, folder] = /** @type {[string, any]} */ (queue.shift());
     const entries = [];
     for await (const entry of folder.values()) entries.push(entry);
     for (const entry of entries.sort(byName)) {

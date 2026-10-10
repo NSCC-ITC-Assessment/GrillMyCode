@@ -27,6 +27,27 @@ jobs:
       - name: Run ESLint
         run: pnpm lint
 
+  # src/ only. The extension and the Workflow Wizard are checked with their own
+  # packages installed, in vscode-extension-checks.yml and pr-checks-docs.yml.
+  typecheck:
+    name: Type Check
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Check types
+        run: pnpm typecheck
+
   # Runs on both the minimum supported Node (package.json engines) and the
   # version the Docker image ships, so runtime-only differences surface here.
   test:

@@ -264,6 +264,10 @@ export function buildNumberedCodeContent(files, { student = true, starter = fals
  * the whole submission the student wrote, which the caller uses to tell a
  * submission with nothing to mark from one that has work in it, and how many
  * starter lines were marked. Blank lines are never counted as either.
+ *
+ * @param {{ filepath: string, content: string }[]} files
+ * @param {Map<string, string>} baseByPath
+ * @param {Map<string, string> | null} [starterByPath]
  */
 export function buildAssessedCodeContent(files, baseByPath, starterByPath = null) {
   const sections = [];
@@ -383,6 +387,16 @@ export function folderDistance(a, b) {
  * stepped over (see resolveSHAs), or null. Any file those commits touched is
  * left out: skip_committers means "do not send this", and such a file is
  * neither the instructor's starter code nor the student's earlier work.
+ *
+ * @param {object} range
+ * @param {string} range.baseSha
+ * @param {string} range.headSha
+ * @param {string | null} range.firstCommit
+ * @param {string[]} range.excludePatterns
+ * @param {string[]} range.excludePatternOverrides
+ * @param {string[]} [range.caseInsensitivePatterns]
+ * @param {string[]} range.assessedFiles
+ * @param {{ from: string, to: string } | null} [range.skippedRange]
  */
 export function findCodebaseContextFiles({
   baseSha,
@@ -446,6 +460,11 @@ export function findCodebaseContextFiles({
  * buildNumberedCodeContent), the paths that made it into each, the paths left
  * out for size, whether any chosen earlier file began as starter code, and how
  * many of its lines are marked as starter code (0 without `askStarter`).
+ *
+ * @param {{ filepath: string, content: string, kind?: string, starterCopy?: string }[]} candidates
+ * @param {string[]} assessedFiles
+ * @param {number} maxChars
+ * @param {{ askStarter?: boolean }} [options]
  */
 export function selectCodebaseContext(
   candidates,
@@ -463,6 +482,7 @@ export function selectCodebaseContext(
     .map((c) => ({ ...c, distance: distance(c.filepath) }))
     .sort((a, b) => a.distance - b.distance || a.filepath.localeCompare(b.filepath));
 
+  /** @type {{ starter: typeof ordered, earlier: typeof ordered }} */
   const chosen = { starter: [], earlier: [] };
   const omitted = [];
   let used = 0;

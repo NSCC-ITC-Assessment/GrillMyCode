@@ -272,11 +272,13 @@
     "build": "node esbuild.js",
     "watch": "node esbuild.js --watch",
     "vscode:prepublish": "node esbuild.js --production",
+    "typecheck": "tsc",
     "package": "vsce package --no-dependencies --out dist/grillmycode.vsix",
     "package:pre-release": "vsce package --pre-release --no-dependencies --out dist/grillmycode.vsix",
     "test:host": "vscode-test"
   },
   "devDependencies": {
+    "@types/node": "^20.19.43",
     "@types/vscode": "1.120.0",
     "@vscode/test-cli": "^0.0.15",
     "@vscode/test-electron": "^3.1.0",
@@ -286,6 +288,7 @@
     "minimatch": "^10.2.6",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
+    "typescript": "^7.0.2",
     "yaml": "^2.9.1"
   }
 }

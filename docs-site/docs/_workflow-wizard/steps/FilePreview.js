@@ -17,6 +17,8 @@ import {
   readManifests,
 } from '../readFolder';
 
+/** @import { StepProps } from '../index' */
+
 // How long typing in a pattern box must pause before the preview is worked
 // out again. Matching a large folder takes long enough to make typing lag.
 const TYPING_PAUSE_MS = 250;
@@ -50,7 +52,7 @@ function useDebounced(value, ms) {
  */
 export function useFilePreview(cfg) {
   const source = cfg.previewSource;
-  const [data, setData] = useState(null);
+  const [data, setData] = useState(/** @type {{ lists: any, languageFiles: any } | null} */ (null));
   const [loadError, setLoadError] = useState(false);
 
   useEffect(() => {
@@ -625,6 +627,8 @@ function Results({ source, result, options, cfg, onChange }) {
  * its pattern boxes can show their checks too. `host` is the editor the
  * wizard is running in, if it is (see index.js): it finds the folder, in place
  * of the browser.
+ *
+ * @param {StepProps & { preview: ReturnType<typeof useFilePreview> }} props
  */
 export default function FilePreview({ cfg, onChange, preview, host }) {
   const source = cfg.previewSource;
@@ -635,7 +639,7 @@ export default function FilePreview({ cfg, onChange, preview, host }) {
   // Set once mounted: the wizard is also rendered on the server, which has no
   // folder picker to ask about.
   const [usesFileInput, setUsesFileInput] = useState(false);
-  const inputRef = useRef(null);
+  const inputRef = useRef(/** @type {HTMLInputElement | null} */ (null));
 
   useEffect(() => setUsesFileInput(!host && !canPickFolder()), [host]);
 
@@ -666,7 +670,7 @@ export default function FilePreview({ cfg, onChange, preview, host }) {
     if (host) {
       loadFolder(async () => readDirectoryHandle(await host.pickFolder({ choose })));
     } else if (canPickFolder()) {
-      loadFolder(async () => readDirectoryHandle(await window.showDirectoryPicker()));
+      loadFolder(async () => readDirectoryHandle(await /** @type {any} */ (window).showDirectoryPicker()));
     } else {
       inputRef.current?.click();
     }
@@ -735,11 +739,12 @@ export default function FilePreview({ cfg, onChange, preview, host }) {
         <input
           ref={inputRef}
           type="file"
+          // @ts-expect-error -- React's types leave out webkitdirectory.
           webkitdirectory=""
           multiple
           hidden
           onChange={(e) => {
-            const fileList = [...e.target.files];
+            const fileList = [...(e.target.files ?? [])];
             // Cleared so choosing the same folder again is still a change.
             e.target.value = '';
             if (fileList.length > 0) loadFolder(async () => readFileInput(fileList));

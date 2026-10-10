@@ -16,8 +16,33 @@ import {
   ISSUES_PER_PAGE,
 } from './constants.js';
 
+/** @typedef {typeof globalThis.fetch} Fetch */
+
+/**
+ * What every request needs: the repository, the token and the `fetch` to use.
+ *
+ * @typedef {{ owner: string, repo: string, token: string, fetch: Fetch }} RepoRequest
+ */
+
+/**
+ * An issue as the REST API lists it: the fields this extension reads.
+ *
+ * @typedef {object} GitHubIssue
+ * @property {number} number
+ * @property {string} title
+ * @property {string} html_url
+ * @property {string} [updated_at]
+ * @property {string | null} [body]
+ * @property {unknown} [pull_request]
+ * @property {(string | { name?: string } | null)[]} [labels]
+ */
+
 /** A failed GitHub request, with the HTTP status that explains it. */
 export class GitHubError extends Error {
+  /**
+   * @param {number} status
+   * @param {string} message
+   */
   constructor(status, message) {
     super(message);
     this.name = 'GitHubError';
@@ -32,6 +57,13 @@ export class GitHubError extends Error {
  * Throws GitHubError on any response but 200. GitHub answers 404 for a private
  * repository the token cannot see, not 403, so 404 means "missing, or no
  * access" and callers word it that way.
+ *
+ * @param {object} request
+ * @param {string} request.path
+ * @param {string} [request.accept]
+ * @param {string} request.what
+ * @param {string} request.token
+ * @param {Fetch} request.fetch
  */
 async function get({ path, accept = 'application/vnd.github+json', what, token, fetch }) {
   const response = await fetch(`${GITHUB_API_URL}${path}`, {
@@ -47,11 +79,18 @@ async function get({ path, accept = 'application/vnd.github+json', what, token, 
   return response;
 }
 
+/**
+ * @param {string} owner
+ * @param {string} repo
+ */
 const repoPath = (owner, repo) => `/repos/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}`;
 
 /**
  * Lists the repository's open issues labelled for GrillMyCode, as the REST API
  * returns them.
+ *
+ * @param {RepoRequest} request
+ * @returns {Promise<GitHubIssue[]>}
  */
 export async function listLabelledIssues({ owner, repo, token, fetch }) {
   const query = new URLSearchParams({
@@ -73,6 +112,9 @@ export async function listLabelledIssues({ owner, repo, token, fetch }) {
  * The logins of the repository's direct collaborators, which leaves out access
  * that comes from the organization or a team. GitHub answers 403 or 404 to an
  * account that may not list them.
+ *
+ * @param {RepoRequest} request
+ * @returns {Promise<string[]>}
  */
 export async function listDirectCollaborators({ owner, repo, token, fetch }) {
   const query = new URLSearchParams({
@@ -91,7 +133,11 @@ export async function listDirectCollaborators({ owner, repo, token, fetch }) {
     : [];
 }
 
-/** The text of one file on the repository's default branch. */
+/**
+ * The text of one file on the repository's default branch.
+ *
+ * @param {RepoRequest & { path: string }} request
+ */
 export async function readFile({ owner, repo, path, token, fetch }) {
   const response = await get({
     path: `${repoPath(owner, repo)}/contents/${path.split('/').map(encodeURIComponent).join('/')}`,

@@ -1,10 +1,13 @@
 import React from 'react';
 import styles from '../styles.module.css';
 
+/** @import { StepProps } from '../index' */
+
 // Everything GrillMyCode writes and who can see it: the student's issue and PDF
 // (always on), whether answers go to the student, and the private instructor
 // copy. Include answers sits here rather than with the other question settings
 // so both places answers can go are decided side by side.
+/** @param {StepProps} props */
 export default function StepDelivery({ cfg, onChange, docsBase = '/docs' }) {
   return (
     <div>

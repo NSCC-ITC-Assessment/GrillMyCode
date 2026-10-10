@@ -139,6 +139,6 @@ async function uploadAsset({
     throw new Error(`HTTP ${response.status}: ${text}`);
   }
 
-  const data = await response.json();
+  const data = /** @type {{ browser_download_url: string }} */ (await response.json());
   return data.browser_download_url;
 }

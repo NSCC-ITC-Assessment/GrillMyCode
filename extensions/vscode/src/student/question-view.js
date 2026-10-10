@@ -12,6 +12,9 @@
 import { randomBytes } from 'crypto';
 import { questionToHtml } from '../shared/html.js';
 
+/** @import { WebviewView } from 'vscode' */
+/** @import { Question } from '../shared/report.js' */
+
 const STYLE = `
   body { padding: 0 16px 16px; color: var(--vscode-foreground); font-family: var(--vscode-font-family); font-size: var(--vscode-font-size); line-height: 1.5; }
   h2, h3 { font-size: 1em; font-weight: 600; margin: 12px 0 4px; }
@@ -31,10 +34,16 @@ export class QuestionView {
    */
   toHtml = questionToHtml;
 
+  /** @type {WebviewView | undefined} */
   #view;
+  /** @type {Question | undefined} */
   #question;
 
-  /** Called by VS Code when the view first becomes visible. */
+  /**
+   * Called by VS Code when the view first becomes visible.
+   *
+   * @param {WebviewView} view
+   */
   resolveWebviewView(view) {
     this.#view = view;
     view.webview.options = { enableScripts: false, localResourceRoots: [] };
@@ -42,7 +51,11 @@ export class QuestionView {
     this.#render();
   }
 
-  /** Shows a question, or the prompt to select one when given undefined. */
+  /**
+   * Shows a question, or the prompt to select one when given undefined.
+   *
+   * @param {Question | undefined} question
+   */
   show(question) {
     this.#question = question;
     this.#render();

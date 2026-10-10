@@ -233,7 +233,7 @@ function checkOverrides(overrides, paths, unopened, verdicts, binaryPaths) {
       broughtBack: 0,
       notLeftOut: 0,
       binary: 0,
-      blocked: [],
+      blocked: /** @type {string[]} */ ([]),
       unopened: unopened.filter((folder) => alone(insideFolder(folder)).assessed),
     };
     for (const path of paths) {
@@ -308,14 +308,14 @@ function checkOverrides(overrides, paths, unopened, verdicts, binaryPaths) {
 export function previewFiles({
   paths,
   texts = {},
-  languages = [],
+  languages = /** @type {string[]} */ ([]),
   lists,
   languageFiles,
   additionalExcludePatterns = '',
   excludePatternOverrides = '',
   stackTemplates = '',
-  unopened = [],
-  binary = [],
+  unopened = /** @type {string[]} */ ([]),
+  binary = /** @type {string[]} */ ([]),
 }) {
   const additional = splitPatternList(additionalExcludePatterns);
   const overrides = splitPatternList(excludePatternOverrides);

@@ -426,6 +426,24 @@ export function instructorPatterns(pattern) {
 }
 
 /**
+ * What the file filter says of a path (see createFileFilter).
+ *
+ * @typedef {{ assessed: true, pattern?: string, guard?: undefined }
+ *   | { assessed: false, pattern: string, guard?: string }} Verdict
+ */
+
+/**
+ * Where an exclude pattern comes from (see detectStack and buildFileRules).
+ *
+ * @typedef {object} PatternOrigin
+ * @property {'always' | 'template' | 'project' | 'fallback' | 'yours'} kind
+ * @property {string} [label]
+ * @property {string} [template]
+ * @property {string} [folder]
+ * @property {string} [written]
+ */
+
+/**
  * Builds the test that decides whether a file is assessed. Returns a function
  * from a path to its verdict:
  *
@@ -450,6 +468,12 @@ export function instructorPatterns(pattern) {
  * `frontend/.env`, `.env` and `**\/.env` re-include frontend/.env and
  * `frontend/**` does not. A brace override is judged one alternative at a
  * time, as it is matched; a negated one never names anything.
+ *
+ * @param {object} lists
+ * @param {string[]} lists.excludePatterns
+ * @param {string[]} [lists.overridePatterns]
+ * @param {string[]} [lists.caseInsensitivePatterns]
+ * @returns {(filepath: string) => Verdict}
  */
 export function createFileFilter({
   excludePatterns,
@@ -486,7 +510,7 @@ export function createFileFilter({
   return (filepath) => {
     const excludedBy = excludes.find((e) => e.matcher.match(filepath));
     if (!excludedBy) return { assessed: true };
-    const excluded = { assessed: false, pattern: excludedBy.pattern };
+    const excluded = /** @type {const} */ ({ assessed: false, pattern: excludedBy.pattern });
 
     const matching = overrides.filter((o) => o.matcher.match(filepath));
     if (matching.length === 0) return excluded;
@@ -496,7 +520,7 @@ export function createFileFilter({
     }
     // Every matching override leaves at least one guard unnamed; report one.
     const unnamed = guarding.find((g) => !matching[0].names.has(g));
-    return { ...excluded, guard: unnamed.pattern };
+    return { ...excluded, guard: unnamed?.pattern };
   };
 }
 
@@ -506,6 +530,11 @@ export function createFileFilter({
  *
  * Overrides accept either an exact pattern from the exclude list (e.g. **\/*.md)
  * or a specific file path that would otherwise be excluded (e.g. README.md).
+ *
+ * @param {string[]} files
+ * @param {string[]} excludePatterns
+ * @param {string[]} [overridePatterns]
+ * @param {string[]} [caseInsensitivePatterns]
  */
 export function filterFiles(
   files,
@@ -841,7 +870,7 @@ export function findProjectFolders(paths) {
       const folder = parts.slice(0, i).join('/');
       if (folder && isSkipped(folder)) continue;
       if (!folders.has(folder)) folders.set(folder, new Set());
-      folders.get(folder).add(parts[i]);
+      folders.get(folder)?.add(parts[i]);
     }
   }
 
@@ -976,6 +1005,7 @@ function parseMixDeps(text) {
   return deps;
 }
 
+/** @type {[file: string, key: 'packageDeps' | 'composerDeps' | 'gemfileDeps' | 'mixDeps', parse: (text: string) => string[], noun: string][]} */
 const MANIFESTS = [
   ['package.json', 'packageDeps', parsePackageDeps, 'deps'],
   ['composer.json', 'composerDeps', parseComposerDeps, 'deps'],
@@ -992,6 +1022,7 @@ const MANIFESTS = [
  * return no deps and hide the framework.
  */
 function readFolderDeps(folder, names, readText) {
+  /** @type {Record<'packageDeps' | 'composerDeps' | 'gemfileDeps' | 'mixDeps', string[]>} */
   const deps = { packageDeps: [], composerDeps: [], gemfileDeps: [], mixDeps: [] };
   const scanned = [];
   for (const [file, key, parse, noun] of MANIFESTS) {
@@ -1259,6 +1290,12 @@ const protectedVerdictOn = createFileFilter({
  *
  * It is a prompt to look, not a verdict: build output such as `dist/app.js`
  * is rightly left out, and reads the same from here.
+ *
+ * @param {object} lists
+ * @param {string[]} lists.detectedPatterns
+ * @param {Map<string, PatternOrigin>} [lists.detectedOrigins]
+ * @param {string[]} [lists.additionalExcludePatterns]
+ * @param {string[]} [lists.excludePatternOverrides]
  */
 export function buildFileRules({
   detectedPatterns,
@@ -1294,9 +1331,15 @@ export function buildFileRules({
     excludePatterns: instructorExcludes,
     caseInsensitivePatterns: instructorExcludes,
   });
+  /**
+   * @param {string} filepath
+   * @param {Verdict} verdict
+   * @param {{ extensions: Record<string, any>, filenames: Record<string, any> }} languageFiles
+   * @returns {verdict is Extract<Verdict, { assessed: false }>}
+   */
   const mayBeOwnWork = (filepath, verdict, languageFiles) =>
     !verdict.assessed &&
-    DETECTED_ORIGINS.includes(origins.get(verdict.pattern)?.kind) &&
+    DETECTED_ORIGINS.includes(origins.get(verdict.pattern)?.kind ?? '') &&
     fileLanguage(filepath, languageFiles) !== null &&
     protectedVerdictOn(filepath).assessed &&
     instructorVerdictOn(filepath).assessed;

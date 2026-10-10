@@ -21,6 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 const TEMPLATES_PATH = join(__dirname, 'data', 'gitignore-templates.json');
 const LANGUAGE_FILES_PATH = join(__dirname, 'data', 'language-files.json');
 
+/** @returns {Promise<any>} */
 async function fetchJson(url, headers) {
   const res = await fetch(url, { headers });
   if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}`);
