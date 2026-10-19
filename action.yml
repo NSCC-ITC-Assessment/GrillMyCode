@@ -472,7 +472,7 @@ runs:
   # should change this value. The release workflow never changes this file on
   # main; it gives the minor git tag (e.g. v0.29) a commit of its own in which
   # this line names the minor image (:v0.29), so @v0.29 stays on that minor.
-  image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:v0"
+  image: "docker://ghcr.io/nscc-itc-assessment/grillmycode:v0.30"
   env:
     INPUT_GITHUB_TOKEN: ${{ inputs.github_token }}
     INPUT_AI_PROVIDER: ${{ inputs.ai_provider }}
