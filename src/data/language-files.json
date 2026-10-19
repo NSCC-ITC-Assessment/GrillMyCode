@@ -881,7 +881,7 @@
     ".sce": "Scilab",
     ".scenic": "Scenic",
     ".sci": "Scilab",
-    ".scm": ["Scheme", "Tree-sitter Query"],
+    ".scm": ["Scheme"],
     ".sco": "Csound Score",
     ".scpt": "AppleScript",
     ".scrbl": "Racket",
