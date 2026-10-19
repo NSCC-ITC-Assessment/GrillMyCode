@@ -299,7 +299,7 @@ To settle before building the reader:
 | Open VSX                 | Publishes to the registry Cursor, VSCodium and similar use | Its own token, and a release step  | Small  |
 | The browser editor       | Works in github.dev, where there is no local Git           | Another way to read Git state      | Medium |
 | GitHub Enterprise Server | Works for schools that host GitHub themselves              | A setting for the server's address | Medium |
-| A JetBrains plugin       | The same student side, in `extensions/jetbrains/`          | Nothing more: phase 4 is released  | Large  |
+| A JetBrains plugin       | Planned in `jetbrains-plugin-plan.md`                      | Nothing more: phase 4 is released  | Large  |
 
 ### Set aside
 
