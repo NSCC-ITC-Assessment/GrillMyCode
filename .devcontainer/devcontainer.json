@@ -27,6 +27,9 @@
         // Docker
         "ms-azuretools.vscode-docker",
 
+        // JetBrains plugin (Gradle tasks only; no Java or Kotlin language server)
+        "vscjava.vscode-gradle",
+
         // YAML / JSON helpers
         "redhat.vscode-yaml",
         "tamasfe.even-better-toml",
@@ -90,6 +93,14 @@
     "ghcr.io/devcontainers/features/github-cli:1": {},
     "ghcr.io/devcontainers/features/docker-in-docker:2": {
       "moby": false
+    },
+    // For the JetBrains plugin in extensions/jetbrains/. The IntelliJ Platform
+    // builds on JDK 21, and Temurin is the JDK the CI's setup-java will use.
+    // Kotlin comes in through Gradle; Gradle here only generates the wrapper.
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "jdkDistro": "tem",
+      "installGradle": true
     }
   },
 
