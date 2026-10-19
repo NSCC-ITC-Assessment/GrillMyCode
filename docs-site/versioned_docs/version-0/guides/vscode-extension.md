@@ -12,7 +12,7 @@ It's optional. The [issue and PDF](what-students-see.md) work the same with or w
 ## What students get
 
 - **A list of their questions**, grouped by file.
-- **A jump to the code.** Selecting a question opens the file and highlights the lines it asks about.
+- **A jump to the code.** Selecting a question opens the file and highlights the lines it asks about. A question about several files opens each one in a tab of its own.
 - **The whole question**, shown under the list with the code as it was when the question was written.
 - **A warning when the code has changed** since the questions were written, because the highlighted lines may no longer be the right ones.
 
@@ -82,7 +82,7 @@ The extension uses it to read the questions issue, and to ask GitHub whether the
 
 - **It needs a recent VS Code**, on a computer or in a codespace. It doesn't run in the lightweight editor GitHub opens when you press <kbd>.</kbd> on a repository.
 - **It follows the branch the student has checked out.** With [submission tags](choosing-a-trigger.md#submission-tag) a repository can hold several sets of questions, and the student can choose which one to see.
-- **Questions don't refresh on their own.** After a later push, the student selects **Refresh Questions**.
+- **Questions arrive on their own.** A student's first set appears in the list a minute or so after GrillMyCode finishes. After a later push, VS Code says a newer set has arrived, and the list changes when the student asks for it.
 
 ---
 

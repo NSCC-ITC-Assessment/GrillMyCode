@@ -32,7 +32,7 @@ Each step is ticked by what the extension finds, not by its button being selecte
 | **Open your assignment's folder** | The open folder is a clone with a GitHub.com remote |
 | **Sign in to GitHub** | GitHub has accepted the sign-in and found the repository |
 | **Get your questions** | A set of questions is showing |
-| **Go from a question to its code** | A question has been opened from the list |
+| **Go from a question to its code** | A question has been opened, from the list or by [stepping to it](#stepping-through-the-questions) |
 
 A step that is ticked stays ticked, in every folder, until the reader unticks it.
 
@@ -65,8 +65,35 @@ Picking **Follow the checked-out branch** in that list clears the remembered cho
 - When the reader selects **Refresh Questions**.
 - When the folder is switched to another branch.
 - When the GitHub account signed in to VS Code changes.
+- When a first set of questions [arrives](#when-new-questions-arrive).
 
-It does not check GitHub on a timer or after a push, so a new set of questions appears only after a refresh. Each load also checks again for an answer key, which decides whether the [instructor view](#the-instructor-view) is offered.
+Each load also checks again for an answer key, which decides whether the [instructor view](#the-instructor-view) is offered.
+
+## When new questions arrive
+
+Between loads, the extension asks GitHub whether the questions have changed: once a minute, and when the VS Code window regains the focus, unless it asked in the 15 seconds before. Each check is one request, for the same list of issues a load reads. Checking is in version 0.4.4 and later. Earlier versions show a new set only after a refresh.
+
+It checks only while the window has the focus, and only once the repository has been read with the signed-in account. A check that fails says nothing, and the next one asks again.
+
+A set counts as new when loading again would show other questions: the issue behind [the set being shown](#which-set-of-questions-it-shows) has other text, or another issue would be chosen in its place. What happens next depends on the list:
+
+- **No questions are showing.** The new set is loaded at once. A notification says "GrillMyCode questions have arrived for this repository.", and its **Show Questions** button opens the Questions view. If that view is not on screen, the GrillMyCode icon in the Activity Bar carries a badge until it is.
+- **Questions are showing.** The list is left as it is, so it never changes under someone who is reading it. A notification says "A newer set of GrillMyCode questions has arrived for this repository.", a note above the list says the same, and the GrillMyCode icon carries a badge. **Show New Questions** in the notification loads the new set, as **Refresh Questions** does. Each set is announced once.
+
+A set that arrives for another branch or submission tag than the one being shown is not announced. It is offered by **Choose Which Questions to Show** after the next load.
+
+## Opening a question's code
+
+Selecting a question opens the file it asks about, in the editor group that is active, and highlights the lines. A question that shows code from several files opens each file in a tab of its own, in the order the question shows them, and leaves the first in front. Under such a question the list has a row for each piece of code, and selecting one brings its file to the front at those lines. Versions before 0.4.3 opened one file at a time.
+
+When another question is opened, the tabs the extension opened for the one before are closed, except those on a file the new question shows too. A tab is left open when any of these is true:
+
+- it was open before the question was;
+- its file has been edited since, whether or not the edit was saved;
+- the reader has pinned it;
+- the reader closed it and opened it again.
+
+Loading the questions again removes the highlights and leaves the tabs, which close when the next question is opened.
 
 ## The moved-code warning
 
@@ -76,6 +103,19 @@ Line numbers in the report are those of the commit the questions were written ab
 - a file the questions point into has changes that are not committed, or edits that are not saved.
 
 A range that runs past the end of the file is cut to fit. A file that no longer exists is reported and not opened.
+
+## Stepping through the questions
+
+**Next Question** and **Previous Question** open the question after or before the one shown in **Selected Question**, as selecting it in the list would. While a set of questions is showing, both are in the Questions view's title bar and in the Command Palette, as **GrillMyCode: Next Question** and **GrillMyCode: Previous Question**. They are in version 0.4.2 and later.
+
+- The order is the list's: file by file, then the broader questions. It is not always the order of the question numbers.
+- With no question selected, **Next Question** opens the first and **Previous Question** the last.
+- A step past either end of the list goes round to the other.
+- A broader question has no lines to open, so the editor stays where it was.
+- A step shows the GrillMyCode view if it is closed.
+- In the [instructor view](#the-instructor-view), they step through the answer key's questions.
+
+Neither command has a keyboard shortcut. A reader who wants one adds it in VS Code's **Keyboard Shortcuts** editor.
 
 ## The instructor view
 
@@ -239,6 +279,8 @@ With that access the extension makes these requests, each time it loads:
 | The answer key, one file in the instructor repository | Whenever the student could be worked out |
 
 The last two are how it [looks for an answer key](#where-the-answer-key-is-read-from). In a student's own repository that is one extra request, which GitHub refuses.
+
+Between loads it repeats the first request alone, to learn [when new questions arrive](#when-new-questions-arrive).
 
 It writes nothing to GitHub and collects no usage data. The one other service it talks to is OpenRouter, and only from [the Workflow Wizard's tab](#what-the-wizards-tab-reads), without the sign-in.
 

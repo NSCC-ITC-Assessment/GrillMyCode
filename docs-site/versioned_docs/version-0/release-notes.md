@@ -5,6 +5,31 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.30.1 — 2026-10-19
+
+### What's Changed
+
+### Features
+
+- implement new questions notification system in VS Code extension
+- implement multi-file question handling in VS Code extension
+- add Next Question and Previous Question functionality to VS Code extension
+
+### Bug Fixes
+
+- improve documentation for return types and clarify comments in git utilities
+
+### Documentation
+
+- update stable release status to 0.4.2 and include version details
+- refine VS Code extension plan by updating phase details and clarifying sign-in process
+- enhance VS Code extension plan with detailed instructor features and workflow file integration
+
+### Chores & Maintenance
+
+- refresh gitignore templates
+- **ci:** Update README.md to clarify Marketplace sign-in process and remove outdated token reference
+
 ## v0.30.0 — 2026-10-10
 
 ### What's Changed
