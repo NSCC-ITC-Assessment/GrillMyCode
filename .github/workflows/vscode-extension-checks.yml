@@ -12,7 +12,8 @@ name: VS Code Extension Checks
 
 # The extension bundles the docs site's Workflow Wizard, so a change to the
 # Wizard is a change to the extension and runs these checks too. The JetBrains
-# plugin has checks of its own, in jetbrains-plugin-checks.yml.
+# plugin has checks of its own, in jetbrains-plugin-checks.yml, and
+# extensions/README.md is for contributors, not part of the extension.
 
 on:
   pull_request:
@@ -20,6 +21,7 @@ on:
     paths:
       - "extensions/**"
       - "!extensions/jetbrains/**"
+      - "!extensions/README.md"
       - "docs-site/docs/_workflow-wizard/**"
       - "docs-site/static/img/grillmycode-wizard.svg"
       - ".github/workflows/vscode-extension-checks.yml"
@@ -29,6 +31,7 @@ on:
     paths:
       - "extensions/**"
       - "!extensions/jetbrains/**"
+      - "!extensions/README.md"
       - "docs-site/docs/_workflow-wizard/**"
       - "docs-site/static/img/grillmycode-wizard.svg"
       - ".github/workflows/vscode-extension-checks.yml"
