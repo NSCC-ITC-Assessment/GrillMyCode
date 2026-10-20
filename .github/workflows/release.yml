@@ -4,7 +4,8 @@ on:
   push:
     tags:
       # "v" then a digit. A plain "v*" matches every tag that starts with "v",
-      # which includes the VS Code extension's vscode-v* tags.
+      # which includes the VS Code extension's vscode-v* tags. The JetBrains
+      # plugin's jetbrains-v* tags do not start with "v", nor with a digit.
       - "v[0-9]*"
 
 jobs:
@@ -208,9 +209,10 @@ jobs:
         env:
           TAG: ${{ steps.version.outputs.tag }}
         # Limited to the action's own tags and files. The editor extensions are
-        # released from this repository under other tag prefixes (vscode-v*),
-        # so the nearest tag of any name could be one of theirs, and a commit
-        # that touches only extensions/ belongs in their notes, not these.
+        # released from this repository under other tag prefixes (vscode-v*,
+        # jetbrains-v*), so the nearest tag of any name could be one of theirs,
+        # and a commit that touches only extensions/ belongs in their notes,
+        # not these.
         run: |
           node scripts/release-notes.js --tag "$TAG" --match "v[0-9]*" \
             --path . --path ":(exclude)extensions" --out /tmp/release-body.txt

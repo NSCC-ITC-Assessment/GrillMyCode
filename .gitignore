@@ -28,3 +28,9 @@ grill-my-code*.md
 
 # Claude (internal bootstrap only — configuration file is committed)
 .claude
+
+# JetBrains plugin: Gradle's output and caches
+extensions/jetbrains/build/
+extensions/jetbrains/.gradle/
+extensions/jetbrains/.intellijPlatform/
+extensions/jetbrains/.kotlin/

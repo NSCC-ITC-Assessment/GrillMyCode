@@ -164,9 +164,11 @@ Adding a new `ai_provider` value requires changes in all of the following places
 
 ## Editor Extensions
 
-`extensions/` holds the editor extensions, one folder per editor (`extensions/vscode/` today),
-each a separate project with its own `package.json` and lockfile, like `docs-site/`. Nothing
-under `extensions/` is copied into the action's container image.
+`extensions/` holds the editor extensions, one folder per editor (`extensions/vscode/` and
+`extensions/jetbrains/`), each a separate project with its own build, like `docs-site/`. Nothing
+under `extensions/` is copied into the action's container image. The rules below are the VS Code
+extension's unless they say otherwise; the JetBrains plugin's own are in
+[JetBrains Plugin](#jetbrains-plugin).
 
 - **The report format is a contract.** The extensions read the issue the action posts, and the
   answer key it files in the instructor repository. If a change alters what `formatReport`
@@ -213,10 +215,33 @@ under `extensions/` is copied into the action's container image.
   (`FolderRecord`, same file). A path the page sends is looked up there, never parsed.
 - **`@types/vscode` must not pass `engines.vscode`**, or the extension will not package. Raise
   both together, deliberately: a higher minimum drops support for older editors.
-- **Releases use their own tag prefix** (`vscode-v*`), never `v*`, which releases the action.
+- **Releases use their own tag prefix** (`vscode-v*`, `jetbrains-v*`), never `v*`, which releases
+  the action.
 - Lint, formatting and unit tests run from the repository root. `pnpm lint` covers `extensions/`.
   The type check does not: run `pnpm typecheck` from `extensions/vscode/` (see
   [Type Checking](#type-checking)).
+
+## JetBrains Plugin
+
+`extensions/jetbrains/` is a Kotlin plugin built by Gradle, following
+`docs-internal/jetbrains-plugin-plan.md`. It ports the VS Code extension's behaviour; it does not
+load its JavaScript.
+
+- **Kotlin is allowed in `extensions/jetbrains/` alone.** Everywhere else the
+  [Type Checking](#type-checking) rules hold: JavaScript with JSDoc types, nothing compiled.
+- **Checks run through Gradle, not pnpm.** From `extensions/jetbrains/`: `./gradlew check` (ktlint
+  and the tests) and `./gradlew buildPlugin`. `pnpm lint` and Prettier do not read Kotlin.
+  `./gradlew verifyPlugin` needs more disk than a codespace has; `jetbrains-plugin-checks.yml`
+  runs it on every pull request that touches the plugin.
+- **The oldest supported IDE is `pluginSinceBuild` and `platformVersion` in `gradle.properties`.**
+  The plugin compiles against that release. Raise both together, deliberately, and the Kotlin
+  `apiVersion` in `build.gradle.kts` with them: the IDE supplies the Kotlin standard library.
+- **Never change the plugin ID** (`org.grillmycode.companion` in `plugin.xml`) once published.
+- **The report format is the same contract.** Once the plugin reads issues, it tests its reader
+  against `extensions/fixtures/` as the VS Code extension does, and a changed layout means a
+  reader in each editor.
+- **Issue text is untrusted here too.** Show it only escaped, in a Swing HTML pane, never in a JCEF
+  browser. The one JCEF page the plan allows is the Workflow Wizard's.
 
 ## Type Checking
 

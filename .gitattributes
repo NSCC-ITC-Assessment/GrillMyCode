@@ -15,6 +15,12 @@ docker-compose.yml text
 entrypoint.sh text eol=lf
 *.sh text eol=lf
 
+# The Gradle wrapper in extensions/jetbrains/: a shell script for Linux and
+# macOS, a batch file for Windows, each in the line endings its shell needs.
+gradlew text eol=lf
+*.bat text eol=crlf
+*.jar binary
+
 # =============================================================================
 # GITHUB ACTION METADATA
 # =============================================================================

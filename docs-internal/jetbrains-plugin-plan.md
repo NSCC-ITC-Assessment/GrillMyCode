@@ -1,7 +1,8 @@
 # JetBrains plugin — plan
 
 > **Recorded:** 2026-10-19 (`d1f974c`), against VS Code extension 0.4.4.
-> **Status:** a proposal. No phase has started.
+> **Status:** J0 in progress. The scaffold, checks and release workflow are in
+> `extensions/jetbrains/`; the first Marketplace upload is still to do.
 
 A JetBrains plugin that does what GrillMyCode Companion does in VS Code: the
 questions the action posts, shown beside the code they ask about. It lives in
@@ -16,7 +17,7 @@ Elsewhere: the VS Code extension's plan, which this follows, in
 
 | Phase | What it adds                                                                                                                                                                    | Needs first                    | Status      |
 | ----- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------ | ----------- |
-| J0    | Scaffold and pipeline: Gradle IntelliJ Platform Plugin 2.x, Kotlin, ktlint, Plugin Verifier, a CI job on JDK 21, a `jetbrains-v*` release workflow, signing, a devcontainer JDK | Nothing                        | Not started |
+| J0    | Scaffold and pipeline: Gradle IntelliJ Platform Plugin 2.x, Kotlin, ktlint, Plugin Verifier, a CI job on JDK 21, a `jetbrains-v*` release workflow, signing, a devcontainer JDK | Nothing                        | In progress |
 | J1    | Student side: sign-in, the questions list, the selected question, the jump to code, the moved-code warning, next and previous, several files, the new-questions notice          | J0, and the sign-in decision   | Not started |
 | J2    | Ready for a class: the Marketplace listing, a reference page and a line in the student guide, a stable release, hand checks on Windows and macOS                                | J1                             | Not started |
 | J3    | Instructor view: the answer key beside the student's code, and the view switch                                                                                                  | J1                             | Not started |

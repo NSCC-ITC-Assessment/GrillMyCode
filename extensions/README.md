@@ -5,12 +5,14 @@ its own folder, with its own dependencies, checks and releases. None of this
 is part of the action: nothing here is copied into the action's container
 image.
 
-| Folder      | What it is                                                            |
-| ----------- | --------------------------------------------------------------------- |
-| `vscode/`   | GrillMyCode Companion, the VS Code extension                          |
-| `fixtures/` | Sample questions issues that every extension tests its reader against |
+| Folder       | What it is                                                            |
+| ------------ | --------------------------------------------------------------------- |
+| `vscode/`    | GrillMyCode Companion, the VS Code extension                          |
+| `jetbrains/` | GrillMyCode Companion for JetBrains IDEs. An empty plugin so far      |
+| `fixtures/`  | Sample questions issues that every extension tests its reader against |
 
-The plan these follow is in `docs-internal/vscode-extension-plan.md`.
+The plans these follow are in `docs-internal/vscode-extension-plan.md` and
+`docs-internal/jetbrains-plugin-plan.md`.
 
 ## Working on the VS Code extension
 
@@ -87,3 +89,100 @@ the next tag depends on it.
 
 A version number can be published only once. If the workflow fails after
 publishing, re-run it: it skips the Marketplace and finishes the rest.
+
+## Working on the JetBrains plugin
+
+The plugin is Kotlin, built by Gradle with the IntelliJ Platform Gradle Plugin.
+It needs JDK 21, which the devcontainer has. From `extensions/jetbrains/`:
+
+```bash
+./gradlew check          # ktlint and the tests
+./gradlew buildPlugin    # build/distributions/*.zip, installable by hand
+./gradlew runIde         # an IDE with the plugin installed, to try it
+./gradlew verifyPlugin   # the Plugin Verifier, against the supported IDEs
+./gradlew ktlintFormat   # fix what ktlint can
+```
+
+The first build downloads IntelliJ IDEA 2025.1, the oldest release the plugin
+supports and the one it compiles against. `verifyPlugin` downloads every IDE
+the verifier checks, several of them over a gigabyte, and needs more disk than
+a codespace has free. Leave it to **JetBrains Plugin Checks**, which runs on
+every pull request that touches the plugin.
+
+`runIde` opens a window, so it needs a desktop: run it on your own machine, not
+in a codespace.
+
+The oldest supported IDE is `pluginSinceBuild` and `platformVersion` in
+`gradle.properties`. Raise both together, deliberately: a higher minimum drops
+support for older IDEs. The Kotlin `apiVersion` in `build.gradle.kts` follows
+the Kotlin that the oldest IDE bundles.
+
+## Releasing the JetBrains plugin
+
+The plugin's tags are `jetbrains-v*`. A version with a suffix, such as
+`0.1.0-eap.1`, goes to the Marketplace's `eap` channel, which only people who
+add that channel receive. A version without one, such as `0.2.0`, goes to the
+default channel, which every install updates to.
+
+1. Set `version` in `extensions/jetbrains/gradle.properties`, add a section for
+   it to `extensions/jetbrains/CHANGELOG.md`, which the Marketplace shows on the
+   listing's "What's New" tab, and merge both to main.
+2. Tag that commit on main and push the tag:
+
+   ```bash
+   git checkout main && git pull
+   git tag jetbrains-v0.1.0-eap.1
+   git push origin jetbrains-v0.1.0-eap.1
+   ```
+
+3. `jetbrains-plugin-release.yml` checks the plugin and runs the verifier, then
+   waits for approval if the `jetbrains-marketplace` environment has a required
+   reviewer. Once approved it signs the plugin, publishes it to the Marketplace
+   and creates a GitHub Release with the signed ZIP attached.
+
+A version number can be published only once. If the workflow fails after
+publishing, do not re-run it: create the GitHub Release by hand.
+
+### The first upload
+
+The Marketplace takes a new plugin's first version only through its site,
+where uploading it creates the listing. JetBrains reviews it by hand, which
+can take days, so do this well before a term starts.
+
+1. Sign in to the [JetBrains Marketplace](https://plugins.jetbrains.com) with
+   the vendor's account, and create the vendor if there is none.
+2. Build the plugin and sign it with the certificate below:
+
+   ```bash
+   CERTIFICATE_CHAIN="$(cat chain.crt)" PRIVATE_KEY="$(cat private_encrypted.pem)" \
+     PRIVATE_KEY_PASSWORD='…' ./gradlew signPlugin
+   ```
+
+3. Upload `build/distributions/*-signed.zip` on the Marketplace's **Upload
+   plugin** page, under the vendor. If the page offers a channel, choose `eap`.
+
+Every later version goes through the workflow.
+
+### The environment's secrets
+
+The `jetbrains-marketplace` environment holds four secrets. The workflow stops
+before publishing if one is missing.
+
+| Secret                 | What it is                                                            |
+| ---------------------- | --------------------------------------------------------------------- |
+| `PUBLISH_TOKEN`        | A token made on the vendor's Marketplace profile, under **My Tokens** |
+| `CERTIFICATE_CHAIN`    | The signing certificate, `chain.crt` below, the whole PEM text        |
+| `PRIVATE_KEY`          | Its private key, `private_encrypted.pem` below, the whole PEM text    |
+| `PRIVATE_KEY_PASSWORD` | The password the key is encrypted with                                |
+
+Make the key and certificate once, on your own machine, and keep them
+somewhere safe outside the repository:
+
+```bash
+openssl genpkey -aes-256-cbc -algorithm RSA -out private_encrypted.pem -pkeyopt rsa_keygen_bits:4096
+openssl rsa -in private_encrypted.pem -out private.pem
+openssl req -key private.pem -new -x509 -days 3650 -out chain.crt
+rm private.pem
+```
+
+The certificate lasts ten years.
