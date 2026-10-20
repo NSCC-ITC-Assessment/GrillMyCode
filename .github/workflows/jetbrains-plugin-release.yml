@@ -1,0 +1,169 @@
+name: JetBrains Plugin Release
+
+# Publishes the JetBrains plugin in extensions/jetbrains/ when a jetbrains-v*
+# tag is pushed, for example jetbrains-v0.1.0-eap.1. The action is released by
+# release.yml on v[0-9]* tags and the VS Code extension by
+# vscode-extension-release.yml on vscode-v* tags; none acts on another's tags.
+#
+# The tag must match the version in extensions/jetbrains/gradle.properties. A
+# suffix names the Marketplace channel: 0.1.0-eap.1 goes to "eap" and is a
+# GitHub pre-release; 0.2.0, with none, goes to the default channel.
+#
+# The publish job runs in the jetbrains-marketplace environment, which holds
+# four secrets:
+#
+#   PUBLISH_TOKEN         A Marketplace token, from the vendor's account
+#   CERTIFICATE_CHAIN     The signing certificate, PEM
+#   PRIVATE_KEY           Its private key, PEM, encrypted
+#   PRIVATE_KEY_PASSWORD  The key's password
+#
+# extensions/README.md has the steps for making them. Give the environment a
+# required reviewer and every publish waits for approval.
+#
+# The Marketplace will not take a plugin's first version from here: it is
+# uploaded by hand on the Marketplace's site, which creates the listing.
+
+on:
+  push:
+    tags:
+      - "jetbrains-v*"
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    name: Check, verify and build
+    runs-on: ubuntu-latest
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      prerelease: ${{ steps.version.outputs.prerelease }}
+    steps:
+      # The IDEs the verifier downloads do not fit in the space a runner
+      # starts with.
+      - name: Free disk space
+        uses: jlumbroso/free-disk-space@v2.0.0
+        with:
+          preinstalled-runtimes: false
+          large-packages: false
+
+      - uses: actions/checkout@v6
+        with:
+          # The release notes read the history back to the previous release.
+          fetch-depth: 0
+
+      - name: Check the tag against gradle.properties
+        id: version
+        run: |
+          VERSION="${GITHUB_REF_NAME#jetbrains-v}"
+          if ! printf '%s' "$VERSION" | grep -Eq '^[0-9]+\.[0-9]+\.[0-9]+(-[a-z]+\.[0-9]+)?$'; then
+            echo "::error::The tag must be jetbrains-v<major>.<minor>.<patch>, with an optional channel suffix: jetbrains-v0.2.0 or jetbrains-v0.1.0-eap.1."
+            exit 1
+          fi
+          DECLARED="$(sed -n 's/^version *= *//p' extensions/jetbrains/gradle.properties)"
+          if [ "$VERSION" != "$DECLARED" ]; then
+            echo "::error::The tag says $VERSION but extensions/jetbrains/gradle.properties says $DECLARED. Change the version there, merge it, and tag that commit."
+            exit 1
+          fi
+          case "$VERSION" in *-*) PRERELEASE=true ;; *) PRERELEASE=false ;; esac
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "prerelease=$PRERELEASE" >> "$GITHUB_OUTPUT"
+          echo "Releasing $VERSION (pre-release: $PRERELEASE)"
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      - name: Check and verify
+        working-directory: extensions/jetbrains
+        run: ./gradlew check verifyPluginProjectConfiguration verifyPluginStructure verifyPlugin
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+
+      # Only commits that touched the plugin, since its previous release.
+      - name: Write the release notes
+        run: |
+          mkdir -p extensions/jetbrains/build
+          node scripts/release-notes.js --tag "$GITHUB_REF_NAME" --match "jetbrains-v*" \
+            --path extensions/jetbrains --out extensions/jetbrains/build/release-notes.md
+
+      - name: Keep the release notes for the publish job
+        uses: actions/upload-artifact@v7
+        with:
+          name: release-notes
+          path: extensions/jetbrains/build/release-notes.md
+          if-no-files-found: error
+
+  publish:
+    name: Publish to the Marketplace
+    needs: build
+    runs-on: ubuntu-latest
+    environment: jetbrains-marketplace
+    permissions:
+      # Create the GitHub Release.
+      contents: write
+    steps:
+      - uses: actions/checkout@v6
+
+      # Without them the build skips signing without a word, and publishing
+      # fails only at the end, or sends an unsigned plugin.
+      - name: Check the environment's secrets
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: |
+          missing=""
+          for name in PUBLISH_TOKEN CERTIFICATE_CHAIN PRIVATE_KEY PRIVATE_KEY_PASSWORD; do
+            if [ -z "$(printenv "$name")" ]; then missing="$missing $name"; fi
+          done
+          if [ -n "$missing" ]; then
+            echo "::error::The jetbrains-marketplace environment is missing:$missing. extensions/README.md has the steps."
+            exit 1
+          fi
+
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - uses: gradle/actions/setup-gradle@v6
+        with:
+          cache-read-only: true
+
+      # Builds the same commit the build job checked, signs it and uploads it
+      # to the channel the version names.
+      - name: Sign and publish to the JetBrains Marketplace
+        working-directory: extensions/jetbrains
+        env:
+          PUBLISH_TOKEN: ${{ secrets.PUBLISH_TOKEN }}
+          CERTIFICATE_CHAIN: ${{ secrets.CERTIFICATE_CHAIN }}
+          PRIVATE_KEY: ${{ secrets.PRIVATE_KEY }}
+          PRIVATE_KEY_PASSWORD: ${{ secrets.PRIVATE_KEY_PASSWORD }}
+        run: ./gradlew publishPlugin
+
+      - name: Fetch the release notes
+        uses: actions/download-artifact@v8
+        with:
+          name: release-notes
+          path: extensions/jetbrains/build
+
+      # Not marked as the latest release: the repository's "Latest release"
+      # stays on the action.
+      - name: Create the GitHub Release
+        uses: softprops/action-gh-release@v3
+        with:
+          tag_name: ${{ github.ref_name }}
+          name: GrillMyCode Companion for JetBrains IDEs ${{ needs.build.outputs.version }}
+          body_path: extensions/jetbrains/build/release-notes.md
+          files: extensions/jetbrains/build/distributions/*-signed.zip
+          prerelease: ${{ needs.build.outputs.prerelease }}
+          make_latest: "false"

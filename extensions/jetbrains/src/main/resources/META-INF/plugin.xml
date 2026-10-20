@@ -1,0 +1,20 @@
+<!-- The plugin's declaration -> https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html
+     The version, change notes and supported builds are written in by Gradle,
+     from gradle.properties and CHANGELOG.md. -->
+<idea-plugin>
+    <!-- Never change the ID once published: the Marketplace and every install know the plugin by it. -->
+    <id>org.grillmycode.companion</id>
+    <name>GrillMyCode Companion</name>
+    <vendor url="https://grillmycode.org">GrillMyCode</vendor>
+
+    <description><![CDATA[
+        <p>The companion to the GrillMyCode GitHub Action. Shows the questions it wrote
+        about your code, beside the code they ask about.</p>
+        <p>This early version sets up the plugin and does nothing yet. Students should
+        use <a href="https://grillmycode.org">GrillMyCode</a> through the questions issue
+        in their repository until a release says otherwise.</p>
+    ]]></description>
+
+    <!-- Every IntelliJ-based IDE: IntelliJ IDEA, PyCharm, WebStorm and the rest. -->
+    <depends>com.intellij.modules.platform</depends>
+</idea-plugin>

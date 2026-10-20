@@ -1,7 +1,7 @@
 // Writes the "What's Changed" notes for a release: the commits since the
 // previous release, grouped by Conventional Commit type.
 //
-// Both release workflows call it, each for its own tags and its own files:
+// The release workflows call it, each for its own tags and its own files:
 //
 //   release.yml (the action, v* tags)
 //     node scripts/release-notes.js --tag v0.25.0 --match "v[0-9]*" \
@@ -10,6 +10,10 @@
 //   vscode-extension-release.yml (the VS Code extension, vscode-v* tags)
 //     node scripts/release-notes.js --tag vscode-v0.2.0 --match "vscode-v*" \
 //       --path extensions/vscode --out notes.md
+//
+//   jetbrains-plugin-release.yml (the JetBrains plugin, jetbrains-v* tags)
+//     node scripts/release-notes.js --tag jetbrains-v0.2.0 --match "jetbrains-v*" \
+//       --path extensions/jetbrains --out notes.md
 //
 //   --tag    the tag being released
 //   --match  a git glob for the tags that count as this product's releases.

@@ -8,3 +8,9 @@ docs-site/
 extensions/fixtures/*/
 extensions/vscode/dist/
 extensions/vscode/.vscode-test/
+# The JetBrains plugin's Gradle output and caches. Its Kotlin is linted by
+# ktlint, through Gradle.
+extensions/jetbrains/build/
+extensions/jetbrains/.gradle/
+extensions/jetbrains/.intellijPlatform/
+extensions/jetbrains/.kotlin/
