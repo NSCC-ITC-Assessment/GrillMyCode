@@ -40,7 +40,10 @@
         "EditorConfig.EditorConfig",
 
         // Copilot customizations evaluations
-        "ms-vscode.vscode-chat-customizations-evaluations"
+        "ms-vscode.vscode-chat-customizations-evaluations",
+
+        // JetBrains plugin for Kotlin language support
+        "jetbrains.kotlin-server"
       ],
       "settings": {
         // ── Formatting ──────────────────────────────────────────────────────

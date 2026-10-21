@@ -4,6 +4,8 @@ import com.intellij.credentialStore.CredentialAttributes
 import com.intellij.credentialStore.Credentials
 import com.intellij.credentialStore.generateServiceName
 import com.intellij.ide.passwordSafe.PasswordSafe
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.util.messages.Topic
 
 /** A signed-in GitHub account: the login, to show, and the token, to send. */
 data class Account(
@@ -30,9 +32,28 @@ object GitHubAccount {
 
     fun save(account: Account) {
         PasswordSafe.instance.set(attributes, Credentials(account.login, account.token))
+        changed()
     }
 
     fun clear() {
         PasswordSafe.instance.set(attributes, null)
+        changed()
+    }
+
+    private fun changed() =
+        ApplicationManager
+            .getApplication()
+            .messageBus
+            .syncPublisher(AccountListener.TOPIC)
+            .accountChanged()
+}
+
+/** Told when the student signs in or out, on the thread that did it. */
+fun interface AccountListener {
+    fun accountChanged()
+
+    companion object {
+        @Topic.AppLevel
+        val TOPIC = Topic.create("GrillMyCode account", AccountListener::class.java)
     }
 }

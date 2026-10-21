@@ -21,3 +21,13 @@ const val GITHUB_API_URL = "https://api.github.com"
 
 /** GitHub REST API version sent with every request, as src/constants.js does. */
 const val GITHUB_API_VERSION = "2026-03-10"
+
+/** Length of the commit SHAs a report prints, as GIT_SHA_SHORT_LENGTH in src/constants.js. */
+const val SHORT_SHA_LENGTH = 7
+
+/**
+ * Issues requested per page. One page is read: a repository would need more
+ * than this many open issues labelled `assessment` to lose one, and the action
+ * reads a single page of the same size when it looks for its own issue.
+ */
+const val ISSUES_PER_PAGE = 100

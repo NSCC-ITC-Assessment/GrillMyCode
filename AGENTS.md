@@ -241,6 +241,12 @@ load its JavaScript.
   against `extensions/fixtures/` as the VS Code extension's is, so a changed layout means
   updating the reader in each editor. Keep the Kotlin in `shared/` a port of the JavaScript in
   `extensions/vscode/src/shared/`, with the same behaviour and the same test cases.
+- **Sign-in is the plugin's own, in `auth/`.** VS Code lends its extensions a GitHub account;
+  JetBrains IDEs do not, so the plugin uses GitHub's device flow for the "GrillMyCode Companion"
+  OAuth app and keeps the token in `PasswordSafe`, never in a file or a setting. With no
+  JavaScript to follow, it stays out of `shared/`. The client ID in `auth/DeviceFlow.kt` is
+  public; the app has no client secret, and must never be given one this code would need.
+  `DeviceFlow.kt` imports nothing from the IDE, so its tests run without one, as `shared/`'s do.
 - **Issue text is untrusted here too.** Show it only escaped, in a Swing HTML pane, never in a JCEF
   browser. The one JCEF page the plan allows is the Workflow Wizard's.
 
