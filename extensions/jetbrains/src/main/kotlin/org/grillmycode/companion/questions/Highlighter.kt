@@ -3,6 +3,7 @@ package org.grillmycode.companion.questions
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
@@ -76,8 +77,18 @@ class Highlighter(
         // The target's file last, so it is the one left in front.
         val byFile = snippets.groupBy { it.file }.entries.sortedBy { (file, _) -> file == target.file }
         for ((path, fileSnippets) in byFile) {
-            val file = resolve(root, path)
-            val document = file?.let { FileDocumentManager.getInstance().getDocument(it) }
+            // The IDE wants a read action around any look at a file or a
+            // document, even on the event dispatch thread. Opening the editor
+            // stays outside it.
+            val file = ReadAction.compute<VirtualFile?, RuntimeException> { resolve(root, path) }
+            val document =
+                file?.let {
+                    ReadAction.compute<Document?, RuntimeException> {
+                        FileDocumentManager.getInstance().getDocument(
+                            it,
+                        )
+                    }
+                }
             if (file == null || document == null) {
                 missing += path
                 continue
@@ -86,7 +97,8 @@ class Highlighter(
             val first = if (front) target else fileSnippets.first()
             val editor =
                 FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, file, first.startLine - 1, 0), front)
-            highlighters[document] = fileSnippets.mapNotNull { highlight(document, it) }
+            highlighters[document] =
+                ReadAction.compute<List<RangeHighlighter>, RuntimeException> { fileSnippets.mapNotNull { highlight(document, it) } }
             editor?.scrollingModel?.scrollToCaret(ScrollType.CENTER_UP)
         }
         if (missing.isNotEmpty()) {
