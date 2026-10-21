@@ -1,20 +1,16 @@
 package org.grillmycode.companion.questions
 
 import com.intellij.icons.AllIcons
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.fileEditor.FileEditorManager
-import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.openapi.vfs.VfsUtilCore
 import com.intellij.openapi.vfs.VirtualFile
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.DoubleClickListener
+import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.TreeUIHelper
@@ -24,7 +20,6 @@ import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
-import org.grillmycode.companion.auth.NOTIFICATION_GROUP
 import org.grillmycode.companion.auth.signIn
 import org.grillmycode.companion.shared.Question
 import org.grillmycode.companion.shared.QuestionGroup
@@ -64,22 +59,34 @@ private sealed interface Row {
  * Questions view lays it out (extensions/vscode/src/student/questions-tree.js),
  * or, with no questions to show, a message saying why in the same words.
  *
- * Double-click or Enter on a question opens its first snippet; on a snippet
- * row, that snippet.
+ * Selecting a question shows it in full in the panel below the tree.
+ * Double-click or Enter opens the files it shows with their lines highlighted,
+ * its first snippet's in front; on a snippet row, that snippet's.
  */
 class QuestionsPanel(
     private val project: Project,
     parent: Disposable,
 ) : SimpleToolWindowPanel(true, true) {
     private val service = project.getService(QuestionsService::class.java)
+    private val highlighter = project.getService(Highlighter::class.java)
     private val tree = Tree(DefaultTreeModel(DefaultMutableTreeNode()))
+    private val details = QuestionDetails()
+    private val splitter =
+        OnePixelSplitter(true, "GrillMyCode.QuestionsPanel.splitter", 0.6f).apply {
+            firstComponent = ScrollPaneFactory.createScrollPane(tree, true)
+            secondComponent = ScrollPaneFactory.createScrollPane(details, true)
+        }
     private var root: VirtualFile? = null
+
+    /** The issue body the tree was built from, to tell new questions from the same ones loaded again. */
+    private var shownBody: String? = null
 
     init {
         tree.isRootVisible = false
         tree.showsRootHandles = true
         tree.cellRenderer = Renderer()
         ToolTipManager.sharedInstance().registerComponent(tree)
+        tree.addTreeSelectionListener { details.show(selectedQuestion()) }
         TreeUIHelper.getInstance().installTreeSpeedSearch(tree)
         object : DoubleClickListener() {
             override fun onDoubleClick(event: MouseEvent): Boolean = openSelected()
@@ -96,11 +103,20 @@ class QuestionsPanel(
     }
 
     private fun show(state: QuestionsState) {
+        val body = (state as? QuestionsState.Ready)?.issue?.body
+        if (body != shownBody) {
+            // Other questions, or none: the highlights were for the ones before.
+            highlighter.clear()
+            shownBody = body
+            if (state is QuestionsState.Ready) {
+                tree.model = DefaultTreeModel(buildTree(state.report.questions))
+                TreeUtil.expandAll(tree)
+                details.show(null)
+            }
+        }
         if (state is QuestionsState.Ready) {
             root = state.root
-            tree.model = DefaultTreeModel(buildTree(state.report.questions))
-            TreeUtil.expandAll(tree)
-            setContent(ScrollPaneFactory.createScrollPane(tree, true))
+            setContent(splitter)
         } else {
             root = null
             setContent(message(state))
@@ -177,46 +193,23 @@ class QuestionsPanel(
         }
     }
 
-    /** Opens what the selected row points at. False when it points at nothing. */
-    private fun openSelected(): Boolean {
-        val row = (tree.lastSelectedPathComponent as? DefaultMutableTreeNode)?.userObject
-        val snippet =
-            when (row) {
-                is Row.QuestionRow -> openableSnippets(row.question).firstOrNull()
-                is Row.SnippetRow -> row.snippet
-                else -> null
-            } ?: return false
-        openSnippet(snippet)
-        return true
-    }
+    private fun selectedRow() = (tree.lastSelectedPathComponent as? DefaultMutableTreeNode)?.userObject
 
-    /**
-     * Opens a snippet's file with its lines selected. The path is the issue's,
-     * which openableSnippets has checked; it is still resolved only inside the
-     * repository.
-     */
-    private fun openSnippet(snippet: Snippet) {
-        val root = root ?: return
-        val file =
-            root.findFileByRelativePath(snippet.file.replace('\\', '/'))?.takeIf { VfsUtilCore.isAncestor(root, it, true) }
-        if (file == null || file.isDirectory) {
-            NotificationGroupManager
-                .getInstance()
-                .getNotificationGroup(NOTIFICATION_GROUP)
-                .createNotification("${snippet.file} is not in this project.", NotificationType.WARNING)
-                .notify(project)
-            return
+    private fun selectedQuestion(): Question? =
+        when (val row = selectedRow()) {
+            is Row.QuestionRow -> row.question
+            is Row.SnippetRow -> row.question
+            else -> null
         }
-        val editor =
-            FileEditorManager
-                .getInstance(
-                    project,
-                ).openTextEditor(OpenFileDescriptor(project, file, snippet.startLine - 1, 0), true)
-        val document = editor?.document ?: return
-        if (document.lineCount == 0) return
-        val first = (snippet.startLine - 1).coerceIn(0, document.lineCount - 1)
-        val last = (snippet.endLine - 1).coerceIn(first, document.lineCount - 1)
-        editor.selectionModel.setSelection(document.getLineStartOffset(first), document.getLineEndOffset(last))
+
+    /** Opens the files of the selected row's question, with their lines highlighted. False when it shows no code. */
+    private fun openSelected(): Boolean {
+        val root = root ?: return false
+        val question = selectedQuestion() ?: return false
+        val snippets = openableSnippets(question)
+        val target = (selectedRow() as? Row.SnippetRow)?.snippet ?: snippets.firstOrNull() ?: return false
+        highlighter.show(root, snippets, target)
+        return true
     }
 
     private class Renderer : ColoredTreeCellRenderer() {
