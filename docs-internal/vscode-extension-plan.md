@@ -303,13 +303,14 @@ To settle before building the reader:
 
 ### Set aside
 
-| Idea                                                                     | Why                                                                            |
-| ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
-| An AI helper that answers the questions                                  | They are study prompts, and an answer on demand removes the reason to study    |
-| Recording how code was written, to target pasted or AI-inserted code     | It is surveillance of students                                                 |
-| Re-matching questions after the code is edited                           | Comments are stripped by default, so the snippet often does not match the file |
-| Writing answers in the editor                                            | Where they are kept and who sees them is a product decision                    |
-| Reading the repository without Git, so questions show in Restricted Mode | Each piece of Git state would need its own reader                              |
+| Idea                                                                     | Why                                                                                                                                                                                                                                      |
+| ------------------------------------------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| An AI helper that answers the questions                                  | They are study prompts, and an answer on demand removes the reason to study                                                                                                                                                              |
+| Recording how code was written, to target pasted or AI-inserted code     | It is surveillance of students                                                                                                                                                                                                           |
+| Re-matching questions after the code is edited                           | Comments are stripped by default, so the snippet often does not match the file                                                                                                                                                           |
+| Writing answers in the editor                                            | Where they are kept and who sees them is a product decision                                                                                                                                                                              |
+| Reading the repository without Git, so questions show in Restricted Mode | Each piece of Git state would need its own reader                                                                                                                                                                                        |
+| Wrapping a question's text in the Questions list                         | VS Code's tree draws each row on one line, with no way to wrap it. A webview list could wrap, but would lose the tree's keyboard use and `reveal`. The full text is in the Selected Question view, which wraps, and in the row's tooltip |
 
 ---
 

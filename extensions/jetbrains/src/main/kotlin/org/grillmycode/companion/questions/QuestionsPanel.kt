@@ -2,31 +2,43 @@ package org.grillmycode.companion.questions
 
 import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.editor.EditorFactory
+import com.intellij.openapi.editor.event.DocumentEvent
+import com.intellij.openapi.editor.event.DocumentListener
 import com.intellij.openapi.fileTypes.FileTypeManager
 import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
+import com.intellij.openapi.util.Disposer
 import com.intellij.openapi.util.text.StringUtil
-import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.vcs.changes.ChangeListListener
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.DoubleClickListener
+import com.intellij.ui.JBColor
 import com.intellij.ui.OnePixelSplitter
 import com.intellij.ui.ScrollPaneFactory
 import com.intellij.ui.SimpleTextAttributes
 import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.ActionLink
+import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
+import git4idea.repo.GitRepository
+import git4idea.repo.GitRepositoryChangeListener
 import org.grillmycode.companion.auth.signIn
 import org.grillmycode.companion.shared.Question
 import org.grillmycode.companion.shared.QuestionGroup
 import org.grillmycode.companion.shared.Snippet
+import org.grillmycode.companion.shared.adjacentQuestion
+import org.grillmycode.companion.shared.describeDrift
 import org.grillmycode.companion.shared.describeLines
 import org.grillmycode.companion.shared.groupQuestions
 import org.grillmycode.companion.shared.openableSnippets
+import org.grillmycode.companion.shared.questionFiles
+import java.awt.BorderLayout
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
@@ -34,9 +46,14 @@ import javax.swing.BoxLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTree
+import javax.swing.SwingConstants
+import javax.swing.Timer
 import javax.swing.ToolTipManager
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+
+/** How long the project must be quiet before the note above the tree is worked out again. */
+private const val SETTLE_MS = 300
 
 /** A row of the questions tree: a file, or the broader questions; a question; or one of a question's snippets. */
 private sealed interface Row {
@@ -62,6 +79,9 @@ private sealed interface Row {
  * Selecting a question shows it in full in the panel below the tree.
  * Double-click or Enter opens the files it shows with their lines highlighted,
  * its first snippet's in front; on a snippet row, that snippet's.
+ *
+ * A note above the tree says when the highlighted lines may not be the ones
+ * asked about, worked out again once the project has been quiet for a moment.
  */
 class QuestionsPanel(
     private val project: Project,
@@ -76,7 +96,33 @@ class QuestionsPanel(
             firstComponent = ScrollPaneFactory.createScrollPane(tree, true)
             secondComponent = ScrollPaneFactory.createScrollPane(details, true)
         }
-    private var root: VirtualFile? = null
+    private val notesText =
+        JBTextArea().apply {
+            isEditable = false
+            isFocusable = false
+            lineWrap = true
+            wrapStyleWord = true
+            isOpaque = false
+            font = UIUtil.getLabelFont()
+        }
+    private val notes =
+        JPanel(BorderLayout(JBUI.scale(6), 0)).apply {
+            border = JBUI.Borders.compound(JBUI.Borders.customLineBottom(JBColor.border()), JBUI.Borders.empty(6, 8))
+            add(JBLabel(AllIcons.General.Warning).apply { verticalAlignment = SwingConstants.TOP }, BorderLayout.WEST)
+            add(notesText, BorderLayout.CENTER)
+            isVisible = false
+        }
+    private val questionsView =
+        JPanel(BorderLayout()).apply {
+            add(notes, BorderLayout.NORTH)
+            add(splitter, BorderLayout.CENTER)
+        }
+
+    /** Waits for edits, saves and Git to settle before the note is worked out again, as VS Code's SETTLE_MS does. */
+    private val settle = Timer(SETTLE_MS) { updateNotes() }.apply { isRepeats = false }
+
+    private var ready: QuestionsState.Ready? = null
+    private val root get() = ready?.root
 
     /** The issue body the tree was built from, to tell new questions from the same ones loaded again. */
     private var shownBody: String? = null
@@ -98,7 +144,24 @@ class QuestionsPanel(
                 }
             },
         )
-        project.messageBus.connect(parent).subscribe(QuestionsListener.TOPIC, QuestionsListener(::show))
+        project.messageBus.connect(parent).apply {
+            subscribe(QuestionsListener.TOPIC, QuestionsListener(::show))
+            // Git's list of changes, which a save also updates.
+            subscribe(
+                ChangeListListener.TOPIC,
+                object : ChangeListListener {
+                    override fun changeListUpdateDone() = settle.restart()
+                },
+            )
+            subscribe(GitRepository.GIT_REPO_CHANGE, GitRepositoryChangeListener { settle.restart() })
+        }
+        EditorFactory.getInstance().eventMulticaster.addDocumentListener(
+            object : DocumentListener {
+                override fun documentChanged(event: DocumentEvent) = settle.restart()
+            },
+            parent,
+        )
+        Disposer.register(parent) { settle.stop() }
         show(service.state)
     }
 
@@ -114,13 +177,53 @@ class QuestionsPanel(
                 details.show(null)
             }
         }
+        ready = state as? QuestionsState.Ready
         if (state is QuestionsState.Ready) {
-            root = state.root
-            setContent(splitter)
+            setContent(questionsView)
+            updateNotes()
         } else {
-            root = null
             setContent(message(state))
         }
+    }
+
+    /** Says, above the tree, when the highlighted lines may not be the ones asked about. */
+    private fun updateNotes() {
+        val ready = ready ?: return
+        val report = ready.report
+        val text =
+            listOf(
+                describeDrift(
+                    headSha = report.headCommit ?: report.headSha,
+                    folderCommit = currentCommit(project, ready.root),
+                    changedFiles = changedFiles(project, ready.root),
+                    files = questionFiles(report.questions),
+                ),
+                if (report.truncated) {
+                    "This report was too long to show in full, so its last questions are missing here. " +
+                        "The PDF linked from the issue has them all."
+                } else {
+                    ""
+                },
+            ).filter { it.isNotEmpty() }.joinToString(" ")
+        notesText.text = text
+        notes.isVisible = text.isNotEmpty()
+    }
+
+    /**
+     * Opens the question after ([step] 1) or before (-1) the one selected, in
+     * the order the tree lists them, as double-clicking it would. The tree is
+     * not given the keyboard: that goes to the editor the question opens.
+     */
+    fun step(step: Int) {
+        val ready = ready ?: return
+        val question = adjacentQuestion(ready.report.questions, selectedQuestion()?.number, step) ?: return
+        val node =
+            TreeUtil.findNode(tree.model.root as DefaultMutableTreeNode) {
+                (it.userObject as? Row.QuestionRow)?.question == question
+            } ?: return
+        // Selecting the row shows the question below; a broader question has no code to open.
+        TreeUtil.selectNode(tree, node)
+        openSelected()
     }
 
     private fun buildTree(questions: List<Question>): DefaultMutableTreeNode {

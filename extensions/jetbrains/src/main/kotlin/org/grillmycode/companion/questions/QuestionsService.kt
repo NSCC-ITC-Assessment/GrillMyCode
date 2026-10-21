@@ -91,7 +91,8 @@ class QuestionsService(
 ) : Disposable {
     private val log = Logger.getInstance(QuestionsService::class.java)
 
-    /** The state showing. Read and written on the event dispatch thread. */
+    /** The state showing. Written on the event dispatch thread; actions read it from any. */
+    @Volatile
     var state: QuestionsState = QuestionsState.Loading
         private set
 

@@ -36,6 +36,12 @@
             <action id="GrillMyCode.Refresh" class="org.grillmycode.companion.questions.RefreshAction"
                     text="Refresh Questions" icon="AllIcons.Actions.Refresh"
                     description="Load this repository's GrillMyCode questions from GitHub again"/>
+            <action id="GrillMyCode.PreviousQuestion" class="org.grillmycode.companion.questions.PreviousQuestionAction"
+                    text="Previous Question" icon="AllIcons.Actions.PreviousOccurence"
+                    description="Open the GrillMyCode question before the one selected"/>
+            <action id="GrillMyCode.NextQuestion" class="org.grillmycode.companion.questions.NextQuestionAction"
+                    text="Next Question" icon="AllIcons.Actions.NextOccurence"
+                    description="Open the GrillMyCode question after the one selected"/>
             <separator/>
             <action id="GrillMyCode.SignIn" class="org.grillmycode.companion.auth.SignInAction"
                     text="Sign In to GitHub…"
