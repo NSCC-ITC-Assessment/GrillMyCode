@@ -5,6 +5,8 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
+## [0.1.0-eap.2]
+
 ### Added
 
 - Select a question to read it in full, with its code, below the list.
