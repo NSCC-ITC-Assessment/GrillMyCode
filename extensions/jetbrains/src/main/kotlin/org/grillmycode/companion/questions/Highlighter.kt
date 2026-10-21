@@ -17,7 +17,6 @@ import com.intellij.openapi.editor.markup.HighlighterLayer
 import com.intellij.openapi.editor.markup.HighlighterTargetArea
 import com.intellij.openapi.editor.markup.RangeHighlighter
 import com.intellij.openapi.fileEditor.FileDocumentManager
-import com.intellij.openapi.fileEditor.FileEditorManager
 import com.intellij.openapi.fileEditor.OpenFileDescriptor
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -95,11 +94,14 @@ class Highlighter(
             }
             val front = path == target.file
             val first = if (front) target else fileSnippets.first()
-            val editor =
-                FileEditorManager.getInstance(project).openTextEditor(OpenFileDescriptor(project, file, first.startLine - 1, 0), front)
             highlighters[document] =
                 ReadAction.compute<List<RangeHighlighter>, RuntimeException> { fileSnippets.mapNotNull { highlight(document, it) } }
-            editor?.scrollingModel?.scrollToCaret(ScrollType.CENTER_UP)
+            // Navigating, not FileEditorManager.openTextEditor, which later IDEs
+            // deprecate for an experimental call that 2025.1 does not have. The
+            // highlights are on the document, so they show however soon the editor does.
+            OpenFileDescriptor(project, file, first.startLine - 1, 0)
+                .apply { setScrollType(ScrollType.CENTER_UP) }
+                .navigate(front)
         }
         if (missing.isNotEmpty()) {
             val names = missing.joinToString(" and ")
