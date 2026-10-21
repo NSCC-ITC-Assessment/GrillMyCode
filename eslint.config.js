@@ -82,6 +82,9 @@ export default [
       'docs-site/**',
       'extensions/vscode/dist/**',
       'extensions/vscode/.vscode-test/**',
+      // The JetBrains plugin is Kotlin, linted by ktlint. Its Gradle output
+      // holds the JavaScript of the test report.
+      'extensions/jetbrains/**',
     ],
   },
 ];

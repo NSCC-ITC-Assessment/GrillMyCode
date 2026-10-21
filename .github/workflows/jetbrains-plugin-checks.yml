@@ -13,12 +13,15 @@ on:
     branches: [main]
     paths:
       - "extensions/jetbrains/**"
+      # The sample issues the plugin's reader is tested against.
+      - "extensions/fixtures/**"
       - ".github/workflows/jetbrains-plugin-checks.yml"
   # On main too, so the latest merged build is always there to download.
   push:
     branches: [main]
     paths:
       - "extensions/jetbrains/**"
+      - "extensions/fixtures/**"
       - ".github/workflows/jetbrains-plugin-checks.yml"
 
 permissions:

@@ -176,8 +176,8 @@ extension's unless they say otherwise; the JetBrains plugin's own are in
   (`src/delivery/issue.js`) or `buildQuestionsJson` (`src/delivery/instructor-repo.js`) writes,
   `test/extension-fixtures.test.js` fails.
   Follow `extensions/fixtures/README.md`: a changed layout means keeping the old fixtures and
-  teaching each extension's reader both, because issues in the old layout stay open in
-  students' repositories.
+  teaching each extension's reader both, in VS Code and JetBrains, because issues in the old
+  layout stay open in students' repositories.
 - **`extensions/fixtures/current/` is generated** by `node scripts/build-extension-fixtures.js`.
   Do not edit it by hand, and do not let Prettier format it.
 - **`extensions/vscode/src/shared/action-inputs.js` is generated** by
@@ -237,9 +237,10 @@ load its JavaScript.
   The plugin compiles against that release. Raise both together, deliberately, and the Kotlin
   `apiVersion` in `build.gradle.kts` with them: the IDE supplies the Kotlin standard library.
 - **Never change the plugin ID** (`org.grillmycode.companion` in `plugin.xml`) once published.
-- **The report format is the same contract.** Once the plugin reads issues, it tests its reader
-  against `extensions/fixtures/` as the VS Code extension does, and a changed layout means a
-  reader in each editor.
+- **The report format is the same contract.** The plugin's reader (`shared/Report.kt`) is tested
+  against `extensions/fixtures/` as the VS Code extension's is, so a changed layout means
+  updating the reader in each editor. Keep the Kotlin in `shared/` a port of the JavaScript in
+  `extensions/vscode/src/shared/`, with the same behaviour and the same test cases.
 - **Issue text is untrusted here too.** Show it only escaped, in a Swing HTML pane, never in a JCEF
   browser. The one JCEF page the plan allows is the Workflow Wizard's.
 

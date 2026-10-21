@@ -17,4 +17,20 @@
 
     <!-- Every IntelliJ-based IDE: IntelliJ IDEA, PyCharm, WebStorm and the rest. -->
     <depends>com.intellij.modules.platform</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="GrillMyCode" displayType="BALLOON"/>
+    </extensions>
+
+    <actions>
+        <group id="GrillMyCode.Menu" text="GrillMyCode" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="GrillMyCode.SignIn" class="org.grillmycode.companion.auth.SignInAction"
+                    text="Sign In to GitHub…"
+                    description="Sign in to GitHub, so GrillMyCode Companion can read your questions"/>
+            <action id="GrillMyCode.SignOut" class="org.grillmycode.companion.auth.SignOutAction"
+                    text="Sign Out of GitHub"
+                    description="Forget the GitHub account GrillMyCode Companion signed in with"/>
+        </group>
+    </actions>
 </idea-plugin>
