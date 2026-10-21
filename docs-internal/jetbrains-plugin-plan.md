@@ -1,7 +1,7 @@
 # JetBrains plugin — plan
 
 > **Recorded:** 2026-10-19 (`d1f974c`), against VS Code extension 0.4.4.
-> **Updated:** 2026-10-21, J1's report reader and GitHub sign-in.
+> **Updated:** 2026-10-21, J1's reader, GitHub sign-in and the questions tool window.
 > **Status:** J0 done, except the first upload, which moved to J1. J1 in
 > progress: see [J1 progress](#j1-progress).
 
@@ -52,16 +52,21 @@ flowchart LR
 
 ### J1 progress
 
-| Piece                                                                             | Where                                                         | Status                                          |
-| --------------------------------------------------------------------------------- | ------------------------------------------------------------- | ----------------------------------------------- |
-| Report reader and issue picker, ported with their tests                           | `shared/Report.kt`, `shared/Issues.kt`                        | Done, passes every fixture                      |
-| GitHub sign-in and sign-out, Tools > GrillMyCode                                  | `auth/`                                                       | Done, tried against GitHub                      |
-| Owner and repository from the Git remote, the issues listed, the question model   | `shared/Remote.kt`, `shared/GitHub.kt`, `shared/Questions.kt` | Done, with the VS Code tests                    |
-| Tool window: the questions list, a message for each state, open a question's code | `questions/`, with the bundled Git plugin (`Git4Idea`)        | Built, not tried by hand. Then the first upload |
-| Selected question, highlights                                                     |                                                               | To do                                           |
-| Moved-code warning, next and previous, several files                              |                                                               | To do                                           |
-| New-questions notice                                                              |                                                               | To do                                           |
-| The untrusted-project message, choosing among several questions issues            |                                                               | To do                                           |
+| Piece                                                                                         | Where                                                                              | Status                                |
+| --------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------- | ------------------------------------- |
+| Report reader and issue picker, ported with their tests                                       | `shared/Report.kt`, `shared/Issues.kt`                                             | Done, passes every fixture            |
+| GitHub sign-in and sign-out, Tools > GrillMyCode                                              | `auth/`                                                                            | Done, tried against GitHub            |
+| Owner and repository from the Git remote, the issues listed, the question model               | `shared/Remote.kt`, `shared/GitHub.kt`, `shared/Questions.kt`                      | Done, with the VS Code tests          |
+| Tool window: the questions list, a message for each state, open a question's code             | `questions/`, with the bundled Git plugin (`Git4Idea`)                             | Done, tried by hand                   |
+| First Marketplace upload, by hand, to the `eap` channel                                       | plugins.jetbrains.com                                                              | Next. JetBrains' review can take days |
+| Selected question: a details panel below the tree                                             | A port of `html.js`, shown escaped in `JBHtmlPane`                                 | To do                                 |
+| Highlights on the question's lines in the editor                                              | `MarkupModel` range highlighters                                                   | To do                                 |
+| Moved-code warning                                                                            | `describeDrift`, with changed files from `ChangeListManager` and unsaved documents | To do                                 |
+| Next and previous question                                                                    | Actions on `adjacentQuestion`                                                      | To do                                 |
+| Choosing among several questions issues, remembered by title                                  | `chooseIssue`'s `preferredTitle`, kept per project                                 | To do                                 |
+| New-questions notice: a check every minute while the IDE has the focus, a balloon and a badge | `whatArrived`                                                                      | To do                                 |
+| The untrusted-project message                                                                 | `TrustedProjects`                                                                  | To do                                 |
+| Hand checks in PyCharm and WebStorm, then J1 is done                                          |                                                                                    | To do                                 |
 
 ---
 

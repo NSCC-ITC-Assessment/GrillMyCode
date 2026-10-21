@@ -9,4 +9,7 @@ Each heading is a version as `gradle.properties` writes it.
 
 ### Added
 
-- An empty plugin, to set up the Marketplace listing. It does nothing yet.
+- Sign in to GitHub from **Tools | GrillMyCode**.
+- The **GrillMyCode** tool window lists the questions from your repository's
+  questions issue, file by file. Double-click a question to open the code it
+  asks about.
