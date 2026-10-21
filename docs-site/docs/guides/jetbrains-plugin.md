@@ -30,7 +30,7 @@ GitHub lets an organization choose which apps may read its repositories, and tur
 
 You need to be an owner of the organization:
 
-1. Install the plugin in a JetBrains IDE (see [How students get it](#how-students-get-it)), then select **Tools | GrillMyCode | Sign In to GitHub…**.
+1. Install the plugin in a JetBrains IDE, from **Settings | Plugins**, then select **Tools | GrillMyCode | Sign In to GitHub…**.
 2. GitHub opens and asks you to authorize GrillMyCode Companion. Next to your classroom's organization, select **Grant**, then authorize.
 
 If you have signed in before, open [GrillMyCode Companion in your GitHub settings](https://github.com/settings/connections/applications/Ov23liUoE9chsGQrWYQR) and select **Grant** next to the organization there.
@@ -41,15 +41,13 @@ Approving the plugin gives no one access they didn't have: it reads only what th
 
 ## How students get it
 
-Students install the plugin themselves. In the IDE, open **Settings**, select **Plugins**, then the **Marketplace** tab, search for `GrillMyCode Companion`, and select **Install**.
-
-Then they open the assignment's folder, open the **GrillMyCode** tool window from the strip of icons at the side of the window, and sign in to GitHub.
+Students install the plugin themselves, from **Settings | Plugins** in the IDE, then open the assignment's folder and sign in to GitHub. [Your questions in JetBrains IDEs](jetbrains-plugin-students.md) has the steps.
 
 ## What to tell your students
 
 Adapt this for your assignment instructions:
 
-> You can read your GrillMyCode questions inside your JetBrains IDE, beside your code. Install the **GrillMyCode Companion** plugin from **Settings | Plugins**, open the assignment's folder, open the **GrillMyCode** tool window at the side of the window, and sign in to GitHub. Your questions appear once you've pushed and GrillMyCode has finished.
+> You can read your GrillMyCode questions inside your JetBrains IDE, beside your code. Install the **GrillMyCode Companion** plugin from **Settings | Plugins**, open the assignment's folder, open the **GrillMyCode** tool window at the side of the window, and sign in to GitHub. Your questions appear once you've pushed and GrillMyCode has finished. Instructions: [Your questions in JetBrains IDEs](jetbrains-plugin-students.md).
 
 ## What students are asked to allow
 
@@ -62,3 +60,5 @@ The plugin uses it to read the questions issue, and keeps the sign-in in the IDE
 - **It shows the student's view only.** The [VS Code extension](vscode-extension.md) also shows an instructor each answer beside the student's code, opens the Workflow Wizard and checks your workflow file. The JetBrains plugin doesn't do these yet.
 - **It follows the branch the student has checked out.** With [submission tags](choosing-a-trigger.md#submission-tag) a repository can hold several sets of questions, and the student can choose which one to see.
 - **Questions arrive on their own** while the IDE is open and the tool window has been opened once. After a later push, the plugin says a newer set has arrived, and the list changes when the student asks for it.
+
+**Go deeper:** [The JetBrains plugin](../reference/jetbrains-plugin.md): which repository and set of questions it reads, when it loads again, opening a question's code, and what the sign-in is used for

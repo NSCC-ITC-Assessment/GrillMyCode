@@ -29,6 +29,11 @@ Each heading is a version as `gradle.properties` writes it.
   Companion, the tool window says so, and links to the page on GitHub where you
   can ask for approval.
 
+### Changed
+
+- The Marketplace description lists what the plugin does, and links to the
+  student guide on grillmycode.org.
+
 ## [0.1.0-eap.1]
 
 ### Added

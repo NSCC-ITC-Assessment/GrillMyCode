@@ -8,15 +8,25 @@
     <vendor url="https://grillmycode.org">GrillMyCode</vendor>
 
     <description><![CDATA[
-        <p>The companion to the GrillMyCode GitHub Action. Shows the questions it wrote
-        about your code, beside the code they ask about.</p>
-        <p>Sign in to GitHub from <b>Tools | GrillMyCode</b>, then open the <b>GrillMyCode</b>
-        tool window in a clone of your assignment repository. It lists the questions from the
-        repository's questions issue, file by file. Double-click a question to open the code
-        it asks about.</p>
-        <p>This is an early access version. Until a stable release, the questions issue in
-        your repository on GitHub remains the place to answer them. See
-        <a href="https://grillmycode.org">grillmycode.org</a>.</p>
+        <p>The companion to the <a href="https://grillmycode.org">GrillMyCode</a> GitHub Action,
+        which writes questions about a student's code to check that they understand it. This
+        plugin shows those questions in the IDE, beside the code they ask about.</p>
+        <ul>
+            <li><b>A list of your questions</b>, file by file, in the <b>GrillMyCode</b> tool window.</li>
+            <li><b>A jump to the code.</b> Double-click a question to open its files with the lines it asks
+            about highlighted.</li>
+            <li><b>The whole question</b> below the list, with the code as it was when the question was
+            written.</li>
+            <li><b>A note when the code has changed</b> since the questions were written.</li>
+            <li><b>New questions</b> announced when they arrive after a push.</li>
+        </ul>
+        <p>To start, open a clone of your assignment repository, open the <b>GrillMyCode</b> tool window,
+        and sign in to GitHub. If your school's GitHub organization restricts apps, an owner approves
+        GrillMyCode Companion once.</p>
+        <p>The plugin reads your repository's questions issue and nothing else. It writes nothing to
+        GitHub and collects no usage data. See
+        <a href="https://grillmycode.org/docs/guides/jetbrains-plugin-students">Your questions in
+        JetBrains IDEs</a>.</p>
     ]]></description>
 
     <!-- Every IntelliJ-based IDE: IntelliJ IDEA, PyCharm, WebStorm and the rest. -->

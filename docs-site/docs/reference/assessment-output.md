@@ -62,7 +62,7 @@ Under the heading, the body holds one HTML comment, which GitHub doesn't display
 
 The comment never holds a question's text, its code, an answer or a distractor, whether `include_answers` is on or off. A withheld question isn't listed.
 
-It has two uses. [The VS Code extension](vscode-extension.md#how-it-finds-the-questions) reads it, and the action knows its own issues by it. The PDF and the instructor repository's copy don't carry it.
+It has two uses. [The VS Code extension](vscode-extension.md#how-it-finds-the-questions) and [the JetBrains plugin](jetbrains-plugin.md#how-it-finds-the-questions) read it, and the action knows its own issues by it. The PDF and the instructor repository's copy don't carry it.
 
 ### When the questions are regenerated
 
