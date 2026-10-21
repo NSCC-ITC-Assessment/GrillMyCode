@@ -31,3 +31,21 @@ const val SHORT_SHA_LENGTH = 7
  * reads a single page of the same size when it looks for its own issue.
  */
 const val ISSUES_PER_PAGE = 100
+
+// The plugin's own, with no counterpart in the action: the same values as
+// extensions/vscode/src/shared/constants.js.
+
+/**
+ * How often the plugin asks GitHub whether new questions have arrived since the
+ * last load, while the IDE has the focus. A run of the action takes a few
+ * minutes, so a minute's wait at the end of one is not noticed, and sixty
+ * requests an hour is a small part of what GitHub allows an account.
+ */
+const val NEW_QUESTIONS_CHECK_MS = 60_000L
+
+/**
+ * An IDE that regains the focus asks at once, unless it last asked less than
+ * this long ago: someone switching between two windows should not send a
+ * request each time.
+ */
+const val NEW_QUESTIONS_FOCUS_GAP_MS = 15_000L

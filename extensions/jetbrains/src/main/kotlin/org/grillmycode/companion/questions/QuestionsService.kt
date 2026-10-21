@@ -2,21 +2,38 @@ package org.grillmycode.companion.questions
 
 import com.intellij.dvcs.repo.VcsRepositoryManager
 import com.intellij.dvcs.repo.VcsRepositoryMappingListener
+import com.intellij.ide.trustedProjects.TrustedProjects
+import com.intellij.ide.util.PropertiesComponent
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationActivationListener
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.diagnostic.Logger
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.IconLoader
 import com.intellij.openapi.vfs.VirtualFile
+import com.intellij.openapi.wm.IdeFrame
+import com.intellij.openapi.wm.ToolWindowManager
+import com.intellij.openapi.wm.ex.ToolWindowManagerListener
+import com.intellij.ui.BadgeIconSupplier
+import com.intellij.util.concurrency.AppExecutorUtil
 import com.intellij.util.messages.Topic
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryChangeListener
 import git4idea.repo.GitRepositoryManager
+import kotlinx.serialization.json.JsonElement
 import org.grillmycode.companion.auth.AccountListener
 import org.grillmycode.companion.auth.GitHubAccount
+import org.grillmycode.companion.auth.NOTIFICATION_GROUP
 import org.grillmycode.companion.httpGet
 import org.grillmycode.companion.shared.GitHubException
+import org.grillmycode.companion.shared.NEW_QUESTIONS_CHECK_MS
+import org.grillmycode.companion.shared.NEW_QUESTIONS_FOCUS_GAP_MS
 import org.grillmycode.companion.shared.NeedsUpdate
+import org.grillmycode.companion.shared.ParsedReport
 import org.grillmycode.companion.shared.QuestionIssue
 import org.grillmycode.companion.shared.Remote
 import org.grillmycode.companion.shared.Report
@@ -25,7 +42,10 @@ import org.grillmycode.companion.shared.findQuestionIssues
 import org.grillmycode.companion.shared.listLabelledIssues
 import org.grillmycode.companion.shared.parseReport
 import org.grillmycode.companion.shared.pickGitHubRemote
+import org.grillmycode.companion.shared.whatArrived
 import java.io.IOException
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.atomic.AtomicBoolean
 import java.util.concurrent.atomic.AtomicInteger
 
 /**
@@ -34,6 +54,9 @@ import java.util.concurrent.atomic.AtomicInteger
  */
 sealed interface QuestionsState {
     data object Loading : QuestionsState
+
+    /** The project is open in safe mode, where the IDE switches Git off. */
+    data object Untrusted : QuestionsState
 
     /** No Git repository in the project has a GitHub remote. */
     data object NoRepository : QuestionsState
@@ -61,7 +84,7 @@ sealed interface QuestionsState {
     ) : QuestionsState
 }
 
-/** Told on the event dispatch thread each time the state changes. */
+/** Told on the event dispatch thread each time the state, or what has arrived since, changes. */
 fun interface QuestionsListener {
     fun stateChanged(state: QuestionsState)
 
@@ -71,6 +94,12 @@ fun interface QuestionsListener {
     }
 }
 
+/** A questions issue that reads as a report, with what it reads as. */
+data class LoadedIssue(
+    val issue: QuestionIssue,
+    val report: ParsedReport,
+)
+
 /** The repository the questions belong to: its root, the GitHub repository it is a clone of, and its branch. */
 private data class Target(
     val root: VirtualFile,
@@ -79,11 +108,34 @@ private data class Target(
     val branch: String?,
 )
 
+/** What a load found: the state to show, every questions issue, and the one chosen. */
+private data class Loaded(
+    val state: QuestionsState,
+    val issues: List<LoadedIssue> = emptyList(),
+    val chosen: QuestionIssue? = null,
+)
+
+/** The tool window's icon, as plugin.xml names it, to put a badge on. */
+private val badgeIcons = BadgeIconSupplier(IconLoader.getIcon("/icons/toolWindow.svg", QuestionsService::class.java))
+
+/**
+ * Keeps the questions issues among a repository's issues, as the GitHub REST
+ * API lists them, each with its report.
+ */
+private fun readReports(issues: List<JsonElement>): List<LoadedIssue> =
+    findQuestionIssues(issues).mapNotNull { issue -> parseReport(issue.body)?.let { LoadedIssue(issue, it) } }
+
 /**
  * Finds the project's GitHub repository, loads its questions issue, and keeps
  * the state in step with sign-in and the repository's branch and remotes.
  * Created when the tool window first opens, so nothing is asked of GitHub
  * before that.
+ *
+ * While the IDE has the focus it asks GitHub now and then whether a set of
+ * questions has arrived since the last load ([check]). The first set is loaded
+ * at once, since the list is empty. A set that replaces the one showing is
+ * announced and left on GitHub until the student asks for it, so the list
+ * never changes under someone who is reading it.
  */
 @Service(Service.Level.PROJECT)
 class QuestionsService(
@@ -96,25 +148,83 @@ class QuestionsService(
     var state: QuestionsState = QuestionsState.Loading
         private set
 
+    /** Every questions issue that reads as a report, for choosing among them. */
+    @Volatile
+    var issues: List<LoadedIssue> = emptyList()
+        private set
+
+    /** The issue [chooseIssue] picked at the last load, shown or not. */
+    @Volatile
+    var chosen: QuestionIssue? = null
+        private set
+
+    /** A set of questions GitHub has in place of the one showing: found by a check, and left there until asked for. */
+    @Volatile
+    var arrived: QuestionIssue? = null
+        private set
+
+    /** True while questions loaded by a check have not been seen in the tool window. */
+    private var unseen = false
+
     /** Counts loads, so one that has been overtaken by a later one is dropped. */
     private val loads = AtomicInteger()
 
     /** The target the state was worked out for, to tell a change that matters from one that does not. */
     @Volatile private var loadedTarget: Target? = null
 
+    /** True while a check for new questions is waiting on GitHub. */
+    private val checking = AtomicBoolean()
+
+    /** When the last check started, as System.currentTimeMillis() gives it. */
+    @Volatile private var checked = 0L
+
     init {
         val app = ApplicationManager.getApplication()
-        app.messageBus.connect(this).subscribe(AccountListener.TOPIC, AccountListener { refresh() })
+        app.messageBus.connect(this).apply {
+            subscribe(AccountListener.TOPIC, AccountListener { refresh() })
+            // Someone coming back from watching the run on GitHub should not wait for the timer.
+            subscribe(
+                ApplicationActivationListener.TOPIC,
+                object : ApplicationActivationListener {
+                    override fun applicationActivated(ideFrame: IdeFrame) {
+                        if (System.currentTimeMillis() - checked >= NEW_QUESTIONS_FOCUS_GAP_MS) check()
+                    }
+                },
+            )
+        }
         project.messageBus.connect(this).apply {
+            // Trusting a project in safe mode switches Git on, which maps its repositories.
             subscribe(VcsRepositoryManager.VCS_REPOSITORY_MAPPING_UPDATED, VcsRepositoryMappingListener { refreshIfMoved() })
             // Sent after every fetch, commit and checkout: a new load only
             // when the branch or the remote has changed.
             subscribe(GitRepository.GIT_REPO_CHANGE, GitRepositoryChangeListener { refreshIfMoved() })
+            // Questions loaded by a check count as seen once the tool window is looked at.
+            subscribe(
+                ToolWindowManagerListener.TOPIC,
+                object : ToolWindowManagerListener {
+                    override fun stateChanged(toolWindowManager: ToolWindowManager) {
+                        if (unseen && toolWindowManager.getToolWindow(TOOL_WINDOW_ID)?.isVisible == true) {
+                            unseen = false
+                            updateBadge()
+                        }
+                    }
+                },
+            )
         }
     }
 
-    /** Works the state out again, off the event dispatch thread. */
-    fun refresh() {
+    /** The check every minute, stopped in [dispose]. */
+    private val timer =
+        AppExecutorUtil
+            .getAppScheduledExecutorService()
+            .scheduleWithFixedDelay(::check, NEW_QUESTIONS_CHECK_MS, NEW_QUESTIONS_CHECK_MS, TimeUnit.MILLISECONDS)
+
+    /**
+     * Works the state out again, off the event dispatch thread. [after] is
+     * told the new state on the event dispatch thread, unless a later load
+     * has overtaken this one.
+     */
+    fun refresh(after: (QuestionsState) -> Unit = {}) {
         val load = loads.incrementAndGet()
         val app = ApplicationManager.getApplication()
         app.executeOnPooledThread {
@@ -124,13 +234,18 @@ class QuestionsService(
                     load(target)
                 } catch (error: Exception) {
                     log.warn("Could not load the questions", error)
-                    QuestionsState.Error
+                    Loaded(QuestionsState.Error)
                 }
             app.invokeLater({
                 if (load != loads.get()) return@invokeLater
                 loadedTarget = target
-                state = next
-                project.messageBus.syncPublisher(QuestionsListener.TOPIC).stateChanged(next)
+                state = next.state
+                issues = next.issues
+                chosen = next.chosen
+                arrived = null
+                updateBadge()
+                publish()
+                after(next.state)
             }, project.disposed)
         }
     }
@@ -140,6 +255,8 @@ class QuestionsService(
             if (findTarget() != loadedTarget) refresh()
         }
     }
+
+    private fun publish() = project.messageBus.syncPublisher(QuestionsListener.TOPIC).stateChanged(state)
 
     /**
      * The first repository with a GitHub remote, as VS Code's findGitHubRepository
@@ -151,30 +268,147 @@ class QuestionsService(
             pickGitHubRemote(remotes)?.let { Target(repository.root, it.owner, it.repo, repository.currentBranchName) }
         }
 
-    private fun load(target: Target?): QuestionsState {
-        if (target == null) return QuestionsState.NoRepository
-        val account = GitHubAccount.load() ?: return QuestionsState.SignedOut
+    private fun load(target: Target?): Loaded {
+        if (target == null) {
+            // Safe mode switches Git off, so no repository would ever be found.
+            return Loaded(if (TrustedProjects.isProjectTrusted(project)) QuestionsState.NoRepository else QuestionsState.Untrusted)
+        }
+        val account = GitHubAccount.load() ?: return Loaded(QuestionsState.SignedOut)
         val issues =
             try {
-                listLabelledIssues(target.owner, target.repo, account.token, ::httpGet)
+                readReports(listLabelledIssues(target.owner, target.repo, account.token, ::httpGet))
             } catch (error: GitHubException) {
                 log.info("Could not read the issues of ${target.owner}/${target.repo}: ${error.message}")
-                return when (error.status) {
-                    401 -> QuestionsState.SignedOut
-                    404 -> QuestionsState.NoAccess
-                    else -> QuestionsState.Error
-                }
+                return Loaded(
+                    when (error.status) {
+                        401 -> QuestionsState.SignedOut
+                        404 -> QuestionsState.NoAccess
+                        else -> QuestionsState.Error
+                    },
+                )
             } catch (error: IOException) {
                 log.info("Could not reach GitHub: ${error.message}")
-                return QuestionsState.Error
+                return Loaded(QuestionsState.Error)
             }
-        val reports = findQuestionIssues(issues).mapNotNull { issue -> parseReport(issue.body)?.let { issue to it } }.toMap()
-        val chosen = chooseIssue(reports.keys.toList(), target.branch) ?: return QuestionsState.NoIssue
-        return when (val report = reports.getValue(chosen)) {
-            is Report -> QuestionsState.Ready(target.root, chosen, report)
-            NeedsUpdate -> QuestionsState.NeedsUpdate
+        val chosen =
+            chooseIssue(issues.map { it.issue }, target.branch, preferredTitle(target))
+                ?: return Loaded(QuestionsState.NoIssue, issues)
+        val state =
+            when (val report = issues.first { it.issue == chosen }.report) {
+                is Report -> QuestionsState.Ready(target.root, chosen, report)
+                NeedsUpdate -> QuestionsState.NeedsUpdate
+            }
+        return Loaded(state, issues, chosen)
+    }
+
+    /**
+     * Shows the questions of the issue with [title] from now on, or with null
+     * those of the branch that is checked out, and remembers the choice for
+     * this repository.
+     */
+    fun choose(title: String?) {
+        val target = loadedTarget ?: return
+        PropertiesComponent.getInstance(project).setValue(preferenceKey(target), title)
+        refresh()
+    }
+
+    /** The title of the questions chosen by hand for this repository, if any. */
+    private fun preferredTitle(target: Target): String? = PropertiesComponent.getInstance(project).getValue(preferenceKey(target))
+
+    private fun preferenceKey(target: Target) = "GrillMyCode.issueTitle:${target.owner}/${target.repo}"
+
+    /**
+     * Asks GitHub whether a set of questions has arrived since the last load.
+     * Nothing is asked while the IDE is in the background, or in a state where
+     * the repository could not be read in the first place.
+     *
+     * A check that fails says nothing: the next one asks again, and Refresh
+     * Questions is there to report a fault.
+     */
+    private fun check() {
+        val target = loadedTarget ?: return
+        val watched =
+            when (state) {
+                is QuestionsState.Ready, QuestionsState.NoIssue, QuestionsState.NeedsUpdate -> true
+                else -> false
+            }
+        val app = ApplicationManager.getApplication()
+        if (!watched || !app.isActive || !checking.compareAndSet(false, true)) return
+        checked = System.currentTimeMillis()
+        val load = loads.get()
+        app.executeOnPooledThread {
+            try {
+                val account = GitHubAccount.load() ?: return@executeOnPooledThread
+                val latest = readReports(listLabelledIssues(target.owner, target.repo, account.token, ::httpGet))
+                val preferred = preferredTitle(target)
+                app.invokeLater({
+                    // A load that started meanwhile has read the same issues, or newer ones.
+                    if (load == loads.get()) notice(chooseIssue(latest.map { it.issue }, target.branch, preferred))
+                }, project.disposed)
+            } catch (error: Exception) {
+                log.debug("Could not check ${target.owner}/${target.repo} for new questions: ${error.message}")
+            } finally {
+                checking.set(false)
+            }
         }
     }
 
-    override fun dispose() = Unit
+    /**
+     * Acts on the issue a check would choose now, [latest], against the one
+     * loaded. With no questions showing it loads them and says they are there.
+     * With some, it leaves the list as it is and says a newer set can be shown.
+     */
+    private fun notice(latest: QuestionIssue?) {
+        if (latest == null || whatArrived(chosen, latest) == null) return
+        if (state !is QuestionsState.Ready) {
+            refresh { next ->
+                // Still nothing to show when, say, the set is in a layout this version cannot read.
+                if (next !is QuestionsState.Ready) return@refresh
+                if (toolWindow()?.isVisible != true) {
+                    unseen = true
+                    updateBadge()
+                }
+                announce("GrillMyCode questions have arrived for this repository.", "Show Questions")
+            }
+            return
+        }
+        // Said once for each set, however many checks find it.
+        if (whatArrived(arrived, latest) == null) return
+        arrived = latest
+        updateBadge()
+        publish()
+        announce("A newer set of GrillMyCode questions has arrived for this repository.", "Show New Questions") { refresh() }
+    }
+
+    /**
+     * Says, in a notification, that questions have arrived. Its button shows
+     * the tool window, after [before] when that is given.
+     */
+    private fun announce(
+        message: String,
+        button: String,
+        before: () -> Unit = {},
+    ) {
+        NotificationGroupManager
+            .getInstance()
+            .getNotificationGroup(NOTIFICATION_GROUP)
+            .createNotification(message, NotificationType.INFORMATION)
+            .addAction(
+                NotificationAction.createSimpleExpiring(button) {
+                    before()
+                    toolWindow()?.show()
+                },
+            ).notify(project)
+    }
+
+    private fun toolWindow() = ToolWindowManager.getInstance(project).getToolWindow(TOOL_WINDOW_ID)
+
+    /** A dot on the tool window's icon while there are questions the student has not seen. */
+    private fun updateBadge() {
+        toolWindow()?.setIcon(if (unseen || arrived != null) badgeIcons.getInfoIcon(true) else badgeIcons.originalIcon)
+    }
+
+    override fun dispose() {
+        timer.cancel(false)
+    }
 }

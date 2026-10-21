@@ -42,6 +42,9 @@
             <action id="GrillMyCode.NextQuestion" class="org.grillmycode.companion.questions.NextQuestionAction"
                     text="Next Question" icon="AllIcons.Actions.NextOccurence"
                     description="Open the GrillMyCode question after the one selected"/>
+            <action id="GrillMyCode.ChooseIssue" class="org.grillmycode.companion.questions.ChooseIssueAction"
+                    text="Choose Which Questions to Show…" icon="AllIcons.Vcs.Branch"
+                    description="Show the GrillMyCode questions of another branch or submission tag"/>
             <separator/>
             <action id="GrillMyCode.SignIn" class="org.grillmycode.companion.auth.SignInAction"
                     text="Sign In to GitHub…"

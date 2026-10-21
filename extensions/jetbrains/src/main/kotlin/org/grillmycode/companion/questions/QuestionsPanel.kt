@@ -10,8 +10,8 @@ import com.intellij.openapi.options.ShowSettingsUtil
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.ui.SimpleToolWindowPanel
 import com.intellij.openapi.util.Disposer
-import com.intellij.openapi.util.text.StringUtil
 import com.intellij.openapi.vcs.changes.ChangeListListener
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.ui.ColoredTreeCellRenderer
 import com.intellij.ui.DoubleClickListener
 import com.intellij.ui.JBColor
@@ -22,6 +22,7 @@ import com.intellij.ui.TreeUIHelper
 import com.intellij.ui.components.ActionLink
 import com.intellij.ui.components.JBLabel
 import com.intellij.ui.components.JBTextArea
+import com.intellij.ui.render.RenderingUtil
 import com.intellij.ui.treeStructure.Tree
 import com.intellij.util.ui.JBUI
 import com.intellij.util.ui.UIUtil
@@ -34,11 +35,16 @@ import org.grillmycode.companion.shared.QuestionGroup
 import org.grillmycode.companion.shared.Snippet
 import org.grillmycode.companion.shared.adjacentQuestion
 import org.grillmycode.companion.shared.describeDrift
+import org.grillmycode.companion.shared.describeGroup
 import org.grillmycode.companion.shared.describeLines
 import org.grillmycode.companion.shared.groupQuestions
 import org.grillmycode.companion.shared.openableSnippets
 import org.grillmycode.companion.shared.questionFiles
 import java.awt.BorderLayout
+import java.awt.Component
+import java.awt.Dimension
+import java.awt.event.ComponentAdapter
+import java.awt.event.ComponentEvent
 import java.awt.event.KeyAdapter
 import java.awt.event.KeyEvent
 import java.awt.event.MouseEvent
@@ -46,14 +52,20 @@ import javax.swing.BoxLayout
 import javax.swing.JComponent
 import javax.swing.JPanel
 import javax.swing.JTree
+import javax.swing.JViewport
 import javax.swing.SwingConstants
 import javax.swing.Timer
-import javax.swing.ToolTipManager
+import javax.swing.plaf.basic.BasicTreeUI
 import javax.swing.tree.DefaultMutableTreeNode
 import javax.swing.tree.DefaultTreeModel
+import javax.swing.tree.TreeCellRenderer
+import javax.swing.tree.TreePath
 
 /** How long the project must be quiet before the note above the tree is worked out again. */
 private const val SETTLE_MS = 300
+
+/** The narrowest a question's text is wrapped to, however narrow the tool window. */
+private const val MIN_WRAP_WIDTH = 80
 
 /** A row of the questions tree: a file, or the broader questions; a question; or one of a question's snippets. */
 private sealed interface Row {
@@ -76,12 +88,14 @@ private sealed interface Row {
  * Questions view lays it out (extensions/vscode/src/student/questions-tree.js),
  * or, with no questions to show, a message saying why in the same words.
  *
- * Selecting a question shows it in full in the panel below the tree.
+ * Each question's text wraps to the tree's width, which VS Code's tree cannot
+ * do. Selecting a question shows it in full in the panel below the tree.
  * Double-click or Enter opens the files it shows with their lines highlighted,
  * its first snippet's in front; on a snippet row, that snippet's.
  *
  * A note above the tree says when the highlighted lines may not be the ones
- * asked about, worked out again once the project has been quiet for a moment.
+ * asked about, worked out again once the project has been quiet for a moment,
+ * and when a newer set of questions has arrived.
  */
 class QuestionsPanel(
     private val project: Project,
@@ -90,6 +104,7 @@ class QuestionsPanel(
     private val service = project.getService(QuestionsService::class.java)
     private val highlighter = project.getService(Highlighter::class.java)
     private val tree = Tree(DefaultTreeModel(DefaultMutableTreeNode()))
+    private val renderer = Renderer()
     private val details = QuestionDetails()
     private val splitter =
         OnePixelSplitter(true, "GrillMyCode.QuestionsPanel.splitter", 0.6f).apply {
@@ -130,8 +145,14 @@ class QuestionsPanel(
     init {
         tree.isRootVisible = false
         tree.showsRootHandles = true
-        tree.cellRenderer = Renderer()
-        ToolTipManager.sharedInstance().registerComponent(tree)
+        tree.cellRenderer = renderer
+        // Each row as tall as its renderer asks, so a question can take several lines.
+        tree.rowHeight = 0
+        (tree.parent as? JViewport)?.addComponentListener(
+            object : ComponentAdapter() {
+                override fun componentResized(event: ComponentEvent) = rewrap()
+            },
+        )
         tree.addTreeSelectionListener { details.show(selectedQuestion()) }
         TreeUIHelper.getInstance().installTreeSpeedSearch(tree)
         object : DoubleClickListener() {
@@ -174,10 +195,18 @@ class QuestionsPanel(
             if (state is QuestionsState.Ready) {
                 tree.model = DefaultTreeModel(buildTree(state.report.questions))
                 TreeUtil.expandAll(tree)
+                rewrap()
                 details.show(null)
             }
         }
         ready = state as? QuestionsState.Ready
+        // Beside the tool window's name: which questions these are, as VS Code's view description says.
+        ToolWindowManager
+            .getInstance(project)
+            .getToolWindow(TOOL_WINDOW_ID)
+            ?.contentManager
+            ?.getContent(this)
+            ?.displayName = ready?.let { "${describeGroup(it.issue.group)} · ${it.report.headSha}" }
         if (state is QuestionsState.Ready) {
             setContent(questionsView)
             updateNotes()
@@ -192,6 +221,11 @@ class QuestionsPanel(
         val report = ready.report
         val text =
             listOf(
+                if (service.arrived != null) {
+                    "A newer set of questions has arrived. Select Refresh Questions, at the top of this tool window, to show it."
+                } else {
+                    ""
+                },
                 describeDrift(
                     headSha = report.headCommit ?: report.headSha,
                     folderCommit = currentCommit(project, ready.root),
@@ -226,6 +260,24 @@ class QuestionsPanel(
         openSelected()
     }
 
+    /**
+     * Wraps the questions' text to the tree's width again: telling the model
+     * each question's row has changed has the tree measure it afresh. Where a
+     * question's row starts is measured first, since the renderer cannot ask
+     * while it lays the row out.
+     */
+    private fun rewrap() {
+        val model = tree.model as DefaultTreeModel
+        val questions =
+            (model.root as DefaultMutableTreeNode)
+                .depthFirstEnumeration()
+                .toList()
+                .filterIsInstance<DefaultMutableTreeNode>()
+                .filter { it.userObject is Row.QuestionRow }
+        questions.firstOrNull()?.let { tree.getPathBounds(TreePath(it.path)) }?.let { renderer.questionX = it.x }
+        questions.forEach(model::nodeChanged)
+    }
+
     private fun buildTree(questions: List<Question>): DefaultMutableTreeNode {
         val top = DefaultMutableTreeNode()
         for (group in groupQuestions(questions)) {
@@ -247,6 +299,11 @@ class QuestionsPanel(
         val (text, links) =
             when (state) {
                 QuestionsState.Loading -> "Loading questions…" to emptyList()
+                QuestionsState.Untrusted ->
+                    (
+                        "This project is open in safe mode, which switches off the Git support GrillMyCode needs. " +
+                            "Trust the project to see your questions."
+                    ) to emptyList()
                 QuestionsState.NoRepository ->
                     "Open a project that is a clone of a GitHub repository to see its GrillMyCode questions." to listOf(refresh)
                 QuestionsState.SignedOut ->
@@ -315,7 +372,62 @@ class QuestionsPanel(
         return true
     }
 
-    private class Renderer : ColoredTreeCellRenderer() {
+    /**
+     * Draws a question's row as text that wraps to the tree's width, and every
+     * other row as the IDE draws a tree row.
+     */
+    private class Renderer : TreeCellRenderer {
+        /** Where a question's row starts, as the panel last measured it. Until then, worked out from the indents. */
+        var questionX: Int? = null
+
+        private val rowRenderer = RowRenderer()
+        private val questionText =
+            JBTextArea().apply {
+                isEditable = false
+                lineWrap = true
+                wrapStyleWord = true
+                isOpaque = false
+                border = JBUI.Borders.empty(2, 0)
+            }
+
+        override fun getTreeCellRendererComponent(
+            tree: JTree,
+            value: Any?,
+            selected: Boolean,
+            expanded: Boolean,
+            leaf: Boolean,
+            row: Int,
+            hasFocus: Boolean,
+        ): Component {
+            val node = value as? DefaultMutableTreeNode
+            val item =
+                node?.userObject as? Row.QuestionRow
+                    ?: return rowRenderer.getTreeCellRendererComponent(tree, value, selected, expanded, leaf, row, hasFocus)
+            return questionText.apply {
+                // Plain text, so the backticks would only be noise.
+                text = "${item.question.number}. ${item.question.question.replace("`", "")}"
+                font = tree.font
+                foreground = RenderingUtil.getForeground(tree, selected)
+                val width = wrapWidth(tree, node)
+                preferredSize = null
+                setSize(width, Short.MAX_VALUE.toInt())
+                preferredSize = Dimension(width, preferredSize.height)
+            }
+        }
+
+        /** The width left for a question's text: from where its row starts to the right edge of what shows of the tree. */
+        private fun wrapWidth(
+            tree: JTree,
+            node: DefaultMutableTreeNode,
+        ): Int {
+            val shown = (tree.parent as? JViewport)?.width ?: tree.width
+            val x =
+                questionX ?: (tree.ui as? BasicTreeUI)?.let { (it.leftChildIndent + it.rightChildIndent) * node.level } ?: 0
+            return (shown - x - tree.insets.right).coerceAtLeast(JBUI.scale(MIN_WRAP_WIDTH))
+        }
+    }
+
+    private class RowRenderer : ColoredTreeCellRenderer() {
         override fun customizeCellRenderer(
             tree: JTree,
             value: Any?,
@@ -337,13 +449,6 @@ class QuestionsPanel(
                         append(name)
                         append("  " + file.substringBeforeLast('/', ""), SimpleTextAttributes.GRAYED_ATTRIBUTES)
                     }
-                }
-                is Row.QuestionRow -> {
-                    // A tree row is plain text, so the backticks would only be noise.
-                    append("${item.question.number}. ${item.question.question.replace("`", "")}")
-                    // Swing reads a tooltip as HTML, and the text is the issue's, so it is escaped.
-                    toolTipText =
-                        "<html><b>Question ${item.question.number}</b><br>${StringUtil.escapeXmlEntities(item.question.question)}</html>"
                 }
                 is Row.SnippetRow -> {
                     icon = AllIcons.Actions.Forward
