@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="6 11 350 350">
+  <!-- The tool window's icon: the logo in one colour, as JetBrains asks of tool window icons.
+       From docs-site/static/img/grillmycode-logo.svg; the flame's inner cut-out is the logo's mask. -->
+  <g fill="none" stroke="#CED0D6" stroke-width="30">
+    <path d="M118 91H96Q66 91 66 121V162Q66 196 20 196Q66 196 66 230V271Q66 301 96 301H118"/>
+    <path d="M244 91H266Q296 91 296 121V162Q296 196 342 196Q296 196 296 230V271Q296 301 266 301H244"/>
+  </g>
+  <path fill="#CED0D6" fill-rule="evenodd" d="M184 54C206 80 222 112 214 150C211 164 210 176 214 188C224 180 234 170 237 158C252 180 259 200 258 226C257 268 224 298 180 299C136 299 101 268 101 226C101 186 124 158 152 132C170 114 180 90 184 54ZM171 230C160 246 154 262 154 280V295H204C202 272 190 248 171 230Z"/>
+</svg>

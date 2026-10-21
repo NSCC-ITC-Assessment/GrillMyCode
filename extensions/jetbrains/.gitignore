@@ -1,0 +1,10 @@
+# Gradle's output and caches, and the IDEs the IntelliJ Platform plugin downloads
+/build
+/.gradle
+/.intellijPlatform
+/.kotlin
+
+# The project files IntelliJ IDEA writes when this folder is opened on its own
+/.idea
+*.iml
+/out

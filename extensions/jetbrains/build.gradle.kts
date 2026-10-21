@@ -1,4 +1,5 @@
 import org.jetbrains.changelog.Changelog
+import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
 plugins {
@@ -13,16 +14,39 @@ kotlin {
     jvmToolchain(21)
     compilerOptions {
         // The standard library is the IDE's, so code may use only what the
-        // oldest supported IDE ships: 2025.1 bundles Kotlin 2.1.
+        // oldest supported IDE ships: 2025.1 bundles Kotlin 2.1. The language
+        // version can be newer; the compiler keeps to this API either way.
         apiVersion = KotlinVersion.KOTLIN_2_1
-        languageVersion = KotlinVersion.KOTLIN_2_1
+        // A class implementing one of the IDE's Kotlin interfaces inherits its
+        // default methods, rather than getting a copy of each that calls the
+        // interface. Those copies count as calls to every one of them, and the
+        // verifier reports any that are deprecated or internal.
+        jvmDefault = JvmDefaultMode.NO_COMPATIBILITY
     }
 }
 
 dependencies {
     intellijPlatform {
         intellijIdeaCommunity(providers.gradleProperty("platformVersion"))
+        // Remotes and the branch, as VS Code's built-in Git extension gives them.
+        bundledPlugin("Git4Idea")
     }
+
+    // Plain unit tests, for the code in shared/ that needs no running IDE.
+    testImplementation(platform("org.junit:junit-bom:6.1.3"))
+    testImplementation("org.junit.jupiter:junit-jupiter")
+    testRuntimeOnly("org.junit.platform:junit-platform-launcher")
+    // The IDE's test runtime loads JUnit 4 classes even for JUnit 5 tests.
+    testRuntimeOnly("junit:junit:4.13.2")
+}
+
+tasks.test {
+    useJUnitPlatform()
+    // The sample issues every editor's reader is tested against. An input, so
+    // the tests run again when one changes.
+    val fixtures = layout.projectDirectory.dir("../fixtures")
+    inputs.dir(fixtures).withPropertyName("fixtures")
+    systemProperty("gmc.fixtures", fixtures.asFile.absolutePath)
 }
 
 changelog {

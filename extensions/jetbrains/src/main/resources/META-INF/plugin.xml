@@ -10,11 +10,48 @@
     <description><![CDATA[
         <p>The companion to the GrillMyCode GitHub Action. Shows the questions it wrote
         about your code, beside the code they ask about.</p>
-        <p>This early version sets up the plugin and does nothing yet. Students should
-        use <a href="https://grillmycode.org">GrillMyCode</a> through the questions issue
-        in their repository until a release says otherwise.</p>
+        <p>Sign in to GitHub from <b>Tools | GrillMyCode</b>, then open the <b>GrillMyCode</b>
+        tool window in a clone of your assignment repository. It lists the questions from the
+        repository's questions issue, file by file. Double-click a question to open the code
+        it asks about.</p>
+        <p>This is an early access version. Until a stable release, the questions issue in
+        your repository on GitHub remains the place to answer them. See
+        <a href="https://grillmycode.org">grillmycode.org</a>.</p>
     ]]></description>
 
     <!-- Every IntelliJ-based IDE: IntelliJ IDEA, PyCharm, WebStorm and the rest. -->
     <depends>com.intellij.modules.platform</depends>
+    <!-- The bundled Git plugin, for the repository's remotes and branch. -->
+    <depends>Git4Idea</depends>
+
+    <extensions defaultExtensionNs="com.intellij">
+        <notificationGroup id="GrillMyCode" displayType="BALLOON"/>
+        <toolWindow id="GrillMyCode" anchor="right" icon="/icons/toolWindow.svg"
+                    factoryClass="org.grillmycode.companion.questions.QuestionsToolWindowFactory"/>
+    </extensions>
+
+    <actions>
+        <group id="GrillMyCode.Menu" text="GrillMyCode" popup="true">
+            <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="GrillMyCode.Refresh" class="org.grillmycode.companion.questions.RefreshAction"
+                    text="Refresh Questions" icon="AllIcons.Actions.Refresh"
+                    description="Load this repository's GrillMyCode questions from GitHub again"/>
+            <action id="GrillMyCode.PreviousQuestion" class="org.grillmycode.companion.questions.PreviousQuestionAction"
+                    text="Previous Question" icon="AllIcons.Actions.PreviousOccurence"
+                    description="Open the GrillMyCode question before the one selected"/>
+            <action id="GrillMyCode.NextQuestion" class="org.grillmycode.companion.questions.NextQuestionAction"
+                    text="Next Question" icon="AllIcons.Actions.NextOccurence"
+                    description="Open the GrillMyCode question after the one selected"/>
+            <action id="GrillMyCode.ChooseIssue" class="org.grillmycode.companion.questions.ChooseIssueAction"
+                    text="Choose Which Questions to Show…" icon="AllIcons.Vcs.Branch"
+                    description="Show the GrillMyCode questions of another branch or submission tag"/>
+            <separator/>
+            <action id="GrillMyCode.SignIn" class="org.grillmycode.companion.auth.SignInAction"
+                    text="Sign In to GitHub…"
+                    description="Sign in to GitHub, so GrillMyCode Companion can read your questions"/>
+            <action id="GrillMyCode.SignOut" class="org.grillmycode.companion.auth.SignOutAction"
+                    text="Sign Out of GitHub"
+                    description="Forget the GitHub account GrillMyCode Companion signed in with"/>
+        </group>
+    </actions>
 </idea-plugin>

@@ -5,6 +5,11 @@ paired with what an extension should read from it. Every editor extension
 tests its report reader against these files, whatever language it is written
 in, so they are the contract between the action and the extensions.
 
+| Reader                                             | Its fixture tests                                                                   |
+| -------------------------------------------------- | ----------------------------------------------------------------------------------- |
+| VS Code, `vscode/src/shared/report.js`             | `vscode/test/report.test.js`, in `pnpm test` from the repository root               |
+| JetBrains, `jetbrains/src/main/kotlin/…/Report.kt` | `jetbrains/src/test/kotlin/…/ReportTest.kt`, in `./gradlew check` from `jetbrains/` |
+
 Each case is a folder of four files:
 
 | File             | What it holds                                                           |
@@ -62,7 +67,8 @@ look different from one posted now:
 1. Copy `current/` to a folder named for the last release that wrote the old
    layout, for example `v0.24/`.
 2. Run `node scripts/build-extension-fixtures.js`.
-3. Update each extension's reader until it reads both folders. Workflows float
+3. Update each extension's reader, in every editor, until it reads both
+   folders. Workflows float
    on a major tag, so issues in the old layout stay open in students'
    repositories long after the release.
 

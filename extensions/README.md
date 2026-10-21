@@ -8,7 +8,7 @@ image.
 | Folder       | What it is                                                            |
 | ------------ | --------------------------------------------------------------------- |
 | `vscode/`    | GrillMyCode Companion, the VS Code extension                          |
-| `jetbrains/` | GrillMyCode Companion for JetBrains IDEs. An empty plugin so far      |
+| `jetbrains/` | GrillMyCode Companion for JetBrains IDEs. Early access                |
 | `fixtures/`  | Sample questions issues that every extension tests its reader against |
 
 The plans these follow are in `docs-internal/vscode-extension-plan.md` and
@@ -112,6 +112,13 @@ every pull request that touches the plugin.
 `runIde` opens a window, so it needs a desktop: run it on your own machine, not
 in a codespace.
 
+To try a build from a codespace instead, download
+`build/distributions/*.zip` and install it in an IDE on your own machine with
+**Settings | Plugins | ⚙ | Install Plugin from Disk…**. Then sign in from
+**Tools | GrillMyCode | Sign In to GitHub…** and open the **GrillMyCode** tool
+window in a clone of an assignment repository. The `build/` folder is ignored
+by Git, so an editor set to hide ignored files does not show it.
+
 The oldest supported IDE is `pluginSinceBuild` and `platformVersion` in
 `gradle.properties`. Raise both together, deliberately: a higher minimum drops
 support for older IDEs. The Kotlin `apiVersion` in `build.gradle.kts` follows
@@ -151,7 +158,8 @@ can take days, so do this well before a term starts.
 
 1. Sign in to the [JetBrains Marketplace](https://plugins.jetbrains.com) with
    the vendor's account, and create the vendor if there is none.
-2. Build the plugin and sign it with the certificate below:
+2. On the machine that holds the signing key, never in a codespace, build the
+   plugin and sign it with the certificate below:
 
    ```bash
    CERTIFICATE_CHAIN="$(cat chain.crt)" PRIVATE_KEY="$(cat private_encrypted.pem)" \
