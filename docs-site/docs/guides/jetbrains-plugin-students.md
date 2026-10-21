@@ -28,9 +28,7 @@ You sign in once. The IDE remembers it for every project.
 
 Your questions appear once you have pushed your work and GrillMyCode has finished, which takes a few minutes. They show up in the list on their own, and the IDE tells you when they arrive.
 
-:::note[Screenshot needed]
-IntelliJ IDEA with the GrillMyCode tool window open on the right: the questions list grouped by file, question 1 selected and shown in full below the list, and the editor showing its file with the lines highlighted. Use the fictional repository `cs-principles-lab-3-jsmith`.
-:::
+![IntelliJ IDEA with the GrillMyCode tool window open on the right. The questions list is grouped by file, with question 11 selected and shown in full below the list, with its code. The editor shows story.php with line 50 highlighted.](/img/screenshots/jetbrains-plugin-questions.png)
 
 - **Select a question** to read it in full below the list, with the code as it was when the question was written.
 - **Double-click a question**, or press **Enter**, to open its file with the lines it asks about highlighted. A question about several files opens each one in a tab of its own, and has a row under it for each piece of code.

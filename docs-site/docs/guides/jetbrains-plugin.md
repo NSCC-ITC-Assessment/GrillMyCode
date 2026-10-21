@@ -18,9 +18,7 @@ It's optional. The [issue and PDF](what-students-see.md) work the same with or w
 
 The plugin doesn't write questions and doesn't show students the answers.
 
-:::note[Screenshot needed]
-IntelliJ IDEA with the GrillMyCode tool window open on the right: the questions list grouped by file, question 1 selected and shown in full below the list, and the editor showing its file with the lines highlighted. Use the fictional repository `cs-principles-lab-3-jsmith`.
-:::
+![IntelliJ IDEA with the GrillMyCode tool window open on the right. The questions list is grouped by file, with question 11 selected and shown in full below the list, with its code. The editor shows story.php with line 50 highlighted.](/img/screenshots/jetbrains-plugin-questions.png)
 
 ## Approve the plugin for your organization
 
