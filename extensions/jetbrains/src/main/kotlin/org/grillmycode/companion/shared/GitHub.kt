@@ -14,7 +14,7 @@ import java.net.URLEncoder
 //
 // The request itself is passed in, so tests can answer it.
 
-/** A response: the HTTP status, and the body when the status is 200. */
+/** A response: the HTTP status, and the body, which on a refusal is GitHub's reason. */
 data class HttpResponse(
     val status: Int,
     val body: String,
@@ -23,10 +23,11 @@ data class HttpResponse(
 /** Sends a GET to [url] with [headers]. */
 typealias HttpGet = (url: String, headers: Map<String, String>) -> HttpResponse
 
-/** A failed GitHub request, with the HTTP status that explains it. */
+/** A failed GitHub request, with the HTTP status that explains it, and the body GitHub sent with it. */
 class GitHubException(
     val status: Int,
     message: String,
+    val body: String = "",
 ) : Exception(message)
 
 /**
@@ -52,7 +53,7 @@ private fun get(
                 "X-GitHub-Api-Version" to GITHUB_API_VERSION,
             ),
         )
-    if (response.status != 200) throw GitHubException(response.status, "GitHub answered ${response.status} for $what")
+    if (response.status != 200) throw GitHubException(response.status, "GitHub answered ${response.status} for $what", response.body)
     return response.body
 }
 

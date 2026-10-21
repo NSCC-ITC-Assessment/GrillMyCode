@@ -1,6 +1,7 @@
 package org.grillmycode.companion.questions
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -29,6 +30,7 @@ import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryChangeListener
+import org.grillmycode.companion.auth.GITHUB_APP_SETTINGS_URL
 import org.grillmycode.companion.auth.signIn
 import org.grillmycode.companion.shared.Question
 import org.grillmycode.companion.shared.QuestionGroup
@@ -313,6 +315,16 @@ class QuestionsPanel(
                         "GitHub could not find this repository for the account that is signed in. " +
                             "Check that you are signed in with the account that owns the assignment."
                     ) to listOf("Try again" to { service.refresh() })
+                is QuestionsState.NotApproved ->
+                    (
+                        "The ${state.owner} organization on GitHub has not approved GrillMyCode Companion, so it cannot " +
+                            "read this repository. Ask your instructor to approve it. You can also ask the organization " +
+                            "from GitHub yourself."
+                    ) to
+                        listOf(
+                            "Ask on GitHub" to { BrowserUtil.browse(GITHUB_APP_SETTINGS_URL) },
+                            "Try again" to { service.refresh() },
+                        )
                 QuestionsState.NoIssue ->
                     (
                         "No GrillMyCode questions were found for this repository. They appear here once you have " +

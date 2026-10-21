@@ -28,6 +28,7 @@ import kotlinx.serialization.json.JsonElement
 import org.grillmycode.companion.auth.AccountListener
 import org.grillmycode.companion.auth.GitHubAccount
 import org.grillmycode.companion.auth.NOTIFICATION_GROUP
+import org.grillmycode.companion.auth.isRestrictedByOrganization
 import org.grillmycode.companion.httpGet
 import org.grillmycode.companion.shared.GitHubException
 import org.grillmycode.companion.shared.NEW_QUESTIONS_CHECK_MS
@@ -66,6 +67,11 @@ sealed interface QuestionsState {
 
     /** GitHub answered 404: no such repository for this account. */
     data object NoAccess : QuestionsState
+
+    /** The organization that owns the repository, [owner], has not approved this app. */
+    data class NotApproved(
+        val owner: String,
+    ) : QuestionsState
 
     /** The repository has no questions issue that reads as a report. */
     data object NoIssue : QuestionsState
@@ -279,13 +285,8 @@ class QuestionsService(
                 readReports(listLabelledIssues(target.owner, target.repo, account.token, ::httpGet))
             } catch (error: GitHubException) {
                 log.info("Could not read the issues of ${target.owner}/${target.repo}: ${error.message}")
-                return Loaded(
-                    when (error.status) {
-                        401 -> QuestionsState.SignedOut
-                        404 -> QuestionsState.NoAccess
-                        else -> QuestionsState.Error
-                    },
-                )
+                val restricted = isRestrictedByOrganization(error.status, error.body)
+                return Loaded(if (restricted) QuestionsState.NotApproved(target.owner) else stateFor(error.status))
             } catch (error: IOException) {
                 log.info("Could not reach GitHub: ${error.message}")
                 return Loaded(QuestionsState.Error)
@@ -300,6 +301,14 @@ class QuestionsService(
             }
         return Loaded(state, issues, chosen)
     }
+
+    /** The state for a refusal from GitHub with [status], other than an organization's restriction. */
+    private fun stateFor(status: Int): QuestionsState =
+        when (status) {
+            401 -> QuestionsState.SignedOut
+            404 -> QuestionsState.NoAccess
+            else -> QuestionsState.Error
+        }
 
     /**
      * Shows the questions of the issue with [title] from now on, or with null

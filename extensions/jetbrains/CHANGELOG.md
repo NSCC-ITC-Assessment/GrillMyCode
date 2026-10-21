@@ -25,6 +25,9 @@ Each heading is a version as `gradle.properties` writes it.
   its own; a newer set is announced and waits until you ask for it, with a dot
   on the tool window's icon until then.
 - A project open in safe mode says why no questions show: trust the project.
+- When the organization that owns the repository has not approved GrillMyCode
+  Companion, the tool window says so, and links to the page on GitHub where you
+  can ask for approval.
 
 ## [0.1.0-eap.1]
 

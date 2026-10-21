@@ -246,7 +246,7 @@ load its JavaScript.
   OAuth app and keeps the token in `PasswordSafe`, never in a file or a setting. With no
   JavaScript to follow, it stays out of `shared/`. The client ID in `auth/DeviceFlow.kt` is
   public; the app has no client secret, and must never be given one this code would need.
-  `DeviceFlow.kt` imports nothing from the IDE, so its tests run without one, as `shared/`'s do.
+  `DeviceFlow.kt` and `AppApproval.kt` import nothing from the IDE, so their tests run without one, as `shared/`'s do.
 - **Issue text is untrusted here too.** Show it only escaped, in a Swing HTML pane, never in a JCEF
   browser. The one JCEF page the plan allows is the Workflow Wizard's.
 

@@ -1,9 +1,10 @@
 # JetBrains plugin — plan
 
 > **Recorded:** 2026-10-19 (`d1f974c`), against VS Code extension 0.4.4.
-> **Updated:** 2026-10-21, J1's reader, GitHub sign-in and the questions tool window.
+> **Updated:** 2026-10-21, J1 built and tried by hand; J2's first pieces.
 > **Status:** J0 done. 0.1.0-eap.1 uploaded to the Marketplace on 2026-10-21,
-> waiting for JetBrains' review. J1 in progress: see [J1 progress](#j1-progress).
+> waiting for JetBrains' review. J1 built, waiting on the PyCharm and WebStorm
+> checks: see [J1 progress](#j1-progress). J2 started: see [J2 progress](#j2-progress).
 
 A JetBrains plugin that does what GrillMyCode Companion does in VS Code: the
 questions the action posts, shown beside the code they ask about. It lives in
@@ -52,22 +53,44 @@ flowchart LR
 
 ### J1 progress
 
-| Piece                                                                                                   | Where                                                                                                      | Status                                  |
-| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | --------------------------------------- |
-| Report reader and issue picker, ported with their tests                                                 | `shared/Report.kt`, `shared/Issues.kt`                                                                     | Done, passes every fixture              |
-| GitHub sign-in and sign-out, Tools > GrillMyCode                                                        | `auth/`                                                                                                    | Done, tried against GitHub              |
-| Owner and repository from the Git remote, the issues listed, the question model                         | `shared/Remote.kt`, `shared/GitHub.kt`, `shared/Questions.kt`                                              | Done, with the VS Code tests            |
-| Tool window: the questions list, a message for each state, open a question's code                       | `questions/`, with the bundled Git plugin (`Git4Idea`)                                                     | Done, tried by hand                     |
-| First Marketplace upload, by hand, to the `eap` channel                                                 | plugins.jetbrains.com                                                                                      | Uploaded 2026-10-21, waiting for review |
-| Selected question: a details panel below the tree                                                       | `shared/Html.kt`, a port of `html.js`, in a Swing HTML pane                                                | Done, tried by hand                     |
-| Highlights on the question's lines in the editor                                                        | `questions/Highlighter.kt`, `MarkupModel` range highlighters                                               | Done, tried by hand                     |
-| Moved-code warning, and the note on a report too long to show in full                                   | `describeDrift`, with changed files from `ChangeListManager` and unsaved documents (`questions/Folder.kt`) | Done, tried by hand                     |
-| Next and previous question                                                                              | Actions on `adjacentQuestion`, in the tool window's title and Tools > GrillMyCode                          | Done, tried by hand                     |
-| Question text wrapped in the list, each row as tall as its text. VS Code cannot: its plan sets it aside | A tree cell renderer that wraps to the tree's width, rows of variable height                               | Built, not tried by hand                |
-| Choosing among several questions issues, remembered by title                                            | `chooseIssue`'s `preferredTitle`, in `PropertiesComponent`; a popup from the tool window's title           | Built, not tried by hand                |
-| New-questions notice: a check every minute while the IDE has the focus, a balloon and a badge           | `whatArrived`, `BadgeIconSupplier`; starts when the tool window first opens                                | Built, not tried by hand                |
-| The untrusted-project message                                                                           | `TrustedProjects.isProjectTrusted`, when no repository is found                                            | Built, not tried by hand                |
-| Hand checks in PyCharm and WebStorm, then J1 is done                                                    |                                                                                                            | To do                                   |
+| Piece                                                                                                   | Where                                                                                                      | Status                                          |
+| ------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ----------------------------------------------- |
+| Report reader and issue picker, ported with their tests                                                 | `shared/Report.kt`, `shared/Issues.kt`                                                                     | Done, passes every fixture                      |
+| GitHub sign-in and sign-out, Tools > GrillMyCode                                                        | `auth/`                                                                                                    | Done, tried against GitHub                      |
+| Owner and repository from the Git remote, the issues listed, the question model                         | `shared/Remote.kt`, `shared/GitHub.kt`, `shared/Questions.kt`                                              | Done, with the VS Code tests                    |
+| Tool window: the questions list, a message for each state, open a question's code                       | `questions/`, with the bundled Git plugin (`Git4Idea`)                                                     | Done, tried by hand                             |
+| First Marketplace upload, by hand, to the `eap` channel                                                 | plugins.jetbrains.com                                                                                      | Uploaded 2026-10-21, waiting for review         |
+| Selected question: a details panel below the tree                                                       | `shared/Html.kt`, a port of `html.js`, in a Swing HTML pane                                                | Done, tried by hand                             |
+| Highlights on the question's lines in the editor                                                        | `questions/Highlighter.kt`, `MarkupModel` range highlighters                                               | Done, tried by hand                             |
+| Moved-code warning, and the note on a report too long to show in full                                   | `describeDrift`, with changed files from `ChangeListManager` and unsaved documents (`questions/Folder.kt`) | Done, tried by hand                             |
+| Next and previous question                                                                              | Actions on `adjacentQuestion`, in the tool window's title and Tools > GrillMyCode                          | Done, tried by hand                             |
+| Question text wrapped in the list, each row as tall as its text. VS Code cannot: its plan sets it aside | A tree cell renderer that wraps to the tree's width, rows of variable height                               | Done, tried by hand                             |
+| Choosing among several questions issues, remembered by title                                            | `chooseIssue`'s `preferredTitle`, in `PropertiesComponent`; a popup from the tool window's title           | Done, tried by hand                             |
+| New-questions notice: a check every minute while the IDE has the focus, a balloon and a badge           | `whatArrived`, `BadgeIconSupplier`; starts when the tool window first opens                                | Done, tried by hand                             |
+| The untrusted-project message                                                                           | `TrustedProjects.isProjectTrusted`, when no repository is found                                            | Done, tried by hand                             |
+| A message of its own when the repository's organization has not approved the app                        | `auth/AppApproval.kt`, the `NotApproved` state                                                             | Built; GitHub's answer not yet checked (see J2) |
+| Hand checks in PyCharm and WebStorm, then J1 is done                                                    |                                                                                                            | To do                                           |
+
+### J2 progress
+
+GitHub turns on OAuth app access restrictions for every new organization, and
+a classroom organization is usually new. Until an owner approves "GrillMyCode
+Companion", the plugin cannot read a student's repository. That makes the
+approval a setup step for every instructor.
+
+| Piece                                                                                                 | Where                                                    | Status                                                                                                                                                      |
+| ----------------------------------------------------------------------------------------------------- | -------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Instructor guide, with approving the app as its setup step                                            | `docs-site/docs/guides/jetbrains-plugin.md`              | Drafted. Merge with the stable release, not before: it tells students to install from the Marketplace's default channel                                     |
+| What GitHub answers a token whose app the organization has not approved                               | A test organization, `check-org-approval.sh` run by hand | To do. The code expects 403 and the words "OAuth App access restrictions"; `AppApprovalTest` holds a body written from memory, to replace with the real one |
+| The button an owner sees to approve the app when signing in ("Grant"?)                                | The same test organization                               | To do. The guide says **Grant**                                                                                                                             |
+| Whether the VS Code extension meets the same restriction, through VS Code's own GitHub app            | The same test organization, in VS Code                   | To do. If it does, its guide gets the step too                                                                                                              |
+| Student guide                                                                                         | `docs-site/docs/guides/`                                 | To do                                                                                                                                                       |
+| Reference page, and the guide's **Go deeper** line to it                                              | `docs-site/docs/reference/`                              | To do                                                                                                                                                       |
+| A required plugin in the template (`.idea/externalDependencies.xml`), so the IDE offers to install it | The instructor guide                                     | To try: a `.idea/` folder holding only that file may change how the IDE opens the folder                                                                    |
+| A line in `what-students-see.md`, the FAQ, `how-gmc-works.md` and `README.md`                         |                                                          | With the stable release                                                                                                                                     |
+| Marketplace listing: description and screenshots                                                      | `plugin.xml`, plugins.jetbrains.com                      | To do                                                                                                                                                       |
+| Hand checks on Windows and macOS                                                                      |                                                          | To do                                                                                                                                                       |
+| Stable release, `0.2.0` on the default channel                                                        | `jetbrains-v*` tag                                       | After eap.1 is approved and the checks pass                                                                                                                 |
 
 ---
 
