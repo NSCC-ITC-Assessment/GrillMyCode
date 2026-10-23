@@ -32,9 +32,11 @@ Each new run replaces the questions in the **same issue**. The link stays the sa
 
 The PDF has the same questions, laid out for printing or offline reading. Its download link is at the top of the issue and doesn't change between runs, so it always gives the latest version. In a private repository, students need to be signed in to GitHub to download it.
 
-## In VS Code
+## In their editor
 
 Students who work in VS Code can also read their questions beside their code, with an optional extension. See [Showing questions in VS Code](vscode-extension.md).
+
+Students who work in IntelliJ IDEA, PyCharm, WebStorm or another JetBrains IDE can do the same with an optional plugin. See [Showing questions in JetBrains IDEs](jetbrains-plugin.md).
 
 ## What to tell your students
 

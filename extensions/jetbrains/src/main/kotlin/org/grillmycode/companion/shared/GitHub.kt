@@ -3,18 +3,20 @@ package org.grillmycode.companion.shared
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.json.JsonArray
 import kotlinx.serialization.json.JsonElement
+import kotlinx.serialization.json.JsonObject
+import kotlinx.serialization.json.JsonPrimitive
 import java.net.URLEncoder
 
 // GitHub reads
 //
-// The request the student side makes: a repository's open issues that carry
-// the questions label. A port of the student half of
-// extensions/vscode/src/shared/github.js; the instructor's two requests come
-// with J3.
+// The requests the plugin makes. The student side makes one: a repository's
+// open issues that carry the questions label. Looking for an answer key adds
+// two: a repository's direct collaborators, and one file. A port of
+// extensions/vscode/src/shared/github.js.
 //
 // The request itself is passed in, so tests can answer it.
 
-/** A response: the HTTP status, and the body when the status is 200. */
+/** A response: the HTTP status, and the body, which on a refusal is GitHub's reason. */
 data class HttpResponse(
     val status: Int,
     val body: String,
@@ -23,10 +25,11 @@ data class HttpResponse(
 /** Sends a GET to [url] with [headers]. */
 typealias HttpGet = (url: String, headers: Map<String, String>) -> HttpResponse
 
-/** A failed GitHub request, with the HTTP status that explains it. */
+/** A failed GitHub request, with the HTTP status that explains it, and the body GitHub sent with it. */
 class GitHubException(
     val status: Int,
     message: String,
+    val body: String = "",
 ) : Exception(message)
 
 /**
@@ -42,17 +45,18 @@ private fun get(
     what: String,
     token: String,
     http: HttpGet,
+    accept: String = "application/vnd.github+json",
 ): String {
     val response =
         http(
             "$GITHUB_API_URL$path",
             mapOf(
-                "Accept" to "application/vnd.github+json",
+                "Accept" to accept,
                 "Authorization" to "Bearer $token",
                 "X-GitHub-Api-Version" to GITHUB_API_VERSION,
             ),
         )
-    if (response.status != 200) throw GitHubException(response.status, "GitHub answered ${response.status} for $what")
+    if (response.status != 200) throw GitHubException(response.status, "GitHub answered ${response.status} for $what", response.body)
     return response.body
 }
 
@@ -77,3 +81,39 @@ fun listLabelledIssues(
     val body = get("${repoPath(owner, repo)}/issues?$query", "$owner/$repo", token, http)
     return runCatching { Json.parseToJsonElement(body) as? JsonArray }.getOrNull() ?: emptyList()
 }
+
+/**
+ * The logins of the repository's direct collaborators, which leaves out access
+ * that comes from the organization or a team. GitHub answers 403 or 404 to an
+ * account that may not list them.
+ */
+fun listDirectCollaborators(
+    owner: String,
+    repo: String,
+    token: String,
+    http: HttpGet,
+): List<String> {
+    val query = "affiliation=direct&per_page=$COLLABORATORS_PER_PAGE"
+    val body = get("${repoPath(owner, repo)}/collaborators?$query", "the collaborators of $owner/$repo", token, http)
+    val collaborators = runCatching { Json.parseToJsonElement(body) as? JsonArray }.getOrNull() ?: return emptyList()
+    return collaborators.mapNotNull { collaborator ->
+        ((collaborator as? JsonObject)?.get("login") as? JsonPrimitive)?.takeIf { it.isString }?.content?.takeIf { it.isNotEmpty() }
+    }
+}
+
+/** The text of one file on the repository's default branch. */
+fun readFile(
+    owner: String,
+    repo: String,
+    path: String,
+    token: String,
+    http: HttpGet,
+): String =
+    get(
+        "${repoPath(owner, repo)}/contents/${path.split("/").joinToString("/", transform = ::encode)}",
+        "$owner/$repo/$path",
+        token,
+        http,
+        // The file itself, not a description of it with the content in Base64.
+        accept = "application/vnd.github.raw+json",
+    )

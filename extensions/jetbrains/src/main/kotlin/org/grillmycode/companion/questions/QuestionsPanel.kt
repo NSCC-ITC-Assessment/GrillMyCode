@@ -1,6 +1,7 @@
 package org.grillmycode.companion.questions
 
 import com.intellij.icons.AllIcons
+import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.editor.EditorFactory
 import com.intellij.openapi.editor.event.DocumentEvent
@@ -29,7 +30,10 @@ import com.intellij.util.ui.UIUtil
 import com.intellij.util.ui.tree.TreeUtil
 import git4idea.repo.GitRepository
 import git4idea.repo.GitRepositoryChangeListener
+import org.grillmycode.companion.auth.GITHUB_APP_SETTINGS_URL
 import org.grillmycode.companion.auth.signIn
+import org.grillmycode.companion.instructor.instructorQuestionToHtml
+import org.grillmycode.companion.instructor.matchesReport
 import org.grillmycode.companion.shared.Question
 import org.grillmycode.companion.shared.QuestionGroup
 import org.grillmycode.companion.shared.Snippet
@@ -40,6 +44,7 @@ import org.grillmycode.companion.shared.describeLines
 import org.grillmycode.companion.shared.groupQuestions
 import org.grillmycode.companion.shared.openableSnippets
 import org.grillmycode.companion.shared.questionFiles
+import org.grillmycode.companion.shared.questionToHtml
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -96,6 +101,10 @@ private sealed interface Row {
  * A note above the tree says when the highlighted lines may not be the ones
  * asked about, worked out again once the project has been quiet for a moment,
  * and when a newer set of questions has arrived.
+ *
+ * In the instructor view the tree lists the answer key's questions, and the
+ * panel below shows each one's answer. Only an account with both views is told,
+ * beside the tool window's name, which one it is looking at.
  */
 class QuestionsPanel(
     private val project: Project,
@@ -139,8 +148,8 @@ class QuestionsPanel(
     private var ready: QuestionsState.Ready? = null
     private val root get() = ready?.root
 
-    /** The issue body the tree was built from, to tell new questions from the same ones loaded again. */
-    private var shownBody: String? = null
+    /** The questions the tree was built from, and in which view, to tell new ones from the same ones loaded again. */
+    private var shown: Pair<View, List<Question>>? = null
 
     init {
         tree.isRootVisible = false
@@ -187,26 +196,38 @@ class QuestionsPanel(
     }
 
     private fun show(state: QuestionsState) {
-        val body = (state as? QuestionsState.Ready)?.issue?.body
-        if (body != shownBody) {
+        val view = service.view
+        val questions = (state as? QuestionsState.Ready)?.let { view to it.questions }
+        if (questions != shown) {
             // Other questions, or none: the highlights were for the ones before.
             highlighter.clear()
-            shownBody = body
+            shown = questions
             if (state is QuestionsState.Ready) {
-                tree.model = DefaultTreeModel(buildTree(state.report.questions))
+                details.toHtml = if (view == View.INSTRUCTOR) ::instructorQuestionToHtml else ::questionToHtml
+                tree.model = DefaultTreeModel(buildTree(state.questions))
                 TreeUtil.expandAll(tree)
                 rewrap()
                 details.show(null)
             }
         }
         ready = state as? QuestionsState.Ready
+        // Only an account with both views is told which one it is looking at.
+        val viewName =
+            when {
+                service.key == null -> null
+                view == View.INSTRUCTOR -> "Instructor view"
+                else -> "Student view"
+            }
         // Beside the tool window's name: which questions these are, as VS Code's view description says.
         ToolWindowManager
             .getInstance(project)
             .getToolWindow(TOOL_WINDOW_ID)
             ?.contentManager
             ?.getContent(this)
-            ?.displayName = ready?.let { "${describeGroup(it.issue.group)} · ${it.report.headSha}" }
+            ?.displayName =
+            listOfNotNull(viewName, ready?.issue?.let { describeGroup(it.group) }, ready?.report?.headSha)
+                .joinToString(" · ")
+                .ifEmpty { null }
         if (state is QuestionsState.Ready) {
             setContent(questionsView)
             updateNotes()
@@ -219,6 +240,10 @@ class QuestionsPanel(
     private fun updateNotes() {
         val ready = ready ?: return
         val report = ready.report
+        val instructor = service.view == View.INSTRUCTOR
+        // The answer key does not say which commit it was written about. The issue
+        // does, and stands in for it while the two hold the same questions.
+        val sameRun = report != null && (!instructor || matchesReport(report.questions, ready.questions))
         val text =
             listOf(
                 if (service.arrived != null) {
@@ -226,13 +251,23 @@ class QuestionsPanel(
                 } else {
                     ""
                 },
-                describeDrift(
-                    headSha = report.headCommit ?: report.headSha,
-                    folderCommit = currentCommit(project, ready.root),
-                    changedFiles = changedFiles(project, ready.root),
-                    files = questionFiles(report.questions),
-                ),
-                if (report.truncated) {
+                if (instructor && report != null && !sameRun) {
+                    "The answer key and the questions issue showing are from different runs of GrillMyCode. " +
+                        "These are the answer key's questions, and their lines may not be the ones in this project."
+                } else {
+                    ""
+                },
+                if (report != null && sameRun) {
+                    describeDrift(
+                        headSha = report.headCommit ?: report.headSha,
+                        folderCommit = currentCommit(project, ready.root),
+                        changedFiles = changedFiles(project, ready.root),
+                        files = questionFiles(ready.questions),
+                    )
+                } else {
+                    ""
+                },
+                if (!instructor && report?.truncated == true) {
                     "This report was too long to show in full, so its last questions are missing here. " +
                         "The PDF linked from the issue has them all."
                 } else {
@@ -250,7 +285,7 @@ class QuestionsPanel(
      */
     fun step(step: Int) {
         val ready = ready ?: return
-        val question = adjacentQuestion(ready.report.questions, selectedQuestion()?.number, step) ?: return
+        val question = adjacentQuestion(ready.questions, selectedQuestion()?.number, step) ?: return
         val node =
             TreeUtil.findNode(tree.model.root as DefaultMutableTreeNode) {
                 (it.userObject as? Row.QuestionRow)?.question == question
@@ -313,6 +348,16 @@ class QuestionsPanel(
                         "GitHub could not find this repository for the account that is signed in. " +
                             "Check that you are signed in with the account that owns the assignment."
                     ) to listOf("Try again" to { service.refresh() })
+                is QuestionsState.NotApproved ->
+                    (
+                        "The ${state.owner} organization on GitHub has not approved GrillMyCode Companion, so it cannot " +
+                            "read this repository. Ask your instructor to approve it. You can also ask the organization " +
+                            "from GitHub yourself."
+                    ) to
+                        listOf(
+                            "Ask on GitHub" to { BrowserUtil.browse(GITHUB_APP_SETTINGS_URL) },
+                            "Try again" to { service.refresh() },
+                        )
                 QuestionsState.NoIssue ->
                     (
                         "No GrillMyCode questions were found for this repository. They appear here once you have " +

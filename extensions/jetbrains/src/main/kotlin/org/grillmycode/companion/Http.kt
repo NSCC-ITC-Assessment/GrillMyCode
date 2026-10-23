@@ -6,8 +6,8 @@ import java.net.HttpURLConnection
 
 /**
  * The [org.grillmycode.companion.shared.HttpGet] the plugin passes to shared/:
- * a GET through the IDE's proxy settings, which answers with the status rather
- * than throwing on one that is not 200.
+ * a GET through the IDE's proxy settings, which answers with the status and the
+ * body rather than throwing on a status that is not 200.
  */
 fun httpGet(
     url: String,
@@ -19,6 +19,9 @@ fun httpGet(
         .throwStatusCodeException(false)
         .tuner { connection -> headers.forEach(connection::setRequestProperty) }
         .connect { request ->
-            val status = (request.connection as HttpURLConnection).responseCode
-            HttpResponse(status, if (status == 200) request.readString() else "")
+            val connection = request.connection as HttpURLConnection
+            val status = connection.responseCode
+            // A refusal's body is GitHub's reason, which says, for one, when an organization has not approved the app.
+            val body = if (status == 200) request.readString() else connection.errorStream?.use { String(it.readBytes()) }.orEmpty()
+            HttpResponse(status, body)
         }

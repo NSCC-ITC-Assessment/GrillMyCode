@@ -17,9 +17,13 @@ import javax.swing.text.html.StyleSheet
  *
  * A Swing HTML pane, not a browser: it runs no script and, given only the
  * markup questionToHtml builds, where everything from the issue is escaped,
- * loads nothing.
+ * loads nothing. The instructor view swaps in instructorQuestionToHtml, which
+ * escapes the answer key's answer the same way.
  */
 class QuestionDetails : JEditorPane() {
+    /** Builds the markup for a question; set before the next [show]. */
+    var toHtml: (Question?) -> String = ::questionToHtml
+
     init {
         isEditable = false
         border = JBUI.Borders.empty(0, 12, 12, 12)
@@ -30,7 +34,7 @@ class QuestionDetails : JEditorPane() {
     fun show(question: Question?) {
         // Built each time, so the colours follow a change of theme.
         editorKit = HTMLEditorKitBuilder().withWordWrapViewFactory().withStyleSheet(styleSheet()).build()
-        text = "<html><body>${questionToHtml(question)}</body></html>"
+        text = "<html><body>${toHtml(question)}</body></html>"
         caretPosition = 0
     }
 
@@ -41,6 +45,7 @@ class QuestionDetails : JEditorPane() {
         val code = "font-family: '${scheme.editorFontName}';"
         return StyleSheet().apply {
             addRule("h2 { font-size: 1em; font-weight: bold; margin: 12px 0 4px 0; }")
+            addRule("h3 { font-size: 1em; font-weight: bold; margin: 12px 0 4px 0; }")
             addRule("p { margin: 0 0 10px 0; }")
             addRule(".hint, .caption { color: $hint; }")
             addRule(".caption { margin: 12px 0 4px 0; }")

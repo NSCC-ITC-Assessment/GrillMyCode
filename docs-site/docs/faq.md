@@ -110,7 +110,7 @@ In a GitHub issue in the student's repository, called **GrillMyCode Questions**,
 
 ### Can students read the questions in their editor?
 
-Yes, in VS Code, with the optional GrillMyCode Companion extension. It shows each question beside the lines it asks about. See [Showing questions in VS Code](guides/vscode-extension.md).
+Yes, in VS Code and JetBrains IDEs, with the optional GrillMyCode Companion extension or plugin. It shows each question beside the lines it asks about. See [Showing questions in VS Code](guides/vscode-extension.md) and [Showing questions in JetBrains IDEs](guides/jetbrains-plugin.md).
 
 ### Can I get the questions into my LMS?
 
