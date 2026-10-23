@@ -39,6 +39,8 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          # Files this workflow's questions apart from the other phases'.
+          question_set: ${{ github.workflow }}
           submission_tags: "phase2"
           # Assess only the work since the phase1 tag. The run fails if the
           # student hasn't pushed phase1, rather than assessing everything.
@@ -57,7 +59,7 @@ jobs:
 
 - Each phase still gets its own issue, PDF and instructor-repository folder, exactly as in [Milestone tags](3-milestone-tags.md).
 - Never list the same tag in two workflow files. Both would run and write to the same issue.
-- To choose the tag when running a phase by hand, pick it in the branch/tag menu on the Run workflow form. Choosing `main` files the questions under the branch instead.
+- To choose the tag when running a phase by hand, pick it in the branch/tag menu on the Run workflow form. Choosing `main` files the questions under the branch instead, still apart from the other phases because of `question_set`. See [Question sets](../reference/triggers.md#question-sets).
 
 ## Related
 

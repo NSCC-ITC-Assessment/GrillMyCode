@@ -1,0 +1,26 @@
+{
+  "questions": [
+    {
+      "number": 1,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/cart.js",
+          "start_line": 19,
+          "end_line": 22,
+          "language": "js",
+          "code": "export function removeItem(cart, sku) {\n  cart.items = cart.items.filter((entry) => entry.sku !== sku);\n  return cart;\n}"
+        }
+      ],
+      "question": "Why does `removeItem` assign a new array to `cart.items` rather than splice it?",
+      "answer": "Filtering returns a new array; the function then stores it on the cart.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    }
+  ]
+}

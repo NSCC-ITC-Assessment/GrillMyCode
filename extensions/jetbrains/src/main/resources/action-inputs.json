@@ -195,6 +195,12 @@
     "values": ["cumulative", "previous-tag"],
     "prefix": "tag:"
   },
+  "question_set": {
+    "description": "The set of questions this workflow makes, kept apart from any other workflow's in the same repository. Each set has its own assessment issue, PDF and instructor-repo folder ({student}/set.<name>/). The Workflow Wizard sets it to the workflow's name, from the github.workflow context. The folder name is the value in lower case, with each run of characters other than letters, digits, - and _ made a single -, so \"Lab 3\" and \"lab-3\" are one set. Empty, or \"GrillMyCode\", is no set: the issue, PDF and folder carry no set name. The run fails if the value is over 100 characters, or has no letter, digit, - or _.",
+    "default": "",
+    "required": false,
+    "kind": "questionSet"
+  },
   "base_sha": {
     "description": "Override the base commit SHA for the diff. When provided this takes precedence over starter_code. Auto-detected when not provided.",
     "default": "",

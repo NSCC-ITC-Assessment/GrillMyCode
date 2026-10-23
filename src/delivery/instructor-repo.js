@@ -19,7 +19,9 @@
  * rather than replacing the last. That folder also carries submissions.md, a
  * log of every run for the tag, and history/, the question sets each run
  * replaced — so a resubmission is visible to the instructor (see
- * submission-history.js). The repository is named
+ * submission-history.js). A run with a question set files all of this under
+ * {studentLogin}/set.<slug>/ instead, tag groups included, so two workflows in
+ * one repository keep their own. The repository is named
  * {assignmentName}-grillmycode-instructor and lives in the same organization as
  * the student repositories.
  *
@@ -45,6 +47,7 @@ import {
   INSTRUCTOR_RATE_LIMIT_MAX_WAIT_MS,
   LOGO_HEADING_HEIGHT_PX,
   LOGO_URL,
+  QUESTION_SET_MARK,
 } from '../constants.js';
 
 import {
@@ -76,10 +79,19 @@ export const ASSESSMENT_DATA_DIR = 'data';
 
 /**
  * The folder a student's assessment is filed in: {studentLogin}/, or
- * {studentLogin}/{tagGroup}/ for a run started by a submission tag.
+ * {studentLogin}/{tagGroup}/ for a run started by a submission tag. A question
+ * set puts either one level down, in {studentLogin}/set.<slug>/. The mark keeps
+ * a set's folder apart from a tag group's: a slug never holds a ".".
+ *
+ * @param {string} studentLogin
+ * @param {string} [tagGroup] - The tag group's slug, or '' for none.
+ * @param {string} [questionSet] - The question set's slug, or '' for none.
  */
-export function assessmentFolder(studentLogin, tagGroup = '') {
-  return tagGroup ? `${studentLogin}/${tagGroup}` : studentLogin;
+export function assessmentFolder(studentLogin, tagGroup = '', questionSet = '') {
+  const parts = [studentLogin];
+  if (questionSet) parts.push(`${QUESTION_SET_MARK}${questionSet}`);
+  if (tagGroup) parts.push(tagGroup);
+  return parts.join('/');
 }
 
 /** Resolves after `ms` milliseconds. */
@@ -432,6 +444,9 @@ async function syncInstructorRepoFiles(octokit, owner, instructorRepoName) {
  * @param {string} [params.tagGroup]           - Filename-safe submission tag group, for a
  *                                               tag run; files the assessment in a
  *                                               subfolder of the student's folder.
+ * @param {string} [params.questionSet]        - The question set's slug; files the
+ *                                               assessment under set.<slug>/ in the
+ *                                               student's folder.
  * @param {string}  params.content             - Markdown report content to write.
  * @param {object[]} params.questions         - The numbered question objects the report
  *                                               was rendered from, filed as questions.json
@@ -456,6 +471,7 @@ export async function deliverToInstructorRepo({
   instructorRepoName,
   studentLogin,
   tagGroup = '',
+  questionSet = '',
   content,
   questions,
   droppedQuestions = [],
@@ -470,9 +486,10 @@ export async function deliverToInstructorRepo({
   // by the current workflow rather than whatever the repository was seeded with.
   await syncInstructorRepoFiles(octokit, owner, instructorRepoName);
 
-  const folder = assessmentFolder(studentLogin, tagGroup);
+  const folder = assessmentFolder(studentLogin, tagGroup, questionSet);
   const dataFolder = `${folder}/${ASSESSMENT_DATA_DIR}`;
-  const label = tagGroup ? `${studentLogin} (${tagGroup})` : studentLogin;
+  const groups = [questionSet && `set ${questionSet}`, tagGroup].filter(Boolean);
+  const label = groups.length > 0 ? `${studentLogin} (${groups.join(', ')})` : studentLogin;
   const filePath = `${folder}/questions.md`;
   const shortHead = headSha.substring(0, GIT_SHA_SHORT_LENGTH);
   const message = `chore: update assessment for ${label} at ${shortHead}`;

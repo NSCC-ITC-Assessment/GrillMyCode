@@ -51,17 +51,22 @@ function commentJson(record) {
  *
  * `version` is ISSUE_LAYOUT_VERSION, which covers the Markdown around the
  * comment as well. `headSha` is the full SHA the report prints the start of.
+ * `set` is the question set's slug (questionSetSlug in src/context.js), and is
+ * there only for a run with a set: its answer key is filed under
+ * {student}/set.<set>/.
  *
  * @param {object} data
  * @param {string} data.headSha
+ * @param {string} [data.questionSet] - The question set's slug, or '' for none.
  * @param {{ number: number, broader: boolean, snippets: { file: string, start: number, end: number }[] }[]} data.questions -
  *   The numbered questions the report shows, less any the answer-leak guard
  *   withheld.
  */
-export function questionsComment({ headSha, questions }) {
+export function questionsComment({ headSha, questionSet = '', questions }) {
   const record = {
     version: ISSUE_LAYOUT_VERSION,
     headSha,
+    ...(questionSet ? { set: questionSet } : {}),
     questions: questions.map((q) => ({
       number: q.number,
       broader: q.broader,
@@ -112,6 +117,8 @@ export function questionsComment({ headSha, questions }) {
  * @param {string | null} [report.pdfUrl]
  * @param {string} [report.submissionNote]
  * @param {Parameters<typeof questionsComment>[0]['questions']} [report.issueQuestions]
+ * @param {{ name: string, slug: string }} [report.questionSet] - The run's
+ *   question set (readQuestionSet in src/inputs.js); both '' for none.
  */
 export function formatReport({
   questions,
@@ -133,6 +140,7 @@ export function formatReport({
   pdfUrl,
   submissionNote,
   issueQuestions,
+  questionSet = { name: '', slug: '' },
 }) {
   const date = new Date().toISOString().replace('T', ' ').substring(0, 19) + ' UTC';
   const shortBase = baseSha.substring(0, GIT_SHA_SHORT_LENGTH);
@@ -143,13 +151,15 @@ export function formatReport({
   const isDefaultBranch = !branchName || branchName === 'main' || branchName === 'master';
   const branchNote = isDefaultBranch ? '' : `> **Branch:** \`${branchName}\`\n`;
 
-  // A backtick is legal in a tag name and would close the code span early.
+  // A backtick is legal in a tag name or a workflow's name, and would close
+  // the code span early.
   const refCode = (name) => `\`${name.replace(/`/g, "'")}\``;
   const tagNote = tagName
     ? `> **Submission tag:** ${refCode(tagName)}` +
       (previousTagName ? ` (changes since ${refCode(previousTagName)})` : '') +
       '\n'
     : '';
+  const setNote = questionSet.slug ? `> **Question set:** ${refCode(questionSet.name)}\n` : '';
 
   const contextNote =
     assignmentContextFiles && assignmentContextFiles.length > 0
@@ -186,7 +196,7 @@ export function formatReport({
     : [];
 
   const dataComment = issueQuestions
-    ? [questionsComment({ headSha, questions: issueQuestions }), '']
+    ? [questionsComment({ headSha, questionSet: questionSet.slug, questions: issueQuestions }), '']
     : [];
 
   return [
@@ -199,6 +209,9 @@ export function formatReport({
     sourceRepoNote,
     `> **Commits reviewed:** \`${shortBase}\` → \`${shortHead}\``,
     branchNote,
+    // Spread rather than '' when absent, which would add a line to every
+    // report without a set and change the layout the extensions read.
+    ...(setNote ? [setNote] : []),
     tagNote,
     submissionLine,
     `> **Code Files Assessed:** ${fileList}`,

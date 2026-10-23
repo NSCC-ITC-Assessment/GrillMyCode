@@ -5,8 +5,11 @@ on:
     paths:
       # GrillMyCode files the data it builds quizzes from in a data/ subfolder.
       - "*/data/questions.json"
-      # A run started by a submission tag files under {student}/{tag group}/.
+      # A run started by a submission tag files under {student}/{tag group}/,
+      # and a question set under {student}/set.<name>/.
       - "*/*/data/questions.json"
+      # A question set's tag runs file under {student}/set.<name>/{tag group}/.
+      - "*/*/*/data/questions.json"
   workflow_dispatch:
 
 concurrency:
@@ -614,15 +617,22 @@ jobs:
               try {
                 // {student}/data/questions.json, or
                 // {student}/{tag group}/data/questions.json for a run started by
-                // a submission tag. The quiz files go beside questions.md, in the
-                // folder above data/. The group joins the student in every name
-                // below, so each milestone's package is told apart from the
-                // student's others once out of this folder.
+                // a submission tag, with set.<name>/ between the two for a
+                // question set. The quiz files go beside questions.md, in the
+                // folder above data/. The groups join the student in every name
+                // below, so each milestone's and each set's package is told
+                // apart from the student's others once out of this folder. The
+                // file names keep the set.<name> mark, which keeps a set apart
+                // from a tag group of the same name; the title, which people
+                // read, drops it.
                 const studentDir = path.dirname(path.dirname(qjson));
                 const [student, ...groupParts] = studentDir.split(path.sep);
                 const group = groupParts.join('-');
                 const quizId = group ? student + '_' + group : student;
-                const quizTitle = assignment + ' - ' + student + (group ? ' (' + group + ')' : '');
+                const groupTitle = groupParts
+                  .map((part) => (part.startsWith('set.') ? part.slice('set.'.length) : part))
+                  .join(', ');
+                const quizTitle = assignment + ' - ' + student + (group ? ' (' + groupTitle + ')' : '');
 
                 const content = fs.readFileSync(qjson, 'utf8');
                 const parsed = parseQuestionsJson(content);

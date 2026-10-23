@@ -23,6 +23,8 @@ import {
   starterQuestionsOneInError,
   starterShareDefaultError,
   temperatureError,
+  DEFAULT_WORKFLOW_NAME,
+  workflowNameError,
 } from './generateYaml';
 
 // Order follows .github/prompts/plan-workflowWizard.prompt.md: the facts
@@ -82,10 +84,14 @@ const STEPS = [
  * @typedef {object} WizardHost
  * @property {string} openFolder
  * @property {(options?: { choose?: boolean }) => Promise<any>} pickFolder
- * @property {(yaml: string) => Promise<boolean>} saveWorkflow
+ * @property {(yaml: string, fileName: string) => Promise<boolean>} saveWorkflow
  */
 
 const INITIAL_CONFIG = {
+  // The workflow's name, which is also its question set (question_set is
+  // written as ${{ github.workflow }}): each name gets its own issue, PDF and
+  // instructor-repository folder, and names the file it is saved as.
+  workflowName: DEFAULT_WORKFLOW_NAME,
   triggerEvent: 'workflow_dispatch',
   branchMode: 'specify',
   pushBranches: ['main', 'master'],
@@ -246,6 +252,8 @@ function getStepError(stepIndex, cfg) {
     }
   }
   if (label === 'Delivery') {
+    const nameError = workflowNameError(cfg);
+    if (nameError) return nameError;
     if (instructorRepoActive(cfg) && (!cfg.instructorRepoTokenSecret || !cfg.instructorRepoTokenSecret.trim())) {
       return 'Please enter a secret name for the instructor repo token before continuing.';
     }
@@ -265,8 +273,12 @@ function getStepError(stepIndex, cfg) {
  *                            or with `choose` one the instructor picks. Its
  *                            `ignoredLeftOut` is true if the host lists it
  *                            without the files Git ignores
- *   host.saveWorkflow(yaml)  writes the workflow file. Resolves to true once
- *                            it is written, and false if that was cancelled
+ *   host.saveWorkflow(yaml, fileName)
+ *                            writes the workflow to .github/workflows/<fileName>,
+ *                            which is workflowFileName in generateYaml.js:
+ *                            grill-my-code.yml or grill-my-code-<set>.yml.
+ *                            Resolves to true once it is written, and false if
+ *                            that was cancelled
  *
  * @param {{ actionRef?: string, docsBase?: string, host?: WizardHost }} props
  */

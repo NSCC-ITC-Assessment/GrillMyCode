@@ -25,6 +25,7 @@ import {
   GITHUB_API_VERSION,
   INSTRUCTOR_REPO_SUFFIX,
   ISSUE_BODY_LIMIT,
+  QUESTION_SET_MARK,
 } from './constants.js';
 import { readInputs } from './inputs.js';
 import {
@@ -450,6 +451,14 @@ function renderOwnWorkWarning(state) {
 function renderOverview(state) {
   const rows = [
     ['Assignment', state.assignmentName ? `\`${state.assignmentName}\`` : '—'],
+    ...(state.inputs?.questionSet.slug
+      ? [
+          [
+            'Question set',
+            `${refCode(state.inputs.questionSet.name)} (folder ${refCode(`${QUESTION_SET_MARK}${state.inputs.questionSet.slug}`)})`,
+          ],
+        ]
+      : []),
     [
       'Student',
       state.studentLogin
@@ -1845,6 +1854,7 @@ async function run() {
       contextSummary: studentContextSummary,
       studentLogin: submitter,
       sourceRepo,
+      questionSet: inputs.questionSet,
     });
 
     // ── Generate PDF and upload to rolling release ───────────────────────────
@@ -1852,7 +1862,11 @@ async function run() {
     // the assignment and student, so the asset name never depends on identity.
     // A tag run adds its group, so each milestone keeps its own PDF rather than
     // replacing the last one.
-    const pdfFilename = `grill-my-code-${safeFilePart(ctx.repo.repo)}${tagSlug ? `-${tagSlug}` : ''}.pdf`;
+    // A question set adds its mark, so each workflow keeps its own PDF too.
+    const setSlug = inputs.questionSet.slug;
+    const pdfFilename =
+      `grill-my-code-${safeFilePart(ctx.repo.repo)}` +
+      `${setSlug ? `.${QUESTION_SET_MARK}${setSlug}` : ''}${tagSlug ? `-${tagSlug}` : ''}.pdf`;
     /** @type {string | null} */
     let pdfUrl = null;
     /** @type {Buffer | null} */
@@ -1901,6 +1915,7 @@ async function run() {
       sourceRepo,
       pdfUrl,
       issueQuestions: shownQuestions,
+      questionSet: inputs.questionSet,
     });
 
     core.setOutput('questions', questions);
@@ -1936,6 +1951,7 @@ async function run() {
       report: safeIssueBody,
       branchName,
       tagPattern: state.tagPattern,
+      questionSetName: inputs.questionSet.name,
       headSha,
       studentLogin,
     });
@@ -1978,7 +1994,7 @@ async function run() {
             octokit: instructorOctokit,
             owner: ctx.repo.owner,
             instructorRepoName,
-            folder: assessmentFolder(submitter, tagSlug),
+            folder: assessmentFolder(submitter, tagSlug, inputs.questionSet.slug),
           });
           const entry = buildSubmissionEntry({
             entries: history.entries,
@@ -2025,6 +2041,7 @@ async function run() {
         studentLogin: submitter,
         sourceRepo: `${ctx.repo.owner}/${ctx.repo.repo}`,
         submissionNote: resubmissionNote,
+        questionSet: inputs.questionSet,
       });
       const rawOutputCopy = formatRawOutput({
         rawOutput: aiOutput,
@@ -2068,6 +2085,7 @@ async function run() {
           instructorRepoName,
           studentLogin: submitter,
           tagGroup: tagSlug,
+          questionSet: inputs.questionSet.slug,
           content: instructorReport,
           questions: finalQuestions,
           droppedQuestions,

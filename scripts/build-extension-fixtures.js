@@ -230,6 +230,37 @@ const CASES = [
     report: { branchName: 'main' },
     issue: { branchName: 'main' },
   },
+  {
+    // A workflow with a question set, run on the default branch: the set goes
+    // in the title, the hidden data and the header.
+    name: 'question-set',
+    sources: [source('src/cart.js', CART_JS)],
+    reply: [
+      question(
+        'What does `subtotal` return for an empty cart?',
+        'Zero, because the reduction starts from 0.',
+        [['src/cart.js', 11, 17]],
+      ),
+    ],
+    questionSet: { name: 'Lab 3: Checkout', slug: 'lab-3-checkout' },
+    report: { branchName: 'main' },
+    issue: { branchName: 'main' },
+  },
+  {
+    // A question set's tag run: the set comes before the tag group.
+    name: 'question-set-tag',
+    sources: [source('src/cart.js', CART_JS)],
+    reply: [
+      question(
+        'Why does `removeItem` assign a new array to `cart.items` rather than splice it?',
+        'Filtering returns a new array; the function then stores it on the cart.',
+        [['src/cart.js', 19, 22]],
+      ),
+    ],
+    questionSet: { name: 'Lab 3', slug: 'lab-3' },
+    report: { branchName: '', tagName: 'phase1' },
+    issue: { branchName: '', tagPattern: 'phase1' },
+  },
 ];
 
 /** A stand-in for GitHub with no open issues, which keeps the one that is created. */
@@ -250,11 +281,19 @@ function recordingOctokit() {
   };
 }
 
-/** What an extension should read from a case's issue. */
-function expectedFor({ title, questions, report, view }) {
+/**
+ * What an extension should read from a case's issue. A case with a question
+ * set has its name, as the title shows it, in `group.set`, and its slug, from
+ * the hidden data, in `report.set`: the slug names its folder in the
+ * instructor repository.
+ */
+function expectedFor({ title, questions, report, view, questionSet }) {
   const group = title.match(/\((tag: )?(.+)\)$/);
   return {
-    group: group ? { kind: group[1] ? 'tag' : 'branch', name: group[2] } : { kind: 'unnamed' },
+    group: {
+      ...(group ? { kind: group[1] ? 'tag' : 'branch', name: group[2] } : { kind: 'unnamed' }),
+      ...(questionSet ? { set: questionSet.name } : {}),
+    },
     report: {
       baseSha: BASE_SHA.slice(0, 7),
       headSha: HEAD_SHA.slice(0, 7),
@@ -263,6 +302,7 @@ function expectedFor({ title, questions, report, view }) {
       // The report names a branch only when it is not the default one.
       branch: ['', 'main', 'master'].includes(report.branchName) ? null : report.branchName,
       tag: report.tagName ?? null,
+      ...(questionSet ? { set: questionSet.slug } : {}),
       files: report.files,
       truncated: false,
     },
@@ -289,6 +329,7 @@ async function buildCase({
   contextSummary,
   report,
   issue,
+  questionSet,
   view = 'student',
 }) {
   const parsed = parseQuestionsReply(
@@ -311,6 +352,7 @@ async function buildCase({
     studentLogin: 'jsmith',
     sourceRepo: 'my-school/cs-principles-lab-3-jsmith',
     issueQuestions: questions,
+    questionSet,
     ...report,
   }).replace(/^> \*\*Generated:\*\* .*$/m, `> **Generated:** ${GENERATED}`);
 
@@ -321,6 +363,7 @@ async function buildCase({
     report: body,
     headSha: HEAD_SHA,
     studentLogin: 'jsmith',
+    questionSetName: questionSet?.name,
     ...issue,
   });
   const { title, labels } = octokit.created;
@@ -330,7 +373,7 @@ async function buildCase({
     [`${name}/issue.json`]: json({ title, labels }),
     [`${name}/body.md`]: octokit.created.body,
     [`${name}/expected.json`]: json(
-      expectedFor({ title, questions, report: { ...report, files }, view }),
+      expectedFor({ title, questions, report: { ...report, files }, view, questionSet }),
     ),
     [`${name}/questions.json`]: buildQuestionsJson(questions),
   };

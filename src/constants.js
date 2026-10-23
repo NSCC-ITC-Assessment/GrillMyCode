@@ -784,6 +784,29 @@ export const DEFAULT_TAG_DIFF_BASE = 'cumulative';
 export const SUBMISSION_TAG_GROUP_FALLBACK = 'tag';
 
 /**
+ * The set a workflow named GrillMyCode makes, as questionSetSlug in
+ * src/context.js writes it. It is no set at all: a run with question_set
+ * "GrillMyCode" files its issue, PDF and instructor-repository folder exactly
+ * as a run without question_set does. Every workflow in the docs, and the
+ * Workflow Wizard's by default, is named GrillMyCode, so giving it a folder of
+ * its own would move every existing assignment's outputs.
+ */
+export const DEFAULT_QUESTION_SET_SLUG = 'grillmycode';
+
+/**
+ * Prefix of a question set's instructor-repository folder ({student}/set.<slug>/)
+ * and of its mark in the PDF's name. A slug never holds a ".", so a set's
+ * folder cannot be mistaken for a tag group's, or for data/ and history/.
+ */
+export const QUESTION_SET_MARK = 'set.';
+
+/**
+ * Longest question_set the action accepts. The value is printed in the issue
+ * title and makes a folder name, and a workflow's name is rarely half this.
+ */
+export const QUESTION_SET_MAX_CHARS = 100;
+
+/**
  * Default label_repos. Off, so that writing to repository metadata the
  * instructor owns — topics they set by hand, the description text they wrote —
  * is always visible in the workflow as an explicit label_repos: "true". The
