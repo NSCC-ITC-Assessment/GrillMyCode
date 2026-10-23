@@ -1,16 +1,48 @@
 import React from 'react';
 import styles from '../styles.module.css';
+import { workflowFileName, workflowNameError } from '../generateYaml';
 
 /** @import { StepProps } from '../index' */
 
 // Everything GrillMyCode writes and who can see it: the student's issue and PDF
 // (always on), whether answers go to the student, and the private instructor
 // copy. Include answers sits here rather than with the other question settings
-// so both places answers can go are decided side by side.
+// so both places answers can go are decided side by side. The workflow's name
+// comes first, because it decides which issue, PDF and folder a run replaces.
 /** @param {StepProps} props */
 export default function StepDelivery({ cfg, onChange, docsBase = '/docs' }) {
+  const nameError = workflowNameError(cfg);
   return (
     <div>
+      <div className={styles.fieldGroup} style={{ marginBottom: '2.5rem' }}>
+        <label className={styles.label} htmlFor="gmc-workflow-name">Workflow name</label>
+        <span className={styles.hint}>
+          Shown in the Actions tab, and in the title of each student's issue. Each name is its own
+          set of questions, with its own issue, PDF and instructor-repository folder, so two
+          workflows with different names never replace each other's questions. Reusing a name
+          replaces that set's questions. Keep <code>GrillMyCode</code> unless this assignment has
+          more than one GrillMyCode workflow. Renaming the workflow later starts a new set.
+        </span>
+        <input
+          id="gmc-workflow-name"
+          type="text"
+          className={styles.input}
+          style={nameError ? { borderColor: 'var(--ifm-color-danger)' } : undefined}
+          value={cfg.workflowName}
+          onChange={(e) => onChange({ workflowName: e.target.value })}
+          placeholder="GrillMyCode"
+        />
+        {nameError ? (
+          <span style={{ fontSize: '0.78rem', color: 'var(--ifm-color-danger)', marginTop: '0.3rem', display: 'block' }}>
+            {nameError}
+          </span>
+        ) : (
+          <span className={styles.hint} style={{ marginTop: '0.3rem' }}>
+            Its file: <code>.github/workflows/{workflowFileName(cfg)}</code>.
+          </span>
+        )}
+      </div>
+
       {/* Headings sit close to the items under them. */}
       <div className={styles.fieldGroup} style={{ marginBottom: '1rem' }}>
         <label className={styles.label}>What students get</label>

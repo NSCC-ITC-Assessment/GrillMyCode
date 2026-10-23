@@ -16,6 +16,7 @@ Each [delivery group](triggers.md#delivery-groups) has one issue, labelled `asse
 |---|---|
 | Push, or manual run on a branch | `GrillMyCode Questions (main)`, with the branch's name |
 | Submission tag `phase1` | `GrillMyCode Questions (tag: phase1)` |
+| A [question set](triggers.md#question-sets), `Lab 3` | `GrillMyCode Questions: Lab 3 (main)`, or `GrillMyCode Questions: Lab 3 (tag: phase1)` |
 
 ### Who the issue is assigned to
 
@@ -58,11 +59,12 @@ Under the heading, the body holds one HTML comment, which GitHub doesn't display
 |---|---|
 | `version` | The version of the issue's layout. It goes up when the body changes in a way a reader written for the last layout couldn't follow |
 | `headSha` | The full SHA of the head commit, which **Commits reviewed** shows the start of |
+| `set` | Only with a [question set](triggers.md#question-sets): its folder name, such as `lab-3` |
 | `questions` | For each question shown: its number, whether it is a broader question, and the file and lines of each snippet |
 
 The comment never holds a question's text, its code, an answer or a distractor, whether `include_answers` is on or off. A withheld question isn't listed.
 
-It has two uses. [The VS Code extension](vscode-extension.md#how-it-finds-the-questions) reads it, and the action knows its own issues by it. The PDF and the instructor repository's copy don't carry it.
+It has two uses. [The VS Code extension](vscode-extension.md#how-it-finds-the-questions) and [the JetBrains plugin](jetbrains-plugin.md#how-it-finds-the-questions) read it, and the action knows its own issues by it. The PDF and the instructor repository's copy don't carry it.
 
 ### When the questions are regenerated
 
@@ -107,6 +109,8 @@ A tag run adds the tag's group, meaning its `submission_tags` entry reduced to t
 | `cs-principles-lab-3-jsmith` | `phase*` (wildcard) | `grill-my-code-cs-principles-lab-3-jsmith-phase.pdf` |
 
 Re-pushing a tag replaces that group's PDF, and every tag matching one wildcard entry shares a single asset.
+
+A [question set](triggers.md#question-sets) adds `.set.` and its folder name before any tag group, so each workflow keeps its own PDF: `grill-my-code-cs-principles-lab-3-jsmith.set.lab-3.pdf`, or `grill-my-code-cs-principles-lab-3-jsmith.set.lab-3-phase1.pdf` for a tag run.
 
 ### A stable download link
 

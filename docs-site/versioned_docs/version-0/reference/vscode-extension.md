@@ -52,11 +52,13 @@ The hidden data carries the version of the issue's layout. When that version is 
 
 ## Which set of questions it shows
 
-A repository has one issue per branch and one per submission tag. When there are several, the extension shows, in order of preference:
+A repository has one issue per branch and one per submission tag, and one of each per [question set](triggers.md#question-sets). When there are several, the extension shows, in order of preference:
 
 1. the set the reader last picked with **Choose Which Questions to Show**, remembered for that repository;
-2. the set for the branch that is checked out;
+2. the set for the branch that is checked out: the one with no question set, or else the question set updated most recently;
 3. the most recently updated set.
+
+**Choose Which Questions to Show** lists a question set's issue under its name, such as `Lab 3 · main`. Reading question sets needs a version later than 0.4.5.
 
 Picking **Follow the checked-out branch** in that list clears the remembered choice.
 
@@ -131,7 +133,7 @@ The extension works out the assignment and the student from the repository's nam
 my-school/cs-principles-lab-3-grillmycode-instructor/jsmith/data/questions.json
 ```
 
-When the questions showing are a submission tag's, it reads that tag's copy, from the [tag's folder](instructor-repository.md#submission-tag-folders).
+When the questions showing are a submission tag's, it reads that tag's copy, from the [tag's folder](instructor-repository.md#submission-tag-folders). A question set's are read from the [set's folder](instructor-repository.md#question-set-folders), which the issue's [hidden data](assessment-output.md#hidden-data) names. An issue whose title names a set and whose hidden data doesn't gets no answer key.
 
 How the student is found depends on whose repository is open:
 
@@ -175,7 +177,7 @@ A repository with an answer key and no questions issue still gets the instructor
 
 ## Workflow help
 
-In a file under `.github/workflows`, the extension reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. It works from the text of the file alone: no sign-in, no request to GitHub and no Git. Every other step is left alone. Workflow help is in version 0.4.0 and later.
+In a file under `.github/workflows`, the extension reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. It works from the text of the file, and of the other workflow files in its folder: no sign-in, no request to GitHub and no Git. Every other step is left alone. Workflow help is in version 0.4.0 and later.
 
 Opening a YAML file starts the extension, as opening the GrillMyCode view does.
 
@@ -192,6 +194,7 @@ Problems are underlined as the file is typed and listed in the **Problems** pane
 | A value outside the input's fixed set: `starter_code`, `previous_work`, `question_emphasis`, `ai_reasoning_effort`, `ai_provider`, `tag_diff_base` | Error |
 | Anything but `true` or `false` for `label_repos` or `preview_only` | Error |
 | A `submission_tags` pattern outside the [supported syntax](triggers.md#pattern-syntax) | Error |
+| A `question_set` over 100 characters, or with no letter, digit, `-` or `_`, and the workflow's name, when `question_set` is `${{ github.workflow }}` | Error |
 | Text where a whole number belongs | Error |
 | A number below the input's smallest value or above its largest, where the action uses the nearest one it allows | Warning |
 | An `ai_temperature` the action ignores | Warning |
@@ -213,6 +216,13 @@ Some checks compare one input with another, or with the rest of the workflow:
 | `starter_questions_one_in` when `starter_code` is not `ask` | Information |
 | `previous_work` when neither `tag_diff_base` nor `base_sha` gives the run earlier work | Information |
 | `tag_diff_base` with no `submission_tags` | Information |
+| `question_set: ${{ github.workflow }}` in a workflow with no `name:` | Information |
+
+One check compares the file with the other workflow files in its folder:
+
+| What is underlined | Level |
+| ------------------ | ----- |
+| A GrillMyCode step whose [question set](triggers.md#question-sets) another workflow file shares, so that each replaces the other's questions. It is underlined on `question_set`, or on `uses:` when the step has none | Warning |
 
 A value GitHub works out when the workflow runs, such as `${{ inputs.num_questions }}`, is not checked, and neither is a comparison that depends on one.
 
@@ -241,7 +251,7 @@ Set `grillmycode.workflowHelp.enabled` to `false` in VS Code's settings, for the
 **GrillMyCode: Open Workflow Wizard**, in the Command Palette, opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, with the same steps and the same workflow at the end, and it does two things a web page cannot. The Wizard is in version 0.4.0 and later.
 
 - **It reads the folder that is open.** On the **Files** step, **Use the open folder** tries the patterns on the folder open in the editor, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. With several folders open, the extension asks which one. In a Git repository, the files Git ignores, such as build output, are left out: they are never committed, so a run never sees them.
-- **It writes the workflow file.** On the last step, **Create the workflow file** writes `.github/workflows/grill-my-code.yml` in the open folder and opens it beside the Wizard. If the folder already has that file, the extension asks before replacing what is in it, and the change can be undone in the editor. With no folder open, the workflow opens as a new file that is not saved yet.
+- **It writes the workflow file.** On the last step, **Create the workflow file** writes the workflow to `.github/workflows/` in the open folder and opens it beside the Wizard. The file is `grill-my-code.yml` for a workflow named GrillMyCode, and named after the [question set](triggers.md#question-sets) for any other name, such as `grill-my-code-lab-3.yml`. If the folder already has that file, the extension asks before replacing what is in it, and the change can be undone in the editor. With no folder open, the workflow opens as a new file that is not saved yet.
 
 [Workflow help](#workflow-help) checks the file the Wizard writes, as it checks any other. The tab keeps its answers while another tab is in front. Closing it discards them.
 

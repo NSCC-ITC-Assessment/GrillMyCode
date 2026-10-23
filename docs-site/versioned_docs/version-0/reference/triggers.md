@@ -204,6 +204,37 @@ The single-line limit belongs to the web form, not to the input itself. The API 
 gh workflow run grill-my-code.yml -f instructor_context="$(cat docs/brief.md)"
 ```
 
+## Question sets
+
+A repository can hold more than one GrillMyCode workflow, for example one for a lab's checkpoint and one for its final submission, both run by hand. Without `question_set` they share one issue, PDF and instructor-repository folder per branch, so the last run to finish replaces the other's questions. Two run at the same time can even leave one run's `questions.md` beside the other's `questions.json`.
+
+`question_set` gives a workflow a set of its own. The Workflow Wizard sets it to the workflow's name, so each name is a set:
+
+```yaml
+name: Lab 3 checkpoint
+# ...
+      - uses: NSCC-ITC-Assessment/GrillMyCode@v0
+        with:
+          question_set: ${{ github.workflow }}
+```
+
+| Output | No set, or `GrillMyCode` | `question_set: Lab 3 checkpoint` |
+|---|---|---|
+| Assessment issue | `GrillMyCode Questions (main)` | `GrillMyCode Questions: Lab 3 checkpoint (main)` |
+| PDF asset | `grill-my-code-{repo}.pdf` | `grill-my-code-{repo}.set.lab-3-checkpoint.pdf` |
+| Instructor repository | `{student}/questions.md` | `{student}/set.lab-3-checkpoint/questions.md` |
+
+The set works with [delivery groups](#delivery-groups): a tag run of the same workflow is titled `GrillMyCode Questions: Lab 3 checkpoint (tag: phase1)`, and files under `{student}/set.lab-3-checkpoint/phase1/` and `grill-my-code-{repo}.set.lab-3-checkpoint-phase1.pdf`.
+
+- **The folder name** is the value in lower case, with each run of characters other than letters, digits, `-` and `_` made a single `-`. So `Lab 3` and `lab-3` are one set. The `set.` mark keeps a set's folder apart from a tag group's.
+- **`GrillMyCode` is no set,** and neither is an empty value. The issue, PDF and folder carry no set name, as in the first column above.
+- **Reusing a name reuses the set.** Two workflows with the same name are one set, and replace each other's questions. The [VS Code extension](vscode-extension.md) and [JetBrains plugin](jetbrains-plugin.md) warn about two workflow files that give one set.
+- **Renaming a workflow starts a new set** from its next run. The old issue stays open, and the old folder stays as it is.
+- **Name the workflow.** An unnamed workflow's `github.workflow` is its file's path, so its set is named after the path.
+- **The run fails** when the value is longer than 100 characters, or has no letter, digit, `-` or `_`.
+
+The issue's [hidden data](assessment-output.md#hidden-data) carries the set's folder name, which is how the editor plugins find its answer key.
+
 ## Overlapping runs
 
 Every recipe includes this `concurrency` block:
@@ -223,6 +254,6 @@ When a new push arrives for the same branch while an earlier run is still going,
 - **A cancelled run may stop part-way.** If it had already written some output, the replacement run overwrites it, so the final state reflects the latest push. A cancelled run in the Actions tab is expected.
 - **A cancelled run isn't free.** Its runner time counts against your plan's Actions minutes on private repositories, which includes most Classroom 50 repositories, and a reply already being generated may still be billed by OpenRouter.
 
-The group is per workflow **and** per ref, so pushes to different branches run independently. For a tag-triggered workflow the ref is the tag, so only a re-push of the *same* tag cancels a run; `phase1` and `phase2` pushed together both finish.
+The group is per workflow **and** per ref, so pushes to different branches run independently, and so do two workflows. Give each workflow its own [question set](#question-sets) so their outputs stay apart too. For a tag-triggered workflow the ref is the tag, so only a re-push of the *same* tag cancels a run; `phase1` and `phase2` pushed together both finish.
 
 To let a running run finish and queue the newer one instead, set `cancel-in-progress: false`. It assesses the older commit first, and pays for both runs.

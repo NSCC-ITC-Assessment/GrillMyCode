@@ -148,3 +148,21 @@ A student can resubmit under the same tag by moving it and pushing it again. Not
 **What counts as a submission:** every tag push, and every manual run started by the student themselves. A manual run started by anyone else, such as your own re-run from the Actions tab, is listed in `submissions.md` but not counted, and its header says so. In a team repository there's no single student to compare against, so every run counts.
 
 The record lives only in the instructor repository, so students can't see or edit it, and deleting and re-pushing a tag doesn't reset the count. The student's run summary also mentions a resubmission, but that count is informational; the instructor repository is the record to rely on.
+
+## Question set folders
+
+A workflow with a [question set](triggers.md#question-sets) files everything one level down, in a `set.{set}` subfolder of the student's folder, tag group folders included:
+
+```
+{student-login}/
+  set.{set}/                       ← e.g. set.lab-3, for a workflow named Lab 3
+    questions.md
+    {assignment}_{student-login}_set.{set}_quiz_{count}.imscc
+    {assignment}_{student-login}_set.{set}_brightspace_quiz_{count}.csv
+    data/
+      questions.json
+      raw-ai-output.md
+    {tag-group}/                   ← the set's submission tag folders, as above
+```
+
+The set is in the quiz file names and, without the `set.` mark, in the quiz title (`cs-principles-lab-3 - jsmith (lab-3)`, or `(lab-3, phase1)` in a tag group's folder). A workflow named `GrillMyCode`, or without `question_set`, files at the top of the student's folder, as in [Repository layout](#repository-layout).

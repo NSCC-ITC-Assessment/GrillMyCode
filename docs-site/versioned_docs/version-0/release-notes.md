@@ -5,6 +5,41 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.31.0 — 2026-10-23
+
+### What's Changed
+
+### Features
+
+- **jetbrains:** read question sets and give each its own workflow file
+- **vscode:** read question sets and give each its own workflow file
+- add question_set to keep each workflow's questions apart
+- **jetbrains:** add workflow help and the Workflow Wizard
+- **jetbrains:** update version to 0.2.0 and revise changelog for clarity
+- **jetbrains:** show an instructor each question's answer
+- **docs:** add screenshots for JetBrains plugin usage
+- **jetbrains:** say when the organization has not approved the app
+- **jetbrains:** wrap questions, choose among issues, and notice new questions
+- **jetbrains:** warn when the code has moved, and step through questions
+- **jetbrains:** show the selected question and highlight its lines
+- **jetbrains:** list the questions in a tool window
+- **jetbrains:** add report parsing functionality and tests
+- **jetbrains:** scaffold the JetBrains plugin with checks and a release workflow
+- **devcontainer:** add JetBrains Gradle plugin and update Java feature configuration
+- **extension:** update version to 0.4.5
+
+### Documentation
+
+- **jetbrains:** update marketplace screenshot details and clarify upload process
+- **jetbrains:** add the student guide, reference page and listing text
+- **jetbrains:** record the tool window and ready the first upload
+- record J0 of the JetBrains plugin as done, except the first upload
+
+### Chores & Maintenance
+
+- **jetbrains:** set the version to 0.2.0, with J3 in it
+- skip the branch image and VS Code checks for changes that cannot affect them
+
 ## v0.30.1 — 2026-10-19
 
 ### What's Changed

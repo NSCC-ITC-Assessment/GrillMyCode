@@ -257,6 +257,14 @@ jobs:
           # .classroom50.yaml file is excluded by pattern instead.
           skip_committers: "github-actions[bot]"
 
+          # ── Question set ──────────────────────────────────────────────────
+
+          # Keeps this workflow's questions apart from any other GrillMyCode
+          # workflow's in the repository: its own issue, PDF and
+          # instructor-repository folder. github.workflow is the workflow's
+          # name. The name GrillMyCode is no set: its outputs carry no set name.
+          question_set: ${{ github.workflow }}
+
           # ── Submission tags (tag-triggered workflows only) ────────────────
 
           # Tag patterns that mark a submission. Only used when the workflow is
