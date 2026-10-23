@@ -96,3 +96,23 @@ fun tagGroupSlug(pattern: String?): String {
             .replace(Regex("^-|-$"), "")
     return slug.ifEmpty { TAG_GROUP_FALLBACK }
 }
+
+/**
+ * The folder name a question set is filed under, as questionSetSlug in
+ * src/context.js: lower case, with each run of characters other than letters,
+ * digits, - and _ made one -. Empty for no set, which an empty value and the
+ * default workflow name, GrillMyCode, both are. Null for a value the action
+ * fails a run on, since it has nothing a folder name can keep.
+ */
+fun questionSetSlug(name: String?): String? {
+    val text = (name ?: "").replace(Regex("\\s+"), " ").trim()
+    if (text.isEmpty()) return ""
+    val slug =
+        text
+            .replace(Regex("[^a-zA-Z0-9_-]"), "-")
+            .replace(Regex("-{2,}"), "-")
+            .replace(Regex("^-|-$"), "")
+            .lowercase()
+    if (slug.isEmpty()) return null
+    return if (slug == DEFAULT_QUESTION_SET_SLUG) "" else slug
+}

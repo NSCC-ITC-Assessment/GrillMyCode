@@ -328,7 +328,19 @@ class QuestionsService(
         // The key is looked for before anything is shown, so an instructor's list
         // does not open on the student's questions and then change.
         val key =
-            when (val found = findAnswerKey(target.owner, target.repo, account.login, chosen?.group, account.token, ::httpGet)) {
+            when (
+                val found =
+                    findAnswerKey(
+                        target.owner,
+                        target.repo,
+                        account.login,
+                        chosen?.group,
+                        account.token,
+                        ::httpGet,
+                        titleSet = chosen?.set,
+                        set = (issues.firstOrNull { it.issue == chosen }?.report as? Report)?.set,
+                    )
+            ) {
                 is AnswerKey -> found
                 is NoAnswerKey -> {
                     // At debug level: for a student there is never one, and that is no fault.

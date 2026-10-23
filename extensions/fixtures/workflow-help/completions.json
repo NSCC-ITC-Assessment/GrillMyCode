@@ -1,0 +1,178 @@
+{
+  "cases": [
+    {
+      "name": "offers the inputs on an empty line of the step",
+      "inputs": [
+        "api_key: x",
+        "|"
+      ],
+      "replaces": "",
+      "insertsInclude": [
+        "num_questions: ",
+        "starter_code: "
+      ]
+    },
+    {
+      "name": "leaves out inputs already set, deprecated ones and the hidden one",
+      "inputs": [
+        "api_key: x",
+        "num_questions: 5",
+        "|"
+      ],
+      "insertsAllInputsExcept": [
+        "api_key",
+        "num_questions",
+        "include_initial_commit",
+        "include_codebase_context",
+        "log_prompt"
+      ]
+    },
+    {
+      "name": "replaces what has been typed of the name",
+      "inputs": [
+        "api_key: x",
+        "num_q|"
+      ],
+      "replaces": "num_q"
+    },
+    {
+      "name": "replaces only the name of an input that already has a value",
+      "inputs": [
+        "api_key: x",
+        "num_|question: 5"
+      ],
+      "replaces": "num_question",
+      "insertsInclude": [
+        "num_questions"
+      ]
+    },
+    {
+      "name": "offers the inputs in a step that has none yet",
+      "inputs": [
+        "|"
+      ],
+      "insertsInclude": [
+        "api_key: "
+      ]
+    },
+    {
+      "name": "offers no names where something else offers them",
+      "inputs": [
+        "api_key: x",
+        "|"
+      ],
+      "names": false,
+      "offered": false
+    },
+    {
+      "name": "offers nothing in another step's inputs",
+      "inputs": [
+        "api_key: x"
+      ],
+      "cursorAt": "fetch-depth",
+      "offered": false
+    },
+    {
+      "name": "offers nothing on the step's own level",
+      "inputs": [
+        "api_key: x"
+      ],
+      "suffix": "        ",
+      "cursorAtEnd": true,
+      "offered": false
+    },
+    {
+      "name": "offers nothing in an empty file",
+      "text": "|",
+      "offered": false
+    },
+    {
+      "name": "offers nothing inside the text of another input",
+      "inputs": [
+        "instructor_context: >",
+        "  Lab 3",
+        "  sta|",
+        "api_key: x"
+      ],
+      "offered": false
+    },
+    {
+      "name": "offers the values of an input with a fixed set, the default marked",
+      "inputs": [
+        "starter_code: |"
+      ],
+      "replaces": "",
+      "inserts": [
+        "none",
+        "ignore",
+        "context",
+        "ask"
+      ],
+      "defaults": [
+        "ignore"
+      ]
+    },
+    {
+      "name": "replaces the value being typed",
+      "inputs": [
+        "starter_code: con|text"
+      ],
+      "replaces": "context"
+    },
+    {
+      "name": "replaces the value being typed inside quotes",
+      "inputs": [
+        "starter_code: \"con|\""
+      ],
+      "replaces": "con"
+    },
+    {
+      "name": "offers true and false",
+      "inputs": [
+        "label_repos: |"
+      ],
+      "inserts": [
+        "true",
+        "false"
+      ]
+    },
+    {
+      "name": "offers the tag: form of tag_diff_base",
+      "inputs": [
+        "tag_diff_base: |"
+      ],
+      "inserts": [
+        "cumulative",
+        "previous-tag",
+        "tag:"
+      ]
+    },
+    {
+      "name": "offers values whether or not it offers names",
+      "inputs": [
+        "starter_code: |"
+      ],
+      "names": false,
+      "inserts": [
+        "none",
+        "ignore",
+        "context",
+        "ask"
+      ]
+    },
+    {
+      "name": "offers nothing for free text",
+      "inputs": [
+        "instructor_context: |"
+      ],
+      "offered": false
+    },
+    {
+      "name": "offers nothing for a number",
+      "inputs": [
+        "num_questions: |"
+      ],
+      "offered": false
+    }
+  ]
+}

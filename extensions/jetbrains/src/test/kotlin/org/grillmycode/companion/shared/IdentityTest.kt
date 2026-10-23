@@ -67,4 +67,18 @@ class IdentityTest {
     fun `tagGroupSlug falls back when nothing of the pattern can be kept`() {
         assertEquals("tag", tagGroupSlug("*"))
     }
+
+    @Test
+    fun `questionSetSlug turns a question set's name into a folder name`() {
+        assertEquals("lab-3", questionSetSlug("Lab 3"))
+        assertEquals("lab-3-checkout-a", questionSetSlug("  Lab 3:  Checkout (A) "))
+        assertEquals("grill-my-code", questionSetSlug("Grill My Code"))
+    }
+
+    @Test
+    fun `questionSetSlug gives no set for an empty name or GrillMyCode, and null for no folder name`() {
+        assertEquals("", questionSetSlug(""))
+        assertEquals("", questionSetSlug("GrillMyCode"))
+        assertEquals(null, questionSetSlug("!!!"))
+    }
 }

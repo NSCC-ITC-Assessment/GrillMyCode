@@ -304,11 +304,14 @@ export class QuestionsController {
 
     // The key is looked for before anything is shown, so an instructor's list
     // does not open on the student's questions and then change.
+    const chosen = this.#chooseIssue();
+    const report = chosen?.report;
     const found = await findAnswerKey({
       owner,
       repo,
       login: session.account.label,
-      group: this.#chooseIssue()?.group,
+      group: chosen?.group,
+      set: report && !report.needsUpdate ? report.set : undefined,
       token: session.accessToken,
       fetch: globalThis.fetch,
     });

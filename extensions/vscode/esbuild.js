@@ -8,6 +8,11 @@
 //   node esbuild.js --production  minified, as packaged
 //   node esbuild.js --watch       rebuild on every change
 //
+//   node esbuild.js --production --wizard-out=<folder>
+//                                 the Wizard's page alone, into that folder:
+//                                 how the JetBrains plugin's build gets the
+//                                 same Wizard (extensions/jetbrains/build.gradle.kts)
+//
 // The source is ES modules, like the rest of the repository. VS Code loads an
 // extension with require(), so that bundle is CommonJS.
 
@@ -17,6 +22,7 @@ import { context } from 'esbuild';
 
 const production = process.argv.includes('--production');
 const watch = process.argv.includes('--watch');
+const wizardOut = process.argv.find((arg) => arg.startsWith('--wizard-out='))?.slice(13);
 
 const shared = {
   bundle: true,
@@ -26,17 +32,19 @@ const shared = {
   logLevel: 'info',
 };
 
-const extension = await context({
-  ...shared,
-  entryPoints: ['src/extension.js'],
-  outfile: 'dist/extension.cjs',
-  format: 'cjs',
-  platform: 'node',
-  // The oldest Node any supported VS Code runs extensions on (engines.vscode).
-  target: 'node20',
-  // Provided by VS Code at run time, never bundled.
-  external: ['vscode'],
-});
+const extension = wizardOut
+  ? undefined
+  : await context({
+      ...shared,
+      entryPoints: ['src/extension.js'],
+      outfile: 'dist/extension.cjs',
+      format: 'cjs',
+      platform: 'node',
+      // The oldest Node any supported VS Code runs extensions on (engines.vscode).
+      target: 'node20',
+      // Provided by VS Code at run time, never bundled.
+      external: ['vscode'],
+    });
 
 // The Wizard is the docs site's, bundled from docs-site/docs/_workflow-wizard/
 // where it stands (src/webview/wizard.js imports it). It is written for the
@@ -49,6 +57,8 @@ const wizard = await context({
   ...shared,
   entryPoints: ['src/webview/wizard.js'],
   outfile: 'dist/wizard.js',
+  // The JetBrains plugin's build asks for the same page somewhere else.
+  ...(wizardOut ? { outfile: `${wizardOut}/wizard.js` } : {}),
   format: 'iife',
   platform: 'browser',
   // Every supported VS Code shows a page with a newer Chromium than this.
@@ -71,7 +81,7 @@ const wizard = await context({
   define: { 'process.env.NODE_ENV': production ? '"production"' : '"development"' },
 });
 
-const builds = [extension, wizard];
+const builds = [extension, wizard].filter((build) => build !== undefined);
 if (watch) {
   await Promise.all(builds.map((build) => build.watch()));
 } else {
@@ -81,4 +91,4 @@ if (watch) {
 
 // The packaged extension carries the repository's licence. Copied in at
 // packaging time, so there is one copy to maintain.
-if (production) copyFileSync('../../LICENSE', 'LICENSE');
+if (production && !wizardOut) copyFileSync('../../LICENSE', 'LICENSE');

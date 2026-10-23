@@ -73,6 +73,16 @@ describe('parseIssueTitle', () => {
     ['GrillMyCode Questions (fix-(a))', { kind: 'branch', name: 'fix-(a)' }],
     ['GrillMyCode Questions (tag: submit/*)', { kind: 'tag', name: 'submit/*' }],
     ['GrillMyCode Questions', { kind: 'unnamed' }],
+    ['GrillMyCode Questions: Lab 3 (main)', { kind: 'branch', name: 'main', set: 'Lab 3' }],
+    [
+      'GrillMyCode Questions: Lab 3 (tag: submit/*)',
+      { kind: 'tag', name: 'submit/*', set: 'Lab 3' },
+    ],
+    [
+      'GrillMyCode Questions: Lab 3: part (A) (fix-(a))',
+      { kind: 'branch', name: 'fix-(a)', set: 'Lab 3: part (A)' },
+    ],
+    ['GrillMyCode Questions: Lab 3', { kind: 'unnamed', set: 'Lab 3' }],
   ])('reads %s', (title, group) => {
     expect(parseIssueTitle(title)).toEqual(group);
   });
@@ -83,6 +93,9 @@ describe('parseIssueTitle', () => {
     'GrillMyCode Questions for lab 3',
     'Re: GrillMyCode Questions (main)',
     'grillmycode questions (main)',
+    'GrillMyCode Questions:  (main)',
+    'GrillMyCode Questions: Lab 3 ()',
+    'GrillMyCode Questions:Lab 3 (main)',
     undefined,
   ])('rejects %s', (title) => {
     expect(parseIssueTitle(title)).toBeUndefined();
@@ -94,6 +107,11 @@ describe('describeGroup', () => {
     expect(describeGroup({ kind: 'branch', name: 'main' })).toBe('main');
     expect(describeGroup({ kind: 'tag', name: 'submit/*' })).toBe('tag submit/*');
     expect(describeGroup({ kind: 'unnamed' })).toBe('no branch');
+  });
+
+  it("puts a question set's name first", () => {
+    expect(describeGroup({ kind: 'branch', name: 'main', set: 'Lab 3' })).toBe('Lab 3 · main');
+    expect(describeGroup({ kind: 'tag', name: 'phase1', set: 'Lab 3' })).toBe('Lab 3 · tag phase1');
   });
 });
 
@@ -183,6 +201,27 @@ describe('chooseIssue', () => {
 
   it('returns undefined when there are none', () => {
     expect(chooseIssue([], { branch: 'main' })).toBeUndefined();
+  });
+
+  it("takes the branch's issue with no question set first, then the newest set", () => {
+    const sets = findQuestionIssues([
+      apiIssue(1, 'GrillMyCode Questions (main)'),
+      apiIssue(2, 'GrillMyCode Questions: Lab 3 (main)'),
+      apiIssue(3, 'GrillMyCode Questions: Lab 4 (main)'),
+      apiIssue(4, 'GrillMyCode Questions: Lab 4 (feature)'),
+    ]);
+    expect(chooseIssue(sets, { branch: 'main' }).number).toBe(1);
+    expect(chooseIssue(sets, { branch: 'feature' }).number).toBe(4);
+    expect(
+      chooseIssue(
+        sets.filter((i) => i.number !== 1),
+        { branch: 'main' },
+      ).number,
+    ).toBe(3);
+    expect(
+      chooseIssue(sets, { branch: 'main', preferredTitle: 'GrillMyCode Questions: Lab 3 (main)' })
+        .number,
+    ).toBe(2);
   });
 });
 

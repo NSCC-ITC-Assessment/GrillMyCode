@@ -209,6 +209,83 @@ export function namedDiffBaseTagError(cfg) {
   return '';
 }
 
+// ── Workflow name and question set ───────────────────────────────────────────
+// The workflow's name is its question set: the generated workflow passes it to
+// question_set as ${{ github.workflow }}. These mirror questionSetSlug in the
+// action's src/context.js and readQuestionSet in src/inputs.js, with
+// DEFAULT_QUESTION_SET_SLUG and QUESTION_SET_MAX_CHARS from src/constants.js.
+// Keep them in step; test/wizard-question-set.test.js checks they agree.
+
+/** The name every workflow in the docs has, which files as a workflow without a set does. */
+export const DEFAULT_WORKFLOW_NAME = 'GrillMyCode';
+const DEFAULT_SET_SLUG = 'grillmycode';
+export const WORKFLOW_NAME_MAX_CHARS = 100;
+
+/** The name as the action reads it: runs of white space made single spaces, trimmed. */
+function workflowName(cfg) {
+  return String(cfg.workflowName ?? '').replace(/\s+/g, ' ').trim();
+}
+
+/**
+ * The slug the action files this workflow's questions under, '' for no set
+ * (the default name), or null for a name the action would fail on.
+ *
+ * @param {string} name
+ * @returns {string | null}
+ */
+export function questionSetSlug(name) {
+  if (!name) return '';
+  const slug = name
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+  if (!slug) return null;
+  return slug === DEFAULT_SET_SLUG ? '' : slug;
+}
+
+/**
+ * Validation message for the workflow name, or '' when it is fine.
+ *
+ * @param {WizardConfig} cfg
+ */
+export function workflowNameError(cfg) {
+  const name = workflowName(cfg);
+  if (!name) return 'Please enter a name for the workflow before continuing.';
+  if (name.length > WORKFLOW_NAME_MAX_CHARS) {
+    return `The workflow name can be at most ${WORKFLOW_NAME_MAX_CHARS} characters.`;
+  }
+  if (questionSetSlug(name) === null) {
+    return 'The workflow name needs at least one letter or digit.';
+  }
+  return '';
+}
+
+/**
+ * Where this workflow is saved: grill-my-code.yml for the default name, and a
+ * file named for the set otherwise, so a second set never replaces the first
+ * set's file. The editors write only names of this shape.
+ *
+ * @param {WizardConfig} cfg
+ */
+export function workflowFileName(cfg) {
+  const slug = questionSetSlug(workflowName(cfg));
+  return slug ? `grill-my-code-${slug}.yml` : 'grill-my-code.yml';
+}
+
+/**
+ * The workflow's `name:` value: plain when YAML reads it as the text written,
+ * single-quoted otherwise. A plain value must start with a letter, so a number
+ * is never read as one, and must not be a word YAML reads as true, false or null.
+ */
+function workflowNameYaml(cfg) {
+  const name = workflowName(cfg) || DEFAULT_WORKFLOW_NAME;
+  const plain =
+    /^[A-Za-z][A-Za-z0-9 _.-]*$/.test(name) &&
+    !/^(true|false|yes|no|on|off|y|n|null)$/i.test(name);
+  return plain ? name : yamlSingle(name);
+}
+
 /**
  * OpenRouter's temperature range; the action ignores anything outside it.
  * Mirrors AI_TEMPERATURE_MIN / AI_TEMPERATURE_MAX in src/constants.js. The
@@ -246,6 +323,7 @@ export function temperatureError(cfg) {
 }
 
 export const DEFAULTS = {
+  workflowName: DEFAULT_WORKFLOW_NAME,
   aiProvider: 'openrouter',
   // Compared against the resolved model (base + routing variant), so choosing a
   // variant on the default model counts as a change and emits the input.
@@ -443,7 +521,7 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
   }
 
   // ── name ───────────────────────────────────────────────────────────────────
-  lines.push('name: GrillMyCode');
+  lines.push(`name: ${workflowNameYaml(cfg)}`);
   lines.push('');
 
   // ── on ────────────────────────────────────────────────────────────────────
@@ -549,6 +627,14 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
     const secretName = cfg.apiKeySecret || 'OPENROUTER_API_KEY';
     lines.push(`          api_key: ${secretRef(secretName)}`);
   }
+
+  // ── Question set ───────────────────────────────────────────────────────────
+  // Always emitted, so a copy of this file given a new name makes a set of its
+  // own rather than replacing this one's questions. The default name keeps
+  // the folders a workflow without the input has.
+  lines.push("          # The workflow's name above is its set of questions: each name gets");
+  lines.push('          # its own issue, PDF and instructor-repository folder.');
+  lines.push('          question_set: ${{ github.workflow }}');
 
   // ── AI Provider ────────────────────────────────────────────────────────────
   if (differ(cfg, 'aiProvider')) {

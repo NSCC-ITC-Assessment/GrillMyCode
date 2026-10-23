@@ -1,0 +1,35 @@
+{
+  "group": {
+    "kind": "branch",
+    "name": "main",
+    "set": "Lab 3: Checkout"
+  },
+  "report": {
+    "baseSha": "4f1c9a2",
+    "headSha": "9b8e7d6",
+    "headCommit": "9b8e7d6c5f4a3b2c1d0e9f8a7b6c5d4e3f2a1b0c",
+    "branch": null,
+    "tag": null,
+    "set": "lab-3-checkout",
+    "files": [
+      "src/cart.js"
+    ],
+    "truncated": false
+  },
+  "questions": [
+    {
+      "number": 1,
+      "broader": false,
+      "snippets": [
+        {
+          "file": "src/cart.js",
+          "start_line": 11,
+          "end_line": 17,
+          "language": "js",
+          "code": "export function subtotal(cart) {\n  let total = 0;\n  for (const entry of cart.items) {\n    total += entry.price * entry.quantity;\n  }\n  return Math.round(total * 100) / 100;\n}"
+        }
+      ],
+      "question": "What does `subtotal` return for an empty cart?"
+    }
+  ]
+}

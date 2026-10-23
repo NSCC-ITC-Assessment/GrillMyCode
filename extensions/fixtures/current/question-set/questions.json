@@ -1,0 +1,26 @@
+{
+  "questions": [
+    {
+      "number": 1,
+      "dropped": false,
+      "broader": false,
+      "about_starter_code": false,
+      "snippets": [
+        {
+          "file": "src/cart.js",
+          "start_line": 11,
+          "end_line": 17,
+          "language": "js",
+          "code": "export function subtotal(cart) {\n  let total = 0;\n  for (const entry of cart.items) {\n    total += entry.price * entry.quantity;\n  }\n  return Math.round(total * 100) / 100;\n}"
+        }
+      ],
+      "question": "What does `subtotal` return for an empty cart?",
+      "answer": "Zero, because the reduction starts from 0.",
+      "distractors": [
+        "A wrong answer",
+        "Another wrong answer",
+        "A third wrong answer"
+      ]
+    }
+  ]
+}

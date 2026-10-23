@@ -12,21 +12,37 @@
  * what a value may be, or of inputs that depend on one another, which is what
  * this adds either way.
  *
- * What is wrong and what to offer is decided in shared/, from the text alone.
- * This module puts the answers into the editor.
+ * What is wrong and what to offer is decided in shared/, from the text alone,
+ * and the question sets of the other workflow files beside it. This module
+ * reads those files, and puts the answers into the editor.
  */
 
 import * as vscode from 'vscode';
-import { checkWorkflow } from '../shared/input-checks.js';
+import { OTHER_WORKFLOW_MAX_BYTES } from '../shared/constants.js';
+import { checkWorkflow, questionSets } from '../shared/input-checks.js';
 import { completionsAt, describeInput, escapeMarkdown, inputAt } from '../shared/workflow-help.js';
 
 /** @import { InputDescription } from '../shared/workflow-help.js' */
+/** @import { OtherWorkflow } from '../shared/input-checks.js' */
 
 /**
  * Workflow files, whatever language the editor gives them: the GitHub Actions
  * extension takes them over from YAML when it is installed.
  */
 const WORKFLOW_FILES = { pattern: '**/.github/workflows/**/*.{yml,yaml}' };
+
+/** Where a workflow file's path from its repository starts. */
+const WORKFLOWS_FOLDER = '.github/workflows/';
+
+/**
+ * A workflow file's path from its repository, as github.workflow gives it for
+ * a workflow with no name: `.github/workflows/grill-my-code.yml`.
+ *
+ * @param {vscode.Uri} uri
+ */
+function repositoryPath(uri) {
+  return uri.path.slice(uri.path.lastIndexOf(`/${WORKFLOWS_FOLDER}`) + 1);
+}
 
 /** The GitHub Actions extension, which has its own help for an action's inputs. */
 const GITHUB_ACTIONS_EXTENSION = 'github.vscode-github-actions';
@@ -67,6 +83,14 @@ export class WorkflowHelp {
    * @type {Map<string, ReturnType<typeof setTimeout>>}
    */
   #pending = new Map();
+  /**
+   * The latest check of each file, by its URI. A check reads the other
+   * workflow files first, and one overtaken meanwhile shows nothing.
+   *
+   * @type {Map<string, number>}
+   */
+  #latest = new Map();
+  #checks = 0;
   /** @type {vscode.Disposable[]} */
   #disposables = [this.#problems];
 
@@ -81,7 +105,10 @@ export class WorkflowHelp {
         provideHover: (document, position) => this.#hover(document, position),
       }),
       vscode.workspace.onDidOpenTextDocument((document) => this.#check(document)),
-      vscode.workspace.onDidChangeTextDocument(({ document }) => this.#checkSoon(document)),
+      // A change to one workflow file can change what the others share with it.
+      vscode.workspace.onDidChangeTextDocument(({ document }) => {
+        if (vscode.languages.match(WORKFLOW_FILES, document) > 0) this.#checkAllSoon();
+      }),
       vscode.workspace.onDidCloseTextDocument((document) => this.#forget(document)),
       vscode.workspace.onDidChangeConfiguration((event) => {
         if (event.affectsConfiguration(`${SETTINGS_SECTION}.${ENABLED_SETTING}`)) this.#checkAll();
@@ -89,6 +116,19 @@ export class WorkflowHelp {
       // The GitHub Actions extension being installed or removed changes what
       // is left to it.
       vscode.extensions.onDidChange(() => this.#checkAll()),
+    );
+    // A workflow file added, removed, renamed or saved, in the editor or, for
+    // the watcher, by anything else, such as switching branches.
+    const watcher = vscode.workspace.createFileSystemWatcher(WORKFLOW_FILES.pattern);
+    this.#disposables.push(
+      vscode.workspace.onDidCreateFiles(() => this.#checkAllSoon()),
+      vscode.workspace.onDidDeleteFiles(() => this.#checkAllSoon()),
+      vscode.workspace.onDidRenameFiles(() => this.#checkAllSoon()),
+      vscode.workspace.onDidSaveTextDocument(() => this.#checkAllSoon()),
+      watcher,
+      watcher.onDidCreate(() => this.#checkAllSoon()),
+      watcher.onDidDelete(() => this.#checkAllSoon()),
+      watcher.onDidChange(() => this.#checkAllSoon()),
     );
     this.#checkAll();
   }
@@ -110,6 +150,12 @@ export class WorkflowHelp {
     for (const document of vscode.workspace.textDocuments) this.#check(document);
   }
 
+  #checkAllSoon() {
+    for (const document of vscode.workspace.textDocuments) {
+      if (vscode.languages.match(WORKFLOW_FILES, document) > 0) this.#checkSoon(document);
+    }
+  }
+
   /** @param {vscode.TextDocument} document */
   #checkSoon(document) {
     const key = document.uri.toString();
@@ -121,16 +167,22 @@ export class WorkflowHelp {
   }
 
   /** @param {vscode.TextDocument} document */
-  #check(document) {
+  async #check(document) {
     const key = document.uri.toString();
     clearTimeout(this.#pending.get(key));
     this.#pending.delete(key);
+    const check = ++this.#checks;
+    this.#latest.set(key, check);
     if (document.isClosed || !this.#enabled(document)) {
       this.#problems.delete(document.uri);
       return;
     }
+    const otherWorkflows = await this.#otherWorkflows(document.uri);
+    if (this.#latest.get(key) !== check || document.isClosed) return;
     const problems = checkWorkflow(document.getText(), {
       unknownInputs: !this.#hasGitHubActions(),
+      path: repositoryPath(document.uri),
+      otherWorkflows,
     });
     this.#problems.set(
       document.uri,
@@ -145,10 +197,51 @@ export class WorkflowHelp {
     );
   }
 
+  /**
+   * The other workflow files in a workflow file's folder, with the question
+   * sets each files under. A file open in the editor is read as it stands
+   * there, saved or not; one that cannot be read, or is too large, is left out.
+   *
+   * @param {vscode.Uri} uri
+   * @returns {Promise<OtherWorkflow[]>}
+   */
+  async #otherWorkflows(uri) {
+    const folder = vscode.Uri.joinPath(uri, '..');
+    let entries;
+    try {
+      entries = await vscode.workspace.fs.readDirectory(folder);
+    } catch {
+      return [];
+    }
+    /** @type {OtherWorkflow[]} */
+    const others = [];
+    for (const [name, type] of entries) {
+      if (type !== vscode.FileType.File || !/\.ya?ml$/.test(name)) continue;
+      const other = vscode.Uri.joinPath(folder, name);
+      if (other.toString() === uri.toString()) continue;
+      const open = vscode.workspace.textDocuments.find(
+        (document) => document.uri.toString() === other.toString(),
+      );
+      let text = open?.getText();
+      if (text === undefined) {
+        try {
+          if ((await vscode.workspace.fs.stat(other)).size > OTHER_WORKFLOW_MAX_BYTES) continue;
+          text = new TextDecoder().decode(await vscode.workspace.fs.readFile(other));
+        } catch {
+          continue;
+        }
+      }
+      const path = repositoryPath(other);
+      others.push({ path, sets: questionSets(text, { path }) });
+    }
+    return others;
+  }
+
   /** @param {vscode.TextDocument} document */
   #forget(document) {
     clearTimeout(this.#pending.get(document.uri.toString()));
     this.#pending.delete(document.uri.toString());
+    this.#latest.delete(document.uri.toString());
     this.#problems.delete(document.uri);
   }
 

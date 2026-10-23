@@ -3,7 +3,6 @@ package org.grillmycode.companion.questions
 import com.intellij.notification.NotificationGroupManager
 import com.intellij.notification.NotificationType
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ReadAction
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.editor.Document
 import com.intellij.openapi.editor.EditorFactory
@@ -106,15 +105,8 @@ class Highlighter(
             // The IDE wants a read action around any look at a file or a
             // document, even on the event dispatch thread. Opening the editor
             // stays outside it.
-            val file = ReadAction.compute<VirtualFile?, RuntimeException> { resolve(root, path) }
-            val document =
-                file?.let {
-                    ReadAction.compute<Document?, RuntimeException> {
-                        FileDocumentManager.getInstance().getDocument(
-                            it,
-                        )
-                    }
-                }
+            val file = read { resolve(root, path) }
+            val document = file?.let { read { FileDocumentManager.getInstance().getDocument(it) } }
             if (file == null || document == null) {
                 missing += path
                 continue
@@ -124,7 +116,7 @@ class Highlighter(
             val had = editors.isFileOpen(file)
             shown += file
             highlighters[document] =
-                ReadAction.compute<List<RangeHighlighter>, RuntimeException> { fileSnippets.mapNotNull { highlight(document, it) } }
+                read { fileSnippets.mapNotNull { highlight(document, it) } }
             // Navigating, not FileEditorManager.openTextEditor, which later IDEs
             // deprecate for an experimental call that 2025.1 does not have. The
             // highlights are on the document, so they show however soon the editor does.

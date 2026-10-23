@@ -11,9 +11,14 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_DISPATCH_OVERRIDES } from '../docs-site/docs/_workflow-wizard/dispatchInputs.js';
-import { DEFAULTS, generateYaml } from '../docs-site/docs/_workflow-wizard/generateYaml.js';
+import {
+  DEFAULTS,
+  generateYaml,
+  workflowFileName,
+} from '../docs-site/docs/_workflow-wizard/generateYaml.js';
 import { ACTION_REF, WORKFLOW_FILE } from '../extensions/vscode/src/shared/constants.js';
 import { checkWorkflow } from '../extensions/vscode/src/shared/input-checks.js';
+import { workflowFilePath } from '../extensions/vscode/src/shared/wizard.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...path) => readFileSync(join(root, ...path), 'utf-8');
@@ -108,8 +113,17 @@ describe('what the editor adds to the Wizard', () => {
     expect(ACTION_REF).toBe(`v${readJson('docs-site', 'versions.json')[0]}`);
   });
 
+  // The Review step names the file and the editor writes it there, for the
+  // default name and for a question set's.
   it('writes the file the Review step names', () => {
-    expect(wizardText(join('steps', 'StepReview.js'))).toContain(`<code>${WORKFLOW_FILE}</code>`);
+    const review = wizardText(join('steps', 'StepReview.js'));
+    expect(review).toContain('<code>.github/workflows/{fileName}</code>');
+    expect(review).toMatch(/host\?\.saveWorkflow\(yaml, fileName\)/);
+    const file = (workflowName) =>
+      workflowFilePath(workflowFileName({ ...DEFAULTS, workflowName }));
+    expect(file('GrillMyCode')).toBe(WORKFLOW_FILE);
+    expect(file('Lab 3: Checkout')).toBe('.github/workflows/grill-my-code-lab-3-checkout.yml');
+    expect(file('x'.repeat(100))).toBe(`.github/workflows/grill-my-code-${'x'.repeat(100)}.yml`);
   });
 
   // The page's half of the host: each is used by the step that needs it.
@@ -188,5 +202,53 @@ describe("the Wizard's workflow under the extension's checks", () => {
     const yaml = generateYaml({ ...answered, ...changes }, { actionRef: ACTION_REF });
     expect(yaml).toContain(`@${ACTION_REF}`);
     expect(checkWorkflow(yaml)).toEqual([]);
+  });
+});
+
+// The JetBrains plugin shows the same bundle in JCEF, where there is no VS
+// Code. Its page runs wizard-bridge.js first, which gives the page's half of
+// the host (host.js) the one call it makes of VS Code.
+describe("the JetBrains plugin's page", () => {
+  const host = read(...WEBVIEW, 'host.js');
+  const bridge = read('extensions', 'jetbrains', 'src', 'main', 'resources', 'wizard-bridge.js');
+
+  it('asks of VS Code only what the bridge gives', () => {
+    expect([...host.matchAll(/\bacquireVsCodeApi\(\)/g)]).toHaveLength(1);
+    const calls = [...host.matchAll(/\beditor\.(\w+)/g)].map(([, call]) => call);
+    expect(new Set(calls)).toEqual(new Set(['postMessage']));
+    // Answers arrive as `message` events on the window.
+    expect(host).toContain("window.addEventListener('message'");
+  });
+
+  it('sends each message as JSON, and hands back each answer as an event', () => {
+    /** @type {string[]} */
+    const sent = [];
+    /** @type {unknown[]} */
+    const received = [];
+    const window = {
+      dispatchEvent: (/** @type {{ data: unknown }} */ event) => received.push(event.data),
+    };
+    class MessageEvent {
+      /** @param {string} type @param {{ data: unknown }} init */
+      constructor(type, { data }) {
+        expect(type).toBe('message');
+        this.data = data;
+      }
+    }
+    const run = new Function(
+      'window',
+      'MessageEvent',
+      'sent',
+      bridge.replace('SEND_REQUEST', 'sent.push(request)'),
+    );
+    run(window, MessageEvent, sent);
+    window.acquireVsCodeApi().postMessage({ type: 'list', id: 2, path: 'src' });
+    expect(sent.map((text) => JSON.parse(text))).toEqual([{ type: 'list', id: 2, path: 'src' }]);
+    window.gmcReceive({ id: 2, ok: true, value: [] });
+    expect(received).toEqual([{ id: 2, ok: true, value: [] }]);
+  });
+
+  it('has the one place the plugin writes its call into', () => {
+    expect(bridge.match(/SEND_REQUEST/g)).toHaveLength(1);
   });
 });

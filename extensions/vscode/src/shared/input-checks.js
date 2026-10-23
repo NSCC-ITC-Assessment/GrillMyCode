@@ -14,7 +14,8 @@
  */
 
 import { ACTION_INPUTS } from './action-inputs.js';
-import { INPUT_NAME_MAX_EDITS } from './constants.js';
+import { INPUT_NAME_MAX_EDITS, QUESTION_SET_MAX_CHARS } from './constants.js';
+import { questionSetSlug } from './identity.js';
 import { isSafeTagName, isSafeTagPattern, splitTagList } from './tags.js';
 import { readWorkflow } from './workflow.js';
 
@@ -40,6 +41,16 @@ import { readWorkflow } from './workflow.js';
 
 /** A secret read from a workflow input, which a run records as plain text. */
 const INPUT_EXPRESSION_RE = /\$\{\{[^}]*\binputs\./;
+
+/** question_set set to the workflow's own name, as the Workflow Wizard writes it. */
+const WORKFLOW_NAME_RE = /^\$\{\{\s*github\.workflow\s*\}\}$/;
+
+/**
+ * Another workflow file of the same repository: its path from the repository,
+ * and the question sets its GrillMyCode steps file under (questionSets).
+ *
+ * @typedef {{ path: string, sets: string[] }} OtherWorkflow
+ */
 
 const quote = (/** @type {unknown} */ value) => `"${value}"`;
 
@@ -90,6 +101,38 @@ export function closestInput(name) {
     if (edits <= INPUT_NAME_MAX_EDITS && (!best || edits < best.edits)) best = { known, edits };
   }
   return best?.known;
+}
+
+/**
+ * What is wrong with a question set's name, as readQuestionSet in src/inputs.js
+ * reads question_set: its white space made single spaces, at most
+ * QUESTION_SET_MAX_CHARS long, with a letter, digit, - or _ to name a folder.
+ *
+ * @param {string} what - What the name is, to begin the message.
+ * @param {string} value
+ * @returns {Finding | undefined}
+ */
+function questionSetProblem(what, value) {
+  const name = value.replace(/\s+/g, ' ').trim();
+  if (name.length > QUESTION_SET_MAX_CHARS) {
+    return {
+      severity: 'error',
+      code: 'invalid-value',
+      message:
+        `${what} is ${name.length} characters long, and a question set's can be at most ` +
+        `${QUESTION_SET_MAX_CHARS}. A run with this value fails.`,
+    };
+  }
+  if (questionSetSlug(name) === null) {
+    return {
+      severity: 'error',
+      code: 'invalid-value',
+      message:
+        `${what}, ${quote(name)}, has no letter, digit, - or _, so it cannot name the ` +
+        "question set's folder. A run with this value fails.",
+    };
+  }
+  return undefined;
 }
 
 /**
@@ -194,6 +237,8 @@ function checkValue(name, rule, raw) {
     };
   }
 
+  if (rule.kind === 'questionSet') return questionSetProblem(name, value);
+
   if (rule.kind === 'tags') {
     const unsafe = splitTagList(value).filter((pattern) => !isSafeTagPattern(pattern));
     if (unsafe.length === 0) return undefined;
@@ -212,12 +257,60 @@ function checkValue(name, rule, raw) {
 }
 
 /**
+ * The question set a step files under, as the action works it out: its folder
+ * name, '' for none, or undefined where the file does not say. question_set
+ * set to github.workflow is the workflow's name, or for a workflow with none,
+ * its file's path, which is what GitHub gives it then.
+ *
+ * @param {WorkflowStep} step
+ * @param {string | undefined} workflowName
+ * @param {string | undefined} path
+ * @returns {string | undefined}
+ */
+function stepQuestionSet(step, workflowName, path) {
+  // The last of a repeated name is the one GitHub keeps.
+  const input = [...step.inputs]
+    .reverse()
+    .find((candidate) => candidate.name.toLowerCase() === 'question_set');
+  if (!input) return '';
+  if (input.value === undefined) return undefined;
+  const value = input.value.trim();
+  if (WORKFLOW_NAME_RE.test(value)) {
+    const name = workflowName ?? path;
+    return name === undefined ? undefined : (questionSetSlug(name) ?? undefined);
+  }
+  if (input.expression) return undefined;
+  return questionSetSlug(value) ?? undefined;
+}
+
+/**
+ * The question sets a workflow file's GrillMyCode steps file under, each once,
+ * as stepQuestionSet works them out. `path` is the file's, from the
+ * repository. A step whose set the file does not say is left out.
+ *
+ * @param {string} text
+ * @param {{ path?: string }} [options]
+ * @returns {string[]}
+ */
+export function questionSets(text, { path } = {}) {
+  const { steps, name } = readWorkflow(text);
+  const sets = steps.map((step) => stepQuestionSet(step, name?.value, path));
+  return [...new Set(sets.filter((set) => set !== undefined))];
+}
+
+/**
  * The problems with one step, each as `{ start, end, severity, code, message }`.
  *
  * @param {WorkflowStep} step
- * @param {{ tagFilters: string[] | undefined, unknownInputs: boolean }} options
+ * @param {{
+ *   tagFilters: string[] | undefined,
+ *   unknownInputs: boolean,
+ *   workflowName: { value: string } & Span | undefined,
+ *   path: string | undefined,
+ *   otherWorkflows: OtherWorkflow[],
+ * }} options
  */
-function checkStep(step, { tagFilters, unknownInputs }) {
+function checkStep(step, { tagFilters, unknownInputs, workflowName, path, otherWorkflows }) {
   /** @type {Problem[]} */
   const problems = [];
   /**
@@ -410,6 +503,47 @@ function checkStep(step, { tagFilters, unknownInputs }) {
     }
   }
 
+  // ── Question set ──────────────────────────────────────────────────────────
+
+  const questionSet = set.get('question_set');
+  const byName =
+    questionSet?.value !== undefined && WORKFLOW_NAME_RE.test(questionSet.value.trim());
+  if (byName && workflowName) {
+    const problem = questionSetProblem("The workflow's name", workflowName.value);
+    if (problem) at(workflowName, problem);
+  } else if (byName) {
+    atValue(/** @type {InputValue} */ (questionSet), {
+      severity: 'info',
+      code: 'unnamed-workflow',
+      message:
+        'The workflow has no name, so github.workflow is the path of its file' +
+        `${path ? `, ${path},` : ''} and its question set is named after that. Give the ` +
+        'workflow a name.',
+    });
+  }
+
+  // Another file of the repository that files under the same set replaces
+  // this one's questions, and this one its.
+  const ownSet = stepQuestionSet(step, workflowName?.value, path);
+  const sharing = otherWorkflows.filter(
+    (other) => ownSet !== undefined && other.path !== path && other.sets.includes(ownSet),
+  );
+  if (sharing.length > 0) {
+    const files = sharing.map((other) => quote(other.path));
+    const named =
+      files.length > 1 ? `${files.slice(0, -1).join(', ')} and ${files.at(-1)}` : files[0];
+    at(questionSet ?? step.uses, {
+      severity: 'warning',
+      code: 'shared-question-set',
+      message:
+        `${named} ${files.length > 1 ? 'file their' : 'files its'} questions under ` +
+        `the same question set as this workflow${ownSet ? `, ${quote(ownSet)}` : ''}, so ` +
+        "each run replaces the other's issue, PDF and answer key. Give each workflow a " +
+        'name of its own' +
+        (byName ? '.' : ', and set question_set: ${{ github.workflow }}.'),
+    });
+  }
+
   return problems;
 }
 
@@ -418,14 +552,18 @@ function checkStep(step, { tagFilters, unknownInputs }) {
  * with no GrillMyCode step has none.
  *
  * `unknownInputs: false` leaves out inputs the action does not declare, for
- * when something else in the editor already reports them.
+ * when something else in the editor already reports them. `path` is the
+ * file's, from the repository, and `otherWorkflows` the repository's other
+ * workflow files, whose question sets this one's must not share.
  *
  * @param {string} text
- * @param {{ unknownInputs?: boolean }} [options]
+ * @param {{ unknownInputs?: boolean, path?: string, otherWorkflows?: OtherWorkflow[] }} [options]
  */
-export function checkWorkflow(text, { unknownInputs = true } = {}) {
-  const { steps, tagFilters } = readWorkflow(text);
+export function checkWorkflow(text, { unknownInputs = true, path, otherWorkflows = [] } = {}) {
+  const { steps, tagFilters, name } = readWorkflow(text);
   return steps
-    .flatMap((step) => checkStep(step, { tagFilters, unknownInputs }))
+    .flatMap((step) =>
+      checkStep(step, { tagFilters, unknownInputs, workflowName: name, path, otherWorkflows }),
+    )
     .sort((a, b) => a.start - b.start);
 }

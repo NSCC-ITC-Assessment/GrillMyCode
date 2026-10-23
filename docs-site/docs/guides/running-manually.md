@@ -9,7 +9,7 @@ Whatever trigger you chose, you can always start GrillMyCode by hand. That's use
 ## Start a run
 
 1. Open the student's repository and go to the **Actions** tab.
-2. In the list on the left, select **GrillMyCode**.
+2. In the list on the left, select **GrillMyCode**, or the name you gave the workflow.
 3. Select **Run workflow**, then the green **Run workflow** button.
 
 The run works exactly like an automatic one. The student's existing issue is updated with the new questions, and the PDF is replaced.
@@ -19,6 +19,10 @@ To run a milestone assessment again, choose the tag from the **Use workflow from
 :::tip
 It doesn't matter who starts the run. The assessment always belongs to the student who owns the repository, even when you start it yourself.
 :::
+
+## More than one set of questions
+
+An assignment can have more than one GrillMyCode workflow, such as a checkpoint and a final review that you run at different times. Give each one a different **Workflow name** on the Workflow Wizard's **Delivery** step. Each name gets its own issue, PDF and private answer key, so running one never replaces the other's questions. Two workflows with the same name share them. See the [Two sets of questions](../example-workflows/11-question-sets.md) recipe.
 
 ## Change a setting for one run
 
@@ -54,4 +58,4 @@ The assignment brief setting is on the form too. A student could point it at a f
 
 ---
 
-**Go deeper:** [Triggers in depth](../reference/triggers.md): how the form's values reach the workflow, and why · Recipe: [Manual run overrides](../example-workflows/manual-dispatch.md)
+**Go deeper:** [Triggers in depth](../reference/triggers.md): how the form's values reach the workflow, and why, and [question sets](../reference/triggers.md#question-sets) · Recipe: [Manual run overrides](../example-workflows/manual-dispatch.md)

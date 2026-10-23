@@ -1,16 +1,23 @@
 import React, { useState } from 'react';
 import styles from '../styles.module.css';
-import { generateYaml, instructorRepoActive, isTagTrigger, submissionTagList } from '../generateYaml';
+import {
+  generateYaml,
+  instructorRepoActive,
+  isTagTrigger,
+  submissionTagList,
+  workflowFileName,
+} from '../generateYaml';
 import { resolveDispatchOverrides } from '../dispatchInputs';
 
 /** @import { StepProps } from '../index' */
 
 function buildChecklist(cfg, docsBase, host) {
+  const file = `.github/workflows/${workflowFileName(cfg)}`;
   const items = [
     {
       text: host
-        ? 'Create the workflow file with the button above, or copy the workflow to `.github/workflows/grill-my-code.yml` in the student (or template) repository. Then commit it.'
-        : 'Copy the workflow above to `.github/workflows/grill-my-code.yml` in the student (or template) repository.',
+        ? `Create the workflow file with the button above, or copy the workflow to \`${file}\` in the student (or template) repository. Then commit it.`
+        : `Copy the workflow above to \`${file}\` in the student (or template) repository.`,
     },
     {
       text: 'Ensure the repository has Actions enabled (Settings → Actions → Allow all actions).',
@@ -89,13 +96,14 @@ function buildChecklist(cfg, docsBase, host) {
 /** @param {StepProps} props */
 export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs', host }) {
   const yaml = generateYaml(cfg, { actionRef });
+  const fileName = workflowFileName(cfg);
   const [copied, setCopied] = useState(false);
   // 'saving', 'saved', 'failed' or '' — how the host's write went.
   const [saveState, setSaveState] = useState('');
 
   function handleSave() {
     setSaveState('saving');
-    host?.saveWorkflow(yaml).then(
+    host?.saveWorkflow(yaml, fileName).then(
       // false: the instructor cancelled, which is not a failure.
       (written) => setSaveState(written ? 'saved' : ''),
       () => setSaveState('failed'),
@@ -120,7 +128,7 @@ export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs', 
             {host.openFolder ? (
               <>
                 <strong>Create the workflow file</strong> writes it to{' '}
-                <code>.github/workflows/grill-my-code.yml</code> in the folder open in the editor,
+                <code>.github/workflows/{fileName}</code> in the folder open in the editor,
                 and opens it. If that folder is not your assignment template repository, copy the
                 workflow there instead. Then commit it.
               </>
@@ -128,7 +136,7 @@ export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs', 
               <>
                 No folder is open in the editor, so <strong>Create the workflow file</strong> opens
                 it as a new file that is not saved yet. Save it as{' '}
-                <code>.github/workflows/grill-my-code.yml</code> in your assignment template
+                <code>.github/workflows/{fileName}</code> in your assignment template
                 repository and commit it.
               </>
             )}
@@ -155,7 +163,7 @@ export default function StepReview({ cfg, actionRef = 'v0', docsBase = '/docs', 
       ) : (
         <p className={styles.hint} style={{ marginBottom: '1rem' }}>
           Your workflow is ready. Copy it to{' '}
-          <code>.github/workflows/grill-my-code.yml</code> in your assignment template repository
+          <code>.github/workflows/{fileName}</code> in your assignment template repository
           and commit it.
         </p>
       )}

@@ -45,6 +45,16 @@ class IssuesTest {
             assertEquals(IssueGroup.Unnamed, parseIssueTitle("GrillMyCode Questions"))
         }
 
+        @Test
+        fun `reads a question set's title`() {
+            fun read(title: String) = parseIssueTitle(title) to parseIssueSet(title)
+            assertEquals(IssueGroup.Branch("main") to "Lab 3", read("GrillMyCode Questions: Lab 3 (main)"))
+            assertEquals(IssueGroup.Tag("submit/*") to "Lab 3", read("GrillMyCode Questions: Lab 3 (tag: submit/*)"))
+            assertEquals(IssueGroup.Branch("fix-(a)") to "Lab 3: part (A)", read("GrillMyCode Questions: Lab 3: part (A) (fix-(a))"))
+            assertEquals(IssueGroup.Unnamed to "Lab 3", read("GrillMyCode Questions: Lab 3"))
+            assertEquals(IssueGroup.Branch("main") to null, read("GrillMyCode Questions (main)"))
+        }
+
         @ParameterizedTest
         @ValueSource(
             strings = [
@@ -53,6 +63,9 @@ class IssuesTest {
                 "GrillMyCode Questions for lab 3",
                 "Re: GrillMyCode Questions (main)",
                 "grillmycode questions (main)",
+                "GrillMyCode Questions:  (main)",
+                "GrillMyCode Questions: Lab 3 ()",
+                "GrillMyCode Questions:Lab 3 (main)",
             ],
         )
         fun `rejects other titles`(title: String) {
@@ -70,6 +83,8 @@ class IssuesTest {
         assertEquals("main", describeGroup(IssueGroup.Branch("main")))
         assertEquals("tag submit/*", describeGroup(IssueGroup.Tag("submit/*")))
         assertEquals("no branch", describeGroup(IssueGroup.Unnamed))
+        assertEquals("Lab 3 · main", describeGroup(IssueGroup.Branch("main"), "Lab 3"))
+        assertEquals("Lab 3 · tag phase1", describeGroup(IssueGroup.Tag("phase1"), "Lab 3"))
     }
 
     @Nested
@@ -161,6 +176,24 @@ class IssuesTest {
         @Test
         fun `returns null when there are none`() {
             assertNull(chooseIssue(emptyList(), branch = "main"))
+        }
+
+        @Test
+        fun `takes the branch's issue with no question set first, then the newest set`() {
+            val sets =
+                findQuestionIssues(
+                    listOf(
+                        apiIssue(1, "GrillMyCode Questions (main)"),
+                        apiIssue(2, "GrillMyCode Questions: Lab 3 (main)"),
+                        apiIssue(3, "GrillMyCode Questions: Lab 4 (main)"),
+                        apiIssue(4, "GrillMyCode Questions: Lab 4 (feature)"),
+                    ),
+                )
+            assertEquals(1, chooseIssue(sets, branch = "main")?.number)
+            assertEquals(4, chooseIssue(sets, branch = "feature")?.number)
+            assertEquals(3, chooseIssue(sets.filter { it.number != 1 }, branch = "main")?.number)
+            assertEquals(2, chooseIssue(sets, branch = "main", preferredTitle = "GrillMyCode Questions: Lab 3 (main)")?.number)
+            assertEquals("Lab 3", sets.single { it.number == 2 }.set)
         }
     }
 

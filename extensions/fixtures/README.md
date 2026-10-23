@@ -75,3 +75,24 @@ look different from one posted now:
 `expected.json` is written from the questions that went into the action, not
 by reading `body.md` back, so a reader that turns `body.md` into
 `expected.json` has made the whole round trip.
+
+## Workflow help cases
+
+`workflow-help/` is not a sample issue. It holds the cases for the editors'
+help with a workflow file, as JSON both editors' tests run: VS Code's in
+`vscode/test/`, and JetBrains' in `jetbrains/src/test/kotlin/…/WorkflowHelpTest.kt`.
+
+| File               | What each case gives, and what must come back                                               |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| `sample.json`      | Not cases: the workflow file a case's `inputs` are written into                             |
+| `read.json`        | A workflow, and the steps, inputs, values, tag filters, name and question sets read from it |
+| `checks.json`      | A workflow, and every problem found in it, in order, with words each message must hold      |
+| `completions.json` | A workflow with a cursor, and what is offered there                                         |
+
+A case has either `text`, a whole file, or `inputs`, the lines of the sample's
+GrillMyCode step, with an optional `on`. In `completions.json` the cursor is the
+first `|`, or the start of `cursorAt`, or the end with `cursorAtEnd`. A field a
+case leaves out is not checked.
+
+These are written by hand, and Prettier leaves them alone too. Add a case here
+rather than to one editor's tests, so both readers stay in step.

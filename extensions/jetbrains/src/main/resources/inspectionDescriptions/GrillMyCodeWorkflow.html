@@ -1,0 +1,18 @@
+<html>
+  <body>
+    <p>
+      Reports problems with the inputs of a workflow step that runs the GrillMyCode action, as far
+      as the workflow file alone can say: a value the action rejects, a value it changes or ignores,
+      a missing API key, a secret written into the file, inputs that need one another, and
+      submission tags that differ from the tags the workflow runs on.
+    </p>
+    <p>
+      Each check follows what the action does with the value. A value GitHub works out when the
+      workflow runs, such as <code>${{ inputs.num_questions }}</code>, is not checked.
+    </p>
+    <p>
+      Turning this inspection off also turns off GrillMyCode's completion and descriptions of the
+      action's inputs.
+    </p>
+  </body>
+</html>

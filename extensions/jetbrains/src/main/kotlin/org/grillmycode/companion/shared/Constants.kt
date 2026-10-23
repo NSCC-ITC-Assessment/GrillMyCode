@@ -71,7 +71,76 @@ const val ANSWER_KEY_FILE = "data/questions.json"
 const val TAG_GROUP_FALLBACK = "tag"
 
 /**
+ * How a question set's folder is marked in the student's folder of the
+ * instructor repository (`jsmith/set.lab-3/`), as QUESTION_SET_MARK.
+ */
+const val QUESTION_SET_MARK = "set."
+
+/**
+ * The slug of the workflow name that is no question set at all, as
+ * DEFAULT_QUESTION_SET_SLUG: a workflow named GrillMyCode files as one without
+ * question_set.
+ */
+const val DEFAULT_QUESTION_SET_SLUG = "grillmycode"
+
+/** The longest question_set the action accepts, as QUESTION_SET_MAX_CHARS. */
+const val QUESTION_SET_MAX_CHARS = 100
+
+/**
  * Collaborators requested per page. One page is read: a Classroom 50
  * repository has one direct collaborator per student.
  */
 const val COLLABORATORS_PER_PAGE = 100
+
+/**
+ * The action as a workflow step's `uses` names it, before the `@` and the
+ * version. GitHub ignores letter case in both halves.
+ */
+const val ACTION_REPOSITORY = "NSCC-ITC-Assessment/GrillMyCode"
+
+/**
+ * How far an input name may be from a known one, in single-letter edits, and
+ * still be offered as what was meant: `num_question` for `num_questions`.
+ */
+const val INPUT_NAME_MAX_EDITS = 2
+
+/**
+ * The version of the action the Workflow Wizard writes after the `@`: its
+ * current major, as the docs site's own Wizard writes. ConstantsTest fails
+ * when it differs from the VS Code extension's.
+ */
+const val ACTION_REF = "v0"
+
+/**
+ * Where the Workflow Wizard's links to the docs lead: the docs of the latest
+ * release of the action.
+ */
+const val DOCS_URL = "https://grillmycode.org/docs"
+
+/**
+ * The workflow file the Workflow Wizard writes, inside the project's folder.
+ * The Wizard's Review step and the docs give the file this name.
+ */
+const val WORKFLOW_FILE = ".github/workflows/grill-my-code.yml"
+
+/**
+ * The longest workflow the Workflow Wizard's page may ask to have written, in
+ * characters. The Wizard's own are a few thousand.
+ */
+const val WIZARD_MAX_WORKFLOW_CHARS = 200_000
+
+/**
+ * The largest file the Workflow Wizard's page is given in full, in bytes. It
+ * reads only dependency manifests that way, such as package.json; a larger one
+ * is left out, as one that cannot be read is.
+ */
+const val WIZARD_MAX_FILE_BYTES = 1_000_000
+
+/**
+ * The largest workflow file the workflow help reads to compare its question
+ * sets with the one being edited, in bytes. A larger one is left out.
+ */
+const val OTHER_WORKFLOW_MAX_BYTES = 1_000_000
+
+/** OpenRouter, which the Workflow Wizard's page asks for its list of models. */
+const val OPENROUTER_ORIGIN = "https://openrouter.ai"

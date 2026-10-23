@@ -133,7 +133,7 @@ New inputs must be added consistently across **all seven locations**:
 4. `README.md` — inputs table row
 5. `docs-site/docs/example-workflows/all-inputs.md` — active or commented-out entry with an inline explanatory comment
 6. `docs-site/docs/_workflow-wizard/` — add the input to the `DEFAULTS` object in `generateYaml.js`, wire up the UI control in the appropriate step component under `steps/`, and update `.github/prompts/plan-workflowWizard.prompt.md`
-7. `scripts/build-extension-action-inputs.js` — add the input to `RULES` if its value is more than free text, then run the script to refresh the VS Code extension's list (see [Editor Extensions](#editor-extensions))
+7. `scripts/build-extension-action-inputs.js` — add the input to `RULES` if its value is more than free text, then run the script to refresh the editor extensions' lists (see [Editor Extensions](#editor-extensions))
 
 ## New AI Providers
 
@@ -183,11 +183,14 @@ extension's unless they say otherwise; the JetBrains plugin's own are in
 - **`extensions/vscode/src/shared/action-inputs.js` is generated** by
   `node scripts/build-extension-action-inputs.js`, from `action.yml` and the `RULES` table in
   that script, which says what `src/inputs.js` accepts for each input. Do not edit it by hand.
-  The extension's workflow help reads it. After changing an input's declaration, or how
-  `src/inputs.js` reads one, update `RULES` and run the script;
-  `test/extension-action-inputs.test.js` fails until you do. A new check on an input belongs in
-  `extensions/vscode/src/shared/input-checks.js` and must follow what the action does with the
-  value: that test also fails if a check fires on a workflow shown in the docs.
+  The extension's workflow help reads it, and the JetBrains plugin's reads the same data from
+  `extensions/jetbrains/src/main/resources/action-inputs.json`, which the script also writes.
+  After changing an input's declaration, or how `src/inputs.js` reads one, update `RULES` and
+  run the script; `test/extension-action-inputs.test.js` fails until you do. A new check on an
+  input belongs in `extensions/vscode/src/shared/input-checks.js` and in the JetBrains plugin's
+  `shared/InputChecks.kt`, with a case in `extensions/fixtures/workflow-help/checks.json`, and
+  must follow what the action does with the value: that test also fails if a check fires on a
+  workflow shown in the docs, and so does the plugin's.
 - **`yaml` must be the same range in `package.json` and `extensions/vscode/package.json`.** The
   extension's unit tests load the root's copy and the packaged extension bundles its own. Raise
   them together; the same test checks this.
@@ -198,7 +201,9 @@ extension's unless they say otherwise; the JetBrains plugin's own are in
   which is a bundle of its own and imports neither `vscode` nor anything from Node.
 - **The Workflow Wizard in the editor is the docs site's.** `extensions/vscode/esbuild.js`
   bundles `docs-site/docs/_workflow-wizard/` where it stands. Never copy Wizard code into the
-  extension. What only the editor can do reaches a step through the Wizard's optional `host`
+  extension. The JetBrains plugin shows the same bundle: its Gradle build runs
+  `esbuild.js --wizard-out=`, so a change to `src/webview/` reaches both editors. What only
+  the editor can do reaches a step through the Wizard's optional `host`
   prop, documented in the Wizard's `index.js`, and every step must still work without one, as
   on the docs site. A package, a docs-site import, a static file or an `--ifm-`/`--gmc-` colour
   variable that is new to the Wizard has to be supplied by the extension as well
@@ -249,8 +254,26 @@ load its JavaScript.
   JavaScript to follow, it stays out of `shared/`. The client ID in `auth/DeviceFlow.kt` is
   public; the app has no client secret, and must never be given one this code would need.
   `DeviceFlow.kt` and `AppApproval.kt` import nothing from the IDE, so their tests run without one, as `shared/`'s do.
+- **The workflow help's cases are shared.** `extensions/fixtures/workflow-help/` holds what
+  reading a workflow, checking its inputs and completing them must give, as JSON both editors'
+  tests run. Add a case there, not to one editor's tests. The plugin reads YAML with SnakeYAML
+  Engine, not the `yaml` package, and `shared/Workflow.kt` gives its scalars the text the
+  `yaml` package's core schema would: a case that tells the two apart belongs in `read.json`.
+- **Use only APIs the oldest IDE has and the newest has not deprecated.** The Marketplace runs
+  the verifier against new IDEs, EAPs included, and lists every deprecated call. Where the
+  replacement is newer than `platformVersion`, use an older call that is still current, as
+  `read` in `questions/Folder.kt` does for `ReadAction.compute`. Avoid `@ApiStatus.Experimental`
+  APIs, which the verifier also reports.
 - **Issue text is untrusted here too.** Show it only escaped, in a Swing HTML pane, never in a JCEF
   browser. The one JCEF page the plan allows is the Workflow Wizard's.
+- **The Wizard's page is VS Code's, in JCEF.** `wizard/WizardEditor.kt` writes the VS Code
+  bundle into a page with its own content security policy (`wizardPage` in `shared/Wizard.kt`).
+  `wizard-bridge.js` gives the bundle's `host.js` the one call it makes of VS Code,
+  `acquireVsCodeApi().postMessage`, and `wizard/WizardTheme.kt` sets the `--vscode-*` colours
+  `wizard.css` reads. A new call in `host.js` or a new colour in `wizard.css` needs its
+  counterpart there: `test/extension-wizard.test.js` and `WizardHostTest` fail until it has
+  one. What the page may ask for is `WizardHost`'s, by VS Code's rules: files only from the
+  folder chosen, and only those a listing named (`FolderRecord`).
 
 ## Type Checking
 

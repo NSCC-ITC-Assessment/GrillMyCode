@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { isGrillMyCodeAction, readWorkflow } from '../src/shared/workflow.js';
-import { workflow } from './workflow-sample.js';
+import { questionSets } from '../src/shared/input-checks.js';
+import { caseText, cases } from './workflow-sample.js';
 
 describe('isGrillMyCodeAction', () => {
   it('accepts the action at any version, in any letter case', () => {
@@ -17,81 +18,44 @@ describe('isGrillMyCodeAction', () => {
   });
 });
 
+// The cases are in extensions/fixtures/workflow-help/read.json, which the
+// JetBrains plugin's tests run as well. A field a case leaves out is not
+// checked; `with` and `value` set to null mean there is none.
 describe('readWorkflow', () => {
-  it('finds the GrillMyCode step and leaves the others', () => {
-    const text = workflow(['api_key: ${{ secrets.OPENROUTER_API_KEY }}', 'num_questions: 10']);
-    const { steps } = readWorkflow(text);
-    expect(steps).toHaveLength(1);
-    expect(steps[0].inputs.map((input) => input.name)).toEqual(['api_key', 'num_questions']);
-    expect(text.slice(steps[0].uses.start, steps[0].uses.end)).toBe(
-      'NSCC-ITC-Assessment/GrillMyCode@v0',
-    );
-    expect(text.slice(steps[0].with.start, steps[0].with.end)).toBe('with');
-  });
-
-  it('says where each name and value is', () => {
-    const text = workflow(['starter_code: "ask" # a comment']);
-    const [input] = readWorkflow(text).steps[0].inputs;
-    expect(text.slice(input.start, input.end)).toBe('starter_code');
-    expect(text.slice(input.valueStart, input.valueEnd)).toBe('"ask"');
-    expect(input.value).toBe('ask');
-  });
-
-  // GitHub hands the action text, whatever YAML made of the value.
-  it('gives each value as the action receives it', () => {
-    const { inputs } = readWorkflow(
-      workflow([
-        'keep_comments: True',
-        'num_questions: 20',
-        'include_answers: "True"',
-        'instructor_context: |',
-        '  Lab 3',
-        '  Loops',
-        'base_sha:',
-      ]),
-    ).steps[0];
-    expect(inputs.map((input) => input.value)).toEqual([
-      'true',
-      '20',
-      'True',
-      'Lab 3\nLoops\n',
-      '',
-    ]);
-  });
-
-  it('marks a value GitHub works out at run time', () => {
-    const { inputs } = readWorkflow(
-      workflow(['num_questions: ${{ inputs.num_questions }}', 'starter_code: ask']),
-    ).steps[0];
-    expect(inputs.map((input) => input.expression)).toEqual([true, false]);
-  });
-
-  it('gives no value for something an input cannot be', () => {
-    const [input] = readWorkflow(workflow(['submission_tags: [phase1, phase2]'])).steps[0].inputs;
-    expect(input.name).toBe('submission_tags');
-    expect(input.value).toBeUndefined();
-  });
-
-  it('reads a step with no inputs', () => {
-    const { steps } = readWorkflow('steps:\n  - uses: NSCC-ITC-Assessment/GrillMyCode@v0\n');
-    expect(steps).toHaveLength(1);
-    expect(steps[0].with).toBeUndefined();
-    expect(steps[0].inputs).toEqual([]);
-  });
-
-  it('reads the tag patterns the workflow runs on', () => {
-    const read = (on) => readWorkflow(workflow([], { on })).tagFilters;
-    expect(read('on:\n  push:\n    tags: ["phase1", "phase2"]')).toEqual(['phase1', 'phase2']);
-    expect(read('on:\n  push:\n    tags:\n      - submit/*')).toEqual(['submit/*']);
-    expect(read('on:\n  push:\n    tags: final')).toEqual(['final']);
-    expect(read('on:\n  push:\n    branches: [main]')).toBeUndefined();
-    expect(read('on: push')).toBeUndefined();
-    expect(read('on: [push, workflow_dispatch]')).toBeUndefined();
-  });
-
-  it('reads nothing from a file that is not a workflow', () => {
-    expect(readWorkflow('').steps).toEqual([]);
-    expect(readWorkflow('just some text').steps).toEqual([]);
-    expect(readWorkflow('a: [1\n b: {').steps).toEqual([]);
+  it.each(cases('read.json'))('$name', (testCase) => {
+    const text = caseText(testCase);
+    const slice = (/** @type {number} */ start, /** @type {number} */ end) =>
+      text.slice(start, end);
+    const { steps, tagFilters, name } = readWorkflow(text);
+    if ('tagFilters' in testCase) expect(tagFilters).toEqual(testCase.tagFilters ?? undefined);
+    if ('questionSets' in testCase) {
+      expect(questionSets(text, { path: testCase.path })).toEqual(testCase.questionSets);
+    }
+    if ('workflowName' in testCase) {
+      expect(name ? { value: name.value, text: slice(name.start, name.end) } : null).toEqual(
+        testCase.workflowName,
+      );
+    }
+    if (!testCase.steps) return;
+    expect(steps).toHaveLength(testCase.steps.length);
+    testCase.steps.forEach((expected, index) => {
+      const step = steps[index];
+      if ('uses' in expected) expect(slice(step.uses.start, step.uses.end)).toBe(expected.uses);
+      if ('with' in expected) {
+        expect(step.with ? slice(step.with.start, step.with.end) : null).toBe(expected.with);
+      }
+      if (!expected.inputs) return;
+      expect(step.inputs).toHaveLength(expected.inputs.length);
+      expected.inputs.forEach((want, i) => {
+        const input = step.inputs[i];
+        if ('name' in want) expect(input.name).toBe(want.name);
+        if ('text' in want) expect(slice(input.start, input.end)).toBe(want.text);
+        if ('value' in want) expect(input.value).toBe(want.value ?? undefined);
+        if ('valueText' in want) {
+          expect(slice(input.valueStart, input.valueEnd)).toBe(want.valueText);
+        }
+        if ('expression' in want) expect(input.expression).toBe(want.expression);
+      });
+    });
   });
 });

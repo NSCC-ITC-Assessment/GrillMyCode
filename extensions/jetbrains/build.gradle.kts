@@ -1,4 +1,5 @@
 import org.jetbrains.changelog.Changelog
+import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
 
@@ -30,14 +31,46 @@ dependencies {
         intellijIdeaCommunity(providers.gradleProperty("platformVersion"))
         // Remotes and the branch, as VS Code's built-in Git extension gives them.
         bundledPlugin("Git4Idea")
+        // Workflow files are YAML; the workflow help works on them.
+        bundledPlugin("org.jetbrains.plugins.yaml")
+        // A light IDE for the tests of the workflow help in the editor.
+        testFramework(TestFrameworkType.Platform)
     }
+
+    // Reads workflow files for the workflow help, with where each value is. The
+    // IDE has a copy of its own, but not as an API a plugin may rely on.
+    implementation("org.snakeyaml:snakeyaml-engine:2.9")
 
     // Plain unit tests, for the code in shared/ that needs no running IDE.
     testImplementation(platform("org.junit:junit-bom:6.1.3"))
     testImplementation("org.junit.jupiter:junit-jupiter")
     testRuntimeOnly("org.junit.platform:junit-platform-launcher")
-    // The IDE's test runtime loads JUnit 4 classes even for JUnit 5 tests.
-    testRuntimeOnly("junit:junit:4.13.2")
+    // The IDE's test runtime loads JUnit 4 classes even for JUnit 5 tests, and
+    // its light fixtures are JUnit 4 tests, which the vintage engine runs.
+    testImplementation("junit:junit:4.13.2")
+    testRuntimeOnly("org.junit.vintage:junit-vintage-engine")
+}
+
+// The Workflow Wizard's page: the docs site's Wizard, bundled by the VS Code
+// extension's esbuild.js exactly as it bundles it for VS Code, so there is one
+// Wizard to keep. Needs Node, and extensions/vscode's packages installed:
+// `pnpm install` there first.
+val wizardBundle = layout.buildDirectory.dir("wizard")
+val buildWizard by tasks.registering(Exec::class) {
+    val vscode = layout.projectDirectory.dir("../vscode")
+    val docs = layout.projectDirectory.dir("../../docs-site")
+    workingDir(vscode)
+    commandLine("node", "esbuild.js", "--production", "--wizard-out=${wizardBundle.get().asFile.absolutePath}")
+    inputs.dir(docs.dir("docs/_workflow-wizard")).withPropertyName("wizard")
+    inputs.dir(docs.dir("static/img")).withPropertyName("images")
+    inputs.dir(vscode.dir("src/webview")).withPropertyName("webview")
+    inputs.dir(vscode.dir("src/shared")).withPropertyName("shared")
+    inputs.files(vscode.file("esbuild.js"), vscode.file("pnpm-lock.yaml")).withPropertyName("build")
+    outputs.dir(wizardBundle)
+}
+
+tasks.processResources {
+    from(buildWizard) { into("wizard") }
 }
 
 tasks.test {
@@ -47,6 +80,12 @@ tasks.test {
     val fixtures = layout.projectDirectory.dir("../fixtures")
     inputs.dir(fixtures).withPropertyName("fixtures")
     systemProperty("gmc.fixtures", fixtures.asFile.absolutePath)
+    // The workflows the documentation shows, which the input checks must
+    // have nothing to say about.
+    val repository = layout.projectDirectory.dir("../..")
+    inputs.dir(repository.dir("docs-site/docs")).withPropertyName("docs")
+    inputs.file(repository.file("README.md")).withPropertyName("readme")
+    systemProperty("gmc.repository", repository.asFile.absolutePath)
 }
 
 changelog {

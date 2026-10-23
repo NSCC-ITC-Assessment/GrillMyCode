@@ -61,6 +61,24 @@ A student can resubmit under the same tag by moving it and pushing it again. Eac
 
 A resubmitted `questions.md` also says so in its header — for example `Submission: ⚠️ resubmitted — this is the 3rd submission of phase1` — so it stands out without opening the log.
 
+### Question set folders
+
+If an assignment has more than one GrillMyCode workflow, each workflow named for its own set of questions (the `question_set` input), each set gets its own `set.{questionSet}` subfolder inside the student's folder, so the workflows do not replace each other's questions. A workflow named GrillMyCode, or without the input, files at the top of the student's folder as shown above.
+
+```
+{studentLogin}/
+└── set.{questionSet}/                                                      ← the workflow's name in lower case, e.g. set.lab-3
+    ├── questions.md
+    ├── {{ASSIGNMENT_NAME}}_{studentLogin}_set.{questionSet}_quiz_{questionCount}.imscc
+    ├── {{ASSIGNMENT_NAME}}_{studentLogin}_set.{questionSet}_brightspace_quiz_{questionCount}.csv
+    ├── data/
+    │   ├── questions.json
+    │   └── raw-ai-output.md
+    └── {tagGroup}/                                                         ← the set's submission tag folders, as above
+```
+
+The files are the same as those described below. The set is carried in the quiz filenames and in the quiz title (`{{ASSIGNMENT_NAME}} - {studentLogin} ({questionSet})`, or `({questionSet}, {tagGroup})` for a tag folder). Renaming a workflow starts a new folder from its next run; the old one is left as it is.
+
 ## Files
 
 ### `{studentLogin}/questions.md`

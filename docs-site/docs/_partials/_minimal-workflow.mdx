@@ -35,6 +35,9 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           api_key: ${{ secrets.OPENROUTER_API_KEY }}
+          # The workflow's name above is its set of questions: rename a copy
+          # of this file to give it an issue, PDF and folder of its own.
+          question_set: ${{ github.workflow }}
           # If desired, uncomment this input and edit to use a different one —
           # any model from https://openrouter.ai/models (provider/model-name).
           # ai_model: "google/gemini-3.5-flash-lite"

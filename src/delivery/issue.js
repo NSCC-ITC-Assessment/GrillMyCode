@@ -83,6 +83,7 @@ export async function postIssue({
   report,
   branchName,
   tagPattern,
+  questionSetName = '',
   headSha,
   studentLogin,
 }) {
@@ -95,7 +96,12 @@ export async function postIssue({
   // their own. The "tag:" prefix keeps a pattern from colliding with a branch
   // of the same name.
   const groupPart = tagPattern ? ` (tag: ${tagPattern})` : branchName ? ` (${branchName})` : '';
-  const title = `GrillMyCode Questions${groupPart}`;
+  // A question set goes after a colon, before the group. Readers written
+  // before sets match "GrillMyCode Questions (" exactly, so they pass over a
+  // set's issue rather than take it for the branch's. A branch name holds no
+  // space, so the group is always the title's last " (…)".
+  const setPart = questionSetName ? `: ${questionSetName}` : '';
+  const title = `GrillMyCode Questions${setPart}${groupPart}`;
   const { owner, repo } = ctx.repo;
 
   // ── Find any existing open assessment issues for this branch or tag group ─

@@ -34,7 +34,9 @@ import {
   DEFAULT_PREVIOUS_WORK,
   DEFAULT_STARTER_QUESTIONS_ONE_IN,
   MIN_STARTER_QUESTIONS_ONE_IN,
+  QUESTION_SET_MAX_CHARS,
 } from './constants.js';
+import { questionSetSlug } from './context.js';
 import { patternProblem, splitPatternList, splitStackTemplates } from './file-selection.js';
 import { isSafeTagName, isSafeTagPattern } from './tags.js';
 
@@ -117,6 +119,31 @@ function readTagDiffBase() {
     );
   }
   return value;
+}
+
+/**
+ * Reads question_set: the name as the issue title prints it, with its runs of
+ * white space made single spaces, and the slug its files go under. Both are ''
+ * for no set (see questionSetSlug). A value with no slug is a configuration
+ * error, not something to file under a made-up name: two such sets would
+ * replace each other's questions, which is what this input is for preventing.
+ */
+function readQuestionSet() {
+  const name = core.getInput('question_set').replace(/\s+/g, ' ').trim();
+  if (name.length > QUESTION_SET_MAX_CHARS) {
+    throw new Error(
+      `question_set is ${name.length} characters long; it can be at most ` +
+        `${QUESTION_SET_MAX_CHARS}. Shorten the workflow's name, or the value given.`,
+    );
+  }
+  const slug = questionSetSlug(name);
+  if (slug === null) {
+    throw new Error(
+      `question_set "${name}" has no letter, digit, - or _, so it cannot name a folder. ` +
+        `Give the workflow a name with at least one letter or digit.`,
+    );
+  }
+  return { name: slug ? name : '', slug };
 }
 
 /**
@@ -393,6 +420,7 @@ export function readInputs() {
     })(),
     submissionTags: readSubmissionTags(),
     tagDiffBase: readTagDiffBase(),
+    questionSet: readQuestionSet(),
     baseSha: core.getInput('base_sha') || '',
     headSha: core.getInput('head_sha') || '',
     instructorRepoToken: core.getInput('instructor_repo_token') || '',

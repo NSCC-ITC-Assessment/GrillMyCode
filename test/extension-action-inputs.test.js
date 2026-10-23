@@ -2,7 +2,11 @@ import { readFileSync, readdirSync } from 'fs';
 import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
-import { ACTION_PATH, buildActionInputs } from '../scripts/build-extension-action-inputs.js';
+import {
+  ACTION_PATH,
+  JSON_OUT_PATH,
+  buildActionInputs,
+} from '../scripts/build-extension-action-inputs.js';
 import { ACTION_INPUTS } from '../extensions/vscode/src/shared/action-inputs.js';
 import { ACTION_REPOSITORY } from '../extensions/vscode/src/shared/constants.js';
 import { checkWorkflow } from '../extensions/vscode/src/shared/input-checks.js';
@@ -16,6 +20,14 @@ const readJson = (...path) => JSON.parse(readFileSync(join(root, ...path), 'utf-
 describe("the extension's list of the action's inputs", () => {
   it('matches action.yml and src/ — run node scripts/build-extension-action-inputs.js if not', () => {
     expect(buildActionInputs(readFileSync(ACTION_PATH, 'utf-8'))).toEqual(ACTION_INPUTS);
+  });
+
+  // The JetBrains plugin reads the same list, as JSON. Compared as text, so
+  // the order the inputs are offered in is the same in both editors.
+  it("is the JetBrains plugin's too — run node scripts/build-extension-action-inputs.js if not", () => {
+    expect(JSON.stringify(JSON.parse(readFileSync(JSON_OUT_PATH, 'utf-8')))).toBe(
+      JSON.stringify(ACTION_INPUTS),
+    );
   });
 
   // The two inputs the action still reads for older workflows, and the one it

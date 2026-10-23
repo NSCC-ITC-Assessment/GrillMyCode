@@ -7,7 +7,7 @@ sidebar_label: The JetBrains plugin
 
 GrillMyCode Companion (`org.grillmycode.companion` on the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/35347-grillmycode-companion)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, in IntelliJ IDEA, PyCharm, WebStorm and the other IDEs built on the IntelliJ Platform, and shows an instructor each question's answer as well. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in JetBrains IDEs](../guides/jetbrains-plugin.md).
 
-It does what the [VS Code extension](vscode-extension.md)'s student and instructor views do. It has no workflow help and no Workflow Wizard.
+It does what the [VS Code extension](vscode-extension.md) does: the student and instructor views, [workflow help](#workflow-help) and the [Workflow Wizard](#the-workflow-wizard) in the IDE.
 
 ## What it needs
 
@@ -35,11 +35,13 @@ The hidden data carries the version of the issue's layout. When that version is 
 
 ## Which set of questions it shows
 
-A repository has one issue per branch and one per submission tag. When there are several, the plugin shows, in order of preference:
+A repository has one issue per branch and one per submission tag, and one of each per [question set](triggers.md#question-sets). When there are several, the plugin shows, in order of preference:
 
 1. the set the reader last picked with **Choose Which Questions to Show…**, remembered for that repository in that project;
-2. the set for the branch that is checked out;
+2. the set for the branch that is checked out: the one with no question set, or else the question set updated most recently;
 3. the most recently updated set.
+
+**Choose Which Questions to Show…** lists a question set's issue under its name, such as `Lab 3 · main`. Reading question sets needs a version later than 0.2.0.
 
 **Choose Which Questions to Show…** is in the tool window's title bar and under **Tools | GrillMyCode** while there is more than one set. Picking **Follow the checked-out branch** in its list clears the remembered choice.
 
@@ -129,6 +131,40 @@ The student view is the one a student gets, built from the issue. Switch to it b
 - **The issue's answers.** With `include_answers` on, the issue contains them. The student view does not show them, and the instructor view shows the answer key's.
 - **Questions lost to the issue's [length limit](assessment-output.md#length-limit).** When the issue was cut short, the question the cut landed in is dropped, and a note above the list says the last questions are missing and points to the PDF.
 
+## Workflow help
+
+In a file under `.github/workflows`, the plugin reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. Like VS Code's, it works from the text of the file, and of the other workflow files in its folder, with no sign-in and no request to GitHub, and it leaves every other step alone. It needs the bundled YAML plugin, which is on by default.
+
+It checks, offers and describes what the VS Code extension does, with the same words:
+
+- [what it checks](vscode-extension.md#what-it-checks), and at which level;
+- [what it offers](vscode-extension.md#what-it-offers);
+- [what it does not know](vscode-extension.md#what-it-does-not-know), such as which version of the action the workflow uses.
+
+In a JetBrains IDE:
+
+- **Problems** are marked as the file is typed and listed in the **Problems** tool window. An error is marked as one, a warning as a warning, and VS Code's information level as a weak warning. A deprecated input is struck through.
+- **Completion** opens by itself after the space that follows an input's name, and on the first letter of a new input. **Ctrl+Space** opens it on demand. For an input with a fixed set of values, only those values are offered.
+- **An input's description, values and default** appear when the pointer rests on its name, and with **Quick Documentation** (**Ctrl+Q**, or **F1** on macOS), on its name or on an input offered in completion.
+- **Nothing is left to another plugin.** VS Code leaves input names, descriptions and unknown inputs to GitHub's extension where it is installed. JetBrains' own [GitHub Actions support](https://www.jetbrains.com/help/idea/github-actions.html) completes the inputs of local actions only, so the plugin offers, describes and checks GrillMyCode's inputs itself.
+
+### Switching it off
+
+Switch off the **GrillMyCode step inputs** inspection, under **Settings | Editor | Inspections | GrillMyCode**. That turns off the completion and the descriptions too. Like any inspection, it can be switched off for one project's profile only.
+
+## The Workflow Wizard
+
+**Tools | GrillMyCode | Open Workflow Wizard** opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, as the VS Code extension shows it, and it does the same two things a web page cannot:
+
+- **It reads the project's folder.** On the **Files** step, **Use the open folder** tries the patterns on the folder the project is in, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. In a Git repository the IDE knows, the files Git ignores are left out.
+- **It writes the workflow file.** On the last step, **Create the workflow file** writes the workflow to `.github/workflows/` in the project's folder and opens it. The file is `grill-my-code.yml` for a workflow named GrillMyCode, and named after the [question set](triggers.md#question-sets) for any other name, such as `grill-my-code-lab-3.yml`. If the project already has that file, the plugin asks before replacing what is in it, and **Undo** in the editor reverses the change.
+
+The tab follows the IDE's theme, and keeps its answers while another tab is in front. Closing it discards them. A link in it opens in your browser. [Workflow help](#workflow-help) checks the file the Wizard writes, as it checks any other.
+
+It reads what VS Code's tab reads, and has the same limits: see [what the Wizard's tab reads](vscode-extension.md#what-the-wizards-tab-reads) and [what it does not do](vscode-extension.md#what-it-does-not-do).
+
+Where the IDE cannot show a web page in a tab, as in some remote development setups, the action opens the Wizard on the docs site instead.
+
 ## Signing in
 
 The plugin signs in with GitHub's device flow, through its own OAuth app, **GrillMyCode Companion**. **Tools | GrillMyCode | Sign In to GitHub…**, or the link in the tool window, shows a code and opens GitHub, where the reader enters it and authorizes the app. It does not use the account of the IDE's bundled GitHub plugin.
@@ -155,10 +191,12 @@ The last two are how it [looks for an answer key](vscode-extension.md#where-the-
 
 Between loads it repeats the first request alone, to learn [when new questions arrive](#when-new-questions-arrive).
 
-It writes nothing to GitHub, talks to no other service, and collects no usage data.
+It writes nothing to GitHub and collects no usage data. The one other service it talks to is OpenRouter, and only from [the Workflow Wizard's tab](#the-workflow-wizard), without the sign-in.
 
 ## Untrusted issue text
 
 Anyone with write access to a student's repository, including the student, can edit the issue. The plugin therefore treats its text as untrusted: everything shown is escaped, in a simple HTML pane that runs no script rather than a browser, and a file path that is absolute or leaves the repository is never opened.
 
 The answer key is read the same way, although only an account with write access to the instructor repository can change it.
+
+The Workflow Wizard's tab does run a script, the Wizard itself, in the IDE's built-in browser. No text from an issue or an answer key is ever shown in it.

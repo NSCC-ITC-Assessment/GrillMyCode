@@ -6,98 +6,44 @@ import {
   escapeMarkdown,
   inputAt,
 } from '../src/shared/workflow-help.js';
-import { workflow } from './workflow-sample.js';
+import { caseText, cases, workflow } from './workflow-sample.js';
 
 /**
- * What is offered where `|` stands in a step's inputs: the text that would be
- * replaced, and what each item inserts.
+ * Where a case's cursor is, and its text without the mark: the first `|`, the
+ * start of `cursorAt`, or the end of the text.
  */
-function offered(inputs, options) {
-  const marked = workflow(inputs);
-  const offset = marked.indexOf('|');
-  const text = marked.replace('|', '');
-  const found = completionsAt(text, offset, options);
-  if (!found) return undefined;
-  return {
-    replaces: text.slice(found.start, found.end),
-    inserts: found.items.map((item) => item.insert),
-    items: found.items,
-  };
+function cursor(testCase) {
+  const marked = caseText(testCase) + (testCase.suffix ?? '');
+  if (testCase.cursorAt) return { text: marked, offset: marked.indexOf(testCase.cursorAt) };
+  if (testCase.cursorAtEnd) return { text: marked, offset: marked.length };
+  return { text: marked.replace('|', ''), offset: marked.indexOf('|') };
 }
 
-describe('completing an input name', () => {
-  it('offers the inputs on an empty line of the step', () => {
-    const { replaces, inserts } = offered(['api_key: x', '|']);
-    expect(replaces).toBe('');
-    expect(inserts).toContain('num_questions: ');
-    expect(inserts).toContain('starter_code: ');
-  });
-
-  it('leaves out inputs already set, deprecated ones and the hidden one', () => {
-    const { inserts } = offered(['api_key: x', 'num_questions: 5', '|']);
-    expect(inserts).not.toContain('api_key: ');
-    expect(inserts).not.toContain('num_questions: ');
-    expect(inserts).not.toContain('include_initial_commit: ');
-    expect(inserts).not.toContain('log_prompt: ');
-    expect(inserts).toHaveLength(Object.keys(ACTION_INPUTS).length - 5);
-  });
-
-  it('replaces what has been typed of the name', () => {
-    expect(offered(['api_key: x', 'num_q|']).replaces).toBe('num_q');
-  });
-
-  it('replaces only the name of an input that already has a value', () => {
-    const { replaces, inserts } = offered(['api_key: x', 'num_|question: 5']);
-    expect(replaces).toBe('num_question');
-    expect(inserts).toContain('num_questions');
-  });
-
-  it('offers the inputs in a step that has none yet', () => {
-    expect(offered(['|']).inserts).toContain('api_key: ');
-  });
-
-  it('offers nothing where input names are left to the GitHub Actions extension', () => {
-    expect(offered(['api_key: x', '|'], { names: false })).toBeUndefined();
-  });
-
-  it('offers nothing outside the step', () => {
-    const text = workflow(['api_key: x']);
-    // In the checkout step's inputs, and on the step's own level.
-    expect(completionsAt(text, text.indexOf('fetch-depth'))).toBeUndefined();
-    expect(completionsAt(`${text}        `, text.length + 8)).toBeUndefined();
-    expect(completionsAt('', 0)).toBeUndefined();
-  });
-
-  it('offers nothing inside the text of another input', () => {
-    expect(offered(['instructor_context: >', '  Lab 3', '  sta|', 'api_key: x'])).toBeUndefined();
-  });
-});
-
-describe('completing a value', () => {
-  it('offers the values of an input with a fixed set, the default marked', () => {
-    const { replaces, inserts, items } = offered(['starter_code: |']);
-    expect(replaces).toBe('');
-    expect(inserts).toEqual(['none', 'ignore', 'context', 'ask']);
-    expect(items.filter((item) => item.isDefault).map((item) => item.label)).toEqual(['ignore']);
-  });
-
-  it('replaces the value being typed, inside quotes or not', () => {
-    expect(offered(['starter_code: con|text']).replaces).toBe('context');
-    expect(offered(['starter_code: "con|"']).replaces).toBe('con');
-  });
-
-  it('offers true and false, and the tag: form of tag_diff_base', () => {
-    expect(offered(['label_repos: |']).inserts).toEqual(['true', 'false']);
-    expect(offered(['tag_diff_base: |']).inserts).toEqual(['cumulative', 'previous-tag', 'tag:']);
-  });
-
-  it('is offered whether or not input names are', () => {
-    expect(offered(['starter_code: |'], { names: false }).inserts).toHaveLength(4);
-  });
-
-  it('offers nothing for free text or a number', () => {
-    expect(offered(['instructor_context: |'])).toBeUndefined();
-    expect(offered(['num_questions: |'])).toBeUndefined();
+// The cases are in extensions/fixtures/workflow-help/completions.json, which
+// the JetBrains plugin's tests run as well.
+describe('completionsAt', () => {
+  it.each(cases('completions.json'))('$name', (testCase) => {
+    const { text, offset } = cursor(testCase);
+    const found = completionsAt(text, offset, { names: testCase.names ?? true });
+    if (testCase.offered === false) {
+      expect(found).toBeUndefined();
+      return;
+    }
+    expect(found).toBeDefined();
+    const inserts = found.items.map((item) => item.insert);
+    if ('replaces' in testCase) expect(text.slice(found.start, found.end)).toBe(testCase.replaces);
+    if (testCase.inserts) expect(inserts).toEqual(testCase.inserts);
+    for (const insert of testCase.insertsInclude ?? []) expect(inserts).toContain(insert);
+    if (testCase.insertsAllInputsExcept) {
+      const left = Object.keys(ACTION_INPUTS).filter(
+        (name) => !testCase.insertsAllInputsExcept.includes(name),
+      );
+      expect(inserts).toEqual(left.map((name) => `${name}: `));
+    }
+    if (testCase.defaults) {
+      const defaults = found.items.filter((item) => item.isDefault).map((item) => item.label);
+      expect(defaults).toEqual(testCase.defaults);
+    }
   });
 });
 

@@ -35,8 +35,9 @@ open an assignment's folder in the window that appears.
 Lint, formatting and the unit tests in `vscode/test/` run from the repository
 root with everything else: `pnpm lint`, `pnpm format:check` and `pnpm test`.
 
-The extension's list of the action's inputs, `vscode/src/shared/action-inputs.js`,
-is generated from `action.yml`. After changing an input, run
+The extensions' list of the action's inputs, `vscode/src/shared/action-inputs.js`
+and the JetBrains plugin's `jetbrains/src/main/resources/action-inputs.json`, is
+generated from `action.yml`. After changing an input, run
 `node scripts/build-extension-action-inputs.js` from the repository root.
 
 The Workflow Wizard's tab is the docs site's Wizard. `pnpm build` bundles it
@@ -93,7 +94,10 @@ publishing, re-run it: it skips the Marketplace and finishes the rest.
 ## Working on the JetBrains plugin
 
 The plugin is Kotlin, built by Gradle with the IntelliJ Platform Gradle Plugin.
-It needs JDK 21, which the devcontainer has. From `extensions/jetbrains/`:
+It needs JDK 21, which the devcontainer has. Its Workflow Wizard is the VS Code
+extension's bundle, which Gradle builds with that project's `esbuild.js`, so it
+also needs Node and the VS Code extension's packages: run `pnpm install` in
+`extensions/vscode/` first. From `extensions/jetbrains/`:
 
 ```bash
 ./gradlew check          # ktlint and the tests
@@ -118,6 +122,10 @@ To try a build from a codespace instead, download
 **Tools | GrillMyCode | Sign In to GitHub…** and open the **GrillMyCode** tool
 window in a clone of an assignment repository. The `build/` folder is ignored
 by Git, so an editor set to hide ignored files does not show it.
+
+The tests in `src/test/kotlin/…/workflow/` run in a light IDE with no window,
+so they run in a codespace too. They are slower than the rest: the first starts
+the IDE.
 
 The oldest supported IDE is `pluginSinceBuild` and `platformVersion` in
 `gradle.properties`. Raise both together, deliberately: a higher minimum drops

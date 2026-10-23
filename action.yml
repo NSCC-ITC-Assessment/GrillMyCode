@@ -424,6 +424,20 @@ inputs:
     required: false
     default: "cumulative"
 
+  question_set:
+    description: >
+      The set of questions this workflow makes, kept apart from any other
+      workflow's in the same repository. Each set has its own assessment issue,
+      PDF and instructor-repo folder ({student}/set.<name>/). The Workflow
+      Wizard sets it to the workflow's name, from the github.workflow context.
+      The folder name is the value in lower case, with each run of characters
+      other than letters, digits, - and _ made a single -, so "Lab 3" and
+      "lab-3" are one set. Empty, or "GrillMyCode", is no set: the issue, PDF
+      and folder carry no set name. The run fails if the value is over 100
+      characters, or has no letter, digit, - or _.
+    required: false
+    default: ""
+
   base_sha:
     description: >-
       Override the base commit SHA for the diff. When provided this takes
@@ -500,6 +514,7 @@ runs:
     INPUT_SKIP_COMMITTERS: ${{ inputs.skip_committers }}
     INPUT_SUBMISSION_TAGS: ${{ inputs.submission_tags }}
     INPUT_TAG_DIFF_BASE: ${{ inputs.tag_diff_base }}
+    INPUT_QUESTION_SET: ${{ inputs.question_set }}
     INPUT_BASE_SHA: ${{ inputs.base_sha }}
     INPUT_HEAD_SHA: ${{ inputs.head_sha }}
     INPUT_INCLUDE_ANSWERS: ${{ inputs.include_answers }}

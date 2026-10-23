@@ -13,10 +13,12 @@ import kotlinx.serialization.json.jsonArray
 // of extensions/vscode/src/shared/issues.js.
 //
 // The action keeps one open issue per branch and one per submission tag
-// pattern, told apart by title:
+// pattern, told apart by title, and one of each per question set, whose name
+// comes after a colon:
 //
 //   GrillMyCode Questions (main)
 //   GrillMyCode Questions (tag: submit/*)
+//   GrillMyCode Questions: Lab 3 (main)
 //
 // (Line comments here: in Kotlin, the "/" and "*" of a tag pattern would open
 // a nested block comment.)
@@ -35,7 +37,10 @@ sealed interface IssueGroup {
     data object Unnamed : IssueGroup
 }
 
-/** A questions issue, as [findQuestionIssues] lists it. */
+/**
+ * A questions issue, as [findQuestionIssues] lists it. [set] is the question
+ * set's name as the title shows it, for a set's issue.
+ */
 data class QuestionIssue(
     val number: Int,
     val title: String,
@@ -43,29 +48,65 @@ data class QuestionIssue(
     val updatedAt: String,
     val body: String,
     val group: IssueGroup,
+    val set: String? = null,
+)
+
+/** What a questions issue's title says: its group, and its question set's name if it has one. */
+private data class IssueTitle(
+    val group: IssueGroup,
+    val set: String?,
 )
 
 /**
- * What a questions issue's title says it is for, or null for any other title.
- *
- * A colon cannot appear in a branch name, so `(tag: …)` is never a branch.
+ * Reads a title. A colon cannot appear in a branch name, so `(tag: …)` is never
+ * a branch. A space cannot appear in a branch name or a tag pattern either, so
+ * in a set's title the group is the last ` (…)`, and a set's name may hold its
+ * own.
  */
-fun parseIssueTitle(title: String?): IssueGroup? {
+private fun readTitle(title: String?): IssueTitle? {
     if (title == null) return null
-    if (title == ISSUE_TITLE) return IssueGroup.Unnamed
+    if (title == ISSUE_TITLE) return IssueTitle(IssueGroup.Unnamed, null)
+    if (title.startsWith("$ISSUE_TITLE: ")) {
+        val rest = title.substring(ISSUE_TITLE.length + 2)
+        val open = rest.lastIndexOf(" (")
+        val named = rest.endsWith(")") && open >= 0
+        val set = (if (named) rest.substring(0, open) else rest).trim()
+        if (set.isEmpty()) return null
+        if (!named) return IssueTitle(IssueGroup.Unnamed, set)
+        return readGroup(rest.substring(open + 2, rest.length - 1))?.let { IssueTitle(it, set) }
+    }
     if (!title.startsWith("$ISSUE_TITLE (") || !title.endsWith(")")) return null
-    val group = title.substring(ISSUE_TITLE.length + 2, title.length - 1)
+    return readGroup(title.substring(ISSUE_TITLE.length + 2, title.length - 1))?.let { IssueTitle(it, null) }
+}
+
+/** The group inside a title's brackets. */
+private fun readGroup(group: String): IssueGroup? {
     if (group.isEmpty()) return null
     return if (group.startsWith("tag: ")) IssueGroup.Tag(group.removePrefix("tag: ")) else IssueGroup.Branch(group)
 }
 
-/** How an issue's group reads in a list: `main`, or `tag submit-*` for a tag pattern. */
-fun describeGroup(group: IssueGroup): String =
-    when (group) {
-        is IssueGroup.Branch -> group.name
-        is IssueGroup.Tag -> "tag ${group.pattern}"
-        IssueGroup.Unnamed -> "no branch"
-    }
+/** What a questions issue's title says it is for, or null for any other title. */
+fun parseIssueTitle(title: String?): IssueGroup? = readTitle(title)?.group
+
+/** The question set a questions issue's title names, or null for none. */
+fun parseIssueSet(title: String?): String? = readTitle(title)?.set
+
+/**
+ * How an issue's group reads in a list: `main`, or `tag submit-*` for a tag
+ * pattern, after the question set's name for a set's issue: `Lab 3 · main`.
+ */
+fun describeGroup(
+    group: IssueGroup,
+    set: String? = null,
+): String {
+    val where =
+        when (group) {
+            is IssueGroup.Branch -> group.name
+            is IssueGroup.Tag -> "tag ${group.pattern}"
+            IssueGroup.Unnamed -> "no branch"
+        }
+    return if (set != null) "$set · $where" else where
+}
 
 private fun JsonElement?.text(): String? = (this as? JsonPrimitive)?.takeIf { it.isString }?.content
 
@@ -86,13 +127,15 @@ fun findQuestionIssues(issues: List<JsonElement>): List<QuestionIssue> =
                 }
             if (!labelled) return@mapNotNull null
             val title = issue["title"].text()
+            val read = readTitle(title) ?: return@mapNotNull null
             QuestionIssue(
                 number = (issue["number"] as? JsonPrimitive)?.content?.toIntOrNull() ?: return@mapNotNull null,
                 title = title ?: return@mapNotNull null,
                 url = issue["html_url"].text() ?: "",
                 updatedAt = issue["updated_at"].text() ?: "",
                 body = issue["body"].text() ?: "",
-                group = parseIssueTitle(title) ?: return@mapNotNull null,
+                group = read.group,
+                set = read.set,
             )
         }.sortedByDescending { it.updatedAt }
 
@@ -102,7 +145,8 @@ fun findQuestionIssues(issues: List<JsonElement>): List<QuestionIssue> =
  *  1. the one the reader last chose by hand ([preferredTitle]), if it is still
  *     open: the title, not the number, since the action may replace an issue
  *     but always titles its successor the same;
- *  2. the one for the branch that is checked out;
+ *  2. the one for the branch that is checked out, the one with no question
+ *     set first, then the set updated most recently;
  *  3. the most recently updated.
  */
 fun chooseIssue(
@@ -111,6 +155,7 @@ fun chooseIssue(
     preferredTitle: String? = null,
 ): QuestionIssue? =
     issues.firstOrNull { preferredTitle != null && it.title == preferredTitle }
+        ?: issues.firstOrNull { branch != null && it.group == IssueGroup.Branch(branch) && it.set == null }
         ?: issues.firstOrNull { branch != null && it.group == IssueGroup.Branch(branch) }
         ?: issues.firstOrNull()
 

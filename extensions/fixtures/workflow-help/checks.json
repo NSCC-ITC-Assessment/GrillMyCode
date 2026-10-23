@@ -1,0 +1,1009 @@
+{
+  "cases": [
+    {
+      "name": "a workflow with nothing wrong has no problems",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_questions: 10",
+        "starter_code: Ask",
+        "starter_questions_one_in: 4",
+        "question_emphasis: tracing",
+        "ai_temperature: 0.7",
+        "keep_comments: true",
+        "label_repos: \"true\"",
+        "instructor_repo_token: ${{ secrets.INSTRUCTOR_REPO_TOKEN }}"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a file with no GrillMyCode step has none",
+      "text": "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v6\n",
+      "problems": []
+    },
+    {
+      "name": "an empty file has none",
+      "text": "",
+      "problems": []
+    },
+    {
+      "name": "a value GitHub works out at run time is not checked",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_questions: ${{ inputs.num_questions }}",
+        "starter_code: ${{ inputs.starter_code || \"ignore\" }}",
+        "label_repos: ${{ vars.LABEL_REPOS }}"
+      ],
+      "problems": []
+    },
+    {
+      "name": "starter_code: asks is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "starter_code: asks"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "asks",
+          "messageContains": [
+            "\"none\", \"ignore\", \"context\" or \"ask\"",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "previous_work: none is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "base_sha: ${{ inputs.base_sha }}",
+        "previous_work: none"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "none",
+          "messageContains": [
+            "\"context\" or \"ignore\"",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "question_emphasis: \"trace\" is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_emphasis: \"trace\""
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "\"trace\"",
+          "messageContains": [
+            "\"balanced\", \"research\" or \"tracing\"",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ai_reasoning_effort: maximum is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "ai_reasoning_effort: maximum"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "maximum",
+          "messageContains": [
+            "\"xhigh\" or \"max\"",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ai_provider: OpenRouter is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "ai_provider: OpenRouter"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "OpenRouter",
+          "messageContains": [
+            "must be \"openrouter\"",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "label_repos: yes is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "instructor_repo_token: ${{ secrets.T }}",
+        "label_repos: yes"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "yes",
+          "messageContains": [
+            "\"true\" or \"false\"",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "preview_only: 1 is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "preview_only: 1"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "1",
+          "messageContains": [
+            "\"true\" or \"false\"",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "tag_diff_base may name a tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1, phase2",
+        "tag_diff_base: tag:phase1"
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_diff_base's modes are read in any letter case",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1, phase2",
+        "tag_diff_base: Previous-Tag"
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_diff_base may not name a pattern",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1, phase2",
+        "tag_diff_base: tag:phase*"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "text": "tag:phase*"
+        }
+      ]
+    },
+    {
+      "name": "tag_diff_base's error names the tag: form",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1, phase2",
+        "tag_diff_base: earliest"
+      ],
+      "problems": [
+        {
+          "messageContains": [
+            "\"tag:<tag name>\""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "submission_tags names the patterns the action does not support",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1, !draft, two words"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "messageContains": [
+            "\"!draft\", \"two words\""
+          ],
+          "messageLacks": [
+            "\"phase1\""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "num_questions: 70 is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_questions: 70"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "so 50 is used"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "num_questions: 0 is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_questions: 0"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "so 1 is used"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "starter_questions_one_in: 1 is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "starter_code: ask",
+        "starter_questions_one_in: 1"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "so 2 is used"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ai_retry_max_attempts: 0 is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "ai_retry_max_attempts: 0"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "so 1 is used"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "num_questions: 5.5 is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_questions: 5.5"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "is read as 5"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ai_temperature: 3 is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "ai_temperature: 3"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "from 0 to 2"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "ai_temperature: warm is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "ai_temperature: warm"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "from 0 to 2"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "keep_comments: yes is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "keep_comments: yes"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "is read as \"false\""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "include_answers: \"True\" is a warning, as the action changes or ignores it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "include_answers: \"True\""
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "messageContains": [
+            "is read as \"false\""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a number that is not a number at all is an error",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_questions: twenty"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "text": "twenty"
+        }
+      ]
+    },
+    {
+      "name": "an unquoted boolean is accepted in any letter case",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "keep_comments: True",
+        "fail_on_empty_assessment: FALSE"
+      ],
+      "problems": []
+    },
+    {
+      "name": "an unknown input is a warning that offers the input it is close to",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_question: 10"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "unknown-input",
+          "text": "num_question",
+          "messageContains": [
+            "Did you mean \"num_questions\"?"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "an unknown input close to none says the editor's copy may be out of date",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "rubric_file: rubric.md"
+      ],
+      "problems": [
+        {
+          "code": "unknown-input",
+          "messageContains": [
+            "If the input is new, update the"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "an unknown input is left out when something else reports it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "num_question: 10"
+      ],
+      "unknownInputs": false,
+      "problems": []
+    },
+    {
+      "name": "an input's name is read in any letter case",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "Num_Questions: 70"
+      ],
+      "problems": [
+        {
+          "code": "out-of-range"
+        }
+      ]
+    },
+    {
+      "name": "a deprecated input is a warning that names its replacement",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "include_initial_commit: true"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "deprecated-input",
+          "text": "include_initial_commit",
+          "deprecated": true,
+          "messageContains": [
+            "Use starter_code: none instead."
+          ],
+          "messageLacks": [
+            "ignored"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a deprecated input says so when its replacement is set",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "starter_code: none",
+        "include_initial_commit: true"
+      ],
+      "problems": [
+        {
+          "code": "deprecated-input",
+          "messageContains": [
+            "It is ignored here"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a missing API key is an error, on the step's with",
+      "inputs": [
+        "num_questions: 10"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "missing-api-key",
+          "text": "with"
+        }
+      ]
+    },
+    {
+      "name": "an empty API key is an error, on the input",
+      "inputs": [
+        "api_key: \"\""
+      ],
+      "problems": [
+        {
+          "code": "missing-api-key",
+          "text": "api_key"
+        }
+      ]
+    },
+    {
+      "name": "a missing API key is on the step's uses when the step has no inputs",
+      "text": "steps:\n  - uses: NSCC-ITC-Assessment/GrillMyCode@v0\n",
+      "problems": [
+        {
+          "code": "missing-api-key",
+          "text": "NSCC-ITC-Assessment/GrillMyCode@v0"
+        }
+      ]
+    },
+    {
+      "name": "a preview needs no API key",
+      "inputs": [
+        "preview_only: true"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a preview worked out at run time needs no API key",
+      "inputs": [
+        "preview_only: ${{ inputs.preview_only }}"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a run that is not a preview needs an API key",
+      "inputs": [
+        "preview_only: false"
+      ],
+      "problems": [
+        {
+          "code": "missing-api-key"
+        }
+      ]
+    },
+    {
+      "name": "an API key written into the file is a warning",
+      "inputs": [
+        "api_key: sk-or-v1-0000"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "secret-in-workflow",
+          "text": "sk-or-v1-0000"
+        }
+      ]
+    },
+    {
+      "name": "an API key read from a workflow input is a warning",
+      "inputs": [
+        "api_key: ${{ inputs.api_key }}"
+      ],
+      "problems": [
+        {
+          "code": "secret-in-workflow"
+        }
+      ]
+    },
+    {
+      "name": "an API key read from the event's inputs is a warning",
+      "inputs": [
+        "api_key: ${{ github.event.inputs.api_key }}"
+      ],
+      "problems": [
+        {
+          "code": "secret-in-workflow"
+        }
+      ]
+    },
+    {
+      "name": "the other tokens may not be written into the file either",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "instructor_repo_token: ghp_0000"
+      ],
+      "problems": [
+        {
+          "code": "secret-in-workflow"
+        }
+      ]
+    },
+    {
+      "name": "the GitHub token may be the run's own",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "github_token: ${{ github.token }}"
+      ],
+      "problems": []
+    },
+    {
+      "name": "label_repos warns when it has no instructor_repo_token",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "label_repos: true"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "needs-other-input",
+          "text": "label_repos"
+        }
+      ]
+    },
+    {
+      "name": "label_repos off needs nothing",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "label_repos: false"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a starter question share has no effect unless starter_code is ask",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "starter_questions_one_in: 4"
+      ],
+      "problems": [
+        {
+          "severity": "info",
+          "code": "no-effect"
+        }
+      ]
+    },
+    {
+      "name": "a starter question share has no effect with starter_code context",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "starter_code: context",
+        "starter_questions_one_in: 4"
+      ],
+      "problems": [
+        {
+          "code": "no-effect"
+        }
+      ]
+    },
+    {
+      "name": "a starter question share is not noted when starter_code is worked out at run time",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "starter_code: ${{ inputs.mode }}",
+        "starter_questions_one_in: 4"
+      ],
+      "problems": []
+    },
+    {
+      "name": "previous_work has no effect where no run has earlier work",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "previous_work: ignore"
+      ],
+      "problems": [
+        {
+          "severity": "info",
+          "code": "no-effect"
+        }
+      ]
+    },
+    {
+      "name": "previous_work applies to a run diffed from the previous tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1",
+        "tag_diff_base: previous-tag",
+        "previous_work: ignore"
+      ],
+      "problems": []
+    },
+    {
+      "name": "previous_work applies to a run from a base_sha",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "base_sha: ${{ inputs.base_sha }}",
+        "previous_work: ignore"
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_diff_base has no effect where no run is started by a tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_diff_base: previous-tag"
+      ],
+      "problems": [
+        {
+          "severity": "info",
+          "code": "no-effect",
+          "text": "tag_diff_base"
+        }
+      ]
+    },
+    {
+      "name": "tag_diff_base cumulative is not noted",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_diff_base: cumulative"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a workflow run on tags with no submission_tags is an error",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}"
+      ],
+      "on": "on:\n  push:\n    tags: [\"phase1\", \"phase2\"]",
+      "problems": [
+        {
+          "severity": "error",
+          "code": "missing-submission-tags",
+          "text": "with"
+        }
+      ]
+    },
+    {
+      "name": "the two tag lists may be in any order",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase2, phase1"
+      ],
+      "on": "on:\n  push:\n    tags: [\"phase1\", \"phase2\"]",
+      "problems": []
+    },
+    {
+      "name": "submission_tags may be written as a block",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: |",
+        "  phase1",
+        "  phase2"
+      ],
+      "on": "on:\n  push:\n    tags: [\"phase1\", \"phase2\"]",
+      "problems": []
+    },
+    {
+      "name": "submission_tags lacking a tag the workflow runs on is a warning",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1"
+      ],
+      "on": "on:\n  push:\n    tags: [\"phase1\", \"phase2\"]",
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "tag-lists-differ",
+          "text": "phase1",
+          "messageContains": [
+            "does not list \"phase2\""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "submission_tags listing a tag the workflow does not run on is a warning",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: phase1, phase2, final"
+      ],
+      "on": "on:\n  push:\n    tags: [\"phase1\", \"phase2\"]",
+      "problems": [
+        {
+          "code": "tag-lists-differ",
+          "messageContains": [
+            "lists \"final\""
+          ]
+        }
+      ]
+    },
+    {
+      "name": "the tag lists are not compared when submission_tags is worked out at run time",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "submission_tags: ${{ vars.SUBMISSION_TAGS }}"
+      ],
+      "on": "on:\n  push:\n    tags: [\"phase1\", \"phase2\"]",
+      "problems": []
+    },
+    {
+      "name": "a question set with a name the action accepts has no problems",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: \"Lab 3: Checkout (A)\""
+      ],
+      "problems": []
+    },
+    {
+      "name": "a question set over 100 characters is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "messageContains": [
+            "101 characters",
+            "at most 100",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a question set with no letter or digit is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: \"!!!\""
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "\"!!!\"",
+          "messageContains": [
+            "question_set, \"!!!\", has no letter, digit",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a question set named after the workflow is checked by the workflow's name",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: Lab 3\non: push",
+      "problems": []
+    },
+    {
+      "name": "a workflow name the action cannot file under is an error on the name",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: \"???\"\non: push",
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "\"???\"",
+          "messageContains": [
+            "The workflow's name, \"???\", has no letter",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a question set named after a workflow with no name is noted",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "problems": [
+        {
+          "severity": "info",
+          "code": "unnamed-workflow",
+          "text": "${{ github.workflow }}",
+          "messageContains": [
+            ".github/workflows/grill-my-code.yml",
+            "Give the workflow a name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "another workflow with no question set shares this one's",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            ""
+          ]
+        }
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "shared-question-set",
+          "text": "NSCC-ITC-Assessment/GrillMyCode@v0",
+          "messageContains": [
+            "\".github/workflows/other.yml\" files its questions",
+            "replaces the other's issue, PDF and answer key",
+            "set question_set: ${{ github.workflow }}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "another workflow with the same name shares this one's question set",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: Lab 3\non: push",
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            "lab-3"
+          ]
+        }
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "shared-question-set",
+          "text": "question_set",
+          "messageContains": [
+            "\"lab-3\"",
+            "name of its own."
+          ],
+          "messageLacks": [
+            "set question_set"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two other workflows sharing the question set are both named",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: lab-3"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            "lab-3"
+          ]
+        },
+        {
+          "path": ".github/workflows/third.yml",
+          "sets": [
+            "x",
+            "lab-3"
+          ]
+        }
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "shared-question-set",
+          "text": "question_set",
+          "messageContains": [
+            "\".github/workflows/other.yml\" and \".github/workflows/third.yml\" file their questions"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "workflows with question sets of their own share nothing",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: Lab 3\non: push",
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            "lab-4",
+            ""
+          ]
+        },
+        {
+          "path": ".github/workflows/grill-my-code.yml",
+          "sets": [
+            "lab-3"
+          ]
+        }
+      ],
+      "problems": []
+    },
+    {
+      "name": "a question set GitHub works out at run time is not compared",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ inputs.set }}"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            ""
+          ]
+        }
+      ],
+      "problems": []
+    }
+  ]
+}

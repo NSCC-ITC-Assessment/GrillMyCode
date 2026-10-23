@@ -8,6 +8,7 @@
 
 import * as core from '@actions/core';
 import {
+  DEFAULT_QUESTION_SET_SLUG,
   GIT_EMPTY_TREE_SHA,
   GIT_SHA_SHORT_LENGTH,
   SUBMISSION_TAG_GROUP_FALLBACK,
@@ -304,6 +305,25 @@ export function resolveSubmissionTag(tagName, patterns) {
  */
 export function tagGroupSlug(pattern) {
   return safeFilePart(pattern) || SUBMISSION_TAG_GROUP_FALLBACK;
+}
+
+/**
+ * The filesystem-safe name a question set's PDF and instructor-repository
+ * folder are filed under, or '' for no set: for an empty question_set, and for
+ * "GrillMyCode" (DEFAULT_QUESTION_SET_SLUG). Lower case, so that a clone on a
+ * file system that ignores case, as Windows and macOS do, never meets `Lab-3/`
+ * beside `lab-3/`: the two are one set. Unlike tagGroupSlug there is no
+ * fallback, because two sets that both fell back would share one folder; a
+ * value with nothing filename-safe in it gives null, for the caller to reject.
+ *
+ * @param {string} name - question_set, trimmed.
+ * @returns {string | null}
+ */
+export function questionSetSlug(name) {
+  if (!name) return '';
+  const slug = safeFilePart(name).toLowerCase();
+  if (!slug) return null;
+  return slug === DEFAULT_QUESTION_SET_SLUG ? '' : slug;
 }
 
 /**
