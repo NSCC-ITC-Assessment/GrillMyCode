@@ -1,11 +1,13 @@
 # JetBrains plugin — plan
 
 > **Recorded:** 2026-10-19 (`d1f974c`), against VS Code extension 0.4.4.
-> **Updated:** 2026-10-23, 0.2.0 released with J1 to J3; J4 and J5 built on `j4`.
+> **Updated:** 2026-10-23, 0.2.0 released with J1 to J3, then 0.3.0 with J4, J5
+> and question sets.
 > **Status:** J0 done. 0.2.0, with J1, J2 and J3, is on the Marketplace's
 > default channel since 2026-10-23. Their hand checks were not done before it
 > shipped: see [J1 progress](#j1-progress), [J2 progress](#j2-progress) and
-> [J3 progress](#j3-progress). J4 and J5 built, together on `j4`: see
+> [J3 progress](#j3-progress). J4 and J5 are in 0.3.0, on the default channel
+> since 2026-10-23, their hand checks also undone: see
 > [J4 progress](#j4-progress) and [J5 progress](#j5-progress).
 
 A JetBrains plugin that does what GrillMyCode Companion does in VS Code: the
@@ -25,8 +27,8 @@ Elsewhere: the VS Code extension's plan, which this follows, in
 | J1    | Student side: sign-in, the questions list, the selected question, the jump to code, the moved-code warning, next and previous, several files, the new-questions notice          | J0                             | In progress |
 | J2    | Ready for a class: the Marketplace listing, a reference page and a line in the student guide, a stable release, hand checks on Windows and macOS                                | J1                             | In progress |
 | J3    | Instructor view: the answer key beside the student's code, and the view switch                                                                                                  | J1                             | In progress |
-| J4    | Workflow help: the action's inputs checked, offered and described in a workflow file                                                                                            | J0, and the shared check cases | Built       |
-| J5    | The docs site's Workflow Wizard in a JCEF tab, reading the open project and writing the workflow file                                                                           | J0                             | Built       |
+| J4    | Workflow help: the action's inputs checked, offered and described in a workflow file                                                                                            | J0, and the shared check cases | 0.3.0       |
+| J5    | The docs site's Workflow Wizard in a JCEF tab, reading the open project and writing the workflow file                                                                           | J0                             | 0.3.0       |
 
 Keep this table current when a phase starts, finishes or changes scope. The
 suggested order is J0, J1, J2, then J3 to J5 in any order. VS Code's phase 6

@@ -2,7 +2,7 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
-## Unreleased
+## 0.6.0, 2026-10-23
 
 - Reads the questions of a question set: a workflow whose name keeps its questions apart from another workflow's. **Choose Which Questions to Show** lists each set by its name, such as **Lab 3 · main**, and the instructor view reads that set's answer key.
 - The workflow checks underline a `question_set`, or a workflow name, that the action can't file questions under, and warn when two workflow files in a repository share a question set.

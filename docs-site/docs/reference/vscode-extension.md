@@ -58,7 +58,7 @@ A repository has one issue per branch and one per submission tag, and one of eac
 2. the set for the branch that is checked out: the one with no question set, or else the question set updated most recently;
 3. the most recently updated set.
 
-**Choose Which Questions to Show** lists a question set's issue under its name, such as `Lab 3 · main`. Reading question sets needs a version later than 0.4.5.
+**Choose Which Questions to Show** lists a question set's issue under its name, such as `Lab 3 · main`. Reading question sets needs version 0.6.0 or later.
 
 Picking **Follow the checked-out branch** in that list clears the remembered choice.
 
