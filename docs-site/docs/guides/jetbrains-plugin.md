@@ -20,6 +20,10 @@ The plugin doesn't write questions and doesn't show students the answers.
 
 ![IntelliJ IDEA with the GrillMyCode tool window open on the right. The questions list is grouped by file, with question 11 selected and shown in full below the list, with its code. The editor shows story.php with line 50 highlighted.](/img/screenshots/jetbrains-plugin-questions.png)
 
+## What instructors get
+
+If you keep a [private answer key](instructor-setup.md), open a student's repository and sign in: each question comes with its answer, beside the student's code. Students never see this. In your own test repository, a button switches between the students' view and yours.
+
 ## Approve the plugin for your organization
 
 Do this once, before your students sign in.
@@ -51,12 +55,12 @@ Adapt this for your assignment instructions:
 
 Each student signs in to GitHub once, from the IDE. The plugin shows a code and opens GitHub, where the student enters it. The sign-in asks for access to the student's repositories. That is broader than the plugin needs, but it's the only permission GitHub offers for reading a private repository this way.
 
-The plugin uses it to read the questions issue, and keeps the sign-in in the IDE's password storage. It changes nothing on GitHub, and it collects no usage data.
+The plugin uses it to read the questions issue, and to ask GitHub whether the account can see the answer key, which a student's can't. It keeps the sign-in in the IDE's password storage. It changes nothing on GitHub, and it collects no usage data.
 
 ## Good to know
 
-- **It shows the student's view only.** The [VS Code extension](vscode-extension.md) also shows an instructor each answer beside the student's code, opens the Workflow Wizard and checks your workflow file. The JetBrains plugin doesn't do these yet.
+- **It doesn't help with your workflow file.** The [VS Code extension](vscode-extension.md) also opens the Workflow Wizard and checks your workflow file. The JetBrains plugin doesn't do these yet.
 - **It follows the branch the student has checked out.** With [submission tags](choosing-a-trigger.md#submission-tag) a repository can hold several sets of questions, and the student can choose which one to see.
 - **Questions arrive on their own** while the IDE is open and the tool window has been opened once. After a later push, the plugin says a newer set has arrived, and the list changes when the student asks for it.
 
-**Go deeper:** [The JetBrains plugin](../reference/jetbrains-plugin.md): which repository and set of questions it reads, when it loads again, opening a question's code, and what the sign-in is used for
+**Go deeper:** [The JetBrains plugin](../reference/jetbrains-plugin.md): which repository and set of questions it reads, when it loads again, opening a question's code, the instructor view, and what the sign-in is used for

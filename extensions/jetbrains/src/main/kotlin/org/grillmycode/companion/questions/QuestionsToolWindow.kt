@@ -35,6 +35,8 @@ class QuestionsToolWindowFactory :
         val actions = ActionManager.getInstance()
         toolWindow.setTitleActions(
             listOfNotNull(
+                actions.getAction("GrillMyCode.ShowInstructorView"),
+                actions.getAction("GrillMyCode.ShowStudentView"),
                 actions.getAction("GrillMyCode.PreviousQuestion"),
                 actions.getAction("GrillMyCode.NextQuestion"),
                 actions.getAction("GrillMyCode.ChooseIssue"),
@@ -86,6 +88,30 @@ abstract class StepAction(
 class NextQuestionAction : StepAction(1)
 
 class PreviousQuestionAction : StepAction(-1)
+
+/**
+ * Switches to [view], for an account that has both views. A student's account
+ * never reads an answer key, so it never sees either action: not in the tool
+ * window, the Tools menu or Find Action.
+ */
+abstract class SwitchViewAction(
+    private val view: View,
+) : DumbAwareAction() {
+    override fun getActionUpdateThread() = ActionUpdateThread.BGT
+
+    override fun update(event: AnActionEvent) {
+        val service = event.project?.getServiceIfCreated(QuestionsService::class.java)
+        event.presentation.isEnabledAndVisible = service?.key != null && service.view != view
+    }
+
+    override fun actionPerformed(event: AnActionEvent) {
+        event.project?.getServiceIfCreated(QuestionsService::class.java)?.switchView(view)
+    }
+}
+
+class ShowInstructorViewAction : SwitchViewAction(View.INSTRUCTOR)
+
+class ShowStudentViewAction : SwitchViewAction(View.STUDENT)
 
 /**
  * Chooses among a repository's questions issues, one per branch or submission

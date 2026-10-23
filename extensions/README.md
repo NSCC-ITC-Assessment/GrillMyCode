@@ -167,7 +167,8 @@ can take days, so do this well before a term starts.
    ```
 
 3. Upload `build/distributions/*-signed.zip` on the Marketplace's **Upload
-   plugin** page, under the vendor. If the page offers a channel, choose `eap`.
+   plugin** page, under the vendor. Unless the page offers a channel, the first
+   version goes to the default one whatever its suffix, as 0.1.0-eap.1 did.
 
 Every later version goes through the workflow.
 

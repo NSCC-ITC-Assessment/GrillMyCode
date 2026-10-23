@@ -30,11 +30,15 @@ import org.grillmycode.companion.auth.GitHubAccount
 import org.grillmycode.companion.auth.NOTIFICATION_GROUP
 import org.grillmycode.companion.auth.isRestrictedByOrganization
 import org.grillmycode.companion.httpGet
+import org.grillmycode.companion.instructor.AnswerKey
+import org.grillmycode.companion.instructor.NoAnswerKey
+import org.grillmycode.companion.instructor.findAnswerKey
 import org.grillmycode.companion.shared.GitHubException
 import org.grillmycode.companion.shared.NEW_QUESTIONS_CHECK_MS
 import org.grillmycode.companion.shared.NEW_QUESTIONS_FOCUS_GAP_MS
 import org.grillmycode.companion.shared.NeedsUpdate
 import org.grillmycode.companion.shared.ParsedReport
+import org.grillmycode.companion.shared.Question
 import org.grillmycode.companion.shared.QuestionIssue
 import org.grillmycode.companion.shared.Remote
 import org.grillmycode.companion.shared.Report
@@ -82,13 +86,22 @@ sealed interface QuestionsState {
     /** Anything else; the IDE's log has the details. */
     data object Error : QuestionsState
 
+    /**
+     * Questions are showing. In the student view they are [report]'s. In the
+     * instructor view they are the answer key's, and [issue] and [report] are
+     * the questions issue's when there is one, and the plugin can read it.
+     */
     data class Ready(
         /** The repository root the snippets' paths are relative to. */
         val root: VirtualFile,
-        val issue: QuestionIssue,
-        val report: Report,
+        val issue: QuestionIssue?,
+        val report: Report?,
+        val questions: List<Question>,
     ) : QuestionsState
 }
+
+/** Which questions the tool window lists: the issue's, or the answer key's with their answers. */
+enum class View { STUDENT, INSTRUCTOR }
 
 /** Told on the event dispatch thread each time the state, or what has arrived since, changes. */
 fun interface QuestionsListener {
@@ -114,11 +127,13 @@ private data class Target(
     val branch: String?,
 )
 
-/** What a load found: the state to show, every questions issue, and the one chosen. */
+/** What a load found: the state to show, every questions issue, the one chosen, and the answer key, with the view. */
 private data class Loaded(
     val state: QuestionsState,
     val issues: List<LoadedIssue> = emptyList(),
     val chosen: QuestionIssue? = null,
+    val key: AnswerKey? = null,
+    val view: View = View.STUDENT,
 )
 
 /** The tool window's icon, as plugin.xml names it, to put a badge on. */
@@ -136,6 +151,12 @@ private fun readReports(issues: List<JsonElement>): List<LoadedIssue> =
  * the state in step with sign-in and the repository's branch and remotes.
  * Created when the tool window first opens, so nothing is asked of GitHub
  * before that.
+ *
+ * It also looks for the repository's answer key (instructor/AnswerKey.kt). An
+ * account that can read it gets the instructor view, which lists the key's
+ * questions with their answers, and a switch between the two views. An account
+ * that cannot gets the student view alone, built from the issue, with nothing
+ * to show that another view exists.
  *
  * While the IDE has the focus it asks GitHub now and then whether a set of
  * questions has arrived since the last load ([check]). The first set is loaded
@@ -162,6 +183,16 @@ class QuestionsService(
     /** The issue [chooseIssue] picked at the last load, shown or not. */
     @Volatile
     var chosen: QuestionIssue? = null
+        private set
+
+    /** The answer key the signed-in account read at the last load, if it could read one. */
+    @Volatile
+    var key: AnswerKey? = null
+        private set
+
+    /** The view showing. Always the student view without an answer key. */
+    @Volatile
+    var view: View = View.STUDENT
         private set
 
     /** A set of questions GitHub has in place of the one showing: found by a check, and left there until asked for. */
@@ -248,6 +279,8 @@ class QuestionsService(
                 state = next.state
                 issues = next.issues
                 chosen = next.chosen
+                key = next.key
+                view = next.view
                 arrived = null
                 updateBadge()
                 publish()
@@ -291,16 +324,62 @@ class QuestionsService(
                 log.info("Could not reach GitHub: ${error.message}")
                 return Loaded(QuestionsState.Error)
             }
-        val chosen =
-            chooseIssue(issues.map { it.issue }, target.branch, preferredTitle(target))
-                ?: return Loaded(QuestionsState.NoIssue, issues)
-        val state =
-            when (val report = issues.first { it.issue == chosen }.report) {
-                is Report -> QuestionsState.Ready(target.root, chosen, report)
-                NeedsUpdate -> QuestionsState.NeedsUpdate
+        val chosen = chooseIssue(issues.map { it.issue }, target.branch, preferredTitle(target))
+        // The key is looked for before anything is shown, so an instructor's list
+        // does not open on the student's questions and then change.
+        val key =
+            when (val found = findAnswerKey(target.owner, target.repo, account.login, chosen?.group, account.token, ::httpGet)) {
+                is AnswerKey -> found
+                is NoAnswerKey -> {
+                    // At debug level: for a student there is never one, and that is no fault.
+                    log.debug("No answer key for ${target.owner}/${target.repo}: ${found.reason}")
+                    null
+                }
             }
-        return Loaded(state, issues, chosen)
+        val view = if (key == null) View.STUDENT else chosenView(target) ?: if (key.own) View.STUDENT else View.INSTRUCTOR
+        return Loaded(present(target, issues, chosen, key, view), issues, chosen, key, view)
     }
+
+    /**
+     * The state for what a load found, in [view]. The student view is the
+     * issue's questions and nothing else, read by the code every student's copy
+     * runs. The instructor view is the key's, and needs no issue.
+     */
+    private fun present(
+        target: Target,
+        issues: List<LoadedIssue>,
+        chosen: QuestionIssue?,
+        key: AnswerKey?,
+        view: View,
+    ): QuestionsState {
+        val report = issues.firstOrNull { it.issue == chosen }?.report
+        if (view == View.INSTRUCTOR && key != null) return QuestionsState.Ready(target.root, chosen, report as? Report, key.questions)
+        return when (report) {
+            null -> QuestionsState.NoIssue
+            NeedsUpdate -> QuestionsState.NeedsUpdate
+            is Report -> QuestionsState.Ready(target.root, chosen, report, report.questions)
+        }
+    }
+
+    /**
+     * Changes the view, for an account that has both, and remembers it for
+     * this repository. Nothing is asked of GitHub: both views were loaded.
+     * Called on the event dispatch thread.
+     */
+    fun switchView(next: View) {
+        val target = loadedTarget ?: return
+        val key = key ?: return
+        PropertiesComponent.getInstance(project).setValue(viewKey(target), next.name)
+        view = next
+        state = present(target, issues, chosen, key, next)
+        publish()
+    }
+
+    /** The view chosen by hand for this repository, if any. */
+    private fun chosenView(target: Target): View? =
+        PropertiesComponent.getInstance(project).getValue(viewKey(target))?.let { name -> View.entries.firstOrNull { it.name == name } }
+
+    private fun viewKey(target: Target) = "GrillMyCode.view:${target.owner}/${target.repo}"
 
     /** The state for a refusal from GitHub with [status], other than an organization's restriction. */
     private fun stateFor(status: Int): QuestionsState =

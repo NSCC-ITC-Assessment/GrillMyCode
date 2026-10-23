@@ -5,9 +5,9 @@ sidebar_label: The JetBrains plugin
 
 # The JetBrains plugin
 
-GrillMyCode Companion (`org.grillmycode.companion` on the JetBrains Marketplace) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, in IntelliJ IDEA, PyCharm, WebStorm and the other IDEs built on the IntelliJ Platform. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in JetBrains IDEs](../guides/jetbrains-plugin.md).
+GrillMyCode Companion (`org.grillmycode.companion` on the [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/35347-grillmycode-companion)) shows the questions from the [assessment issue](assessment-output.md) beside the code they ask about, in IntelliJ IDEA, PyCharm, WebStorm and the other IDEs built on the IntelliJ Platform, and shows an instructor each question's answer as well. It is separate from the action: it has its own releases, needs no input in the workflow, and only reads what the action has already posted. For setup, see [Showing questions in JetBrains IDEs](../guides/jetbrains-plugin.md).
 
-It does what the [VS Code extension](vscode-extension.md)'s student view does. It has no instructor view, no workflow help and no Workflow Wizard.
+It does what the [VS Code extension](vscode-extension.md)'s student and instructor views do. It has no workflow help and no Workflow Wizard.
 
 ## What it needs
 
@@ -51,6 +51,8 @@ A repository has one issue per branch and one per submission tag. When there are
 - When a safe-mode project is trusted.
 - When a first set of questions [arrives](#when-new-questions-arrive).
 
+Each load also checks again for an answer key, which decides whether the [instructor view](#the-instructor-view) is offered.
+
 ## When new questions arrive
 
 Between loads, the plugin asks GitHub whether the questions have changed: once a minute, and when the IDE regains the focus, unless it asked in the 15 seconds before. Each check is one request, for the same list of issues a load reads.
@@ -68,7 +70,14 @@ A set that arrives for another branch or submission tag than the one being shown
 
 Selecting a question shows it in full below the list. Double-clicking it, or pressing **Enter**, opens the file it asks about and highlights the lines. A question that shows code from several files opens each file in a tab of its own and leaves the first in front. Under such a question the list has a row for each piece of code, and opening one brings its file to the front at those lines.
 
-Unlike the VS Code extension, the plugin leaves open the tabs it opened for one question when the next is opened. The IDE closes old tabs itself, past its tab limit.
+When another question is opened, the tabs the plugin opened for the one before are closed, except those on a file the new question shows too. A tab is left open when any of these is true:
+
+- it was open before the question was;
+- its file has been edited since, whether or not the edit was saved;
+- the reader has pinned it;
+- the reader closed it and opened it again.
+
+Loading the questions again removes the highlights and leaves the tabs, which close when the next question is opened.
 
 Opening another question removes the highlights, and so does a load that brings other questions. Editing a highlighted file removes that file's highlights, since the lines may have moved.
 
@@ -90,12 +99,34 @@ A range that runs past the end of the file is cut to fit. A file that no longer 
 - A step past either end of the list goes round to the other.
 - A broader question has no lines to open, so the editor stays where it was.
 - A step shows the tool window if it is hidden.
+- In the [instructor view](#the-instructor-view), they step through the answer key's questions.
 
 Neither action has a keyboard shortcut. A reader who wants one adds it under **Settings | Keymap**.
 
+## The instructor view
+
+An account that can read an assignment's answer key gets a second view. It lists the answer key's questions, and the panel below the list shows each one's answer under its code. Opening a question still opens the student's file at the lines it asks about.
+
+No setting turns it on. The plugin offers the view only after it has read the answer key with the signed-in account, which a student's account cannot do, so a student's copy shows the questions and nothing else: no answers, no switch, and no mention of another view.
+
+The plugin follows the VS Code extension's rules for this view, with the same requests:
+
+- [where the answer key is read from](vscode-extension.md#where-the-answer-key-is-read-from), and how the student is found;
+- [which view opens](vscode-extension.md#which-view-opens), by whose repository it is;
+- [what happens when the answer key and the issue differ](vscode-extension.md#when-the-answer-key-and-the-issue-differ), which turns the [moved-code warning](#the-moved-code-warning) into a note that the two are from different runs;
+- [what the view leaves out](vscode-extension.md#what-the-instructor-view-leaves-out), such as distractors and marks.
+
+### Switching views
+
+With a readable answer key, the tool window's title bar has **Show Student View** or **Show Instructor View**, whichever is not showing, and the same two are under **Tools | GrillMyCode**. The name of the view that is showing is written beside the tool window's name. Switching asks nothing of GitHub.
+
+The choice is remembered for that repository, in that project. A remembered choice of the instructor view does nothing for an account that can no longer read the answer key.
+
+The student view is the one a student gets, built from the issue. Switch to it before sharing your screen with a student.
+
 ## What it leaves out
 
-- **Answers.** With `include_answers` on, the issue contains them. The plugin does not show them.
+- **The issue's answers.** With `include_answers` on, the issue contains them. The student view does not show them, and the instructor view shows the answer key's.
 - **Questions lost to the issue's [length limit](assessment-output.md#length-limit).** When the issue was cut short, the question the cut landed in is dropped, and a note above the list says the last questions are missing and points to the PDF.
 
 ## Signing in
@@ -112,10 +143,22 @@ GitHub turns on OAuth app access restrictions for every new organization. Until 
 
 ### What is read
 
-With that access the plugin makes one request, each time it loads: the repository's open issues labelled `assessment`. Between loads it repeats it, to learn [when new questions arrive](#when-new-questions-arrive).
+With that access the plugin makes these requests, each time it loads:
+
+| Request | When |
+| ------- | ---- |
+| The repository's open issues labelled `assessment` | Always |
+| The repository's direct collaborators | Only when the repository is not the account's own |
+| The answer key, one file in the instructor repository | Whenever the student could be worked out |
+
+The last two are how it [looks for an answer key](vscode-extension.md#where-the-answer-key-is-read-from). In a student's own repository that is one extra request, which GitHub refuses.
+
+Between loads it repeats the first request alone, to learn [when new questions arrive](#when-new-questions-arrive).
 
 It writes nothing to GitHub, talks to no other service, and collects no usage data.
 
 ## Untrusted issue text
 
 Anyone with write access to a student's repository, including the student, can edit the issue. The plugin therefore treats its text as untrusted: everything shown is escaped, in a simple HTML pane that runs no script rather than a browser, and a file path that is absolute or leaves the repository is never opened.
+
+The answer key is read the same way, although only an account with write access to the instructor repository can change it.

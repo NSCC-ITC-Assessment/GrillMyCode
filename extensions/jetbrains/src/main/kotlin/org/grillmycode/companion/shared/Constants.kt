@@ -49,3 +49,29 @@ const val NEW_QUESTIONS_CHECK_MS = 60_000L
  * request each time.
  */
 const val NEW_QUESTIONS_FOCUS_GAP_MS = 15_000L
+
+/**
+ * What the action adds to an assignment's name to name its instructor
+ * repository (INSTRUCTOR_REPO_SUFFIX): `cs-principles-lab-3` gives
+ * `cs-principles-lab-3-grillmycode-instructor`.
+ */
+const val INSTRUCTOR_REPO_SUFFIX = "-grillmycode-instructor"
+
+/**
+ * Where the action files a student's answer key, inside that student's folder
+ * of the instructor repository (deliverToInstructorRepo in
+ * src/delivery/instructor-repo.js).
+ */
+const val ANSWER_KEY_FILE = "data/questions.json"
+
+/**
+ * The folder a submission tag's answer key is filed under when the tag pattern
+ * has no character a folder name can keep (SUBMISSION_TAG_GROUP_FALLBACK).
+ */
+const val TAG_GROUP_FALLBACK = "tag"
+
+/**
+ * Collaborators requested per page. One page is read: a Classroom 50
+ * repository has one direct collaborator per student.
+ */
+const val COLLABORATORS_PER_PAGE = 100

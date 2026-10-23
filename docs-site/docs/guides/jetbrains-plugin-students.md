@@ -43,7 +43,7 @@ The questions were written about your code as it was when you pushed. If you hav
 
 ## What the sign-in asks for
 
-The plugin reads your questions through your GitHub account. GitHub offers one permission for reading a private repository this way, which is access to your repositories, so that is what the sign-in asks for. The plugin uses it to read your questions. It changes nothing on GitHub and sends nothing anywhere else. To sign out, select **Tools | GrillMyCode | Sign Out of GitHub**.
+The plugin reads your questions through your GitHub account. GitHub offers one permission for reading a private repository this way, which is access to your repositories, so that is what the sign-in asks for. The plugin uses it to read your questions, and to check whether the account is an instructor's. It changes nothing on GitHub and sends nothing anywhere else. To sign out, select **Tools | GrillMyCode | Sign Out of GitHub**.
 
 ## If your questions don't appear
 

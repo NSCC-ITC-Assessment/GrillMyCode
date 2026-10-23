@@ -240,7 +240,9 @@ load its JavaScript.
 - **The report format is the same contract.** The plugin's reader (`shared/Report.kt`) is tested
   against `extensions/fixtures/` as the VS Code extension's is, so a changed layout means
   updating the reader in each editor. Keep the Kotlin in `shared/` a port of the JavaScript in
-  `extensions/vscode/src/shared/`, with the same behaviour and the same test cases.
+  `extensions/vscode/src/shared/`, and `instructor/AnswerKey.kt` and `instructor/Html.kt` of
+  `extensions/vscode/src/instructor/`, with the same behaviour and the same test cases. Those two
+  import nothing from the IDE, so their tests run without one.
 - **Sign-in is the plugin's own, in `auth/`.** VS Code lends its extensions a GitHub account;
   JetBrains IDEs do not, so the plugin uses GitHub's device flow for the "GrillMyCode Companion"
   OAuth app and keeps the token in `PasswordSafe`, never in a file or a setting. With no

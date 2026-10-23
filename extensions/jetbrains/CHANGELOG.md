@@ -5,10 +5,26 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
+### Added
+
+- The instructor view: an account that can read the assignment's answer key
+  sees the key's questions, each with its answer below the list. **Show
+  Instructor View** and **Show Student View**, in the tool window's title and
+  **Tools | GrillMyCode**, switch between the two, and the choice is
+  remembered for the repository. A student's account sees no sign of either.
+
+### Changed
+
+- Each load also asks GitHub for the assignment's answer key. In a student's
+  own repository that is one more request, which GitHub refuses.
+
 ## [0.1.0-eap.2]
 
 ### Added
 
+- Opening another question closes the tabs opened for the one before, as the
+  VS Code extension does. A tab that was open already, or that you have
+  edited, pinned, or closed and opened again, stays open.
 - Select a question to read it in full, with its code, below the list.
 - Opening a question highlights the lines it asks about, in every file it
   shows. Editing a file takes its highlight away.

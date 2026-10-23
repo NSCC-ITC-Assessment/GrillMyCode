@@ -19,12 +19,15 @@
             written.</li>
             <li><b>A note when the code has changed</b> since the questions were written.</li>
             <li><b>New questions</b> announced when they arrive after a push.</li>
+            <li><b>For instructors</b>, each question's answer from the private answer key, beside the
+            student's code. Students never see it.</li>
         </ul>
         <p>To start, open a clone of your assignment repository, open the <b>GrillMyCode</b> tool window,
         and sign in to GitHub. If your school's GitHub organization restricts apps, an owner approves
         GrillMyCode Companion once.</p>
-        <p>The plugin reads your repository's questions issue and nothing else. It writes nothing to
-        GitHub and collects no usage data. See
+        <p>The plugin reads your repository's questions issue, and asks GitHub whether your account can
+        read the assignment's answer key, which a student's cannot. It writes nothing to GitHub and
+        collects no usage data. See
         <a href="https://grillmycode.org/docs/guides/jetbrains-plugin-students">Your questions in
         JetBrains IDEs</a>.</p>
     ]]></description>
@@ -43,6 +46,12 @@
     <actions>
         <group id="GrillMyCode.Menu" text="GrillMyCode" popup="true">
             <add-to-group group-id="ToolsMenu" anchor="last"/>
+            <action id="GrillMyCode.ShowInstructorView" class="org.grillmycode.companion.questions.ShowInstructorViewAction"
+                    text="Show Instructor View" icon="AllIcons.Nodes.Padlock"
+                    description="List the answer key's questions, each with its answer"/>
+            <action id="GrillMyCode.ShowStudentView" class="org.grillmycode.companion.questions.ShowStudentViewAction"
+                    text="Show Student View" icon="AllIcons.General.User"
+                    description="List the questions as the student sees them, without the answers"/>
             <action id="GrillMyCode.Refresh" class="org.grillmycode.companion.questions.RefreshAction"
                     text="Refresh Questions" icon="AllIcons.Actions.Refresh"
                     description="Load this repository's GrillMyCode questions from GitHub again"/>

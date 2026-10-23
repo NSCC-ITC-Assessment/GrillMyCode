@@ -28,13 +28,18 @@ data class Snippet(
     val code: String,
 )
 
-/** A question, as the report gives it. [answer] is there only when the instructor set include_answers. */
+/**
+ * A question, as the report gives it. [answer] is there only when the
+ * instructor set include_answers. An answer key's question always has an
+ * answer, and adds [distractors] (parseAnswerKey in instructor/AnswerKey.kt).
+ */
 data class Question(
     val number: Int,
     val broader: Boolean,
     val snippets: List<Snippet>,
     val question: String,
     val answer: String? = null,
+    val distractors: List<String> = emptyList(),
 )
 
 /** What [parseReport] reads from a questions issue. */
@@ -102,7 +107,7 @@ private sealed interface ReportData {
 }
 
 /** A whole JSON number, as JavaScript's Number.isInteger allows: `1.0` is one, `"1"` is not. */
-private fun JsonElement?.asWholeNumber(): Double? {
+internal fun JsonElement?.asWholeNumber(): Double? {
     val primitive = this as? JsonPrimitive ?: return null
     if (primitive.isString) return null
     return primitive.content.toDoubleOrNull()?.takeIf { it.isFinite() && it == Math.floor(it) }
@@ -111,9 +116,9 @@ private fun JsonElement?.asWholeNumber(): Double? {
 /** A whole, non-negative JSON number that fits an Int. */
 private fun JsonElement?.asCount(): Int? = asWholeNumber()?.takeIf { it >= 0 && it <= Int.MAX_VALUE }?.toInt()
 
-private fun JsonElement?.asText(): String? = (this as? JsonPrimitive)?.takeIf { it.isString }?.content
+internal fun JsonElement?.asText(): String? = (this as? JsonPrimitive)?.takeIf { it.isString }?.content
 
-private fun JsonElement?.asBoolean(): Boolean? = (this as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull
+internal fun JsonElement?.asBoolean(): Boolean? = (this as? JsonPrimitive)?.takeIf { !it.isString }?.booleanOrNull
 
 /**
  * Reads the hidden data comment: the first line that is one, wherever it is,
