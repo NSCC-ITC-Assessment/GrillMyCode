@@ -7,6 +7,7 @@ import {
   isRequest,
   joinPath,
   wizardPage,
+  workflowFilePath,
 } from '../src/shared/wizard.js';
 
 describe('isRequest', () => {
@@ -27,6 +28,31 @@ describe('isRequest', () => {
     ['a request numbered with a fraction', { type: 'list', id: 1.5 }],
   ])('refuses %s', (_what, message) => {
     expect(isRequest(message)).toBe(false);
+  });
+});
+
+describe('workflowFilePath', () => {
+  it('puts a name the Wizard gives in .github/workflows/', () => {
+    expect(workflowFilePath('grill-my-code.yml')).toBe('.github/workflows/grill-my-code.yml');
+    expect(workflowFilePath('grill-my-code-lab-3.yml')).toBe(
+      '.github/workflows/grill-my-code-lab-3.yml',
+    );
+  });
+
+  it('refuses any other name, rather than read it as a path', () => {
+    for (const name of [
+      undefined,
+      '',
+      'ci.yml',
+      'grill-my-code-.yml',
+      'grill-my-code-Lab-3.yml',
+      'grill-my-code-../x.yml',
+      '../grill-my-code.yml',
+      'grill-my-code.yaml',
+      `grill-my-code-${'x'.repeat(101)}.yml`,
+    ]) {
+      expect(workflowFilePath(name), String(name)).toBeUndefined();
+    }
   });
 });
 

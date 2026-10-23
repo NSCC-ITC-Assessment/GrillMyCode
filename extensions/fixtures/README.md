@@ -82,12 +82,12 @@ by reading `body.md` back, so a reader that turns `body.md` into
 help with a workflow file, as JSON both editors' tests run: VS Code's in
 `vscode/test/`, and JetBrains' in `jetbrains/src/test/kotlin/…/WorkflowHelpTest.kt`.
 
-| File               | What each case gives, and what must come back                                          |
-| ------------------ | -------------------------------------------------------------------------------------- |
-| `sample.json`      | Not cases: the workflow file a case's `inputs` are written into                        |
-| `read.json`        | A workflow, and the steps, inputs, values and tag filters read from it                 |
-| `checks.json`      | A workflow, and every problem found in it, in order, with words each message must hold |
-| `completions.json` | A workflow with a cursor, and what is offered there                                    |
+| File               | What each case gives, and what must come back                                               |
+| ------------------ | ------------------------------------------------------------------------------------------- |
+| `sample.json`      | Not cases: the workflow file a case's `inputs` are written into                             |
+| `read.json`        | A workflow, and the steps, inputs, values, tag filters, name and question sets read from it |
+| `checks.json`      | A workflow, and every problem found in it, in order, with words each message must hold      |
+| `completions.json` | A workflow with a cursor, and what is offered there                                         |
 
 A case has either `text`, a whole file, or `inputs`, the lines of the sample's
 GrillMyCode step, with an optional `on`. In `completions.json` the cursor is the

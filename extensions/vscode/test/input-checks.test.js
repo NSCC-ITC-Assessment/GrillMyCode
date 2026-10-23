@@ -8,7 +8,11 @@ import { caseText, cases } from './workflow-sample.js';
 describe('checkWorkflow', () => {
   it.each(cases('checks.json'))('$name', (testCase) => {
     const text = caseText(testCase);
-    const found = checkWorkflow(text, { unknownInputs: testCase.unknownInputs ?? true });
+    const found = checkWorkflow(text, {
+      unknownInputs: testCase.unknownInputs ?? true,
+      path: testCase.path,
+      otherWorkflows: testCase.otherWorkflows,
+    });
     expect(found).toHaveLength(testCase.problems.length);
     testCase.problems.forEach((expected, index) => {
       const { start, end, message, ...problem } = found[index];

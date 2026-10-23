@@ -11,9 +11,14 @@ import { dirname, join } from 'path';
 import { fileURLToPath } from 'url';
 import { describe, expect, it } from 'vitest';
 import { DEFAULT_DISPATCH_OVERRIDES } from '../docs-site/docs/_workflow-wizard/dispatchInputs.js';
-import { DEFAULTS, generateYaml } from '../docs-site/docs/_workflow-wizard/generateYaml.js';
+import {
+  DEFAULTS,
+  generateYaml,
+  workflowFileName,
+} from '../docs-site/docs/_workflow-wizard/generateYaml.js';
 import { ACTION_REF, WORKFLOW_FILE } from '../extensions/vscode/src/shared/constants.js';
 import { checkWorkflow } from '../extensions/vscode/src/shared/input-checks.js';
+import { workflowFilePath } from '../extensions/vscode/src/shared/wizard.js';
 
 const root = join(dirname(fileURLToPath(import.meta.url)), '..');
 const read = (...path) => readFileSync(join(root, ...path), 'utf-8');
@@ -108,8 +113,17 @@ describe('what the editor adds to the Wizard', () => {
     expect(ACTION_REF).toBe(`v${readJson('docs-site', 'versions.json')[0]}`);
   });
 
+  // The Review step names the file and the editor writes it there, for the
+  // default name and for a question set's.
   it('writes the file the Review step names', () => {
-    expect(wizardText(join('steps', 'StepReview.js'))).toContain(`<code>${WORKFLOW_FILE}</code>`);
+    const review = wizardText(join('steps', 'StepReview.js'));
+    expect(review).toContain('<code>.github/workflows/{fileName}</code>');
+    expect(review).toMatch(/host\?\.saveWorkflow\(yaml, fileName\)/);
+    const file = (workflowName) =>
+      workflowFilePath(workflowFileName({ ...DEFAULTS, workflowName }));
+    expect(file('GrillMyCode')).toBe(WORKFLOW_FILE);
+    expect(file('Lab 3: Checkout')).toBe('.github/workflows/grill-my-code-lab-3-checkout.yml');
+    expect(file('x'.repeat(100))).toBe(`.github/workflows/grill-my-code-${'x'.repeat(100)}.yml`);
   });
 
   // The page's half of the host: each is used by the step that needs it.

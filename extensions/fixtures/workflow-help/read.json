@@ -218,6 +218,107 @@
       "name": "reads nothing from \"a: [1\\n b: {\"",
       "text": "a: [1\n b: {",
       "steps": []
+    },
+    {
+      "name": "reads the workflow's name",
+      "inputs": [],
+      "on": "name: Lab 3\non: push",
+      "workflowName": {
+        "value": "Lab 3",
+        "text": "Lab 3"
+      }
+    },
+    {
+      "name": "reads a quoted workflow name as GitHub does",
+      "inputs": [],
+      "on": "name: 'Lab 3: it''s quoted'\non: push",
+      "workflowName": {
+        "value": "Lab 3: it's quoted",
+        "text": "'Lab 3: it''s quoted'"
+      }
+    },
+    {
+      "name": "reads no name from a workflow without one",
+      "inputs": [],
+      "workflowName": null
+    },
+    {
+      "name": "reads no name from an empty one",
+      "inputs": [],
+      "on": "name:\non: push",
+      "workflowName": null
+    },
+    {
+      "name": "files a step with no question set under none",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}"
+      ],
+      "questionSets": [
+        ""
+      ]
+    },
+    {
+      "name": "files a step under the question set it names, as a folder name",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: \"Lab 3: Checkout\""
+      ],
+      "questionSets": [
+        "lab-3-checkout"
+      ]
+    },
+    {
+      "name": "files a step named GrillMyCode under no question set",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: GrillMyCode"
+      ],
+      "questionSets": [
+        ""
+      ]
+    },
+    {
+      "name": "files a step under the workflow's name",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: Lab 3\non: push",
+      "questionSets": [
+        "lab-3"
+      ]
+    },
+    {
+      "name": "files a step of an unnamed workflow under its path",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{github.workflow}}"
+      ],
+      "path": ".github/workflows/quiz.yml",
+      "questionSets": [
+        "github-workflows-quiz-yml"
+      ]
+    },
+    {
+      "name": "leaves out a question set the file does not say",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ inputs.set }}"
+      ],
+      "questionSets": []
+    },
+    {
+      "name": "leaves out a question set that names no folder",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: \"!!!\""
+      ],
+      "questionSets": []
+    },
+    {
+      "name": "files nothing from a file with no GrillMyCode step",
+      "text": "jobs:\n  a:\n    steps:\n      - uses: actions/checkout@v6\n",
+      "questionSets": []
     }
   ]
 }

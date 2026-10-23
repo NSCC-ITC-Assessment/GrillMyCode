@@ -779,6 +779,231 @@
       ],
       "on": "on:\n  push:\n    tags: [\"phase1\", \"phase2\"]",
       "problems": []
+    },
+    {
+      "name": "a question set with a name the action accepts has no problems",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: \"Lab 3: Checkout (A)\""
+      ],
+      "problems": []
+    },
+    {
+      "name": "a question set over 100 characters is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx",
+          "messageContains": [
+            "101 characters",
+            "at most 100",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a question set with no letter or digit is an error, as the action rejects it",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: \"!!!\""
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "\"!!!\"",
+          "messageContains": [
+            "question_set, \"!!!\", has no letter, digit",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a question set named after the workflow is checked by the workflow's name",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: Lab 3\non: push",
+      "problems": []
+    },
+    {
+      "name": "a workflow name the action cannot file under is an error on the name",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: \"???\"\non: push",
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "\"???\"",
+          "messageContains": [
+            "The workflow's name, \"???\", has no letter",
+            "fails"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "a question set named after a workflow with no name is noted",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "problems": [
+        {
+          "severity": "info",
+          "code": "unnamed-workflow",
+          "text": "${{ github.workflow }}",
+          "messageContains": [
+            ".github/workflows/grill-my-code.yml",
+            "Give the workflow a name"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "another workflow with no question set shares this one's",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            ""
+          ]
+        }
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "shared-question-set",
+          "text": "NSCC-ITC-Assessment/GrillMyCode@v0",
+          "messageContains": [
+            "\".github/workflows/other.yml\" files its questions",
+            "replaces the other's issue, PDF and answer key",
+            "set question_set: ${{ github.workflow }}"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "another workflow with the same name shares this one's question set",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: Lab 3\non: push",
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            "lab-3"
+          ]
+        }
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "shared-question-set",
+          "text": "question_set",
+          "messageContains": [
+            "\"lab-3\"",
+            "name of its own."
+          ],
+          "messageLacks": [
+            "set question_set"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "two other workflows sharing the question set are both named",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: lab-3"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            "lab-3"
+          ]
+        },
+        {
+          "path": ".github/workflows/third.yml",
+          "sets": [
+            "x",
+            "lab-3"
+          ]
+        }
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "shared-question-set",
+          "text": "question_set",
+          "messageContains": [
+            "\".github/workflows/other.yml\" and \".github/workflows/third.yml\" file their questions"
+          ]
+        }
+      ]
+    },
+    {
+      "name": "workflows with question sets of their own share nothing",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ github.workflow }}"
+      ],
+      "on": "name: Lab 3\non: push",
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            "lab-4",
+            ""
+          ]
+        },
+        {
+          "path": ".github/workflows/grill-my-code.yml",
+          "sets": [
+            "lab-3"
+          ]
+        }
+      ],
+      "problems": []
+    },
+    {
+      "name": "a question set GitHub works out at run time is not compared",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "question_set: ${{ inputs.set }}"
+      ],
+      "path": ".github/workflows/grill-my-code.yml",
+      "otherWorkflows": [
+        {
+          "path": ".github/workflows/other.yml",
+          "sets": [
+            ""
+          ]
+        }
+      ],
+      "problems": []
     }
   ]
 }

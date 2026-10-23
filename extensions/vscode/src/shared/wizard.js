@@ -7,7 +7,7 @@
  * the page has been shown, which is all it may ask for.
  */
 
-import { OPENROUTER_ORIGIN } from './constants.js';
+import { OPENROUTER_ORIGIN, QUESTION_SET_MAX_CHARS, WORKFLOW_FILE } from './constants.js';
 
 /**
  * What the page sends the extension. Every request but `ready` carries an
@@ -20,7 +20,10 @@ import { OPENROUTER_ORIGIN } from './constants.js';
  *                                  what Git ignores
  *   list         { path }          → [{ name, kind }]: what a folder holds
  *   read         { path, bytes }   → the file's text, or its first `bytes` bytes
- *   saveWorkflow { yaml }          → true once written, false if cancelled
+ *   saveWorkflow { yaml, fileName }
+ *                                  → true once written, false if cancelled.
+ *                                  `fileName` is the file in .github/workflows/
+ *                                  (see workflowFilePath)
  */
 export const REQUESTS = ['ready', 'pickFolder', 'list', 'read', 'saveWorkflow'];
 
@@ -35,6 +38,7 @@ export const REQUESTS = ['ready', 'pickFolder', 'list', 'read', 'saveWorkflow'];
  * @property {unknown} [path]
  * @property {unknown} [bytes]
  * @property {unknown} [yaml]
+ * @property {unknown} [fileName]
  */
 
 /**
@@ -63,6 +67,28 @@ export function isRequest(message) {
   if (!message || typeof message !== 'object') return false;
   if (!REQUESTS.includes(message.type)) return false;
   return message.type === 'ready' || Number.isSafeInteger(message.id);
+}
+
+/**
+ * The names the Wizard gives a workflow file (workflowFileName in the
+ * Wizard's generateYaml.js): grill-my-code.yml, or grill-my-code-<set>.yml for
+ * a question set, the set's folder name in between.
+ */
+const WORKFLOW_FILE_NAME = new RegExp(
+  `^grill-my-code(?:-[a-z0-9_-]{1,${QUESTION_SET_MAX_CHARS}})?\\.yml$`,
+);
+
+/**
+ * Where the workflow the page sends is written, from the folder that is open:
+ * WORKFLOW_FILE's folder and the name the page gives the file. Undefined for
+ * a name the Wizard never gives, which is refused rather than read as a path.
+ *
+ * @param {unknown} fileName
+ * @returns {string | undefined}
+ */
+export function workflowFilePath(fileName) {
+  if (typeof fileName !== 'string' || !WORKFLOW_FILE_NAME.test(fileName)) return undefined;
+  return `${WORKFLOW_FILE.slice(0, WORKFLOW_FILE.lastIndexOf('/'))}/${fileName}`;
 }
 
 /**

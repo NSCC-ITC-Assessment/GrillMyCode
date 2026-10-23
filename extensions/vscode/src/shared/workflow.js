@@ -117,6 +117,9 @@ function readTagFilters(document) {
  *               name, and `{ value, valueStart, valueEnd, expression }` when
  *               its value is one an input can have.
  *   tagFilters  the patterns of `on.push.tags`, when there are any.
+ *   name        the workflow's `name`, as `{ value, start, end }`, when it has
+ *               one written as text. GitHub shows it in the Actions tab, and it
+ *               is github.workflow, which question_set may be set to.
  *
  * A file that cannot be read as YAML gives whatever was read before the
  * mistake, which may be nothing.
@@ -127,6 +130,8 @@ export function readWorkflow(text) {
   /** @type {WorkflowStep[]} */
   const steps = [];
   let tagFilters;
+  /** @type {{ value: string } & Span | undefined} */
+  let name;
   try {
     const document = parseDocument(text, { logLevel: 'silent' });
     visit(document, {
@@ -149,8 +154,12 @@ export function readWorkflow(text) {
       },
     });
     tagFilters = readTagFilters(document);
+    const nameNode = document.get('name', true);
+    if (isScalar(nameNode) && nameNode.range && scalarText(nameNode).trim()) {
+      name = { value: scalarText(nameNode), start: nameNode.range[0], end: nameNode.range[1] };
+    }
   } catch {
     // Left as whatever was found before the parser gave up.
   }
-  return { steps, tagFilters };
+  return { steps, tagFilters, name };
 }

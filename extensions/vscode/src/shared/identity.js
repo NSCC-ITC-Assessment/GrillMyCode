@@ -2,15 +2,15 @@
  * Submission identity
  *
  * Works out which assignment a student repository belongs to and whose it is,
- * by the rules the action files an answer key under (src/submission-identity.js
- * and tagGroupSlug in src/context.js). test/identity.test.js fails when these
+ * by the rules the action files an answer key under (src/submission-identity.js,
+ * and tagGroupSlug and questionSetSlug in src/context.js). test/identity.test.js fails when these
  * stop agreeing with the action's.
  *
  * Classroom 50 names every student repository `<classroom>-<assignment>-<owner>`,
  * where <owner> is the student's login, or `group-<n>` for a team.
  */
 
-import { TAG_GROUP_FALLBACK } from './constants.js';
+import { DEFAULT_QUESTION_SET_SLUG, TAG_GROUP_FALLBACK } from './constants.js';
 
 /**
  * Which assignment a repository belongs to and whose it is.
@@ -103,4 +103,28 @@ export function tagGroupSlug(pattern) {
     .replace(/-{2,}/g, '-')
     .replace(/^-|-$/g, '');
   return slug || TAG_GROUP_FALLBACK;
+}
+
+/**
+ * The folder name a question set is filed under, as questionSetSlug in
+ * src/context.js: lower case, with each run of characters other than letters,
+ * digits, - and _ made one -. '' for no set, which an empty value and the
+ * default workflow name, GrillMyCode, both are. null for a value the action
+ * fails a run on, since it has nothing a folder name can keep.
+ *
+ * @param {unknown} name
+ * @returns {string | null}
+ */
+export function questionSetSlug(name) {
+  const text = String(name ?? '')
+    .replace(/\s+/g, ' ')
+    .trim();
+  if (!text) return '';
+  const slug = text
+    .replace(/[^a-zA-Z0-9_-]/g, '-')
+    .replace(/-{2,}/g, '-')
+    .replace(/^-|-$/g, '')
+    .toLowerCase();
+  if (!slug) return null;
+  return slug === DEFAULT_QUESTION_SET_SLUG ? '' : slug;
 }

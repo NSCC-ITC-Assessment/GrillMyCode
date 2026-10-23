@@ -2,8 +2,14 @@ import { readFileSync, readdirSync } from 'fs';
 import { join, relative, sep } from 'path';
 import { describe, expect, it, vi } from 'vitest';
 import { FIXTURES_DIR, buildFixtures } from '../scripts/build-extension-fixtures.js';
-import { INSTRUCTOR_REPO_SUFFIX, SUBMISSION_TAG_GROUP_FALLBACK } from '../src/constants.js';
-import { tagGroupSlug } from '../src/context.js';
+import {
+  DEFAULT_QUESTION_SET_SLUG,
+  INSTRUCTOR_REPO_SUFFIX,
+  QUESTION_SET_MARK,
+  QUESTION_SET_MAX_CHARS,
+  SUBMISSION_TAG_GROUP_FALLBACK,
+} from '../src/constants.js';
+import { questionSetSlug, tagGroupSlug } from '../src/context.js';
 import { ASSESSMENT_DATA_DIR } from '../src/delivery/instructor-repo.js';
 import { matchSubmissionIdentity } from '../src/submission-identity.js';
 import * as extension from '../extensions/vscode/src/shared/constants.js';
@@ -51,6 +57,9 @@ describe("the extension's copy of where the answer key is filed", () => {
     expect(extension.INSTRUCTOR_REPO_SUFFIX).toBe(INSTRUCTOR_REPO_SUFFIX);
     expect(extension.ANSWER_KEY_FILE).toBe(`${ASSESSMENT_DATA_DIR}/questions.json`);
     expect(extension.TAG_GROUP_FALLBACK).toBe(SUBMISSION_TAG_GROUP_FALLBACK);
+    expect(extension.QUESTION_SET_MARK).toBe(QUESTION_SET_MARK);
+    expect(extension.DEFAULT_QUESTION_SET_SLUG).toBe(DEFAULT_QUESTION_SET_SLUG);
+    expect(extension.QUESTION_SET_MAX_CHARS).toBe(QUESTION_SET_MAX_CHARS);
   });
 
   it.each([
@@ -71,6 +80,14 @@ describe("the extension's copy of where the answer key is filed", () => {
     'names the folder of the tag pattern "%s" as the action does',
     (pattern) => {
       expect(extensionIdentity.tagGroupSlug(pattern)).toBe(tagGroupSlug(pattern));
+    },
+  );
+
+  // The action reads question_set with its white space made single spaces.
+  it.each(['', 'GrillMyCode', 'Lab 3', 'Lab 3: Checkout (A)', '__x__', '!!!', 'Été 2026'])(
+    'names the folder of the question set "%s" as the action does',
+    (name) => {
+      expect(extensionIdentity.questionSetSlug(name)).toBe(questionSetSlug(name));
     },
   );
 });

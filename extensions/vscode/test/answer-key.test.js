@@ -39,6 +39,33 @@ describe('answerKeyLocation', () => {
       'jsmith/submit/data/questions.json',
     );
   });
+
+  it("is in the question set's folder, tag groups inside it", () => {
+    const main = { kind: 'branch', name: 'main', set: 'Lab 3' };
+    expect(answerKeyLocation(student, main, 'lab-3').path).toBe(
+      'jsmith/set.lab-3/data/questions.json',
+    );
+    expect(answerKeyLocation(student, { ...main, kind: 'tag', name: 'phase1' }, 'lab-3').path).toBe(
+      'jsmith/set.lab-3/phase1/data/questions.json',
+    );
+  });
+
+  // Without the folder name the key would be the one with no set: another set's.
+  it("is nowhere when the title names a set the data doesn't", () => {
+    expect(answerKeyLocation(student, { kind: 'branch', name: 'main', set: 'Lab 3' })).toBe(
+      undefined,
+    );
+  });
+
+  it.each(cases)('$name: is where the action filed it', ({ name, expected }) => {
+    const { path } = answerKeyLocation(student, expected.group, expected.report.set);
+    const filed = {
+      'question-set': 'jsmith/set.lab-3-checkout/data/questions.json',
+      'question-set-tag': 'jsmith/set.lab-3/phase1/data/questions.json',
+      'submission-tag': 'jsmith/submit/data/questions.json',
+    };
+    expect(path).toBe(filed[name.replace(/^.*\//, '')] ?? 'jsmith/data/questions.json');
+  });
 });
 
 describe('reading the fixtures', () => {

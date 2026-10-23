@@ -30,7 +30,6 @@ import {
   DOCS_URL,
   WIZARD_MAX_FILE_BYTES,
   WIZARD_MAX_WORKFLOW_CHARS,
-  WORKFLOW_FILE,
 } from '../shared/constants.js';
 import { getGitApi } from '../student/git.js';
 import {
@@ -39,6 +38,7 @@ import {
   FolderRecord,
   isRequest,
   wizardPage,
+  workflowFilePath,
 } from '../shared/wizard.js';
 
 /** @import { WizardRequest } from '../shared/wizard.js' */
@@ -142,11 +142,12 @@ export class WorkflowWizard {
      * Whether to replace the workflow file a folder already has.
      *
      * @param {string} folderName
+     * @param {string} path - The file, from the folder.
      */
-    confirmReplace: async (folderName) => {
+    confirmReplace: async (folderName, path) => {
       const replace = 'Replace';
       const answer = await vscode.window.showWarningMessage(
-        `${folderName} already has ${WORKFLOW_FILE}. Replace what is in it?`,
+        `${folderName} already has ${path}. Replace what is in it?`,
         { modal: true, detail: 'You can undo the change in the file once it is open.' },
         replace,
       );
@@ -261,7 +262,7 @@ export class WorkflowWizard {
       case 'read':
         return this.read(message.path, message.bytes);
       case 'saveWorkflow':
-        return this.saveWorkflow(message.yaml);
+        return this.saveWorkflow(message.yaml, message.fileName);
       default:
         throw new Error(`Unknown request: ${message.type}`);
     }
@@ -352,23 +353,27 @@ export class WorkflowWizard {
   }
 
   /**
-   * Writes the workflow to WORKFLOW_FILE in the open folder and shows it.
+   * Writes the workflow to .github/workflows/ in the open folder, under the
+   * name the page gives it (workflowFilePath), and shows it.
    * Resolves to false if the instructor backs out. With no folder open there
    * is nowhere to write it, so it is shown as a new file to save.
    *
    * @param {unknown} yaml
+   * @param {unknown} fileName
    */
-  async saveWorkflow(yaml) {
+  async saveWorkflow(yaml, fileName) {
     if (typeof yaml !== 'string' || !yaml.trim() || yaml.length > WIZARD_MAX_WORKFLOW_CHARS) {
       throw new Error('Not a workflow.');
     }
+    const path = workflowFilePath(fileName);
+    if (!path) throw new Error('Not a workflow file name.');
     const folders = vscode.workspace.workspaceFolders ?? [];
     if (folders.length === 0) {
       await this.#show(
         await vscode.workspace.openTextDocument({ language: 'yaml', content: yaml }),
       );
       vscode.window.showInformationMessage(
-        `No folder is open, so the workflow is in a new file. Save it as ${WORKFLOW_FILE} in your assignment template repository.`,
+        `No folder is open, so the workflow is in a new file. Save it as ${path} in your assignment template repository.`,
       );
       return true;
     }
@@ -378,9 +383,9 @@ export class WorkflowWizard {
         : await this.prompts.pickOpenFolder('The folder to create the workflow file in');
     if (!folder) return false;
 
-    const uri = vscode.Uri.joinPath(folder.uri, ...WORKFLOW_FILE.split('/'));
+    const uri = vscode.Uri.joinPath(folder.uri, ...path.split('/'));
     if (await exists(uri)) {
-      if (!(await this.prompts.confirmReplace(folder.name))) return false;
+      if (!(await this.prompts.confirmReplace(folder.name, path))) return false;
       // Replaced as an edit, so it can be undone, and so a copy of the file
       // that is open with changes of its own is replaced too.
       const document = await vscode.workspace.openTextDocument(uri);

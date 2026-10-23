@@ -193,24 +193,24 @@ describe('GrillMyCode Workflow Wizard', () => {
     // Other tests read this file, so it goes back as it was.
     after(async () => {
       wizard.prompts.confirmReplace = async () => true;
-      await wizard.saveWorkflow(original);
+      await wizard.saveWorkflow(original, 'grill-my-code.yml');
       assert.strictEqual(onDisk(workflowUri), original);
     });
 
     it('leaves a file that is there alone unless told to replace it', async () => {
       const asked = [];
-      wizard.prompts.confirmReplace = async (name) => {
-        asked.push(name);
+      wizard.prompts.confirmReplace = async (name, path) => {
+        asked.push([name, path]);
         return false;
       };
-      assert.strictEqual(await wizard.saveWorkflow(workflow), false);
-      assert.deepStrictEqual(asked, [folder.name]);
+      assert.strictEqual(await wizard.saveWorkflow(workflow, 'grill-my-code.yml'), false);
+      assert.deepStrictEqual(asked, [[folder.name, '.github/workflows/grill-my-code.yml']]);
       assert.strictEqual(onDisk(workflowUri), original);
     });
 
     it('replaces it when told to, and shows it', async () => {
       wizard.prompts.confirmReplace = async () => true;
-      assert.strictEqual(await wizard.saveWorkflow(workflow), true);
+      assert.strictEqual(await wizard.saveWorkflow(workflow, 'grill-my-code.yml'), true);
       assert.strictEqual(onDisk(workflowUri), workflow);
       assert.strictEqual(
         vscode.window.activeTextEditor.document.uri.toString(),
@@ -224,14 +224,33 @@ describe('GrillMyCode Workflow Wizard', () => {
         recursive: true,
       });
       wizard.prompts.confirmReplace = () => assert.fail('asked about a file that is not there');
-      assert.strictEqual(await wizard.saveWorkflow(workflow), true);
+      assert.strictEqual(await wizard.saveWorkflow(workflow, 'grill-my-code.yml'), true);
       assert.strictEqual(onDisk(workflowUri), workflow);
     });
 
+    // A question set's workflow is a file of its own, beside the first.
+    it("writes a question set's workflow under its own name", async () => {
+      const setUri = vscode.Uri.joinPath(
+        folder.uri,
+        '.github',
+        'workflows',
+        'grill-my-code-lab-3.yml',
+      );
+      wizard.prompts.confirmReplace = () => assert.fail('asked about a file that is not there');
+      assert.strictEqual(await wizard.saveWorkflow(workflow, 'grill-my-code-lab-3.yml'), true);
+      assert.strictEqual(onDisk(setUri), workflow);
+      assert.strictEqual(onDisk(workflowUri), workflow);
+      await vscode.workspace.fs.delete(setUri);
+    });
+
     it('refuses what is not a workflow', async () => {
-      await assert.rejects(wizard.saveWorkflow(''), /not a workflow/i);
-      await assert.rejects(wizard.saveWorkflow({ yaml: workflow }), /not a workflow/i);
-      await assert.rejects(wizard.saveWorkflow('a'.repeat(200_001)), /not a workflow/i);
+      const name = 'grill-my-code.yml';
+      await assert.rejects(wizard.saveWorkflow('', name), /not a workflow/i);
+      await assert.rejects(wizard.saveWorkflow({ yaml: workflow }, name), /not a workflow/i);
+      await assert.rejects(wizard.saveWorkflow('a'.repeat(200_001), name), /not a workflow/i);
+      for (const other of [undefined, '../grill-my-code.yml', 'ci.yml', 'grill-my-code-Lab.yml']) {
+        await assert.rejects(wizard.saveWorkflow(workflow, other), /not a workflow file name/i);
+      }
       assert.strictEqual(onDisk(workflowUri), workflow);
     });
   });

@@ -12,10 +12,11 @@
  *   my-school/cs-principles-lab-3-grillmycode-instructor/jsmith/data/questions.json
  *
  * and a run started by a submission tag files its own one folder down, in
- * `jsmith/<tag group>/data/`.
+ * `jsmith/<tag group>/data/`. A question set puts either one folder further
+ * down, in `jsmith/set.<set>/`.
  */
 
-import { ANSWER_KEY_FILE, INSTRUCTOR_REPO_SUFFIX } from '../shared/constants.js';
+import { ANSWER_KEY_FILE, INSTRUCTOR_REPO_SUFFIX, QUESTION_SET_MARK } from '../shared/constants.js';
 import { listDirectCollaborators, readFile } from '../shared/github.js';
 import {
   matchSubmissionIdentity,
@@ -49,13 +50,23 @@ import {
  * Where an identity's answer key is: `{ repo, path }` in the student
  * repository's organization. `group` is the questions issue's, from
  * parseIssueTitle, and names the tag pattern for a submission tag's questions.
+ * `set` is the question set's folder name, from the issue's hidden data
+ * (parseReport). Undefined when the title names a set and the data does not
+ * say its folder: the folder with no set holds another set's answers.
  *
  * @param {Pick<SubmissionIdentity, 'assignment' | 'submitter'>} identity
  * @param {IssueGroup} [group]
+ * @param {string} [set]
  */
-export function answerKeyLocation({ assignment, submitter }, group) {
-  const folder = group?.kind === 'tag' ? `${submitter}/${tagGroupSlug(group.name)}` : submitter;
-  return { repo: `${assignment}${INSTRUCTOR_REPO_SUFFIX}`, path: `${folder}/${ANSWER_KEY_FILE}` };
+export function answerKeyLocation({ assignment, submitter }, group, set) {
+  if (group?.set && !set) return undefined;
+  const parts = [submitter];
+  if (set) parts.push(`${QUESTION_SET_MARK}${set}`);
+  if (group?.kind === 'tag') parts.push(tagGroupSlug(group.name));
+  return {
+    repo: `${assignment}${INSTRUCTOR_REPO_SUFFIX}`,
+    path: `${parts.join('/')}/${ANSWER_KEY_FILE}`,
+  };
 }
 
 /**
@@ -161,10 +172,12 @@ export function matchesReport(reportQuestions, keyQuestions) {
  * ordinary student. In anyone else's the student is found first, from the
  * repository's direct collaborators, as the action finds them.
  *
- * @param {RepoRequest & { login?: string, group?: IssueGroup }} request
+ * `set` is the question set's folder name, from the issue's hidden data.
+ *
+ * @param {RepoRequest & { login?: string, group?: IssueGroup, set?: string }} request
  * @returns {Promise<AnswerKey | { reason: string }>}
  */
-export async function findAnswerKey({ owner, repo, login, group, token, fetch }) {
+export async function findAnswerKey({ owner, repo, login, group, set, token, fetch }) {
   try {
     const own = ownSubmissionIdentity(repo, login);
     const identity =
@@ -172,7 +185,8 @@ export async function findAnswerKey({ owner, repo, login, group, token, fetch })
       matchSubmissionIdentity(repo, await listDirectCollaborators({ owner, repo, token, fetch }));
     if (identity.error !== undefined) return { reason: identity.error };
 
-    const location = answerKeyLocation(identity, group);
+    const location = answerKeyLocation(identity, group, set);
+    if (!location) return { reason: "the issue's hidden data does not name its question set" };
     const questions = parseAnswerKey(await readFile({ owner, ...location, token, fetch }));
     if (!questions) {
       return { reason: `${owner}/${location.repo}/${location.path} is not an answer key` };

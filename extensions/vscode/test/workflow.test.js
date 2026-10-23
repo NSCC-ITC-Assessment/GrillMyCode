@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { isGrillMyCodeAction, readWorkflow } from '../src/shared/workflow.js';
+import { questionSets } from '../src/shared/input-checks.js';
 import { caseText, cases } from './workflow-sample.js';
 
 describe('isGrillMyCodeAction', () => {
@@ -25,8 +26,16 @@ describe('readWorkflow', () => {
     const text = caseText(testCase);
     const slice = (/** @type {number} */ start, /** @type {number} */ end) =>
       text.slice(start, end);
-    const { steps, tagFilters } = readWorkflow(text);
+    const { steps, tagFilters, name } = readWorkflow(text);
     if ('tagFilters' in testCase) expect(tagFilters).toEqual(testCase.tagFilters ?? undefined);
+    if ('questionSets' in testCase) {
+      expect(questionSets(text, { path: testCase.path })).toEqual(testCase.questionSets);
+    }
+    if ('workflowName' in testCase) {
+      expect(name ? { value: name.value, text: slice(name.start, name.end) } : null).toEqual(
+        testCase.workflowName,
+      );
+    }
     if (!testCase.steps) return;
     expect(steps).toHaveLength(testCase.steps.length);
     testCase.steps.forEach((expected, index) => {

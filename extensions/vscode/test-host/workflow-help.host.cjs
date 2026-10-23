@@ -3,6 +3,7 @@
 // run in has no GitHub Actions extension, so the help is all this extension's.
 
 const assert = require('assert');
+const { TextEncoder } = require('util');
 const vscode = require('vscode');
 
 /** Waits until `check` returns something truthy, and returns it. */
@@ -121,6 +122,20 @@ describe('GrillMyCode workflow help', () => {
       [vscode.CompletionItemKind.Value, vscode.CompletionItemKind.Property].includes(item.kind),
     );
     assert.deepStrictEqual(ours, []);
+  });
+
+  // A copy of the file left with the same name files under the same question set.
+  it('warns about another workflow file with the same question set', async () => {
+    const copy = vscode.Uri.joinPath(document.uri, '..', 'copy.yml');
+    await vscode.workspace.fs.writeFile(copy, new TextEncoder().encode(document.getText()));
+    const shared = await until(
+      () => problems().find((problem) => problem.code === 'shared-question-set'),
+      'the shared question set',
+    );
+    assert.strictEqual(shared.severity, vscode.DiagnosticSeverity.Warning);
+    assert.match(shared.message, /"\.github\/workflows\/copy\.yml" files its questions/);
+    await vscode.workspace.fs.delete(copy);
+    await until(() => problems().length === 1, 'the warning to go');
   });
 
   it('stops when its setting is switched off', async () => {
