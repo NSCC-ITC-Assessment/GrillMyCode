@@ -76,11 +76,11 @@ The first upload, approved on 2026-10-22, is at
 <https://plugins.jetbrains.com/plugin/35347-grillmycode-companion>. What the
 Marketplace's API showed on 2026-10-23:
 
-| Finding                                                                                                                                       | What follows                                                                                                                         |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| 0.1.0-eap.1 is on the default channel (`"channel": ""`), not `eap`                                                                            | Every install of it follows the default channel, so it never receives 0.1.0-eap.2, which goes to `eap`. 0.2.0 reaches it             |
-| The version is `"hidden": true, "listed": false`, and a search for GrillMyCode finds nothing                                                  | The listing's page opens from its link, but the IDE's Marketplace tab cannot find it yet. Check the vendor's settings for the plugin |
-| Its "What's New" text is the scaffold's ("An empty plugin… It does nothing yet"), from the ZIP's `plugin.xml`, though the JAR is the J1 build | `patchPluginXml` now writes the CHANGELOG's notes, so eap.2 is right. Correct eap.1's text on the site if it allows                  |
+| Finding                                                                                                                                       | What follows                                                                                                                                 |
+| --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
+| 0.1.0-eap.1 is on the default channel (`"channel": ""`), not `eap`                                                                            | Every install of it follows the default channel, so a release to `eap` would reach no one. 0.1.0-eap.2 is skipped: its changes ship in 0.2.0 |
+| The version is `"hidden": true, "listed": false`, and a search for GrillMyCode finds nothing                                                  | The listing's page opens from its link, but the IDE's Marketplace tab cannot find it yet. Check the vendor's settings for the plugin         |
+| Its "What's New" text is the scaffold's ("An empty plugin… It does nothing yet"), from the ZIP's `plugin.xml`, though the JAR is the J1 build | `patchPluginXml` now writes the CHANGELOG's notes, so 0.2.0's are right. Correct eap.1's text on the site if it allows                       |
 
 ### J2 progress
 
@@ -102,13 +102,13 @@ approval a setup step for every instructor.
 | Whether the VS Code extension meets the same restriction, through VS Code's own GitHub app                            | The same test organization, in VS Code                   | To do. If it does, its guide gets the step too                                                                                                                                                                       |
 | A required plugin in the template (`.idea/externalDependencies.xml`), so the IDE offers to install it                 | The instructor guide                                     | To try once 0.2.0 is on the default channel. Open a folder holding only that `.idea/` file in IDEA, PyCharm and WebStorm: does the IDE offer the plugin, and does it still set the project up as for a plain folder? |
 | Hand checks on Windows and macOS                                                                                      |                                                          | To do                                                                                                                                                                                                                |
-| Stable release, `0.2.0` on the default channel                                                                        | `jetbrains-v*` tag                                       | After the checks pass. Merge `j2` with it                                                                                                                                                                            |
+| Stable release, `0.2.0` on the default channel                                                                        | `jetbrains-v*` tag                                       | After the J2 and J3 checks pass. Merge `j3`, which holds `j2`, with it                                                                                                                                               |
 
 ### J3 progress
 
-On the `j3` branch, cut from `j2`. It ships in the release after 0.2.0, so
-merge `j2` first. Keep J3's CHANGELOG lines under Unreleased when 0.2.0's
-section is cut.
+On the `j3` branch, cut from `j2`. It ships in 0.2.0 with J2, decided on
+2026-10-23: no one is on the `eap` channel, so a release between them would
+reach no one. Merge `j3` to main, which brings `j2` with it.
 
 | Piece                                                                                                 | Where                                                                         | Status                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------- |

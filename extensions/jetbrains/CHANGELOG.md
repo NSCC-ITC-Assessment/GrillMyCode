@@ -5,20 +5,7 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
-### Added
-
-- The instructor view: an account that can read the assignment's answer key
-  sees the key's questions, each with its answer below the list. **Show
-  Instructor View** and **Show Student View**, in the tool window's title and
-  **Tools | GrillMyCode**, switch between the two, and the choice is
-  remembered for the repository. A student's account sees no sign of either.
-
-### Changed
-
-- Each load also asks GitHub for the assignment's answer key. In a student's
-  own repository that is one more request, which GitHub refuses.
-
-## [0.1.0-eap.2]
+## [0.2.0]
 
 ### Added
 
@@ -46,11 +33,18 @@ Each heading is a version as `gradle.properties` writes it.
 - When the organization that owns the repository has not approved GrillMyCode
   Companion, the tool window says so, and links to the page on GitHub where you
   can ask for approval.
+- The instructor view: an account that can read the assignment's answer key
+  sees the key's questions, each with its answer below the list. **Show
+  Instructor View** and **Show Student View**, in the tool window's title and
+  **Tools | GrillMyCode**, switch between the two, and the choice is
+  remembered for the repository. A student's account sees no sign of either.
 
 ### Changed
 
 - The Marketplace description lists what the plugin does, and links to the
   student guide on grillmycode.org.
+- Each load also asks GitHub for the assignment's answer key. In a student's
+  own repository that is one more request, which GitHub refuses.
 
 ## [0.1.0-eap.1]
 
