@@ -71,6 +71,22 @@ const val ANSWER_KEY_FILE = "data/questions.json"
 const val TAG_GROUP_FALLBACK = "tag"
 
 /**
+ * How a question set's folder is marked in the student's folder of the
+ * instructor repository (`jsmith/set.lab-3/`), as QUESTION_SET_MARK.
+ */
+const val QUESTION_SET_MARK = "set."
+
+/**
+ * The slug of the workflow name that is no question set at all, as
+ * DEFAULT_QUESTION_SET_SLUG: a workflow named GrillMyCode files as one without
+ * question_set.
+ */
+const val DEFAULT_QUESTION_SET_SLUG = "grillmycode"
+
+/** The longest question_set the action accepts, as QUESTION_SET_MAX_CHARS. */
+const val QUESTION_SET_MAX_CHARS = 100
+
+/**
  * Collaborators requested per page. One page is read: a Classroom 50
  * repository has one direct collaborator per student.
  */
@@ -119,6 +135,12 @@ const val WIZARD_MAX_WORKFLOW_CHARS = 200_000
  * is left out, as one that cannot be read is.
  */
 const val WIZARD_MAX_FILE_BYTES = 1_000_000
+
+/**
+ * The largest workflow file the workflow help reads to compare its question
+ * sets with the one being edited, in bytes. A larger one is left out.
+ */
+const val OTHER_WORKFLOW_MAX_BYTES = 1_000_000
 
 /** OpenRouter, which the Workflow Wizard's page asks for its list of models. */
 const val OPENROUTER_ORIGIN = "https://openrouter.ai"

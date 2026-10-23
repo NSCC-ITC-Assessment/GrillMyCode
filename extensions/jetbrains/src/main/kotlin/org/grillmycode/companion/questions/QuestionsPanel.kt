@@ -225,7 +225,7 @@ class QuestionsPanel(
             ?.contentManager
             ?.getContent(this)
             ?.displayName =
-            listOfNotNull(viewName, ready?.issue?.let { describeGroup(it.group) }, ready?.report?.headSha)
+            listOfNotNull(viewName, ready?.issue?.let { describeGroup(it.group, it.set) }, ready?.report?.headSha)
                 .joinToString(" · ")
                 .ifEmpty { null }
         if (state is QuestionsState.Ready) {

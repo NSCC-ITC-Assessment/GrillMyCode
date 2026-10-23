@@ -14,6 +14,8 @@ import org.grillmycode.companion.shared.IssueGroup
 import org.grillmycode.companion.shared.Question
 import org.grillmycode.companion.shared.Report
 import org.grillmycode.companion.shared.listDirectCollaborators
+import org.grillmycode.companion.shared.parseIssueSet
+import org.grillmycode.companion.shared.parseIssueTitle
 import org.grillmycode.companion.shared.parseReport
 import org.grillmycode.companion.shared.readFile
 import org.junit.jupiter.api.Assertions.assertEquals
@@ -36,6 +38,7 @@ private data class KeyCase(
     val name: String,
     val body: String,
     val key: String,
+    val title: String,
 )
 
 private val cases: List<KeyCase> by lazy {
@@ -43,7 +46,10 @@ private val cases: List<KeyCase> by lazy {
     File(root, "current")
         .listFiles { file -> file.isDirectory }!!
         .sortedBy { it.name }
-        .map { KeyCase(it.name, File(it, "body.md").readText(), File(it, "questions.json").readText()) }
+        .map {
+            val title = Regex(""""title": "([^"]*)"""").find(File(it, "issue.json").readText())!!.groupValues[1]
+            KeyCase(it.name, File(it, "body.md").readText(), File(it, "questions.json").readText(), title)
+        }
 }
 
 private val keyText by lazy { cases.single { it.name == "default-branch" }.key }
@@ -64,15 +70,33 @@ class AnswerKeyTest {
                 AnswerKeyLocation("cs-principles-lab-3-grillmycode-instructor", "jsmith/data/questions.json"),
                 answerKeyLocation("cs-principles-lab-3", "jsmith", IssueGroup.Branch("main")),
             )
-            assertEquals("jsmith/data/questions.json", answerKeyLocation("cs-principles-lab-3", "jsmith", null).path)
+            assertEquals("jsmith/data/questions.json", answerKeyLocation("cs-principles-lab-3", "jsmith", null)?.path)
         }
 
         @Test
         fun `is one folder down for a submission tag`() {
             assertEquals(
                 "jsmith/submit/data/questions.json",
-                answerKeyLocation("cs-principles-lab-3", "jsmith", IssueGroup.Tag("submit/*")).path,
+                answerKeyLocation("cs-principles-lab-3", "jsmith", IssueGroup.Tag("submit/*"))?.path,
             )
+        }
+
+        @Test
+        fun `is in the question set's folder, tag groups inside it`() {
+            assertEquals(
+                "jsmith/set.lab-3/data/questions.json",
+                answerKeyLocation("cs-principles-lab-3", "jsmith", IssueGroup.Branch("main"), "Lab 3", "lab-3")?.path,
+            )
+            assertEquals(
+                "jsmith/set.lab-3/phase1/data/questions.json",
+                answerKeyLocation("cs-principles-lab-3", "jsmith", IssueGroup.Tag("phase1"), "Lab 3", "lab-3")?.path,
+            )
+        }
+
+        // Without the folder name the key would be the one with no set: another set's.
+        @Test
+        fun `is nowhere when the title names a set the data doesn't`() {
+            assertNull(answerKeyLocation("cs-principles-lab-3", "jsmith", IssueGroup.Branch("main"), "Lab 3"))
         }
     }
 
@@ -96,6 +120,28 @@ class AnswerKeyTest {
         fun `the key matches the issue of the same run`() =
             cases.map { case ->
                 DynamicTest.dynamicTest(case.name) { assertTrue(matchesReport(reportQuestions(case.body), key(case.key))) }
+            }
+
+        @TestFactory
+        fun `is where the action filed it`() =
+            cases.map { case ->
+                DynamicTest.dynamicTest(case.name) {
+                    val filed =
+                        mapOf(
+                            "question-set" to "jsmith/set.lab-3-checkout/data/questions.json",
+                            "question-set-tag" to "jsmith/set.lab-3/phase1/data/questions.json",
+                            "submission-tag" to "jsmith/submit/data/questions.json",
+                        )
+                    val location =
+                        answerKeyLocation(
+                            "cs-principles-lab-3",
+                            "jsmith",
+                            parseIssueTitle(case.title),
+                            parseIssueSet(case.title),
+                            (parseReport(case.body) as Report).set,
+                        )
+                    assertEquals(filed[case.name] ?: "jsmith/data/questions.json", location?.path)
+                }
             }
 
         @Test

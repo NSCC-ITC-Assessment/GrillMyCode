@@ -88,8 +88,14 @@ class WorkflowTest {
     fun readWorkflow() =
         cases("read.json") { case ->
             val text = caseText(case)
-            val (steps, tagFilters) = readWorkflow(text)
+            val (steps, tagFilters, name) = readWorkflow(text)
             if ("tagFilters" in case) assertEquals(case.strings("tagFilters"), tagFilters)
+            if ("workflowName" in case) {
+                val want = case["workflowName"] as? JsonObject
+                assertEquals(want?.string("value"), name?.value)
+                assertEquals(want?.string("text"), name?.let { text.substring(it.start, it.end) })
+            }
+            if ("questionSets" in case) assertEquals(case.strings("questionSets"), questionSets(text, case.string("path")))
             val expectedSteps = case["steps"] as? JsonArray ?: return@cases
             assertEquals(expectedSteps.size, steps.size, "steps")
             expectedSteps.forEachIndexed { index, element ->
@@ -139,7 +145,11 @@ class InputChecksTest {
     fun checkWorkflow() =
         cases("checks.json") { case ->
             val text = caseText(case)
-            val found = checkWorkflow(text, case.flag("unknownInputs") ?: true)
+            val others =
+                (case["otherWorkflows"] as? JsonArray)?.map {
+                    OtherWorkflow(it.jsonObject.string("path")!!, it.jsonObject.strings("sets")!!)
+                }
+            val found = checkWorkflow(text, case.flag("unknownInputs") ?: true, case.string("path"), others.orEmpty())
             val expected = case.getValue("problems").jsonArray
             assertEquals(expected.size, found.size, "problems: $found")
             expected.forEachIndexed { index, element ->

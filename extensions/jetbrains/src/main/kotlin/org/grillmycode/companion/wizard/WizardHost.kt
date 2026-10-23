@@ -31,7 +31,7 @@ import org.grillmycode.companion.shared.FolderEntry
 import org.grillmycode.companion.shared.FolderRecord
 import org.grillmycode.companion.shared.WIZARD_MAX_FILE_BYTES
 import org.grillmycode.companion.shared.WIZARD_MAX_WORKFLOW_CHARS
-import org.grillmycode.companion.shared.WORKFLOW_FILE
+import org.grillmycode.companion.shared.workflowFilePath
 
 // The Workflow Wizard's host
 //
@@ -67,10 +67,11 @@ interface WizardPrompts {
     /** A folder from anywhere on the computer, or null. */
     fun chooseFolder(project: Project): VirtualFile?
 
-    /** Whether to replace the workflow file the project already has. */
+    /** Whether to replace the workflow file at [path] that the project already has. */
     fun confirmReplace(
         project: Project,
         folderName: String,
+        path: String,
     ): Boolean
 }
 
@@ -86,11 +87,12 @@ object IdeWizardPrompts : WizardPrompts {
     override fun confirmReplace(
         project: Project,
         folderName: String,
+        path: String,
     ): Boolean =
         MessageDialogBuilder
             .yesNo(
                 "Replace the Workflow File",
-                "$folderName already has $WORKFLOW_FILE. Replace what is in it?\n\nYou can undo the change in the file once it is open.",
+                "$folderName already has $path. Replace what is in it?\n\nYou can undo the change in the file once it is open.",
             ).yesText("Replace")
             .noText(Messages.getCancelButton())
             .icon(Messages.getWarningIcon())
@@ -129,7 +131,10 @@ class WizardHost(
                 JsonPrimitive(
                     read(field("path")?.takeIf { it.isString }?.content, field("bytes")?.takeIf { !it.isString }?.doubleOrNull),
                 )
-            "saveWorkflow" -> JsonPrimitive(saveWorkflow(field("yaml")?.takeIf { it.isString }?.content))
+            "saveWorkflow" ->
+                JsonPrimitive(
+                    saveWorkflow(field("yaml")?.takeIf { it.isString }?.content, field("fileName")?.takeIf { it.isString }?.content),
+                )
             else -> throw WizardError("Error", "Unknown request: $type")
         }
     }
@@ -209,20 +214,25 @@ class WizardHost(
     }
 
     /**
-     * Writes the workflow to WORKFLOW_FILE in the project's folder and opens
-     * it. Returns false if the instructor backs out. With no folder there is
-     * nowhere to write it, so it opens as a file that is not saved.
+     * Writes the workflow to .github/workflows/ in the project's folder, under
+     * the name the page gives it (workflowFilePath), and opens it. Returns false
+     * if the instructor backs out. With no folder there is nowhere to write it,
+     * so it opens as a file that is not saved.
      */
-    fun saveWorkflow(yaml: String?): Boolean {
+    fun saveWorkflow(
+        yaml: String?,
+        fileName: String?,
+    ): Boolean {
         if (yaml.isNullOrBlank() || yaml.length > WIZARD_MAX_WORKFLOW_CHARS) throw WizardError("Error", "Not a workflow.")
+        val path = workflowFilePath(fileName) ?: throw WizardError("Error", "Not a workflow file name.")
         val folder = projectFolder()
         if (folder == null) {
-            onEdt { OpenFileDescriptor(project, LightVirtualFile(WORKFLOW_FILE.substringAfterLast('/'), yaml)).navigate(true) }
+            onEdt { OpenFileDescriptor(project, LightVirtualFile(path.substringAfterLast('/'), yaml)).navigate(true) }
             return true
         }
-        val existing = read { folder.findFileByRelativePath(WORKFLOW_FILE) }
+        val existing = read { folder.findFileByRelativePath(path) }
         return onEdt {
-            if (existing != null && !prompts.confirmReplace(project, folder.name)) return@onEdt false
+            if (existing != null && !prompts.confirmReplace(project, folder.name, path)) return@onEdt false
             val file =
                 WriteCommandAction.writeCommandAction(project).withName("Create the Workflow File").compute<VirtualFile, Exception> {
                     if (existing != null) {
@@ -236,8 +246,8 @@ class WizardHost(
                         FileDocumentManager.getInstance().saveDocument(document)
                         existing
                     } else {
-                        val dir = VfsUtil.createDirectoryIfMissing(folder, WORKFLOW_FILE.substringBeforeLast('/'))
-                        dir.createChildData(this, WORKFLOW_FILE.substringAfterLast('/')).also { it.setBinaryContent(yaml.toByteArray()) }
+                        val dir = VfsUtil.createDirectoryIfMissing(folder, path.substringBeforeLast('/'))
+                        dir.createChildData(this, path.substringAfterLast('/')).also { it.setBinaryContent(yaml.toByteArray()) }
                     }
                 }
             OpenFileDescriptor(project, file).navigate(true)

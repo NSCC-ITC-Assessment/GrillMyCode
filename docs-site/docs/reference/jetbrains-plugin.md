@@ -35,11 +35,13 @@ The hidden data carries the version of the issue's layout. When that version is 
 
 ## Which set of questions it shows
 
-A repository has one issue per branch and one per submission tag. When there are several, the plugin shows, in order of preference:
+A repository has one issue per branch and one per submission tag, and one of each per [question set](triggers.md#question-sets). When there are several, the plugin shows, in order of preference:
 
 1. the set the reader last picked with **Choose Which Questions to Show…**, remembered for that repository in that project;
-2. the set for the branch that is checked out;
+2. the set for the branch that is checked out: the one with no question set, or else the question set updated most recently;
 3. the most recently updated set.
+
+**Choose Which Questions to Show…** lists a question set's issue under its name, such as `Lab 3 · main`. Reading question sets needs a version later than 0.2.0.
 
 **Choose Which Questions to Show…** is in the tool window's title bar and under **Tools | GrillMyCode** while there is more than one set. Picking **Follow the checked-out branch** in its list clears the remembered choice.
 
@@ -131,7 +133,7 @@ The student view is the one a student gets, built from the issue. Switch to it b
 
 ## Workflow help
 
-In a file under `.github/workflows`, the plugin reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. Like VS Code's, it works from the text of the file alone, with no sign-in and no request to GitHub, and it leaves every other step alone. It needs the bundled YAML plugin, which is on by default.
+In a file under `.github/workflows`, the plugin reads each step that uses `NSCC-ITC-Assessment/GrillMyCode`, at any version, and helps with its `with:` block. Like VS Code's, it works from the text of the file, and of the other workflow files in its folder, with no sign-in and no request to GitHub, and it leaves every other step alone. It needs the bundled YAML plugin, which is on by default.
 
 It checks, offers and describes what the VS Code extension does, with the same words:
 
@@ -155,7 +157,7 @@ Switch off the **GrillMyCode step inputs** inspection, under **Settings | Editor
 **Tools | GrillMyCode | Open Workflow Wizard** opens the [Workflow Wizard](../workflow-wizard.mdx) in an editor tab. It is the docs site's Wizard, as the VS Code extension shows it, and it does the same two things a web page cannot:
 
 - **It reads the project's folder.** On the **Files** step, **Use the open folder** tries the patterns on the folder the project is in, with nothing to pick. **Choose another folder…** reads one from anywhere on the computer, such as a folder holding your own solution. In a Git repository the IDE knows, the files Git ignores are left out.
-- **It writes the workflow file.** On the last step, **Create the workflow file** writes `.github/workflows/grill-my-code.yml` in the project's folder and opens it. If the project already has that file, the plugin asks before replacing what is in it, and **Undo** in the editor reverses the change.
+- **It writes the workflow file.** On the last step, **Create the workflow file** writes the workflow to `.github/workflows/` in the project's folder and opens it. The file is `grill-my-code.yml` for a workflow named GrillMyCode, and named after the [question set](triggers.md#question-sets) for any other name, such as `grill-my-code-lab-3.yml`. If the project already has that file, the plugin asks before replacing what is in it, and **Undo** in the editor reverses the change.
 
 The tab follows the IDE's theme, and keeps its answers while another tab is in front. Closing it discards them. A link in it opens in your browser. [Workflow help](#workflow-help) checks the file the Wizard writes, as it checks any other.
 

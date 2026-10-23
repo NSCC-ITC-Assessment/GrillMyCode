@@ -9,6 +9,7 @@ import org.grillmycode.companion.shared.HttpGet
 import org.grillmycode.companion.shared.INSTRUCTOR_REPO_SUFFIX
 import org.grillmycode.companion.shared.IdentityError
 import org.grillmycode.companion.shared.IssueGroup
+import org.grillmycode.companion.shared.QUESTION_SET_MARK
 import org.grillmycode.companion.shared.Question
 import org.grillmycode.companion.shared.Snippet
 import org.grillmycode.companion.shared.SubmissionIdentity
@@ -65,14 +66,21 @@ data class AnswerKeyLocation(
 /**
  * Where an identity's answer key is. [group] is the questions issue's, from
  * parseIssueTitle, and names the tag pattern for a submission tag's questions.
+ * [titleSet] is the question set the issue's title names, and [set] its folder
+ * name, from the issue's hidden data (parseReport). Null when the title names
+ * a set and the data does not say its folder: the folder with no set holds
+ * another set's answers.
  */
 fun answerKeyLocation(
     assignment: String,
     submitter: String,
     group: IssueGroup?,
-): AnswerKeyLocation {
-    val folder = if (group is IssueGroup.Tag) "$submitter/${tagGroupSlug(group.pattern)}" else submitter
-    return AnswerKeyLocation("$assignment$INSTRUCTOR_REPO_SUFFIX", "$folder/$ANSWER_KEY_FILE")
+    titleSet: String? = null,
+    set: String? = null,
+): AnswerKeyLocation? {
+    if (titleSet != null && set == null) return null
+    val parts = listOfNotNull(submitter, set?.let { "$QUESTION_SET_MARK$it" }, (group as? IssueGroup.Tag)?.let { tagGroupSlug(it.pattern) })
+    return AnswerKeyLocation("$assignment$INSTRUCTOR_REPO_SUFFIX", "${parts.joinToString("/")}/$ANSWER_KEY_FILE")
 }
 
 /** A whole JSON number that fits an Int, as JavaScript's Number.isInteger allows. */
@@ -147,7 +155,8 @@ fun matchesReport(
  *
  * In the account's own repository this is one request, which GitHub refuses an
  * ordinary student. In anyone else's the student is found first, from the
- * repository's direct collaborators, as the action finds them.
+ * repository's direct collaborators, as the action finds them. [titleSet] and
+ * [set] are as [answerKeyLocation] takes them.
  */
 fun findAnswerKey(
     owner: String,
@@ -156,18 +165,20 @@ fun findAnswerKey(
     group: IssueGroup?,
     token: String,
     http: HttpGet,
+    titleSet: String? = null,
+    set: String? = null,
 ): AnswerKeyResult =
     try {
         val own = ownSubmissionIdentity(repo, login)
         when (val identity = own ?: matchSubmissionIdentity(repo, listDirectCollaborators(owner, repo, token, http))) {
             is IdentityError -> NoAnswerKey(identity.error)
             is SubmissionIdentity -> {
-                val location = answerKeyLocation(identity.assignment, identity.submitter, group)
-                val questions = parseAnswerKey(readFile(owner, location.repo, location.path, token, http))
-                if (questions == null) {
-                    NoAnswerKey("$owner/${location.repo}/${location.path} is not an answer key")
-                } else {
-                    AnswerKey(questions, own != null, location.repo, location.path)
+                val location = answerKeyLocation(identity.assignment, identity.submitter, group, titleSet, set)
+                val questions = location?.let { parseAnswerKey(readFile(owner, it.repo, it.path, token, http)) }
+                when {
+                    location == null -> NoAnswerKey("the issue's hidden data does not name its question set")
+                    questions == null -> NoAnswerKey("$owner/${location.repo}/${location.path} is not an answer key")
+                    else -> AnswerKey(questions, own != null, location.repo, location.path)
                 }
             }
         }

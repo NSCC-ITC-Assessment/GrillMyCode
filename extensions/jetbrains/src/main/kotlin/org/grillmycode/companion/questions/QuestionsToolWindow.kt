@@ -156,7 +156,7 @@ class ChooseIssueAction : DumbAwareAction() {
                             return
                         }
                         val issue = loaded.issue
-                        append(describeGroup(issue.group))
+                        append(describeGroup(issue.group, issue.set))
                         val detail =
                             when (val report = loaded.report) {
                                 is Report -> "${report.questions.size} questions · commit ${report.headSha}"

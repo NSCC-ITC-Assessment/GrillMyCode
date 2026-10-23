@@ -41,6 +41,18 @@ private data class Finding(
 /** A secret read from a workflow input, which a run records as plain text. */
 private val INPUT_EXPRESSION = Regex("""\$\{\{[^}]*\binputs\.""")
 
+/** question_set set to the workflow's own name, as the Workflow Wizard writes it. */
+private val WORKFLOW_NAME = Regex("""\$\{\{\s*github\.workflow\s*}}""")
+
+/**
+ * Another workflow file of the same repository: its path from the repository,
+ * and the question sets its GrillMyCode steps file under ([questionSets]).
+ */
+data class OtherWorkflow(
+    val path: String,
+    val sets: List<String>,
+)
+
 private val WHOLE_NUMBER = Regex("""[+-]?\d+""")
 
 private fun quote(value: Any?) = "\"$value\""
@@ -78,6 +90,36 @@ fun closestInput(name: String): String? {
         if (edits <= INPUT_NAME_MAX_EDITS && (best == null || edits < best.second)) best = known to edits
     }
     return best?.first
+}
+
+/**
+ * What is wrong with a question set's name, as readQuestionSet in
+ * src/inputs.js reads question_set: its white space made single spaces, at
+ * most [QUESTION_SET_MAX_CHARS] long, with a letter, digit, - or _ to name a
+ * folder. [what] begins the message.
+ */
+private fun questionSetProblem(
+    what: String,
+    value: String,
+): Finding? {
+    val name = value.replace(Regex("""\s+"""), " ").trim()
+    if (name.length > QUESTION_SET_MAX_CHARS) {
+        return Finding(
+            Severity.ERROR,
+            "invalid-value",
+            "$what is ${name.length} characters long, and a question set's can be at most " +
+                "$QUESTION_SET_MAX_CHARS. A run with this value fails.",
+        )
+    }
+    if (questionSetSlug(name) == null) {
+        return Finding(
+            Severity.ERROR,
+            "invalid-value",
+            "$what, ${quote(name)}, has no letter, digit, - or _, so it cannot name the " +
+                "question set's folder. A run with this value fails.",
+        )
+    }
+    return null
 }
 
 /** What is wrong with one value, or null. */
@@ -183,8 +225,42 @@ private fun checkValue(
             )
         }
 
+        InputRule.QuestionSet -> return questionSetProblem(name, value)
+
         InputRule.Free -> return null
     }
+}
+
+/**
+ * The question set a step files under, as the action works it out: its folder
+ * name, empty for none, or null where the file does not say. question_set set
+ * to github.workflow is the workflow's name, or for a workflow with none, its
+ * file's path, which is what GitHub gives it then.
+ */
+private fun stepQuestionSet(
+    step: WorkflowStep,
+    workflowName: String?,
+    path: String?,
+): String? {
+    // The last of a repeated name is the one GitHub keeps.
+    val input = step.inputs.lastOrNull { it.name.lowercase() == "question_set" } ?: return ""
+    val value = input.value?.trim() ?: return null
+    if (WORKFLOW_NAME.matches(value)) return questionSetSlug(workflowName ?: path ?: return null)
+    if (input.expression) return null
+    return questionSetSlug(value)
+}
+
+/**
+ * The question sets a workflow file's GrillMyCode steps file under, each once,
+ * as [stepQuestionSet] works them out. [path] is the file's, from the
+ * repository. A step whose set the file does not say is left out.
+ */
+fun questionSets(
+    text: String,
+    path: String? = null,
+): List<String> {
+    val workflow = readWorkflow(text)
+    return workflow.steps.mapNotNull { stepQuestionSet(it, workflow.name?.value, path) }.distinct()
 }
 
 /** The problems with one step. */
@@ -192,6 +268,9 @@ private fun checkStep(
     step: WorkflowStep,
     tagFilters: List<String>?,
     unknownInputs: Boolean,
+    workflowName: WorkflowName?,
+    path: String?,
+    otherWorkflows: List<OtherWorkflow>,
 ): List<Problem> {
     val problems = mutableListOf<Problem>()
 
@@ -422,6 +501,46 @@ private fun checkStep(
         }
     }
 
+    // ── Question set ──────────────────────────────────────────────────────────
+
+    val questionSet = set["question_set"]
+    val byName = questionSet?.value?.trim()?.let { WORKFLOW_NAME.matches(it) } == true
+    if (byName && workflowName != null) {
+        questionSetProblem("The workflow's name", workflowName.value)?.let { at(workflowName.start, workflowName.end, it) }
+    } else if (byName && questionSet != null) {
+        atValue(
+            questionSet,
+            Finding(
+                Severity.INFO,
+                "unnamed-workflow",
+                "The workflow has no name, so github.workflow is the path of its file" +
+                    (if (path != null) ", $path," else "") +
+                    " and its question set is named after that. Give the workflow a name.",
+            ),
+        )
+    }
+
+    // Another file of the repository that files under the same set replaces
+    // this one's questions, and this one its.
+    val ownSet = stepQuestionSet(step, workflowName?.value, path)
+    val sharing = otherWorkflows.filter { ownSet != null && it.path != path && ownSet in it.sets }
+    if (sharing.isNotEmpty()) {
+        val files = sharing.map { quote(it.path) }
+        val named = if (files.size > 1) "${files.dropLast(1).joinToString(", ")} and ${files.last()}" else files[0]
+        at(
+            questionSet?.let { Span(it.start, it.end) } ?: step.uses,
+            Finding(
+                Severity.WARNING,
+                "shared-question-set",
+                "$named ${if (files.size > 1) "file their" else "files its"} questions under " +
+                    "the same question set as this workflow${if (!ownSet.isNullOrEmpty()) ", ${quote(ownSet)}" else ""}, so " +
+                    "each run replaces the other's issue, PDF and answer key. Give each workflow a " +
+                    "name of its own" +
+                    if (byName) "." else ", and set question_set: \${{ github.workflow }}.",
+            ),
+        )
+    }
+
     return problems
 }
 
@@ -430,12 +549,16 @@ private fun checkStep(
  * with no GrillMyCode step has none.
  *
  * [unknownInputs] false leaves out inputs the action does not declare, for when
- * something else in the IDE already reports them.
+ * something else in the IDE already reports them. [path] is the file's, from
+ * the repository, and [otherWorkflows] the repository's other workflow files,
+ * whose question sets this one's must not share.
  */
 fun checkWorkflow(
     text: String,
     unknownInputs: Boolean = true,
+    path: String? = null,
+    otherWorkflows: List<OtherWorkflow> = emptyList(),
 ): List<Problem> {
-    val (steps, tagFilters) = readWorkflow(text)
-    return steps.flatMap { checkStep(it, tagFilters, unknownInputs) }.sortedBy { it.start }
+    val (steps, tagFilters, name) = readWorkflow(text)
+    return steps.flatMap { checkStep(it, tagFilters, unknownInputs, name, path, otherWorkflows) }.sortedBy { it.start }
 }

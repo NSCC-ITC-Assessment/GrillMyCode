@@ -16,6 +16,16 @@ Each heading is a version as `gradle.properties` writes it.
   Workflow Wizard in an editor tab. It tries your choice of files on the
   project's folder, and writes the workflow file in it. Where the IDE cannot
   show a web page in a tab, it opens the Wizard on grillmycode.org.
+- Reads the questions of a question set: a workflow whose name keeps its
+  questions apart from another workflow's. **Choose Which Questions to Show…**
+  lists each set by its name, such as **Lab 3 · main**, and the instructor view
+  reads that set's answer key.
+- The workflow help marks a `question_set`, or a workflow name, that the action
+  can't file questions under, and warns when two workflow files in a
+  repository share a question set.
+- The Workflow Wizard writes the workflow file under a name of its own for each
+  question set, such as `grill-my-code-lab-3.yml`, so a second set never
+  replaces the first set's file.
 
 ## [0.2.0]
 

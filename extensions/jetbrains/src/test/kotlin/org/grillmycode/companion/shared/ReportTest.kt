@@ -61,6 +61,7 @@ fun Report.toJson() =
         headCommit?.let { put("headCommit", it) }
         put("branch", branch)
         put("tag", tag)
+        set?.let { put("set", it) }
         put("files", buildJsonArray { files.forEach { add(it) } })
         put("truncated", truncated)
         put(
@@ -96,19 +97,21 @@ fun Report.toJson() =
         )
     }
 
-fun IssueGroup.toJson() =
-    when (this) {
-        is IssueGroup.Branch ->
-            buildJsonObject {
+/** A group in the shape of expected.json's `group`, with the question set the title names. */
+fun IssueGroup.toJson(set: String? = null) =
+    buildJsonObject {
+        when (this@toJson) {
+            is IssueGroup.Branch -> {
                 put("kind", "branch")
                 put("name", name)
             }
-        is IssueGroup.Tag ->
-            buildJsonObject {
+            is IssueGroup.Tag -> {
                 put("kind", "tag")
                 put("name", pattern)
             }
-        IssueGroup.Unnamed -> buildJsonObject { put("kind", "unnamed") }
+            IssueGroup.Unnamed -> put("kind", "unnamed")
+        }
+        set?.let { put("set", it) }
     }
 
 fun Fixture.expectedReport() = JsonObject(expected.getValue("report").jsonObject + ("questions" to expected.getValue("questions")))
@@ -128,7 +131,7 @@ class ReportTest {
             fixtures.map { f ->
                 dynamicTest(f.name) {
                     val issue = JsonObject(f.issue + mapOf("number" to JsonPrimitive(7), "body" to JsonPrimitive(f.body)))
-                    assertEquals(f.expected["group"], findQuestionIssues(listOf(issue)).single().group.toJson())
+                    assertEquals(f.expected["group"], findQuestionIssues(listOf(issue)).single().let { it.group.toJson(it.set) })
                 }
             }
 

@@ -47,10 +47,24 @@ data class WorkflowStep(
     val inputs: List<StepInput>,
 )
 
-/** What [readWorkflow] found: every step that runs the action, and the patterns of `on.push.tags`, when there are any. */
+/**
+ * The workflow's `name`, written as text, and where it is. GitHub shows it in
+ * the Actions tab, and it is github.workflow, which question_set may be set to.
+ */
+data class WorkflowName(
+    val value: String,
+    val start: Int,
+    val end: Int,
+)
+
+/**
+ * What [readWorkflow] found: every step that runs the action, the patterns of
+ * `on.push.tags`, when there are any, and the workflow's [name], when it has one.
+ */
 data class Workflow(
     val steps: List<WorkflowStep>,
     val tagFilters: List<String>?,
+    val name: WorkflowName? = null,
 )
 
 /** What marks a value GitHub works out when the workflow runs. */
@@ -182,6 +196,14 @@ private class Reader(
         val filters = nodes.filterIsInstance<ScalarNode>().map(::scalarText).filter { it.isNotEmpty() }
         return filters.ifEmpty { null }
     }
+
+    /** The workflow's `name`, or null when it has none written as text. */
+    fun name(root: Node?): WorkflowName? {
+        val node = (root as? MappingNode)?.pair("name")?.second as? ScalarNode ?: return null
+        val at = offsets.span(node) ?: return null
+        val value = scalarText(node)
+        return if (value.isBlank()) null else WorkflowName(value, at.start, at.end)
+    }
 }
 
 /** [text] with the line holding [offset] replaced by spaces, so every other offset stays where it was. */
@@ -217,7 +239,7 @@ fun readWorkflow(text: String): Workflow {
                     .firstOrNull()
             val reader = Reader(offsets)
             reader.visit(root)
-            return Workflow(reader.steps, reader.tagFilters(root))
+            return Workflow(reader.steps, reader.tagFilters(root), reader.name(root))
         } catch (mistake: YamlEngineException) {
             val marked = mistake as? MarkedYamlEngineException ?: return Workflow(emptyList(), null)
             // Where the mistake was found, or, when that line is already blank

@@ -67,6 +67,21 @@ class WorkflowHelpIdeTest : BasePlatformTestCase() {
         )
     }
 
+    // A copy of the file left with the same name files under the same question set.
+    fun testWarnsAboutAnotherWorkflowFileWithTheSameQuestionSet() {
+        myFixture.addFileToProject(
+            ".github/workflows/copy.yml",
+            "on: push\njobs:\n  a:\n    steps:\n      - uses: NSCC-ITC-Assessment/GrillMyCode@v0\n",
+        )
+        open(KEY)
+        val info = ours().single()
+        assertEquals(HighlightSeverity.WARNING, info.severity)
+        assertTrue(info.description, info.description.contains("\".github/workflows/copy.yml\" files its questions"))
+
+        open(KEY, "question_set: Lab 3", path = ".github/workflows/lab-3.yml")
+        assertEmpty(ours())
+    }
+
     fun testShowsTheActionsWordsAsText() {
         open(KEY, "submission_tags: phase1", "tag_diff_base: earliest")
         val tooltip = ours().single().toolTip.orEmpty()

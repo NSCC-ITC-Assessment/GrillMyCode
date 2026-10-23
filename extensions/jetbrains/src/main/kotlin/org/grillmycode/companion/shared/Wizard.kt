@@ -19,7 +19,10 @@ import kotlinx.serialization.json.doubleOrNull
 //                                  what Git ignores
 //   list         { path }          → [{ name, kind }]: what a folder holds
 //   read         { path, bytes }   → the file's text, or its first `bytes` bytes
-//   saveWorkflow { yaml }          → true once written, false if cancelled
+//   saveWorkflow { yaml, fileName }
+//                                  → true once written, false if cancelled.
+//                                  `fileName` is the file in .github/workflows/
+//                                  (see workflowFilePath)
 //
 // Every request but `ready` carries an `id`, and is answered with
 // `{ id, ok: true, value }` or `{ id, ok: false, error: { name, message } }`.
@@ -43,6 +46,23 @@ fun isWizardRequest(message: Any?): Boolean {
     if (type == "ready") return true
     val id = (message["id"] as? JsonPrimitive)?.takeIf { !it.isString }?.doubleOrNull ?: return false
     return id == Math.floor(id) && Math.abs(id) <= MAX_SAFE_INTEGER
+}
+
+/**
+ * The names the Wizard gives a workflow file (workflowFileName in the Wizard's
+ * generateYaml.js): grill-my-code.yml, or grill-my-code-<set>.yml for a
+ * question set, the set's folder name in between.
+ */
+private val WORKFLOW_FILE_NAME = Regex("""^grill-my-code(?:-[a-z0-9_-]{1,$QUESTION_SET_MAX_CHARS})?\.yml$""")
+
+/**
+ * Where the workflow the page sends is written, from the project's folder:
+ * WORKFLOW_FILE's folder and the name the page gives the file. Null for a name
+ * the Wizard never gives, which is refused rather than read as a path.
+ */
+fun workflowFilePath(fileName: String?): String? {
+    if (fileName == null || !WORKFLOW_FILE_NAME.matches(fileName)) return null
+    return "${WORKFLOW_FILE.substringBeforeLast('/')}/$fileName"
 }
 
 /** A path inside a folder, as the page names it: `src/app.js`. */

@@ -3,6 +3,7 @@ package org.grillmycode.companion.shared
 import kotlinx.serialization.json.Json
 import org.junit.jupiter.api.Assertions.assertEquals
 import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertNull
 import org.junit.jupiter.api.Assertions.assertTrue
 import org.junit.jupiter.api.Nested
 import org.junit.jupiter.api.Test
@@ -185,6 +186,34 @@ class WizardTest {
 }
 
 /** The constants both editors share hold the same values in each. */
+class WorkflowFilePathTest {
+    @Test
+    fun `puts a name the Wizard gives in github-workflows`() {
+        assertEquals(".github/workflows/grill-my-code.yml", workflowFilePath("grill-my-code.yml"))
+        assertEquals(".github/workflows/grill-my-code-lab-3.yml", workflowFilePath("grill-my-code-lab-3.yml"))
+    }
+
+    @ParameterizedTest
+    @ValueSource(
+        strings = [
+            "",
+            "ci.yml",
+            "grill-my-code-.yml",
+            "grill-my-code-Lab-3.yml",
+            "grill-my-code-../x.yml",
+            "../grill-my-code.yml",
+            "grill-my-code.yaml",
+        ],
+    )
+    fun `refuses any other name, rather than read it as a path`(name: String) = assertNull(workflowFilePath(name))
+
+    @Test
+    fun `refuses no name, and a set's name longer than the action takes`() {
+        assertNull(workflowFilePath(null))
+        assertNull(workflowFilePath("grill-my-code-${"x".repeat(101)}.yml"))
+    }
+}
+
 class ConstantsTest {
     private val javaScript =
         File(System.getProperty("gmc.repository") ?: error("Run the tests through Gradle"), "extensions/vscode/src/shared/constants.js")
@@ -214,6 +243,10 @@ class ConstantsTest {
                 "WORKFLOW_FILE" to WORKFLOW_FILE,
                 "WIZARD_MAX_WORKFLOW_CHARS" to WIZARD_MAX_WORKFLOW_CHARS,
                 "WIZARD_MAX_FILE_BYTES" to WIZARD_MAX_FILE_BYTES,
+                "QUESTION_SET_MARK" to QUESTION_SET_MARK,
+                "DEFAULT_QUESTION_SET_SLUG" to DEFAULT_QUESTION_SET_SLUG,
+                "QUESTION_SET_MAX_CHARS" to QUESTION_SET_MAX_CHARS,
+                "OTHER_WORKFLOW_MAX_BYTES" to OTHER_WORKFLOW_MAX_BYTES,
                 "OPENROUTER_ORIGIN" to OPENROUTER_ORIGIN,
             )
         for ((name, value) in shared) assertEquals(javaScript(name), value.toString(), name)

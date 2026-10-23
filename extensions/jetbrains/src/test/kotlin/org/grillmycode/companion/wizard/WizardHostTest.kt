@@ -25,11 +25,15 @@ private class Answers(
 
     override fun chooseFolder(project: Project) = folder
 
+    var replacePath: String? = null
+
     override fun confirmReplace(
         project: Project,
         folderName: String,
+        path: String,
     ): Boolean {
         replaceAsked++
+        replacePath = path
         return replace
     }
 }
@@ -106,18 +110,28 @@ class WizardHostTest : BasePlatformTestCase() {
     }
 
     fun testWritesTheWorkflowFile() {
-        assertEquals("true", ask("""{"type":"saveWorkflow","id":1,"yaml":"on: push\n"}""").jsonPrimitive.content)
+        assertEquals(
+            "true",
+            ask("""{"type":"saveWorkflow","id":1,"yaml":"on: push\n","fileName":"grill-my-code.yml"}""").jsonPrimitive.content,
+        )
         assertEquals("on: push\n", String(root.findFileByRelativePath(WORKFLOW_FILE)!!.contentsToByteArray()))
         assertEquals(0, answers.replaceAsked)
     }
 
     fun testAsksBeforeReplacingOne() {
-        ask("""{"type":"saveWorkflow","id":1,"yaml":"on: push\n"}""")
+        ask("""{"type":"saveWorkflow","id":1,"yaml":"on: push\n","fileName":"grill-my-code.yml"}""")
         answers.replace = false
-        assertEquals("false", ask("""{"type":"saveWorkflow","id":2,"yaml":"on: workflow_dispatch\n"}""").jsonPrimitive.content)
+        assertEquals(
+            "false",
+            ask("""{"type":"saveWorkflow","id":2,"yaml":"on: workflow_dispatch\n","fileName":"grill-my-code.yml"}""").jsonPrimitive.content,
+        )
         answers.replace = true
-        assertEquals("true", ask("""{"type":"saveWorkflow","id":3,"yaml":"on: workflow_dispatch\n"}""").jsonPrimitive.content)
+        assertEquals(
+            "true",
+            ask("""{"type":"saveWorkflow","id":3,"yaml":"on: workflow_dispatch\n","fileName":"grill-my-code.yml"}""").jsonPrimitive.content,
+        )
         assertEquals(2, answers.replaceAsked)
+        assertEquals(WORKFLOW_FILE, answers.replacePath)
         val file = root.findFileByRelativePath(WORKFLOW_FILE)!!
         assertEquals(
             "on: workflow_dispatch\n",
@@ -128,9 +142,26 @@ class WizardHostTest : BasePlatformTestCase() {
         )
     }
 
+    // A question set's workflow is a file of its own, beside the first.
+    fun testWritesAQuestionSetsWorkflowUnderItsOwnName() {
+        ask("""{"type":"saveWorkflow","id":1,"yaml":"on: push\n","fileName":"grill-my-code.yml"}""")
+        val saved = ask("""{"type":"saveWorkflow","id":2,"yaml":"on: workflow_dispatch\n","fileName":"grill-my-code-lab-3.yml"}""")
+        assertEquals("true", saved.jsonPrimitive.content)
+        assertEquals(
+            "on: workflow_dispatch\n",
+            String(root.findFileByRelativePath(".github/workflows/grill-my-code-lab-3.yml")!!.contentsToByteArray()),
+        )
+        assertEquals("on: push\n", String(root.findFileByRelativePath(WORKFLOW_FILE)!!.contentsToByteArray()))
+        assertEquals(0, answers.replaceAsked)
+    }
+
     fun testRefusesWhatIsNotAWorkflow() {
-        refused("""{"type":"saveWorkflow","id":1,"yaml":"  "}""")
-        refused("""{"type":"saveWorkflow","id":2,"yaml":1}""")
+        refused("""{"type":"saveWorkflow","id":1,"yaml":"  ","fileName":"grill-my-code.yml"}""")
+        refused("""{"type":"saveWorkflow","id":2,"yaml":1,"fileName":"grill-my-code.yml"}""")
+        for (name in listOf("", "ci.yml", "../grill-my-code.yml", "grill-my-code-Lab.yml")) {
+            refused("""{"type":"saveWorkflow","id":3,"yaml":"on: push\n","fileName":"$name"}""")
+        }
+        refused("""{"type":"saveWorkflow","id":4,"yaml":"on: push\n"}""")
     }
 
     // Each colour the stylesheet reads from VS Code is one the page sets here.
