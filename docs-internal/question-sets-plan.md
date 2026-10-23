@@ -2,8 +2,8 @@
 
 > **Recorded:** 2026-10-23 (`6e8c861`), against action v0 and both editor
 > plugins at 0.2.0 (JetBrains) and 0.4.5 (VS Code).
-> **Status:** Built on branch `question-sets` (on top of `j4`), 2026-10-23.
-> Every decision is settled. Hand checks still to do are in
+> **Status:** Released 2026-10-23 in action v0.31.0, VS Code 0.6.0 and
+> JetBrains 0.3.0. Every decision is settled. Hand checks still to do are in
 > [Progress](#progress).
 
 Two workflows in one student repository, both run by hand, write to the same
@@ -190,7 +190,7 @@ own file.
 | Quiz workflow: third depth, title without `set.` | Built; not run against a real instructor repository                      |
 | Fixtures: `question-set`, `question-set-tag`     | Built                                                                    |
 | Wizard: name field, `question_set`, file name    | Built, `test/wizard-question-set.test.js`; not seen in a browser         |
-| VS Code: readers, picker, key path, checks, save | Built; `pnpm test:host` not run (the codespace lacks `libnspr4`)         |
+| VS Code: readers, picker, key path, checks, save | Built, `pnpm test:host` passes                                           |
 | JetBrains: the same                              | Built, `./gradlew check` and `buildPlugin`; not tried in an IDE          |
 | Docs, recipe 11, phase recipe, CHANGELOGs        | Built, docs build passes                                                 |
 | Hand checks                                      | Two workflows run by hand on `main`; a set with a tag; both editors open |

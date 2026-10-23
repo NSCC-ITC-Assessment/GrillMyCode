@@ -3,7 +3,7 @@
 > **Recorded:** 2026-10-03 (`ff56b1d`). Shortened on 2026-10-04 and 2026-10-10.
 > The fuller wording is this file at `ee31e05`. What was tried and how is at
 > `10791ec`.
-> **Status:** 0.4.4 is the stable release, of 2026-10-10. Phases 1, 3, 4, 5
+> **Status:** 0.6.0 is the stable release, of 2026-10-23. Phases 1, 3, 4, 5
 > and 7 are released, 2 is under way and 6 is a proposal. Parts of 3, 5 and 7
 > went out without having been seen working.
 
@@ -65,12 +65,13 @@ flowchart LR
 | 0.4.2           | 2026-10-10        | **Next Question** and **Previous Question**, which step through the list. Outside the phases, from [Further ideas](#further-ideas). Stable, and the first release to sign in with the Entra identity     |
 | 0.4.3           | 2026-10-10        | A question about several files opens each in a tab of its own, and the tabs it opened close at the next question. Outside the phases. Stable                                                             |
 | 0.4.4           | 2026-10-10        | The new-questions notice, from [Further ideas](#further-ideas): a check each minute, and on focus, loads a first set of questions and announces a newer one without changing the list. Stable            |
+| 0.6.0           | 2026-10-23        | Question sets: each set's issue listed under its name, its answer key read, a warning when two workflow files share one, and a Wizard file of its own per set. Stable; 0.5.x skipped, as an odd minor    |
 | Tags kept apart |                   | `release.yml` runs on `v[0-9]*` and `branch-build.yml` ignores every tag, so a `vscode-v*` tag cannot release the action                                                                                 |
 
-| Channel     | Versions                                                                                              |
-| ----------- | ----------------------------------------------------------------------------------------------------- |
-| Stable      | 0.1.0 (by hand, despite its odd minor number), 0.2.0, 0.2.1, 0.2.2, 0.4.0, 0.4.1, 0.4.2, 0.4.3, 0.4.4 |
-| Pre-release | 0.1.1, 0.1.2, 0.3.0, 0.3.1                                                                            |
+| Channel     | Versions                                                                                                            |
+| ----------- | ------------------------------------------------------------------------------------------------------------------- |
+| Stable      | 0.1.0 (by hand, despite its odd minor number), 0.2.0, 0.2.1, 0.2.2, 0.4.0, 0.4.1, 0.4.2, 0.4.3, 0.4.4, 0.4.5, 0.6.0 |
+| Pre-release | 0.1.1, 0.1.2, 0.3.0, 0.3.1                                                                                          |
 
 ---
 

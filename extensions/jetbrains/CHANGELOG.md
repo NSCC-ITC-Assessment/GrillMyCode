@@ -5,6 +5,8 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
+## [0.3.0]
+
 ### Added
 
 - Help with the GrillMyCode step of a workflow file, as the VS Code extension
