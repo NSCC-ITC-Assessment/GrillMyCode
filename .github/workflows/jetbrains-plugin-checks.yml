@@ -13,8 +13,20 @@ on:
     branches: [main]
     paths:
       - "extensions/jetbrains/**"
-      # The sample issues the plugin's reader is tested against.
+      # The sample issues and workflow cases the plugin is tested against.
       - "extensions/fixtures/**"
+      # The Workflow Wizard, which the plugin bundles as the VS Code extension
+      # builds it, and the constants the two share.
+      - "docs-site/docs/_workflow-wizard/**"
+      - "docs-site/static/img/grillmycode-wizard.svg"
+      - "extensions/vscode/src/webview/**"
+      - "extensions/vscode/src/shared/**"
+      - "extensions/vscode/esbuild.js"
+      - "extensions/vscode/package.json"
+      - "extensions/vscode/pnpm-lock.yaml"
+      # The workflows the docs show, which the input checks must pass.
+      - "docs-site/docs/**"
+      - "README.md"
       - ".github/workflows/jetbrains-plugin-checks.yml"
   # On main too, so the latest merged build is always there to download.
   push:
@@ -22,6 +34,15 @@ on:
     paths:
       - "extensions/jetbrains/**"
       - "extensions/fixtures/**"
+      - "docs-site/docs/_workflow-wizard/**"
+      - "docs-site/static/img/grillmycode-wizard.svg"
+      - "extensions/vscode/src/webview/**"
+      - "extensions/vscode/src/shared/**"
+      - "extensions/vscode/esbuild.js"
+      - "extensions/vscode/package.json"
+      - "extensions/vscode/pnpm-lock.yaml"
+      - "docs-site/docs/**"
+      - "README.md"
       - ".github/workflows/jetbrains-plugin-checks.yml"
 
 permissions:
@@ -45,6 +66,20 @@ jobs:
 
       # Also checks gradle-wrapper.jar against Gradle's published checksums.
       - uses: gradle/actions/setup-gradle@v6
+
+      # The Workflow Wizard's page is the VS Code extension's bundle, built by
+      # its esbuild.js (build.gradle.kts), so its packages are installed too.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      - name: Install the VS Code extension's packages
+        working-directory: extensions/vscode
+        run: pnpm install --frozen-lockfile
 
       # ktlint, the tests, and the checks on plugin.xml.
       - name: Check
@@ -86,6 +121,20 @@ jobs:
         with:
           # The IDEs are too large to be worth caching.
           cache-read-only: true
+
+      # The Workflow Wizard's page is the VS Code extension's bundle, built by
+      # its esbuild.js (build.gradle.kts), so its packages are installed too.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      - name: Install the VS Code extension's packages
+        working-directory: extensions/vscode
+        run: pnpm install --frozen-lockfile
 
       - name: Run the Plugin Verifier
         run: ./gradlew verifyPlugin

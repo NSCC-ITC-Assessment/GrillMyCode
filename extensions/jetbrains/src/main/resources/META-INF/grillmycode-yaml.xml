@@ -1,0 +1,15 @@
+<!-- The workflow help, loaded only where the bundled YAML plugin is on: it
+     works on workflow files, which are YAML. -->
+<idea-plugin>
+    <extensions defaultExtensionNs="com.intellij">
+        <localInspection language="yaml" shortName="GrillMyCodeWorkflow"
+                         displayName="GrillMyCode step inputs" groupName="GrillMyCode"
+                         enabledByDefault="true" level="WARNING"
+                         implementationClass="org.grillmycode.companion.workflow.WorkflowInspection"/>
+        <completion.contributor language="yaml" order="first"
+                                implementationClass="org.grillmycode.companion.workflow.WorkflowCompletion"/>
+        <typedHandler implementation="org.grillmycode.companion.workflow.WorkflowTypedHandler"/>
+        <lang.documentationProvider language="yaml" order="first"
+                                    implementationClass="org.grillmycode.companion.workflow.WorkflowDocumentation"/>
+    </extensions>
+</idea-plugin>

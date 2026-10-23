@@ -1,11 +1,12 @@
 # JetBrains plugin — plan
 
 > **Recorded:** 2026-10-19 (`d1f974c`), against VS Code extension 0.4.4.
-> **Updated:** 2026-10-23, 0.1.0-eap.1 approved; J1 built and tried by hand; J2's docs and listing drafted; J3 built on `j3`.
-> **Status:** J0 done. 0.1.0-eap.1 approved by JetBrains on 2026-10-22, on the
-> default channel, not `eap`: see [J1 progress](#j1-progress). J1 built, waiting on the PyCharm and WebStorm
-> checks: see [J1 progress](#j1-progress). J2 started: see [J2 progress](#j2-progress).
-> J3 built, not yet tried against GitHub: see [J3 progress](#j3-progress).
+> **Updated:** 2026-10-23, 0.2.0 released with J1 to J3; J4 and J5 built on `j4`.
+> **Status:** J0 done. 0.2.0, with J1, J2 and J3, is on the Marketplace's
+> default channel since 2026-10-23. Their hand checks were not done before it
+> shipped: see [J1 progress](#j1-progress), [J2 progress](#j2-progress) and
+> [J3 progress](#j3-progress). J4 and J5 built, together on `j4`: see
+> [J4 progress](#j4-progress) and [J5 progress](#j5-progress).
 
 A JetBrains plugin that does what GrillMyCode Companion does in VS Code: the
 questions the action posts, shown beside the code they ask about. It lives in
@@ -24,8 +25,8 @@ Elsewhere: the VS Code extension's plan, which this follows, in
 | J1    | Student side: sign-in, the questions list, the selected question, the jump to code, the moved-code warning, next and previous, several files, the new-questions notice          | J0                             | In progress |
 | J2    | Ready for a class: the Marketplace listing, a reference page and a line in the student guide, a stable release, hand checks on Windows and macOS                                | J1                             | In progress |
 | J3    | Instructor view: the answer key beside the student's code, and the view switch                                                                                                  | J1                             | In progress |
-| J4    | Workflow help: the action's inputs checked, offered and described in a workflow file                                                                                            | J0, and the shared check cases | Not started |
-| J5    | The docs site's Workflow Wizard in a JCEF tab, reading the open project and writing the workflow file                                                                           | J0                             | Not started |
+| J4    | Workflow help: the action's inputs checked, offered and described in a workflow file                                                                                            | J0, and the shared check cases | Built       |
+| J5    | The docs site's Workflow Wizard in a JCEF tab, reading the open project and writing the workflow file                                                                           | J0                             | Built       |
 
 Keep this table current when a phase starts, finishes or changes scope. The
 suggested order is J0, J1, J2, then J3 to J5 in any order. VS Code's phase 6
@@ -60,7 +61,7 @@ flowchart LR
 | GitHub sign-in and sign-out, Tools > GrillMyCode                                                        | `auth/`                                                                                                    | Done, tried against GitHub                      |
 | Owner and repository from the Git remote, the issues listed, the question model                         | `shared/Remote.kt`, `shared/GitHub.kt`, `shared/Questions.kt`                                              | Done, with the VS Code tests                    |
 | Tool window: the questions list, a message for each state, open a question's code                       | `questions/`, with the bundled Git plugin (`Git4Idea`)                                                     | Done, tried by hand                             |
-| First Marketplace upload, by hand, to the `eap` channel                                                 | plugins.jetbrains.com                                                                                      | Approved 2026-10-22, see below the table        |
+| First Marketplace upload, by hand, to the `eap` channel                                                 | plugins.jetbrains.com                                                                                      | Approved 2026-10-22                             |
 | Selected question: a details panel below the tree                                                       | `shared/Html.kt`, a port of `html.js`, in a Swing HTML pane                                                | Done, tried by hand                             |
 | Highlights on the question's lines in the editor                                                        | `questions/Highlighter.kt`, `MarkupModel` range highlighters                                               | Done, tried by hand                             |
 | Moved-code warning, and the note on a report too long to show in full                                   | `describeDrift`, with changed files from `ChangeListManager` and unsaved documents (`questions/Folder.kt`) | Done, tried by hand                             |
@@ -72,15 +73,10 @@ flowchart LR
 | A message of its own when the repository's organization has not approved the app                        | `auth/AppApproval.kt`, the `NotApproved` state                                                             | Built; GitHub's answer not yet checked (see J2) |
 | Hand checks in PyCharm and WebStorm, then J1 is done                                                    |                                                                                                            | To do                                           |
 
-The first upload, approved on 2026-10-22, is at
-<https://plugins.jetbrains.com/plugin/35347-grillmycode-companion>. What the
-Marketplace's API showed on 2026-10-23:
-
-| Finding                                                                                                                                       | What follows                                                                                                                                 |
-| --------------------------------------------------------------------------------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------- |
-| 0.1.0-eap.1 is on the default channel (`"channel": ""`), not `eap`                                                                            | Every install of it follows the default channel, so a release to `eap` would reach no one. 0.1.0-eap.2 is skipped: its changes ship in 0.2.0 |
-| The version is `"hidden": true, "listed": false`, and a search for GrillMyCode finds nothing                                                  | The listing's page opens from its link, but the IDE's Marketplace tab cannot find it yet. Check the vendor's settings for the plugin         |
-| Its "What's New" text is the scaffold's ("An empty plugin… It does nothing yet"), from the ZIP's `plugin.xml`, though the JAR is the J1 build | `patchPluginXml` now writes the CHANGELOG's notes, so 0.2.0's are right. Correct eap.1's text on the site if it allows                       |
+The first upload, 0.1.0-eap.1, was approved on 2026-10-22 and landed on the
+default channel, not `eap`, so 0.1.0-eap.2 was skipped and its changes shipped
+in 0.2.0. Its listing stayed hidden from search until 0.2.0 was published. The
+listing is <https://plugins.jetbrains.com/plugin/35347-grillmycode-companion>.
 
 ### J2 progress
 
@@ -102,13 +98,12 @@ approval a setup step for every instructor.
 | Whether the VS Code extension meets the same restriction, through VS Code's own GitHub app                            | The same test organization, in VS Code                   | To do. If it does, its guide gets the step too                                                                                                                                                                       |
 | A required plugin in the template (`.idea/externalDependencies.xml`), so the IDE offers to install it                 | The instructor guide                                     | To try once 0.2.0 is on the default channel. Open a folder holding only that `.idea/` file in IDEA, PyCharm and WebStorm: does the IDE offer the plugin, and does it still set the project up as for a plain folder? |
 | Hand checks on Windows and macOS                                                                                      |                                                          | To do                                                                                                                                                                                                                |
-| Stable release, `0.2.0` on the default channel                                                                        | `jetbrains-v*` tag                                       | After the J2 and J3 checks pass. Merge `j3`, which holds `j2`, with it                                                                                                                                               |
+| Stable release, `0.2.0` on the default channel                                                                        | `jetbrains-v*` tag                                       | Released 2026-10-23, with J3, before the hand checks. The verifier found two deprecated calls in 2026.3 EAP: fixed on `j4`                                                                                           |
 
 ### J3 progress
 
-On the `j3` branch, cut from `j2`. It ships in 0.2.0 with J2, decided on
-2026-10-23: no one is on the `eap` channel, so a release between them would
-reach no one. Merge `j3` to main, which brings `j2` with it.
+Shipped in 0.2.0 with J2, decided on 2026-10-23: no one was on the `eap`
+channel, so a release between them would have reached no one.
 
 | Piece                                                                                                 | Where                                                                         | Status                                                                     |
 | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | -------------------------------------------------------------------------- |
@@ -121,6 +116,38 @@ reach no one. Merge `j3` to main, which brings `j2` with it.
 | Reference section, a guide paragraph, the listing's line                                              | `reference/jetbrains-plugin.md`, `guides/jetbrains-plugin.md`, `plugin.xml`   | Drafted. The reference links to VS Code's section for the shared rules     |
 | Hand check as an instructor: someone else's repository, then a test repository of one's own           | A classroom organization with an instructor repository                        | To do. Also shows the two buttons and the view's name in the title         |
 | Hand check as a student: no answers, no buttons, nothing under Find Action or Tools                   | The same, with a student account                                              | To do. Find Action hides an action that is not visible: check it does here |
+
+### J4 progress
+
+On the `j4` branch, cut from main after 0.2.0.
+
+| Piece                                                                                   | Where                                                                               | Status                                                                                                                  |
+| --------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| The action's inputs as JSON, from the same generator                                    | `scripts/build-extension-action-inputs.js`, `src/main/resources/action-inputs.json` | Done, checked by `test/extension-action-inputs.test.js`                                                                 |
+| The workflow help's cases moved to fixtures, read by both editors                       | `extensions/fixtures/workflow-help/`, the three VS Code tests                       | Done                                                                                                                    |
+| Reading a workflow, with offsets, as the `yaml` package does                            | `shared/Workflow.kt`, SnakeYAML Engine 2.9 bundled                                  | Done. Reads past a mistake by blanking its line, where the `yaml` package recovers on its own                           |
+| Checks, completion, descriptions, ported with the same messages                         | `shared/InputChecks.kt`, `shared/WorkflowHelp.kt`, `shared/JavaScript.kt`           | Done, passes every case and every workflow in the docs                                                                  |
+| The inspection, completion and Quick Documentation                                      | `workflow/`, in `grillmycode-yaml.xml`, an optional dependency on the YAML plugin   | Built, with light-IDE tests (`WorkflowHelpIdeTest`)                                                                     |
+| The switch: the inspection, which completion and descriptions follow                    | `workflowHelpOn`                                                                    | Built                                                                                                                   |
+| Reference section, a guide line, the listing's line, CHANGELOG                          | `reference/jetbrains-plugin.md`, `guides/jetbrains-plugin.md`, `plugin.xml`         | Drafted. The reference links to VS Code's section for the rules both share                                              |
+| Hand check in IntelliJ IDEA Community and PyCharm: marks, completion as you type, hover | A workflow file                                                                     | To do. Completion opening by itself as you type is not covered by the light tests                                       |
+| Hand check in IntelliJ IDEA Ultimate, beside JetBrains' GitHub Actions support          | The same                                                                            | To do. Its "undefined parameters" check may report an unknown input twice; if it does, leave unknown inputs to it there |
+
+### J5 progress
+
+On `j4` too: the Wizard's tab needed nothing from J4, but both reach the
+editor's parity with VS Code in one release.
+
+| Piece                                                                                             | Where                                                                                                                        | Status                                                                                                                                                  |
+| ------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| The Wizard's bundle, built by VS Code's `esbuild.js --wizard-out=` and carried as resources       | `buildWizard` in `build.gradle.kts`; Node and `pnpm install` in `extensions/vscode/`, in every CI job that builds the plugin | Done                                                                                                                                                    |
+| The page: its policy, the bundle written in, the bridge, the IDE's colours as VS Code's variables | `shared/Wizard.kt`, `wizard-bridge.js`, `wizard/WizardTheme.kt`                                                              | Done, with `WizardTest` and a bridge test in `test/extension-wizard.test.js`                                                                            |
+| What the page may ask: the folder, its listings, a file's start, the workflow file                | `wizard/WizardHost.kt`, a port of VS Code's rules                                                                            | Done, with `WizardHostTest` in a light IDE                                                                                                              |
+| The tab, its action, the theme followed, links in the browser                                     | `wizard/WizardEditor.kt`, **Tools \| GrillMyCode \| Open Workflow Wizard**                                                   | Built. A test IDE has no JCEF, so the page has not run yet                                                                                              |
+| The fallback without JCEF: the Wizard on the docs site                                            | `OpenWorkflowWizardAction`                                                                                                   | Built                                                                                                                                                   |
+| Reference section, a guide paragraph, the listing's line, CHANGELOG                               | `reference/jetbrains-plugin.md`, `guides/jetbrains-plugin.md`, `plugin.xml`                                                  | Drafted. The reference links to VS Code's for what the tab reads                                                                                        |
+| Hand check: all ten steps, dark and light, in IntelliJ IDEA and PyCharm                           | A project with a template's files                                                                                            | To do. Also: the folder preview, **Create the workflow file** with and without one there, the model list from OpenRouter, a link opening in the browser |
+| Hand check on Windows and macOS                                                                   | The same                                                                                                                     | To do                                                                                                                                                   |
 
 ---
 
@@ -160,8 +187,8 @@ both editors read, in a form neither language owns:
 | `vscode.authentication`, the `repo` scope                                   | Our own GitHub device flow (`auth/`), the token in `PasswordSafe`. See [Decisions](#decisions)                               |
 | Welcome views, one per state (`signedOut`, `noIssue`, `needsUpdate`…)       | An empty-state panel in the tool window, in the same words                                                                   |
 | The new-questions notice                                                    | A notification balloon and a badge on the tool window's icon                                                                 |
-| Workflow help                                                               | An inspection, a completion contributor and a documentation provider on the YAML plugin's PSI                                |
-| The Workflow Wizard's tab                                                   | `JBCefBrowser`, a `JBCefJSQuery` bridge for the Wizard's `host`, and the same content security policy                        |
+| Workflow help                                                               | An inspection, a completion contributor and a documentation provider for YAML files, working on the text as VS Code does     |
+| The Workflow Wizard's tab                                                   | `JBCefBrowser`, VS Code's bundle written into the page, and a `JBCefJSQuery` bridge that stands in for `acquireVsCodeApi`    |
 | The walkthrough                                                             | A short "Get started" panel the first time the tool window opens                                                             |
 
 The VS Code [rules that outlast the phases](vscode-extension-plan.md#rules-that-outlast-the-phases)
@@ -174,18 +201,18 @@ view.
 
 ## Changes outside `extensions/jetbrains/`
 
-| Where                                      | Change                                                                                                                   | Status       |
-| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ------------ |
-| `AGENTS.md`                                | A JetBrains section: Kotlin is allowed in this folder alone, it reads the shared fixtures, its tag prefix, its own rules | Done (J0)    |
-| `scripts/build-extension-action-inputs.js` | Also writes JSON. `test/extension-action-inputs.test.js` checks that file too                                            | To do        |
-| `extensions/fixtures/`                     | New folders for the input-check and code-matching cases, and the JavaScript tests read them from there                   | To do        |
-| `extensions/README.md`                     | The plugin's commands and release steps                                                                                  | Done (J0)    |
-| `docs-site/docs/reference/`                | A JetBrains plugin page, and a student guide                                                                             | Drafted (J2) |
-| `release.yml`, `branch-build.yml`          | Check that a `jetbrains-v*` tag cannot release the action                                                                | Done (J0)    |
-| `.devcontainer/`                           | A JDK                                                                                                                    | Done (J0)    |
-| `.prettierignore`, `pnpm lint`             | Leave out `extensions/jetbrains/build/`. Kotlin is linted by Gradle                                                      | Done (J0)    |
-| `extensions/fixtures/README.md`            | Says that a layout change now means a reader in each editor                                                              | Done (J1)    |
-| `vscode-extension-checks.yml`              | Does not run for changes to the plugin alone                                                                             | Done (J0)    |
+| Where                                      | Change                                                                                                                   | Status                                      |
+| ------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------- |
+| `AGENTS.md`                                | A JetBrains section: Kotlin is allowed in this folder alone, it reads the shared fixtures, its tag prefix, its own rules | Done (J0)                                   |
+| `scripts/build-extension-action-inputs.js` | Also writes JSON. `test/extension-action-inputs.test.js` checks that file too                                            | Done (J4)                                   |
+| `extensions/fixtures/`                     | New folders for the input-check and code-matching cases, and the JavaScript tests read them from there                   | Input checks done (J4); code matching to do |
+| `extensions/README.md`                     | The plugin's commands and release steps                                                                                  | Done (J0)                                   |
+| `docs-site/docs/reference/`                | A JetBrains plugin page, and a student guide                                                                             | Drafted (J2)                                |
+| `release.yml`, `branch-build.yml`          | Check that a `jetbrains-v*` tag cannot release the action                                                                | Done (J0)                                   |
+| `.devcontainer/`                           | A JDK                                                                                                                    | Done (J0)                                   |
+| `.prettierignore`, `pnpm lint`             | Leave out `extensions/jetbrains/build/`. Kotlin is linted by Gradle                                                      | Done (J0)                                   |
+| `extensions/fixtures/README.md`            | Says that a layout change now means a reader in each editor                                                              | Done (J1)                                   |
+| `vscode-extension-checks.yml`              | Does not run for changes to the plugin alone                                                                             | Done (J0)                                   |
 
 ---
 

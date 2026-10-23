@@ -1,0 +1,19 @@
+{
+  "description": "The workflow file the cases fill in: {on} is a case's `on`, or the default below, and {inputs} its `inputs`, each indented to the step's `with` block.",
+  "defaultOn": "on: push",
+  "inputIndent": "          ",
+  "lines": [
+    "{on}",
+    "jobs:",
+    "  generate-questions:",
+    "    runs-on: ubuntu-latest",
+    "    steps:",
+    "      - uses: actions/checkout@v6",
+    "        with:",
+    "          fetch-depth: 0",
+    "      - uses: NSCC-ITC-Assessment/GrillMyCode@v0",
+    "        with:",
+    "{inputs}",
+    ""
+  ]
+}

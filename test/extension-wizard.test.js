@@ -190,3 +190,51 @@ describe("the Wizard's workflow under the extension's checks", () => {
     expect(checkWorkflow(yaml)).toEqual([]);
   });
 });
+
+// The JetBrains plugin shows the same bundle in JCEF, where there is no VS
+// Code. Its page runs wizard-bridge.js first, which gives the page's half of
+// the host (host.js) the one call it makes of VS Code.
+describe("the JetBrains plugin's page", () => {
+  const host = read(...WEBVIEW, 'host.js');
+  const bridge = read('extensions', 'jetbrains', 'src', 'main', 'resources', 'wizard-bridge.js');
+
+  it('asks of VS Code only what the bridge gives', () => {
+    expect([...host.matchAll(/\bacquireVsCodeApi\(\)/g)]).toHaveLength(1);
+    const calls = [...host.matchAll(/\beditor\.(\w+)/g)].map(([, call]) => call);
+    expect(new Set(calls)).toEqual(new Set(['postMessage']));
+    // Answers arrive as `message` events on the window.
+    expect(host).toContain("window.addEventListener('message'");
+  });
+
+  it('sends each message as JSON, and hands back each answer as an event', () => {
+    /** @type {string[]} */
+    const sent = [];
+    /** @type {unknown[]} */
+    const received = [];
+    const window = {
+      dispatchEvent: (/** @type {{ data: unknown }} */ event) => received.push(event.data),
+    };
+    class MessageEvent {
+      /** @param {string} type @param {{ data: unknown }} init */
+      constructor(type, { data }) {
+        expect(type).toBe('message');
+        this.data = data;
+      }
+    }
+    const run = new Function(
+      'window',
+      'MessageEvent',
+      'sent',
+      bridge.replace('SEND_REQUEST', 'sent.push(request)'),
+    );
+    run(window, MessageEvent, sent);
+    window.acquireVsCodeApi().postMessage({ type: 'list', id: 2, path: 'src' });
+    expect(sent.map((text) => JSON.parse(text))).toEqual([{ type: 'list', id: 2, path: 'src' }]);
+    window.gmcReceive({ id: 2, ok: true, value: [] });
+    expect(received).toEqual([{ id: 2, ok: true, value: [] }]);
+  });
+
+  it('has the one place the plugin writes its call into', () => {
+    expect(bridge.match(/SEND_REQUEST/g)).toHaveLength(1);
+  });
+});

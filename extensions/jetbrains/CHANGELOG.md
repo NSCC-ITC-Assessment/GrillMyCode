@@ -5,6 +5,18 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
+### Added
+
+- Help with the GrillMyCode step of a workflow file, as the VS Code extension
+  gives it: problems with its inputs marked as you type, the inputs and the
+  values of an input offered, and each input's description. Switch it off with
+  the **GrillMyCode step inputs** inspection, under **Settings | Editor |
+  Inspections | GrillMyCode**.
+- **Tools | GrillMyCode | Open Workflow Wizard** opens the docs site's
+  Workflow Wizard in an editor tab. It tries your choice of files on the
+  project's folder, and writes the workflow file in it. Where the IDE cannot
+  show a web page in a tab, it opens the Wizard on grillmycode.org.
+
 ## [0.2.0]
 
 ### Added

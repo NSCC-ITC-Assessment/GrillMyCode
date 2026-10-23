@@ -24,6 +24,10 @@ The plugin doesn't write questions and doesn't show students the answers.
 
 If you keep a [private answer key](instructor-setup.md), open a student's repository and sign in: each question comes with its answer, beside the student's code. Students never see this. In your own test repository, a button switches between the students' view and yours.
 
+The [Workflow Wizard](../workflow-wizard.mdx) opens inside your JetBrains IDE too: select **Tools | GrillMyCode | Open Workflow Wizard**. There it can try your choice of files on the project's folder, and create the workflow file in it for you.
+
+When you edit your workflow file in a JetBrains IDE, the plugin marks a setting GrillMyCode would reject or ignore, before you push it.
+
 ## Approve the plugin for your organization
 
 Do this once, before your students sign in.
@@ -59,8 +63,7 @@ The plugin uses it to read the questions issue, and to ask GitHub whether the ac
 
 ## Good to know
 
-- **It doesn't help with your workflow file.** The [VS Code extension](vscode-extension.md) also opens the Workflow Wizard and checks your workflow file. The JetBrains plugin doesn't do these yet.
 - **It follows the branch the student has checked out.** With [submission tags](choosing-a-trigger.md#submission-tag) a repository can hold several sets of questions, and the student can choose which one to see.
 - **Questions arrive on their own** while the IDE is open and the tool window has been opened once. After a later push, the plugin says a newer set has arrived, and the list changes when the student asks for it.
 
-**Go deeper:** [The JetBrains plugin](../reference/jetbrains-plugin.md): which repository and set of questions it reads, when it loads again, opening a question's code, the instructor view, and what the sign-in is used for
+**Go deeper:** [The JetBrains plugin](../reference/jetbrains-plugin.md): which repository and set of questions it reads, when it loads again, opening a question's code, the instructor view, what it checks in a workflow file, the Workflow Wizard in the IDE, and what the sign-in is used for

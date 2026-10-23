@@ -79,13 +79,23 @@ jobs:
         with:
           cache-read-only: true
 
-      - name: Check and verify
-        working-directory: extensions/jetbrains
-        run: ./gradlew check verifyPluginProjectConfiguration verifyPluginStructure verifyPlugin
+      # The Workflow Wizard's page is the VS Code extension's bundle, built by
+      # its esbuild.js (build.gradle.kts), so its packages are installed too.
+      - uses: pnpm/action-setup@v6
 
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      - name: Install the VS Code extension's packages
+        working-directory: extensions/vscode
+        run: pnpm install --frozen-lockfile
+
+      - name: Check and verify
+        working-directory: extensions/jetbrains
+        run: ./gradlew check verifyPluginProjectConfiguration verifyPluginStructure verifyPlugin
 
       # Only commits that touched the plugin, since its previous release.
       - name: Write the release notes
@@ -138,6 +148,20 @@ jobs:
       - uses: gradle/actions/setup-gradle@v6
         with:
           cache-read-only: true
+
+      # The Workflow Wizard's page is the VS Code extension's bundle, built by
+      # its esbuild.js (build.gradle.kts), so its packages are installed too.
+      - uses: pnpm/action-setup@v6
+
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: "pnpm"
+          cache-dependency-path: extensions/vscode/pnpm-lock.yaml
+
+      - name: Install the VS Code extension's packages
+        working-directory: extensions/vscode
+        run: pnpm install --frozen-lockfile
 
       # Builds the same commit the build job checked, signs it and uploads it
       # to the channel the version names.

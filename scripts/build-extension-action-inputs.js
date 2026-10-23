@@ -1,7 +1,11 @@
-// Writes what the VS Code extension knows about the action's inputs to
-// extensions/vscode/src/shared/action-inputs.js, so its workflow help
-// (completion, hover text and checks in a workflow file) describes the inputs
-// the action declares, not a second list kept by hand.
+// Writes what the editor extensions know about the action's inputs, so their
+// workflow help (completion, hover text and checks in a workflow file)
+// describes the inputs the action declares, not a second list kept by hand:
+//
+//   extensions/vscode/src/shared/action-inputs.js        the VS Code extension's
+//   extensions/jetbrains/src/main/resources/action-inputs.json  the JetBrains plugin's
+//
+// Both hold the same data.
 //
 // Each input's description, default and required flag come from action.yml.
 // What a value may be comes from RULES below, which names the constants
@@ -11,7 +15,7 @@
 // src/inputs.js reads an input:
 //   node scripts/build-extension-action-inputs.js
 //
-// A test checks the committed file against action.yml and src/constants.js.
+// A test checks the committed files against action.yml and src/constants.js.
 
 import { readFileSync, writeFileSync } from 'fs';
 import { fileURLToPath } from 'url';
@@ -45,6 +49,16 @@ export const OUT_PATH = join(
   'src',
   'shared',
   'action-inputs.js',
+);
+export const JSON_OUT_PATH = join(
+  __dirname,
+  '..',
+  'extensions',
+  'jetbrains',
+  'src',
+  'main',
+  'resources',
+  'action-inputs.json',
 );
 
 const BANNER = `// GENERATED FILE — do not edit. This is what action.yml declares for each
@@ -180,12 +194,27 @@ export function buildActionInputs(actionYaml) {
   return inputs;
 }
 
-// Run directly (not imported by the test): write the file, formatted as
-// `pnpm format:check` expects it.
+/**
+ * Writes `source` to `path`, formatted as `pnpm format:check` expects it.
+ *
+ * @param {string} path
+ * @param {string} source
+ */
+async function writeFormatted(path, source) {
+  const options = await resolveConfig(path);
+  writeFileSync(path, await format(source, { ...options, filepath: path }));
+}
+
+// Run directly (not imported by the test): write both files.
 if (process.argv[1] && resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const built = buildActionInputs(readFileSync(ACTION_PATH, 'utf-8'));
-  const source = `${BANNER}/** @type {Record<string, ActionInput>} */\nexport const ACTION_INPUTS = ${JSON.stringify(built)};\n`;
-  const options = await resolveConfig(OUT_PATH);
-  writeFileSync(OUT_PATH, await format(source, { ...options, filepath: OUT_PATH }));
-  console.log(`Wrote ${OUT_PATH} (${Object.keys(built).length} inputs)`);
+  const count = Object.keys(built).length;
+  await writeFormatted(
+    OUT_PATH,
+    `${BANNER}/** @type {Record<string, ActionInput>} */\nexport const ACTION_INPUTS = ${JSON.stringify(built)};\n`,
+  );
+  console.log(`Wrote ${OUT_PATH} (${count} inputs)`);
+  // JSON has no comments, so the warning not to edit it is the README's.
+  await writeFormatted(JSON_OUT_PATH, JSON.stringify(built));
+  console.log(`Wrote ${JSON_OUT_PATH} (${count} inputs)`);
 }

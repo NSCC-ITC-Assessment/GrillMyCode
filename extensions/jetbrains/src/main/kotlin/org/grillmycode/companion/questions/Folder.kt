@@ -1,8 +1,9 @@
 package org.grillmycode.companion.questions
 
-import com.intellij.openapi.application.ReadAction
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.fileEditor.FileDocumentManager
 import com.intellij.openapi.project.Project
+import com.intellij.openapi.util.Computable
 import com.intellij.openapi.util.io.FileUtil
 import com.intellij.openapi.vcs.changes.ChangeListManager
 import com.intellij.openapi.vfs.VfsUtilCore
@@ -11,6 +12,13 @@ import git4idea.repo.GitRepositoryManager
 
 // The repository's state, as the moved-code warning reads it: a port of
 // changedFiles in extensions/vscode/src/student/git.js.
+
+/**
+ * Runs [compute] in a read action, which the IDE wants around any look at a
+ * file, a document or the VCS's state. Application.runReadAction, not
+ * ReadAction.compute, which 2026.3 deprecates for a call 2025.1 does not have.
+ */
+internal fun <T> read(compute: () -> T): T = ApplicationManager.getApplication().runReadAction(Computable { compute() })
 
 /**
  * The full SHA the repository at [root] is at, or null when Git has not said
@@ -30,7 +38,7 @@ fun changedFiles(
     project: Project,
     root: VirtualFile,
 ): List<String> =
-    ReadAction.compute<List<String>, RuntimeException> {
+    read {
         val changed =
             ChangeListManager.getInstance(project).allChanges.mapNotNull { change ->
                 val path = (change.afterRevision ?: change.beforeRevision)?.file?.path ?: return@mapNotNull null

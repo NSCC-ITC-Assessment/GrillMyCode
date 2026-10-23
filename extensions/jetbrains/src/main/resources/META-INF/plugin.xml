@@ -21,13 +21,17 @@
             <li><b>New questions</b> announced when they arrive after a push.</li>
             <li><b>For instructors</b>, each question's answer from the private answer key, beside the
             student's code. Students never see it.</li>
+            <li><b>Help with the workflow file</b>: problems with the GrillMyCode step's settings marked as
+            you type, and its settings and their values offered and described.</li>
+            <li><b>The Workflow Wizard</b> in an editor tab, which tries your choice of files on the project and
+            writes the workflow file for you.</li>
         </ul>
         <p>To start, open a clone of your assignment repository, open the <b>GrillMyCode</b> tool window,
         and sign in to GitHub. If your school's GitHub organization restricts apps, an owner approves
         GrillMyCode Companion once.</p>
         <p>The plugin reads your repository's questions issue, and asks GitHub whether your account can
         read the assignment's answer key, which a student's cannot. It writes nothing to GitHub and
-        collects no usage data. See
+        collects no usage data. The Workflow Wizard asks OpenRouter for its public list of models. See
         <a href="https://grillmycode.org/docs/guides/jetbrains-plugin-students">Your questions in
         JetBrains IDEs</a>.</p>
     ]]></description>
@@ -36,11 +40,14 @@
     <depends>com.intellij.modules.platform</depends>
     <!-- The bundled Git plugin, for the repository's remotes and branch. -->
     <depends>Git4Idea</depends>
+    <!-- The bundled YAML plugin, for the workflow help in workflow files. -->
+    <depends optional="true" config-file="grillmycode-yaml.xml">org.jetbrains.plugins.yaml</depends>
 
     <extensions defaultExtensionNs="com.intellij">
         <notificationGroup id="GrillMyCode" displayType="BALLOON"/>
         <toolWindow id="GrillMyCode" anchor="right" icon="/icons/toolWindow.svg"
                     factoryClass="org.grillmycode.companion.questions.QuestionsToolWindowFactory"/>
+        <fileEditorProvider implementation="org.grillmycode.companion.wizard.WizardEditorProvider"/>
     </extensions>
 
     <actions>
@@ -64,6 +71,10 @@
             <action id="GrillMyCode.ChooseIssue" class="org.grillmycode.companion.questions.ChooseIssueAction"
                     text="Choose Which Questions to Show…" icon="AllIcons.Vcs.Branch"
                     description="Show the GrillMyCode questions of another branch or submission tag"/>
+            <separator/>
+            <action id="GrillMyCode.OpenWorkflowWizard" class="org.grillmycode.companion.wizard.OpenWorkflowWizardAction"
+                    text="Open Workflow Wizard"
+                    description="Answer a few questions and get a GrillMyCode workflow file for your assignment"/>
             <separator/>
             <action id="GrillMyCode.SignIn" class="org.grillmycode.companion.auth.SignInAction"
                     text="Sign In to GitHub…"
