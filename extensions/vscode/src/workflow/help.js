@@ -117,9 +117,14 @@ export class WorkflowHelp {
       // is left to it.
       vscode.extensions.onDidChange(() => this.#checkAll()),
     );
-    // A workflow file added, removed or saved from outside the editor.
+    // A workflow file added, removed, renamed or saved, in the editor or, for
+    // the watcher, by anything else, such as switching branches.
     const watcher = vscode.workspace.createFileSystemWatcher(WORKFLOW_FILES.pattern);
     this.#disposables.push(
+      vscode.workspace.onDidCreateFiles(() => this.#checkAllSoon()),
+      vscode.workspace.onDidDeleteFiles(() => this.#checkAllSoon()),
+      vscode.workspace.onDidRenameFiles(() => this.#checkAllSoon()),
+      vscode.workspace.onDidSaveTextDocument(() => this.#checkAllSoon()),
       watcher,
       watcher.onDidCreate(() => this.#checkAllSoon()),
       watcher.onDidDelete(() => this.#checkAllSoon()),

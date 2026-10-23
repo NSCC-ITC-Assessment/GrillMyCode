@@ -127,14 +127,22 @@ describe('GrillMyCode workflow help', () => {
   // A copy of the file left with the same name files under the same question set.
   it('warns about another workflow file with the same question set', async () => {
     const copy = vscode.Uri.joinPath(document.uri, '..', 'copy.yml');
-    await vscode.workspace.fs.writeFile(copy, new TextEncoder().encode(document.getText()));
+    const create = new vscode.WorkspaceEdit();
+    create.createFile(copy, { contents: new TextEncoder().encode(document.getText()) });
+    assert.ok(await vscode.workspace.applyEdit(create));
     const shared = await until(
       () => problems().find((problem) => problem.code === 'shared-question-set'),
       'the shared question set',
     );
     assert.strictEqual(shared.severity, vscode.DiagnosticSeverity.Warning);
     assert.match(shared.message, /"\.github\/workflows\/copy\.yml" files its questions/);
-    await vscode.workspace.fs.delete(copy);
+    // A throwaway folder may be on a disk with no trash to move the file to.
+    const files = vscode.workspace.getConfiguration('files');
+    await files.update('enableTrash', false, vscode.ConfigurationTarget.Workspace);
+    const remove = new vscode.WorkspaceEdit();
+    remove.deleteFile(copy);
+    assert.ok(await vscode.workspace.applyEdit(remove));
+    await files.update('enableTrash', undefined, vscode.ConfigurationTarget.Workspace);
     await until(() => problems().length === 1, 'the warning to go');
   });
 
