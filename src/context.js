@@ -12,6 +12,7 @@ import {
   GIT_EMPTY_TREE_SHA,
   GIT_SHA_SHORT_LENGTH,
   SUBMISSION_TAG_GROUP_FALLBACK,
+  TAG_RANGE_SEPARATOR,
 } from './constants.js';
 import {
   getLeadingSkipCandidates,
@@ -43,6 +44,11 @@ import { findMatchingTagPattern, namedDiffBaseTag, pickPreviousSubmissionTag } f
  * names the tag object rather than the commit — and with tag_diff_base set to
  * previous-tag the base moves up to the nearest earlier submission tag, and
  * with tag:<name> to that tag, failing the run if it cannot be used.
+ *
+ * tag_range applies whatever started the run and takes precedence over
+ * tag_diff_base: the base is its first tag, and the head its second, or the
+ * commit the run started on when it names none. A tag it needs and cannot use
+ * fails the run.
  *
  * Returns { baseSha, headSha, previousTag, skippedRange }, where previousTag is
  * the { name, commit } the base was moved to, or null, and skippedRange is the
@@ -94,9 +100,13 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // that is about to be discarded. base_sha cannot move up here in the same
   // way: it is documented as taking precedence over starter_code,
   // so it has to be applied after that block has had its say.
-  if (tagName) {
+  if (inputs.tagRange?.to) {
+    headSha = overrideHead ?? resolveRangeTag(inputs.tagRange, inputs.tagRange.to);
+  } else if (tagName || inputs.tagRange) {
     // A tag push or a manual run started on a tag. Push payloads carry the
-    // pushed object in `after`; a dispatch carries the commit in ctx.sha.
+    // pushed object in `after`; a dispatch carries the commit in ctx.sha. A
+    // tag_range with no end tag comes here too, since its run may have started
+    // on a tag, and peeling a commit gives that commit.
     const eventSha = event === 'push' ? ctx.payload.after : ctx.sha;
     headSha = overrideHead ?? sanitiseSha(peelToCommit(sanitiseSha(eventSha)));
   } else if (event === 'push') {
@@ -126,7 +136,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // empty tree, so it is the tighter of the two whenever one exists.
   /** @type {{ name: string, commit: string } | null} */
   let previousTag = null;
-  if (tagName && inputs.tagDiffBase === 'previous-tag') {
+  if (tagName && !inputs.tagRange && inputs.tagDiffBase === 'previous-tag') {
     previousTag = pickPreviousSubmissionTag({
       tags: listTags(),
       ancestors: listAncestors(headSha),
@@ -154,7 +164,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // range. Skipped when base_sha is set, since that override wins anyway and a
   // missing tag should not fail a run that would never use it.
   const namedTag = namedDiffBaseTag(inputs.tagDiffBase);
-  if (tagName && namedTag && !inputs.baseSha) {
+  if (tagName && namedTag && !inputs.tagRange && !inputs.baseSha) {
     const commit = resolveTagCommit(namedTag);
     if (!commit) {
       throw new Error(
@@ -183,6 +193,34 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
     core.info(
       `tag_diff_base is ${inputs.tagDiffBase}: base set to ` +
         `${commit.substring(0, GIT_SHA_SHORT_LENGTH)}, so only work since that tag is assessed.`,
+    );
+  }
+
+  // ── Apply tag_range ────────────────────────────────────────────────────────
+  // As with tag:<name>, there is no fallback, and base_sha skips it so a missing
+  // tag does not fail a run that would never use it.
+  if (inputs.tagRange && !inputs.baseSha) {
+    const { from } = inputs.tagRange;
+    const commit = resolveRangeTag(inputs.tagRange, from);
+    const range = tagRangeText(inputs.tagRange);
+    if (commit === headSha) {
+      throw new Error(
+        `tag_range is "${range}", but tag "${from}" is on the commit being assessed ` +
+          `(${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}), so there is no work since it to assess.`,
+      );
+    }
+    if (!isAncestor(commit, headSha)) {
+      throw new Error(
+        `tag_range is "${range}", but tag "${from}" (${commit.substring(0, GIT_SHA_SHORT_LENGTH)}) ` +
+          `is not an earlier commit in the history of ${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}, ` +
+          `so the work since it cannot be worked out.`,
+      );
+    }
+    previousTag = { name: from, commit };
+    baseSha = commit;
+    core.info(
+      `tag_range is ${range}: assessing ${commit.substring(0, GIT_SHA_SHORT_LENGTH)}..` +
+        `${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}.`,
     );
   }
 
@@ -240,6 +278,31 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   }
 
   return { baseSha, headSha, previousTag, skippedRange };
+}
+
+/** A parsed tag_range as the workflow wrote it, for messages. */
+function tagRangeText({ from, to }) {
+  return `${from}${TAG_RANGE_SEPARATOR}${to}`;
+}
+
+/**
+ * The commit one of tag_range's tags points at. Throws when there is no such
+ * tag: an assessment of a wider range than the workflow names would look like
+ * the one it asked for.
+ *
+ * @param {{ from: string, to: string }} tagRange
+ * @param {string} name
+ */
+function resolveRangeTag(tagRange, name) {
+  const commit = resolveTagCommit(name);
+  if (!commit) {
+    throw new Error(
+      `tag_range is "${tagRangeText(tagRange)}", but there is no tag "${name}" in this ` +
+        `repository. Check the tag name, that the student has pushed it, and that the checkout ` +
+        `step sets fetch-depth: 0 so tags are fetched.`,
+    );
+  }
+  return sanitiseSha(commit);
 }
 
 /**
