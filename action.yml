@@ -424,6 +424,20 @@ inputs:
     required: false
     default: "cumulative"
 
+  tag_range:
+    description: >
+      The tags that mark the work to assess, whatever started the run. Write it
+      as "<from tag>..<to tag>", e.g. "phase1..phase2", to assess the work after
+      the first tag up to the second, or as "<from tag>..", e.g. "phase1..", to
+      assess the work after that tag up to the commit the run started on. Names
+      are case-sensitive and need not be in submission_tags. The run fails if a
+      tag is missing, if the first tag is not an earlier commit than the end of
+      the range, or if the second tag is not on the default branch. Takes
+      precedence over tag_diff_base; base_sha and head_sha take precedence over
+      this.
+    required: false
+    default: ""
+
   question_set:
     description: >
       The set of questions this workflow makes, kept apart from any other

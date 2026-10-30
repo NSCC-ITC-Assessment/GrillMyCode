@@ -778,6 +778,12 @@ export const TAG_DIFF_BASE_NAMED_PREFIX = 'tag:';
 export const DEFAULT_TAG_DIFF_BASE = 'cumulative';
 
 /**
+ * What separates the two tags of a tag_range value, as in "phase1..phase2". A
+ * tag name may not contain it (see isSafeTagName), so a value splits one way.
+ */
+export const TAG_RANGE_SEPARATOR = '..';
+
+/**
  * Name a tag group's PDF and instructor-repository folder are filed under when
  * its pattern has no filename-safe characters at all (e.g. a bare `**`).
  */

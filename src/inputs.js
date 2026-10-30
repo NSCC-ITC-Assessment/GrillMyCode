@@ -35,6 +35,7 @@ import {
   DEFAULT_STARTER_QUESTIONS_ONE_IN,
   MIN_STARTER_QUESTIONS_ONE_IN,
   QUESTION_SET_MAX_CHARS,
+  TAG_RANGE_SEPARATOR,
 } from './constants.js';
 import { questionSetSlug } from './context.js';
 import { patternProblem, splitPatternList, splitStackTemplates } from './file-selection.js';
@@ -119,6 +120,41 @@ function readTagDiffBase() {
     );
   }
   return value;
+}
+
+/**
+ * Reads tag_range: "<from>..<to>", or "<from>.." for no end tag, in which case
+ * `to` is ''. Returns null when the input is empty. Tag names keep their case,
+ * as in tag_diff_base. Three dots are rejected rather than split: a tag name may
+ * start or end with a dot, so "v1...v2" could be read two ways, and it means
+ * something else to git.
+ *
+ * @returns {{ from: string, to: string } | null}
+ */
+function readTagRange() {
+  const raw = core.getInput('tag_range').trim();
+  if (!raw) return null;
+  const parts = raw.split(TAG_RANGE_SEPARATOR).map((part) => part.trim());
+  const [from, to] = parts;
+  if (
+    parts.length !== 2 ||
+    raw.includes(`${TAG_RANGE_SEPARATOR}.`) ||
+    !isSafeTagName(from) ||
+    (to !== '' && !isSafeTagName(to))
+  ) {
+    throw new Error(
+      `tag_range "${raw}" is not a usable range. Write it as ` +
+        `"<from tag>${TAG_RANGE_SEPARATOR}<to tag>", e.g. "phase1${TAG_RANGE_SEPARATOR}phase2", or ` +
+        `"<from tag>${TAG_RANGE_SEPARATOR}" for everything since that tag; a name may use ` +
+        'letters, digits and . _ / - but no wildcards.',
+    );
+  }
+  if (from === to) {
+    throw new Error(
+      `tag_range "${raw}" starts and ends at the same tag, so there is no work to assess.`,
+    );
+  }
+  return { from, to };
 }
 
 /**
@@ -420,6 +456,7 @@ export function readInputs() {
     })(),
     submissionTags: readSubmissionTags(),
     tagDiffBase: readTagDiffBase(),
+    tagRange: readTagRange(),
     questionSet: readQuestionSet(),
     baseSha: core.getInput('base_sha') || '',
     headSha: core.getInput('head_sha') || '',

@@ -256,6 +256,12 @@ export const ACTION_INPUTS = {
     values: ['cumulative', 'previous-tag'],
     prefix: 'tag:',
   },
+  tag_range: {
+    description:
+      'The tags that mark the work to assess, whatever started the run. Write it as "<from tag>..<to tag>", e.g. "phase1..phase2", to assess the work after the first tag up to the second, or as "<from tag>..", e.g. "phase1..", to assess the work after that tag up to the commit the run started on. Names are case-sensitive and need not be in submission_tags. The run fails if a tag is missing, if the first tag is not an earlier commit than the end of the range, or if the second tag is not on the default branch. Takes precedence over tag_diff_base; base_sha and head_sha take precedence over this.',
+    default: '',
+    required: false,
+  },
   question_set: {
     description:
       'The set of questions this workflow makes, kept apart from any other workflow\'s in the same repository. Each set has its own assessment issue, PDF and instructor-repo folder ({student}/set.<name>/). The Workflow Wizard sets it to the workflow\'s name, from the github.workflow context. The folder name is the value in lower case, with each run of characters other than letters, digits, - and _ made a single -, so "Lab 3" and "lab-3" are one set. Empty, or "GrillMyCode", is no set: the issue, PDF and folder carry no set name. The run fails if the value is over 100 characters, or has no letter, digit, - or _.',
