@@ -223,7 +223,7 @@ on:
 
 Names are case-sensitive and can't use wildcards. They don't need to be in `submission_tags`. In the Workflow Wizard, this is **Assess only the work between two tags**, with **From tag** and **To tag** fields, on the *Push, PR Merge, or Manual* and *Manual only* triggers.
 
-Students create the tags, so put the names and the commands in the assignment instructions. The range is fixed in the workflow file, so changing it takes a commit, or a separate workflow for each range. It can't be a field on the run form; see [Settings to keep out of the form](#settings-to-keep-out-of-the-form).
+Students create the tags, so put the names and the commands in the assignment instructions. The range is fixed in the workflow file, so changing it takes a commit, or a separate workflow for each range. It can't be a field on the run form; see [Settings to keep out of the form](#settings-to-keep-out-of-the-form). For a complete workflow, see the [Assess between two tags](../example-workflows/12-tag-range.md) recipe.
 
 ### When a tag range fails the run
 
