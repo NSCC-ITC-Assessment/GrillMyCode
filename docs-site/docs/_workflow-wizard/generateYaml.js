@@ -222,7 +222,8 @@ export function namedDiffBaseTagError(cfg) {
 
 /**
  * Whether the workflow can set a tag range. A submission tag trigger already
- * has an end, the tag that was pushed, and chooses its start with tag_diff_base.
+ * has an end, the tag that was pushed, and tag_diff_base's tag:<name> gives the
+ * same range, while staying on the run form as an override.
  *
  * @param {WizardConfig} cfg
  */

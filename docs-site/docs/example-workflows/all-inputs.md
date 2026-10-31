@@ -283,8 +283,9 @@ jobs:
 
           # Assesses only the work between two tags, whatever starts the run:
           # "phase1..phase2", or "phase1.." for everything since that tag. The
-          # run fails if a tag is missing or not usable. With this set, no run
-          # is a submission, so the two inputs above have no effect.
+          # run fails if a tag is missing or not usable. On a submission tag run,
+          # that tag ends the range, so write only the first. Takes precedence
+          # over tag_diff_base.
           # tag_range: "phase1..phase2"
 
           # Manually override the base and/or head commit SHA.

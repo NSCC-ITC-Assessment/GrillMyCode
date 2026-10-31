@@ -109,8 +109,9 @@ Steps run from the student repositories, through what the AI should know about t
   `namedDiffBaseTagError` mirrors the action's `isSafeTagName` and blocks the step on an empty or
   unusable name
 - `tag_range` is emitted as `<from>..<to>` by `tagRangeValue(cfg)`, on the push and manual-only
-  triggers alone (`offersTagRange`): a submission tag run already has an end, the pushed tag. It
-  changes nothing under `on:`. `tagRangeError` mirrors the action's `readTagRange` and blocks the
+  triggers alone (`offersTagRange`): a submission tag run already has an end, the pushed tag, and
+  the "Only work since a tag you name" radio gives the same result while keeping `tag_diff_base`
+  on the run form. It changes nothing under `on:`. `tagRangeError` mirrors the action's `readTagRange` and blocks the
   Trigger step on a name it rejects, an end tag with no start tag, or the same tag at both ends;
   `test/wizard-tag-range.test.js` compares the two. It is not a dispatch override, since it
   narrows what gets assessed, like `base_sha`. The Review step's checklist tells the instructor

@@ -405,8 +405,9 @@ inputs:
       fails unless the tag matches one of these entries and points at a commit
       on the default branch. Each entry is its own delivery group: it has one
       assessment issue, one PDF and one instructor-repo folder, so phase1 and
-      phase2 are kept apart. Ignored on runs not started by a tag, and on runs
-      with tag_range set.
+      phase2 are kept apart. Ignored on runs not started by a tag. With
+      tag_range set, a tag that matches no entry does not fail the run: it is
+      filed under a branch instead.
     required: false
     default: ""
 
@@ -420,8 +421,8 @@ inputs:
       the cumulative base. "tag:<name>" (e.g. "tag:phase1") starts the diff at
       that tag, which need not be in submission_tags; the name is
       case-sensitive. The run fails if the tag is missing, is not an earlier
-      commit, or is on the assessed commit. A manual base_sha takes precedence
-      over all three. Ignored on runs not started by a tag.
+      commit, or is on the assessed commit. A manual base_sha and tag_range take
+      precedence over all three. Ignored on runs not started by a tag.
     required: false
     default: "cumulative"
 
@@ -434,10 +435,12 @@ inputs:
       are case-sensitive and need not be in submission_tags. The run fails if a
       tag is missing, if the first tag is not an earlier commit than the end of
       the range, or if the range ends at a tag that is not on the default
-      branch. A run with this set is not a submission, even when started by a
-      tag: it is filed under the default branch when the range ends at a tag,
-      and otherwise under the branch it ran on. Takes precedence over
-      tag_diff_base; base_sha and head_sha take precedence over this.
+      branch. A run started on a tag in submission_tags is a submission, as it
+      is without this: that tag ends the range, and the run fails if a second
+      tag names another. Any other run is filed under the default branch when
+      the range ends at a tag, and otherwise under the branch it ran on. Takes
+      precedence over tag_diff_base; base_sha and head_sha take precedence over
+      this.
     required: false
     default: ""
 

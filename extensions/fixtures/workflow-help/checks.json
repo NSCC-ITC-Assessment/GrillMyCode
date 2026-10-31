@@ -1124,17 +1124,35 @@
       ]
     },
     {
-      "name": "submission_tags has no effect beside a tag_range",
+      "name": "submission_tags applies beside a tag_range with no end tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..",
+        "submission_tags: phase2, final"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a tag_range may end at the one submission tag",
       "inputs": [
         "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
         "tag_range: phase1..phase2",
-        "submission_tags: phase1"
+        "submission_tags: phase2"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a tag_range with an end tag fails on any other submission tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..phase2",
+        "submission_tags: phase2, final"
       ],
       "problems": [
         {
-          "severity": "info",
-          "code": "no-effect",
-          "text": "submission_tags"
+          "severity": "warning",
+          "code": "tag-range-end",
+          "text": "phase1..phase2"
         }
       ]
     },

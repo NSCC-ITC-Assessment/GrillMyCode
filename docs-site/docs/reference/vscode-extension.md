@@ -212,12 +212,13 @@ Some checks compare one input with another, or with the rest of the workflow:
 | No `api_key`, unless `preview_only` is set | Error |
 | A workflow that runs on `on.push.tags` with neither `submission_tags` nor `tag_range` | Error |
 | `submission_tags` and `on.push.tags` that list different entries | Warning |
+| A `tag_range` with a second tag, beside `submission_tags` that lists any other | Warning |
 | `api_key`, `instructor_repo_token` or `github_token` written into the file, or read from a workflow input | Warning |
 | `label_repos` with no `instructor_repo_token` | Warning |
 | `starter_questions_one_in` when `starter_code` is not `ask` | Information |
 | `previous_work` when none of `tag_diff_base`, `tag_range` or `base_sha` gives the run earlier work | Information |
 | `tag_diff_base` with no `submission_tags` | Information |
-| `submission_tags` or `tag_diff_base` beside a `tag_range` | Information |
+| `tag_diff_base` beside a `tag_range` | Information |
 | `question_set: ${{ github.workflow }}` in a workflow with no `name:` | Information |
 
 One check compares the file with the other workflow files in its folder:

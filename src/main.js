@@ -32,6 +32,7 @@ import {
   assertOnDefaultBranch,
   resolveBranch,
   resolveSHAs,
+  resolveSubmissionRunTag,
   resolveSubmissionTag,
   resolveTagName,
   resolveTagRangeBranch,
@@ -573,7 +574,7 @@ function renderConfiguration(state) {
     ],
     ['Answers shown to student', `${i.includeAnswers ? '**YES**' : 'no'}${flag(i.includeAnswers)}`],
     ['Starter code', renderStarterCodeSetting(state)],
-    ...(state.tagName ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
+    ...(state.tagName && !i.tagRange ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
     ...(i.tagRange ? [['Tag range', `\`${tagRangeText(i.tagRange)}\``]] : []),
     // Earlier work exists only once the base moves past the first commit.
     ...(state.tagName || i.tagRange || i.baseSha
@@ -1240,9 +1241,7 @@ async function run() {
       core.info(`Tag "${startedOnTag}" was deleted — nothing to assess.`);
       return;
     }
-    // A run with a tag_range is not a submission, even when it started on a tag:
-    // the range says what it assesses, and it files under a branch.
-    const tagName = inputs.tagRange ? '' : startedOnTag;
+    const tagName = resolveSubmissionRunTag(startedOnTag, inputs);
     let tagSlug = '';
     if (tagName) {
       const submissionTag = resolveSubmissionTag(tagName, inputs.submissionTags);

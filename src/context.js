@@ -85,6 +85,16 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
     };
   }
 
+  // A submission's tag ends its range, so a second tag naming another commit
+  // would file that commit's work under this tag's group.
+  if (tagName && inputs.tagRange?.to && inputs.tagRange.to !== tagName && !overrideHead) {
+    throw new Error(
+      `tag_range is "${tagRangeText(inputs.tagRange)}", but this run is a submission under tag ` +
+        `"${tagName}", which ends the range. Leave out the second tag, as in ` +
+        `"${inputs.tagRange.from}${TAG_RANGE_SEPARATOR}".`,
+    );
+  }
+
   const event = ctx.eventName;
   let baseSha, headSha;
 
@@ -336,6 +346,21 @@ export function resolveTagName(ctx) {
 }
 
 /**
+ * The tag that makes this run a submission, or '' when it is not one. A run
+ * started on a tag is a submission when the tag is in submission_tags. Without a
+ * tag_range it must be, and resolveSubmissionTag fails the run if not; with one,
+ * the range says what to assess, so any other tag leaves an ordinary run.
+ *
+ * @param {string} startedOnTag
+ * @param {import('./inputs.js').Inputs} inputs
+ */
+export function resolveSubmissionRunTag(startedOnTag, inputs) {
+  if (!startedOnTag) return '';
+  if (inputs.tagRange && !findMatchingTagPattern(inputs.submissionTags, startedOnTag)) return '';
+  return startedOnTag;
+}
+
+/**
  * Matches a run's tag against submission_tags and returns the pattern it files
  * under, plus that pattern's filename-safe slug.
  *
@@ -417,7 +442,8 @@ export async function assertOnDefaultBranch(ctx, octokit, headSha, tagName) {
 }
 
 /**
- * The branch a run with a tag_range files under. A range that ends at a tag
+ * The branch a run with a tag_range files under, when it is not a submission
+ * (see resolveSubmissionRunTag). A range that ends at a tag
  * files under the default branch, and that tag must be on it, so a range's
  * assessment goes to the same place whichever ref the run was started from.
  * That tag is the range's own, or the one the run started on when it names none.

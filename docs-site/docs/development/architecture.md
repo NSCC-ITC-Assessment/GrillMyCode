@@ -42,7 +42,8 @@ resolveTagName() → resolveSubmissionTag()
     │  Only on a run started by a tag (a tag push, or a manual run on a tag)
     │  Matches the tag against submission_tags; no match fails the run
     │  The matched pattern names the delivery group (issue, PDF, instructor folder)
-    │  Skipped when tag_range is set: such a run is not a submission
+    │  With tag_range set, a tag that matches nothing leaves an ordinary run
+    │  (resolveSubmissionRunTag) rather than failing it
     │
 resolveSHAs()
     │  Determines baseSha and headSha from the event context
@@ -283,7 +284,7 @@ After event-specific resolution, `starter_code` overrides the base SHA: every va
 
 On a run started by a submission tag (`{ tagName }` passed as the fourth argument), the head is the tagged commit, peeled with `git rev-parse <sha>^{commit}` because an annotated tag's push names the tag object. With `tag_diff_base: previous-tag`, the base then moves to the nearest strict ancestor carrying a tag that matches any `submission_tags` pattern (`pickPreviousSubmissionTag` in `src/tags.js`); with none, the base above stands. With `tag_diff_base: tag:<name>`, the base moves to that tag instead (`resolveTagCommit` in `src/git.js`, looked up under `refs/tags/`), and the run throws if the tag is missing, is not an ancestor of the head, or is on the head itself; it is skipped when `base_sha` is set. The chosen tag is returned as `previousTag`.
 
-With `tag_range` (`inputs.tagRange`, `{ from, to }`), on any event, the head is the `to` tag's commit, or with no `to` the event's commit, peeled as above since the run may have started on a tag. The base is the `from` tag's commit. The run throws if a tag is missing, or if `from` is not an ancestor of the head or is on it. `tag_diff_base` is not applied. `from` is returned as `previousTag`, which nothing shows on a run with no `tagName`: `main.js` passes none when `tag_range` is set, so the run has no tag group and files under `resolveTagRangeBranch()`.
+With `tag_range` (`inputs.tagRange`, `{ from, to }`), on any event, the head is the `to` tag's commit, or with no `to` the event's commit, peeled as above since the run may have started on a tag. The base is the `from` tag's commit. The run throws if a tag is missing, or if `from` is not an ancestor of the head or is on it. `tag_diff_base` is not applied. `from` is returned as `previousTag`. A run that is a submission (`resolveSubmissionRunTag`) keeps its tag group, and throws if `to` names another tag; any other run has no `tagName`, so no tag group, and files under `resolveTagRangeBranch()`.
 
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
 

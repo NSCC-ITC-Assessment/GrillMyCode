@@ -463,16 +463,22 @@ private fun checkStep(
     // ── Submission tags ───────────────────────────────────────────────────────
 
     if (hasTagRange) {
-        // No run with a tag_range is a submission, so a tag on it needs no entry. A
-        // value worked out at run time might be empty, so only a written one is noted.
-        if (!literal("tag_range").isNullOrEmpty()) {
-            if (!unset("submission_tags")) {
-                at(
-                    place("submission_tags"),
+        // A tag that matches no submission_tags entry does not fail a run with a
+        // tag_range, so nothing here needs an entry. A value worked out at run time
+        // might be empty, so only a written one is checked.
+        val range = literal("tag_range")
+        if (!range.isNullOrEmpty()) {
+            // A submission's tag ends its range, so a second tag naming another fails it.
+            val end = if (tagRangeProblem(range) == "") range.split("..")[1].trim() else ""
+            if (end != "" && splitTagList(literal("submission_tags")).any { it != end }) {
+                atValue(
+                    set.getValue("tag_range"),
                     Finding(
-                        Severity.INFO,
-                        "no-effect",
-                        "submission_tags has no effect here: with tag_range set, no run is a submission.",
+                        Severity.WARNING,
+                        "tag-range-end",
+                        "tag_range ends at ${quote(end)}, but submission_tags lists other tags. A run " +
+                            "started by one of them is a submission that the tag itself ends, so it fails. " +
+                            "Leave out the second tag.",
                     ),
                 )
             }

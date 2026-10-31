@@ -477,15 +477,21 @@ function checkStep(step, { tagFilters, unknownInputs, workflowName, path, otherW
   // ── Submission tags ───────────────────────────────────────────────────────
 
   if (hasTagRange) {
-    // No run with a tag_range is a submission, so a tag on it needs no entry. A
-    // value worked out at run time might be empty, so only a written one is noted.
-    if (literal('tag_range')) {
-      if (!unset('submission_tags')) {
-        at(set.get('submission_tags') ?? stepItself, {
-          severity: 'info',
-          code: 'no-effect',
+    // A tag that matches no submission_tags entry does not fail a run with a
+    // tag_range, so nothing here needs an entry. A value worked out at run time
+    // might be empty, so only a written one is checked.
+    const range = literal('tag_range');
+    if (range) {
+      // A submission's tag ends its range, so a second tag naming another fails it.
+      const end = tagRangeProblem(range) === '' ? range.split('..')[1].trim() : '';
+      if (end && splitTagList(literal('submission_tags')).some((tag) => tag !== end)) {
+        atValue(/** @type {InputValue} */ (set.get('tag_range')), {
+          severity: 'warning',
+          code: 'tag-range-end',
           message:
-            'submission_tags has no effect here: with tag_range set, no run is a submission.',
+            `tag_range ends at ${quote(end)}, but submission_tags lists other tags. A run ` +
+            'started by one of them is a submission that the tag itself ends, so it fails. ' +
+            'Leave out the second tag.',
         });
       }
       if (diffBase && diffBase !== 'cumulative') {

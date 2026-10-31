@@ -3,7 +3,12 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveSHAs, resolveTagRangeBranch, tagRangeText } from '../src/context.js';
+import {
+  resolveSHAs,
+  resolveSubmissionRunTag,
+  resolveTagRangeBranch,
+  tagRangeText,
+} from '../src/context.js';
 import { findCodebaseContextFiles } from '../src/files.js';
 import { formatReport } from '../src/report.js';
 
@@ -372,5 +377,69 @@ describe('the report of a run with a tag_range', () => {
     const withRange = report({ tagName: '', previousTagName: 'phase1' });
     expect(withRange).not.toContain('Submission tag');
     expect(withRange).toBe(report({ tagName: '', previousTagName: '' }));
+  });
+});
+
+describe('a tag run with a tag_range', () => {
+  const withRange = (over = {}) => inputs('phase1', '', { submissionTags: ['phase*'], ...over });
+
+  it('is a submission when its tag is in submission_tags', () => {
+    expect(resolveSubmissionRunTag('phase2', withRange())).toBe('phase2');
+  });
+
+  it('is an ordinary run when its tag is not', () => {
+    expect(resolveSubmissionRunTag('draft', withRange())).toBe('');
+    expect(resolveSubmissionRunTag('phase2', withRange({ submissionTags: [] }))).toBe('');
+  });
+
+  it('is a submission whatever the tag without a tag_range, so a mismatch can fail', () => {
+    expect(resolveSubmissionRunTag('draft', withRange({ tagRange: null }))).toBe('draft');
+  });
+
+  it('is not a submission when no tag started it', () => {
+    expect(resolveSubmissionRunTag('', withRange())).toBe('');
+  });
+
+  it('assesses from the first tag to the tag that started it', async () => {
+    const { baseSha, headSha, previousTag } = await resolveSHAs(
+      dispatchCtx(commits.two),
+      octokit,
+      withRange(),
+      { tagName: 'phase2' },
+    );
+    expect(baseSha).toBe(commits.one);
+    expect(headSha).toBe(commits.two);
+    expect(previousTag).toEqual({ name: 'phase1', commit: commits.one });
+  });
+
+  it('may name its own tag as the end of the range', async () => {
+    const { headSha } = await resolveSHAs(
+      dispatchCtx(commits.two),
+      octokit,
+      inputs('phase1', 'phase2', { submissionTags: ['phase*'] }),
+      { tagName: 'phase2' },
+    );
+    expect(headSha).toBe(commits.two);
+  });
+
+  it('fails when a second tag names another commit', async () => {
+    await expect(
+      resolveSHAs(
+        dispatchCtx(commits.two),
+        octokit,
+        inputs('phase1', 'final', { submissionTags: ['phase*'] }),
+        { tagName: 'phase2' },
+      ),
+    ).rejects.toThrow(/submission under tag "phase2", which ends the range/);
+  });
+
+  it('lets head_sha replace the second tag', async () => {
+    const { headSha } = await resolveSHAs(
+      dispatchCtx(commits.two),
+      octokit,
+      inputs('phase1', 'final', { submissionTags: ['phase*'], headSha: commits.three }),
+      { tagName: 'phase2' },
+    );
+    expect(headSha).toBe(commits.three);
   });
 });
