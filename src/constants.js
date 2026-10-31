@@ -639,7 +639,7 @@ export const DEFAULT_STARTER_CODE = 'ignore';
  * Accepted values of the previous_work input: whether the student's own
  * earlier work that this submission did not touch is sent as background. It
  * exists only when the assessed range starts after the first commit
- * (tag_diff_base: previous-tag or tag:<name>, or base_sha).
+ * (tag_diff_base: previous-tag or tag:<name>, tag_range, or base_sha).
  */
 export const PREVIOUS_WORK_MODES = ['context', 'ignore'];
 

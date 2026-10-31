@@ -281,7 +281,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
 }
 
 /** A parsed tag_range as the workflow wrote it, for messages. */
-function tagRangeText({ from, to }) {
+export function tagRangeText({ from, to }) {
   return `${from}${TAG_RANGE_SEPARATOR}${to}`;
 }
 

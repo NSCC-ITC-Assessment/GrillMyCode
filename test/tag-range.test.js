@@ -3,7 +3,9 @@ import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveSHAs, resolveTagRangeBranch } from '../src/context.js';
+import { resolveSHAs, resolveTagRangeBranch, tagRangeText } from '../src/context.js';
+import { findCodebaseContextFiles } from '../src/files.js';
+import { formatReport } from '../src/report.js';
 
 // The range comes from what git says the tags point at, annotated tags
 // included, so these run against a throwaway repository rather than a mock.
@@ -322,5 +324,53 @@ describe('resolveTagRangeBranch', () => {
       commits.side,
     );
     expect(branch).toBe('main');
+  });
+});
+
+describe('tagRangeText', () => {
+  it('writes the range as the workflow did', () => {
+    expect(tagRangeText({ from: 'phase1', to: 'phase2' })).toBe('phase1..phase2');
+    expect(tagRangeText({ from: 'phase1', to: '' })).toBe('phase1..');
+  });
+});
+
+describe('earlier work on a run with a tag_range', () => {
+  it('finds the work before the first tag, and the starter code', () => {
+    const found = findCodebaseContextFiles({
+      baseSha: commits.one,
+      headSha: commits.two,
+      firstCommit: commits.first,
+      excludePatterns: [],
+      excludePatternOverrides: [],
+      caseInsensitivePatterns: [],
+      assessedFiles: ['two.txt'],
+      skippedRange: null,
+    });
+    expect(found.map(({ filepath, kind }) => [filepath, kind]).sort()).toEqual([
+      ['first.txt', 'starter'],
+      ['one.txt', 'earlier'],
+    ]);
+  });
+});
+
+// The report is a contract with the editor extensions (see
+// extensions/fixtures/README.md), and a range run is not a submission.
+describe('the report of a run with a tag_range', () => {
+  it('has no submission tag line, and names the branch as any branch run does', () => {
+    const report = (over) =>
+      formatReport({
+        questions: [],
+        files: ['two.txt'],
+        baseSha: commits.one,
+        headSha: commits.two,
+        provider: 'openrouter',
+        model: 'provider/model',
+        branchName: 'main',
+        questionSet: { name: '', slug: '' },
+        ...over,
+      });
+    const withRange = report({ tagName: '', previousTagName: 'phase1' });
+    expect(withRange).not.toContain('Submission tag');
+    expect(withRange).toBe(report({ tagName: '', previousTagName: '' }));
   });
 });
