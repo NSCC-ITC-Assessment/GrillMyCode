@@ -99,6 +99,10 @@ const INITIAL_CONFIG = {
   // run uses. Tags are never inferred — only what is listed here fires a run.
   submissionTags: '',
   tagDiffBase: 'cumulative',
+  // The tags of tag_range, on any other trigger. An empty end tag means the
+  // range runs up to the commit the run started on.
+  tagRangeFrom: '',
+  tagRangeTo: '',
   // Action inputs additionally exposed as workflow_dispatch inputs, so a manual
   // run can change them from the Actions tab. Copied, not referenced, so the
   // exported default list is never mutated through wizard state.

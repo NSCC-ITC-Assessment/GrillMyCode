@@ -60,13 +60,17 @@ export function effectiveAiModel(cfg) {
 /**
  * Whether a run can have earlier work — the student's own code from before the
  * assessed range — which only a base later than the first commit leaves: a tag
- * run diffed from an earlier tag, or a base_sha override. previous_work has no
- * effect otherwise, so it is neither offered nor emitted.
+ * run diffed from an earlier tag, a tag range, or a base_sha override.
+ * previous_work has no effect otherwise, so it is neither offered nor emitted.
  *
  * @param {WizardConfig} cfg
  */
 export function hasEarlierWork(cfg) {
-  return (isTagTrigger(cfg) && (cfg.tagDiffBase || 'cumulative') !== 'cumulative') || Boolean(cfg.baseSha);
+  return (
+    (isTagTrigger(cfg) && (cfg.tagDiffBase || 'cumulative') !== 'cumulative') ||
+    Boolean(tagRangeValue(cfg)) ||
+    Boolean(cfg.baseSha)
+  );
 }
 
 /** Smallest starter_questions_one_in, as MIN_STARTER_QUESTIONS_ONE_IN in src/constants.js. */
@@ -192,6 +196,11 @@ export function invalidSubmissionTags(cfg) {
 // "tag:<name>" form. Keep the two in step.
 const TAG_NAME_RE = /^[A-Za-z0-9._][A-Za-z0-9._/-]*$/;
 
+/** @param {string} name */
+function isUsableTagName(name) {
+  return TAG_NAME_RE.test(name) && !name.includes('..') && !name.endsWith('/');
+}
+
 /**
  * Why the "tag:<name>" diff base cannot be emitted, or '' when it can (or when
  * another mode is chosen). The action fails every run on a bad name.
@@ -203,10 +212,60 @@ export function namedDiffBaseTagError(cfg) {
   if (!value.startsWith('tag:')) return '';
   const name = value.slice('tag:'.length);
   if (!name) return 'Please enter the tag to compare against before continuing.';
-  if (!TAG_NAME_RE.test(name) || name.includes('..') || name.endsWith('/')) {
+  if (!isUsableTagName(name)) {
     return `"${name}" is not a usable tag name. Use letters, digits and . _ / - with no wildcards.`;
   }
   return '';
+}
+
+// ── Tag range ────────────────────────────────────────────────────────────────
+
+/**
+ * Whether the workflow can set a tag range. A submission tag trigger already
+ * has an end, the tag that was pushed, and chooses its start with tag_diff_base.
+ *
+ * @param {WizardConfig} cfg
+ */
+export function offersTagRange(cfg) {
+  return !isTagTrigger(cfg);
+}
+
+/**
+ * Why the tag range cannot be emitted, or '' when it can (or when none is set).
+ * Mirrors readTagRange in the action's src/inputs.js, which fails every run on
+ * a value it rejects. Keep the two in step.
+ *
+ * @param {WizardConfig} cfg
+ */
+export function tagRangeError(cfg) {
+  if (!offersTagRange(cfg)) return '';
+  const from = (cfg.tagRangeFrom || '').trim();
+  const to = (cfg.tagRangeTo || '').trim();
+  if (!from && !to) return '';
+  if (!from) return 'Please enter the tag the range starts from, or clear the end tag.';
+  const bad = [from, to].find((name) => name && !isUsableTagName(name));
+  if (bad) {
+    return `"${bad}" is not a usable tag name. Use letters, digits and . _ / - with no wildcards.`;
+  }
+  if (from === to) return 'The range starts and ends at the same tag, so there is no work to assess.';
+  // from "v1." and to "x" would be written with three dots, which the action
+  // rejects because it could be read two ways.
+  if (from.endsWith('.') || to.startsWith('.')) {
+    return 'A tag at the start of the range cannot end with a dot, and one at the end cannot start with one.';
+  }
+  return '';
+}
+
+/**
+ * The tag_range value to emit, or '' for none: a range that is not offered or
+ * not usable is never written, since the action would fail every run on it.
+ *
+ * @param {WizardConfig} cfg
+ */
+export function tagRangeValue(cfg) {
+  const from = (cfg.tagRangeFrom || '').trim();
+  if (!offersTagRange(cfg) || !from || tagRangeError(cfg)) return '';
+  return `${from}..${(cfg.tagRangeTo || '').trim()}`;
 }
 
 // ── Workflow name and question set ───────────────────────────────────────────
@@ -350,6 +409,8 @@ export const DEFAULTS = {
   instructorRepoEnabled: false,
   labelRepos: false,
   tagDiffBase: 'cumulative',
+  tagRangeFrom: '',
+  tagRangeTo: '',
   baseSha: '',
   headSha: '',
 };
@@ -754,6 +815,16 @@ export function generateYaml(inputCfg, { actionRef = 'v0' } = {}) {
     lines.push('          # fires the workflow but is missing here fails the run.');
     lines.push(`          submission_tags: ${yamlStr(submissionTagList(cfg).join(', '))}`);
     pushInput('tag_diff_base', 'tagDiffBase', yamlStr(cfg.tagDiffBase));
+  }
+
+  // ── Tag range ──────────────────────────────────────────────────────────────
+  // Not a workflow_dispatch input either, for the reason given for the SHA
+  // overrides below: it narrows what gets assessed.
+  const tagRange = tagRangeValue(cfg);
+  if (tagRange) {
+    lines.push('          # Assesses only the work between these tags, whatever starts the run.');
+    lines.push('          # The run fails if a repository does not have them.');
+    lines.push(`          tag_range: ${yamlStr(tagRange)}`);
   }
 
   // ── SHA overrides ──────────────────────────────────────────────────────────
