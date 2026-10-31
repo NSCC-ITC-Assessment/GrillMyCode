@@ -4,6 +4,7 @@ import {
   generateYaml,
   instructorRepoActive,
   isTagTrigger,
+  tagRangeValue,
   submissionTagList,
   workflowFileName,
 } from '../generateYaml';
@@ -45,6 +46,21 @@ function buildChecklist(cfg, docsBase, host) {
         'move it with "git tag -f <name>" and push it with "git push --force origin <name>".',
       linkHref: `${docsBase}/example-workflows/tag-submission`,
       linkLabel: 'Tag submission example',
+    });
+  }
+
+  if (tagRangeValue(cfg)) {
+    const from = cfg.tagRangeFrom.trim();
+    const to = cfg.tagRangeTo.trim();
+    items.push({
+      text:
+        `Tell students to tag their work: "git tag ${from} && git push origin ${from}"` +
+        (to ? ` and later "git tag ${to} && git push origin ${to}". ` : '. ') +
+        'A run fails in any repository without ' +
+        (to ? 'these tags' : 'this tag') +
+        ', and the names are case-sensitive.',
+      linkHref: `${docsBase}/reference/triggers`,
+      linkLabel: 'Triggers reference',
     });
   }
 

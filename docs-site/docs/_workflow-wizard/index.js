@@ -18,6 +18,7 @@ import {
   instructorRepoActive,
   invalidSubmissionTags,
   isTagTrigger,
+  tagRangeError,
   namedDiffBaseTagError,
   submissionTagList,
   starterQuestionsOneInError,
@@ -222,6 +223,10 @@ function getStepError(stepIndex, cfg) {
     }
     const namedTagError = namedDiffBaseTagError(cfg);
     if (namedTagError) return namedTagError;
+  }
+  if (label === 'Trigger') {
+    const rangeError = tagRangeError(cfg);
+    if (rangeError) return rangeError;
   }
   if (label === 'Questions') {
     const oneInError = starterQuestionsOneInError(cfg);
