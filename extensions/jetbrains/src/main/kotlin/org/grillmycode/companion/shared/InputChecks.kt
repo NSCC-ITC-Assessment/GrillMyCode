@@ -225,6 +225,23 @@ private fun checkValue(
             )
         }
 
+        InputRule.TagRange -> {
+            val problem = tagRangeProblem(value)
+            if (problem == "") return null
+            return Finding(
+                Severity.ERROR,
+                "invalid-value",
+                if (problem == "same") {
+                    "$name: ${quote(value)} starts and ends at the same tag, so there is no work to " +
+                        "assess. A run with this value fails."
+                } else {
+                    "$name: ${quote(value)} is not a usable range. Write it as \"phase1..phase2\", or " +
+                        "\"phase1..\" for everything since that tag. A name may use letters, digits and " +
+                        ". _ / - but no wildcards. A run with this value fails."
+                },
+            )
+        }
+
         InputRule.QuestionSet -> return questionSetProblem(name, value)
 
         InputRule.Free -> return null
@@ -427,24 +444,50 @@ private fun checkStep(
     }
 
     // Earlier work exists only when the assessed range starts after the first
-    // commit: a tag run diffed from an earlier tag, or a base_sha.
+    // commit: a tag run diffed from an earlier tag, a tag_range, or a base_sha.
     val diffBase = literal("tag_diff_base")?.lowercase()
     val fromEarlierTag = "tag_diff_base" in set && diffBase != "" && diffBase != "cumulative"
-    if ("previous_work" in set && !unset("previous_work") && !fromEarlierTag && unset("base_sha")) {
+    val hasTagRange = !unset("tag_range")
+    if ("previous_work" in set && !unset("previous_work") && !fromEarlierTag && !hasTagRange && unset("base_sha")) {
         at(
             place("previous_work"),
             Finding(
                 Severity.INFO,
                 "no-effect",
                 "previous_work has no effect here. A run has earlier work only when tag_diff_base " +
-                    "is \"previous-tag\" or \"tag:<tag name>\", or base_sha is set.",
+                    "is \"previous-tag\" or \"tag:<tag name>\", or tag_range or base_sha is set.",
             ),
         )
     }
 
     // ── Submission tags ───────────────────────────────────────────────────────
 
-    if (unset("submission_tags")) {
+    if (hasTagRange) {
+        // No run with a tag_range is a submission, so a tag on it needs no entry. A
+        // value worked out at run time might be empty, so only a written one is noted.
+        if (!literal("tag_range").isNullOrEmpty()) {
+            if (!unset("submission_tags")) {
+                at(
+                    place("submission_tags"),
+                    Finding(
+                        Severity.INFO,
+                        "no-effect",
+                        "submission_tags has no effect here: with tag_range set, no run is a submission.",
+                    ),
+                )
+            }
+            if (!diffBase.isNullOrEmpty() && diffBase != "cumulative") {
+                at(
+                    place("tag_diff_base"),
+                    Finding(
+                        Severity.INFO,
+                        "no-effect",
+                        "tag_diff_base has no effect here: tag_range takes precedence over it.",
+                    ),
+                )
+            }
+        }
+    } else if (unset("submission_tags")) {
         if (tagFilters != null) {
             at(
                 place("submission_tags"),

@@ -44,6 +44,9 @@ sealed interface InputRule {
     /** A list of submission tag patterns. */
     data object Tags : InputRule
 
+    /** Two tag names separated by "..", the second optional. Anything else fails the run. */
+    data object TagRange : InputRule
+
     /** A question set's name, which must be able to name a folder. Anything else fails the run. */
     data object QuestionSet : InputRule
 
@@ -80,6 +83,7 @@ private fun readRule(input: JsonObject): InputRule =
         "integer" -> InputRule.Integer(input.number("min") ?: 0.0, input.number("max"))
         "number" -> InputRule.Number(input.number("min") ?: 0.0, input.number("max") ?: 0.0)
         "tags" -> InputRule.Tags
+        "tagRange" -> InputRule.TagRange
         "questionSet" -> InputRule.QuestionSet
         else -> InputRule.Free
     }

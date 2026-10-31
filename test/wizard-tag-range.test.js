@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
 import { parse } from 'yaml';
+import { checkWorkflow } from '../extensions/vscode/src/shared/input-checks.js';
 import { readInputs } from '../src/inputs.js';
 import {
   DEFAULTS,
@@ -51,6 +52,14 @@ describe('the tag range the Wizard writes', () => {
     expect(tagRangeError(config)).toBe('');
     expect(tagRangeValue(config)).toBe('');
     expect(actionInputs(config)).not.toHaveProperty('tag_range');
+  });
+
+  it('gives the editors nothing to report', () => {
+    const config = range('phase1', 'phase2', {
+      aiModel: 'provider/model',
+      previousWork: 'ignore',
+    });
+    expect(checkWorkflow(generateYaml(config))).toEqual([]);
   });
 
   it('is never written when the action would reject it', () => {

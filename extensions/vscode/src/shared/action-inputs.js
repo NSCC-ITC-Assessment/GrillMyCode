@@ -11,6 +11,7 @@
  *   | { kind: 'integer', min: number, max?: number }
  *   | { kind: 'number', min: number, max: number }
  *   | { kind: 'tags' }
+ *   | { kind: 'tagRange' }
  *   | { kind: 'questionSet' }
  *   | { kind?: undefined }} InputRule
  */
@@ -261,6 +262,7 @@ export const ACTION_INPUTS = {
       'The tags that mark the work to assess, whatever started the run. Write it as "<from tag>..<to tag>", e.g. "phase1..phase2", to assess the work after the first tag up to the second, or as "<from tag>..", e.g. "phase1..", to assess the work after that tag up to the commit the run started on. Names are case-sensitive and need not be in submission_tags. The run fails if a tag is missing, if the first tag is not an earlier commit than the end of the range, or if the range ends at a tag that is not on the default branch. A run with this set is not a submission, even when started by a tag: it is filed under the default branch when the range ends at a tag, and otherwise under the branch it ran on. Takes precedence over tag_diff_base; base_sha and head_sha take precedence over this.',
     default: '',
     required: false,
+    kind: 'tagRange',
   },
   question_set: {
     description:

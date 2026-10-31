@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest';
+import { tagRangeProblem } from '../extensions/vscode/src/shared/tags.js';
 import { readInputs } from '../src/inputs.js';
 
 const ENV_KEYS = ['INPUT_GITHUB_TOKEN', 'INPUT_API_KEY', 'INPUT_TAG_RANGE'];
@@ -62,5 +63,39 @@ describe('tag_range input', () => {
 
   it('rejects a range that starts and ends at the same tag', () => {
     expect(() => tagRange('phase1..phase1')).toThrow(/same tag/);
+  });
+});
+
+describe("the extension's copy of the tag_range rule", () => {
+  const accepted = (value) => {
+    try {
+      tagRange(value);
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  it.each([
+    'phase1..phase2',
+    'phase1..',
+    ' Phase1 .. Phase2 ',
+    'v1.0..release/v2.0',
+    'phase1',
+    '..phase2',
+    '..',
+    'phase1..phase2..final',
+    'phase1...phase2',
+    'phase1....phase2',
+    'phase*..phase2',
+    'phase 1..phase2',
+    '-phase1..phase2',
+    'phase1..-phase2',
+    'phase1/..phase2',
+    'phase1..phase1',
+    '.a..b',
+    'a...',
+  ])('agrees with the action about "%s"', (value) => {
+    expect(tagRangeProblem(value.trim()) === '').toBe(accepted(value));
   });
 });

@@ -74,6 +74,7 @@ const BANNER = `// GENERATED FILE — do not edit. This is what action.yml decla
  *   | { kind: 'integer', min: number, max?: number }
  *   | { kind: 'number', min: number, max: number }
  *   | { kind: 'tags' }
+ *   | { kind: 'tagRange' }
  *   | { kind: 'questionSet' }
  *   | { kind?: undefined }} InputRule
  */
@@ -113,6 +114,8 @@ const MIN_COUNT = 1;
  *   integer   a whole number, clamped to `min` and `max`.
  *   number    a number from `min` to `max`. Anything else is ignored.
  *   tags      a list of submission tag patterns.
+ *   tagRange  two tag names separated by "..", the second optional. Anything
+ *             else fails the run.
  *   questionSet  a question set's name: at most QUESTION_SET_MAX_CHARS long,
  *             with a character a folder name can keep. Anything else fails
  *             the run.
@@ -159,6 +162,7 @@ const RULES = {
     values: TAG_DIFF_BASE_MODES,
     prefix: TAG_DIFF_BASE_NAMED_PREFIX,
   },
+  tag_range: { kind: 'tagRange' },
   log_prompt: { hidden: true },
 };
 
