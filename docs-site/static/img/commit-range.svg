@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 560" role="img" aria-labelledby="gmc-range-title">
-  <title id="gmc-range-title">How the base commit is chosen. A student repository's history runs from the empty tree, through the first commit (the template copy), a bot commit, the student's commits, a phase1 tag and more student commits, to the head: the commit the run is about. The run assesses everything after the base up to the head. With starter_code none, the base is the empty tree, so everything is assessed. With starter_code ignore, the default, or context or ask, the base is the first commit. skip_committers, github-actions[bot] by default, moves the base past a leading run of verified bot commits. On a tag run, tag_diff_base previous-tag or tag:phase1 moves the base to the earlier tag, so only the work since it is assessed. base_sha and head_sha override all of these.</title>
+  <title id="gmc-range-title">How the base commit is chosen. A student repository's history runs from the empty tree, through the first commit (the template copy), a bot commit, the student's commits, a phase1 tag and more student commits, to the head: the commit the run is about. The run assesses everything after the base up to the head. With starter_code none, the base is the empty tree, so everything is assessed. With starter_code ignore, the default, or context or ask, the base is the first commit. skip_committers, github-actions[bot] by default, moves the base past a leading run of verified bot commits. On a tag run, tag_diff_base previous-tag or tag:phase1 moves the base to the earlier tag, and tag_range does the same on any run, so only the work since it is assessed. base_sha and head_sha override all of these.</title>
   <style>
     .txt{font-family:system-ui,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif}
     .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,"Liberation Mono",monospace}
@@ -103,13 +103,12 @@
   </g>
   <use href="#gmc-range-base" x="290" y="389"/>
 
-  <!-- row 4: tag_diff_base -->
+  <!-- row 4: tag_diff_base and tag_range -->
   <rect x="20" y="422" width="960" height="76" rx="20" fill="#FFFFFF" fill-opacity=".7"/>
   <g class="txt">
-    <text class="sub" x="44" y="446">tag runs only:</text>
-    <text class="sub" x="44" y="464">base moves to</text>
-    <text class="sub" x="44" y="482">the earlier tag</text>
-    <text class="sub" x="600" y="446"><tspan class="mono" style="font-weight:700;fill:#1E293B">tag_diff_base: previous-tag</tspan> or <tspan class="mono" style="font-weight:700;fill:#1E293B">tag:phase1</tspan></text>
+    <text class="sub" x="44" y="455">base moves to</text>
+    <text class="sub" x="44" y="473">the earlier tag</text>
+    <text class="sub" x="976" y="446" text-anchor="end"><tspan class="mono" style="font-weight:700;fill:#1E293B">tag_diff_base: previous-tag</tspan> or <tspan class="mono" style="font-weight:700;fill:#1E293B">tag:phase1</tspan> on tag runs, or <tspan class="mono" style="font-weight:700;fill:#1E293B">tag_range</tspan> on any run</text>
     <rect class="ink" x="580" y="460" width="320" height="26" rx="13" fill="#0D9488" stroke-width="2.5"/>
     <text class="bar" x="610" y="478">assessed</text>
   </g>

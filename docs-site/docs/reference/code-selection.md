@@ -15,7 +15,7 @@ Each run works through these stages in order:
 
 ## 1. The commit range
 
-![A student repository's history: the empty tree, the first commit (the template copy), a bot commit, the student's commits, an earlier phase1 tag, more student commits, and the head. Four bars show what is assessed, from the base up to the head. With starter_code none, the base is the empty tree. With starter_code ignore (the default), context or ask, it is the first commit. skip_committers moves it past a leading run of verified bot commits. On a tag run, tag_diff_base previous-tag or tag:phase1 moves it to the earlier tag. base_sha and head_sha override all of these.](/img/commit-range.svg)
+![A student repository's history: the empty tree, the first commit (the template copy), a bot commit, the student's commits, an earlier phase1 tag, more student commits, and the head. Four bars show what is assessed, from the base up to the head. With starter_code none, the base is the empty tree. With starter_code ignore (the default), context or ask, it is the first commit. skip_committers moves it past a leading run of verified bot commits. On a tag run, tag_diff_base previous-tag or tag:phase1 moves it to the earlier tag, and on any run, so does tag_range. base_sha and head_sha override all of these.](/img/commit-range.svg)
 
 ### Head
 
