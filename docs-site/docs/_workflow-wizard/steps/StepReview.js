@@ -59,8 +59,8 @@ function buildChecklist(cfg, docsBase, host) {
         'A run fails in any repository without ' +
         (to ? 'these tags' : 'this tag') +
         ', and the names are case-sensitive.',
-      linkHref: `${docsBase}/reference/triggers`,
-      linkLabel: 'Triggers reference',
+      linkHref: `${docsBase}/reference/triggers#tag-ranges`,
+      linkLabel: 'Tag ranges',
     });
   }
 

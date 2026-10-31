@@ -16,7 +16,7 @@ A run that finds nothing to assess ends early and, by default, still **succeeds*
 
 - **"The commit range … contains no changed files."** Nothing was compared at all. This is normal straight after a student accepts an assignment, before they push any work.
 
-  On an **empty-repository** assignment (`--empty-repo`), it also happens when the student's work is all in the first commit. Set `starter_code: none`; see [Using GrillMyCode with Classroom 50](guides/classroom50.md#empty-repository-assignments). Otherwise, check any `base_sha` or `head_sha` override.
+  On an **empty-repository** assignment (`--empty-repo`), it also happens when the student's work is all in the first commit. Set `starter_code: none`; see [Using GrillMyCode with Classroom 50](guides/classroom50.md#empty-repository-assignments). With a [tag range](reference/triggers.md#tag-ranges), it means the files are the same at both ends of the range. Otherwise, check any `base_sha` or `head_sha` override.
 - **"All N changed file(s) were removed by the exclude patterns."** Files changed, but every one was filtered out. The summary lists them. Bring back the ones you need with `exclude_pattern_overrides`; see [Choosing which files are assessed](guides/choosing-files.md#bringing-something-back).
 
 Once students have started work, set [`fail_on_empty_assessment`](reference/inputs-outputs.md) to `'true'` so an unassessed repository shows as a failed run instead of a green tick.
@@ -42,6 +42,19 @@ A run started by a tag fails, rather than assessing anything, in two cases. The 
 - **The tagged commit isn't on the default branch.** Merge the work into the default branch, move the tag to the merged commit with `git tag -f <name>`, and push it with `git push --force origin <name>`.
 
 See [Triggers in depth](reference/triggers.md#submission-tags).
+
+### A run with a tag range failed
+
+A run with `tag_range` set fails, rather than assessing something wider, when it can't use the tags. The run's log says which:
+
+- **`there is no tag`.** The student hasn't pushed that tag, or its name differs: `Phase1` and `phase1` are different tags. Ask the student to push it, then run the workflow again. If the tag is there, check that the checkout step sets `fetch-depth: 0`.
+- **`is not an earlier commit`.** The tags are the wrong way round or on different branches. Check the range, then ask the student to move the tag with `git tag -f <name>` and push it with `git push --force origin <name>`.
+- **`no work since it to assess`.** Both ends of the range are on the same commit.
+- **`is not on the default branch`.** Merge the work into the default branch, move the tag to the merged commit and push it again.
+- **`is not a usable range`.** Write the value as `phase1..phase2`, or `phase1..` for everything since that tag.
+- **`starts and ends at the same tag`.** Name two different tags, or leave out the second.
+
+See [Tag ranges](reference/triggers.md#tag-ranges).
 
 ### A student ran `gh student submit`, but no questions appeared
 
