@@ -34,6 +34,7 @@ import {
   resolveSHAs,
   resolveSubmissionTag,
   resolveTagName,
+  resolveTagRangeBranch,
   safeFilePart,
 } from './context.js';
 import { resolveSubmissionIdentity } from './submission-identity.js';
@@ -1222,15 +1223,18 @@ async function run() {
     // A tag run files its assessment under the submission_tags pattern it
     // matched rather than under a branch, so the pattern is settled before
     // anything else and a mismatch fails the run before any work is done.
-    const tagName = resolveTagName(ctx);
+    const startedOnTag = resolveTagName(ctx);
+    if (startedOnTag && ctx.eventName === 'push' && ctx.payload.deleted) {
+      // Deleting a tag is not a submission, and there is no commit to assess.
+      state.handled = true;
+      core.info(`Tag "${startedOnTag}" was deleted — nothing to assess.`);
+      return;
+    }
+    // A run with a tag_range is not a submission, even when it started on a tag:
+    // the range says what it assesses, and it files under a branch.
+    const tagName = inputs.tagRange ? '' : startedOnTag;
     let tagSlug = '';
     if (tagName) {
-      if (ctx.eventName === 'push' && ctx.payload.deleted) {
-        // Deleting a tag is not a submission, and there is no commit to assess.
-        state.handled = true;
-        core.info(`Tag "${tagName}" was deleted — nothing to assess.`);
-        return;
-      }
       const submissionTag = resolveSubmissionTag(tagName, inputs.submissionTags);
       state.tagName = tagName;
       state.tagPattern = submissionTag.pattern;
@@ -1267,7 +1271,9 @@ async function run() {
     if (tagName) {
       await assertOnDefaultBranch(ctx, octokit, headSha, tagName);
     } else {
-      branchName = resolveBranch(ctx);
+      branchName = inputs.tagRange
+        ? await resolveTagRangeBranch(ctx, octokit, inputs, headSha)
+        : resolveBranch(ctx);
       core.info(`Branch: ${branchName}`);
     }
     state.branchName = branchName;

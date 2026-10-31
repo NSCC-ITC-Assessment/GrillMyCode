@@ -399,11 +399,7 @@ export function questionSetSlug(name) {
  * the tag, which tells the student the submission did not register.
  */
 export async function assertOnDefaultBranch(ctx, octokit, headSha, tagName) {
-  let defaultBranch = ctx.payload?.repository?.default_branch;
-  if (!defaultBranch) {
-    const { data } = await octokit.rest.repos.get({ owner: ctx.repo.owner, repo: ctx.repo.repo });
-    defaultBranch = data.default_branch;
-  }
+  const defaultBranch = await resolveDefaultBranch(ctx, octokit);
   const ref = `refs/remotes/origin/${defaultBranch}`;
   if (!refExists(ref)) {
     throw new Error(
@@ -418,6 +414,35 @@ export async function assertOnDefaultBranch(ctx, octokit, headSha, tagName) {
         `re-tag the merged commit and push the tag again (git push --force origin ${tagName}).`,
     );
   }
+}
+
+/**
+ * The branch a run with a tag_range files under. A range that ends at a tag
+ * files under the default branch, and that tag must be on it, so a range's
+ * assessment goes to the same place whichever ref the run was started from.
+ * That tag is the range's own, or the one the run started on when it names none.
+ * A range that ends on a branch files under that branch, as any run there does.
+ *
+ * A head_sha replaces the tag as the end of the range, so it skips the check.
+ *
+ * @param {typeof import('@actions/github').context} ctx
+ * @param {ReturnType<typeof import('@actions/github').getOctokit>} octokit
+ * @param {import('./inputs.js').Inputs} inputs
+ * @param {string} headSha
+ */
+export async function resolveTagRangeBranch(ctx, octokit, inputs, headSha) {
+  const endTag = inputs.tagRange?.to || resolveTagName(ctx);
+  if (!endTag) return resolveBranch(ctx);
+  if (!inputs.headSha) await assertOnDefaultBranch(ctx, octokit, headSha, endTag);
+  return resolveDefaultBranch(ctx, octokit);
+}
+
+/** The repository's default branch, from the event when it says. */
+async function resolveDefaultBranch(ctx, octokit) {
+  const named = ctx.payload?.repository?.default_branch;
+  if (named) return named;
+  const { data } = await octokit.rest.repos.get({ owner: ctx.repo.owner, repo: ctx.repo.repo });
+  return data.default_branch;
 }
 
 /**

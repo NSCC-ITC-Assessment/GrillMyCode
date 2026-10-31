@@ -1,9 +1,9 @@
-import { afterAll, beforeAll, describe, expect, it, vi } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { spawnSync } from 'node:child_process';
 import { mkdtempSync, rmSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { resolveSHAs } from '../src/context.js';
+import { resolveSHAs, resolveTagRangeBranch } from '../src/context.js';
 
 // The range comes from what git says the tags point at, annotated tags
 // included, so these run against a throwaway repository rather than a mock.
@@ -223,5 +223,104 @@ describe('tag_range', () => {
       expect(baseSha).toBe(commits.one);
       expect(headSha).toBe(commits.two);
     });
+  });
+});
+
+describe('resolveTagRangeBranch', () => {
+  const savedRef = process.env.GITHUB_REF;
+
+  // Read before the context, and set when the suite itself runs in Actions.
+  const ctxOn = (ref) => ({
+    ...dispatchCtx(),
+    ref,
+    payload: { repository: { default_branch: 'main' } },
+  });
+  const onRef = (ref) => {
+    process.env.GITHUB_REF = ref;
+    return ctxOn(ref);
+  };
+
+  beforeAll(() => {
+    run('update-ref', 'refs/remotes/origin/main', commits.three);
+  });
+
+  afterEach(() => {
+    if (savedRef === undefined) delete process.env.GITHUB_REF;
+    else process.env.GITHUB_REF = savedRef;
+  });
+
+  it('files a range ending at a tag under the default branch, from any branch', async () => {
+    const branch = await resolveTagRangeBranch(
+      onRef('refs/heads/side'),
+      octokit,
+      inputs('phase1', 'phase2'),
+      commits.two,
+    );
+    expect(branch).toBe('main');
+  });
+
+  it('files a range with no end tag under the branch it ran on', async () => {
+    const branch = await resolveTagRangeBranch(
+      onRef('refs/heads/side'),
+      octokit,
+      inputs('phase1', ''),
+      commits.side,
+    );
+    expect(branch).toBe('side');
+  });
+
+  it('files a run started on a tag under the default branch, not the tag ref', async () => {
+    const branch = await resolveTagRangeBranch(
+      onRef('refs/tags/phase2'),
+      octokit,
+      inputs('phase1', ''),
+      commits.two,
+    );
+    expect(branch).toBe('main');
+  });
+
+  it('asks the API for the default branch when the event does not say', async () => {
+    const get = vi.fn(async () => ({ data: { default_branch: 'main' } }));
+    process.env.GITHUB_REF = 'refs/heads/side';
+    const branch = await resolveTagRangeBranch(
+      dispatchCtx(),
+      { rest: { repos: { get } } },
+      inputs('phase1', 'phase2'),
+      commits.two,
+    );
+    expect(branch).toBe('main');
+    expect(get).toHaveBeenCalled();
+  });
+
+  it('fails when the end tag is not on the default branch', async () => {
+    await expect(
+      resolveTagRangeBranch(
+        onRef('refs/heads/main'),
+        octokit,
+        inputs('phase1', 'side-tag'),
+        commits.side,
+      ),
+    ).rejects.toThrow(/Tag "side-tag" points at .* not on the default branch \(main\)/);
+  });
+
+  it('fails when the tag the run started on is not on the default branch', async () => {
+    await expect(
+      resolveTagRangeBranch(
+        onRef('refs/tags/side-tag'),
+        octokit,
+        inputs('first-tag', ''),
+        commits.side,
+      ),
+    ).rejects.toThrow(/Tag "side-tag" points at .* not on the default branch/);
+  });
+
+  it('does not check a tag that head_sha replaced', async () => {
+    const branch = await resolveTagRangeBranch(
+      onRef('refs/tags/side-tag'),
+      octokit,
+      inputs('phase1', '', { headSha: commits.side }),
+      commits.side,
+    );
+    expect(branch).toBe('main');
   });
 });

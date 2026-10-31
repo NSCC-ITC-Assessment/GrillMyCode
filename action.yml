@@ -405,7 +405,8 @@ inputs:
       fails unless the tag matches one of these entries and points at a commit
       on the default branch. Each entry is its own delivery group: it has one
       assessment issue, one PDF and one instructor-repo folder, so phase1 and
-      phase2 are kept apart. Ignored on runs not started by a tag.
+      phase2 are kept apart. Ignored on runs not started by a tag, and on runs
+      with tag_range set.
     required: false
     default: ""
 
@@ -432,9 +433,11 @@ inputs:
       assess the work after that tag up to the commit the run started on. Names
       are case-sensitive and need not be in submission_tags. The run fails if a
       tag is missing, if the first tag is not an earlier commit than the end of
-      the range, or if the second tag is not on the default branch. Takes
-      precedence over tag_diff_base; base_sha and head_sha take precedence over
-      this.
+      the range, or if the range ends at a tag that is not on the default
+      branch. A run with this set is not a submission, even when started by a
+      tag: it is filed under the default branch when the range ends at a tag,
+      and otherwise under the branch it ran on. Takes precedence over
+      tag_diff_base; base_sha and head_sha take precedence over this.
     required: false
     default: ""
 
