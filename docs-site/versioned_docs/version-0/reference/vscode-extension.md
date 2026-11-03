@@ -58,7 +58,7 @@ A repository has one issue per branch and one per submission tag, and one of eac
 2. the set for the branch that is checked out: the one with no question set, or else the question set updated most recently;
 3. the most recently updated set.
 
-**Choose Which Questions to Show** lists a question set's issue under its name, such as `Lab 3 · main`. Reading question sets needs a version later than 0.4.5.
+**Choose Which Questions to Show** lists a question set's issue under its name, such as `Lab 3 · main`. Reading question sets needs version 0.6.0 or later.
 
 Picking **Follow the checked-out branch** in that list clears the remembered choice.
 
@@ -194,6 +194,7 @@ Problems are underlined as the file is typed and listed in the **Problems** pane
 | A value outside the input's fixed set: `starter_code`, `previous_work`, `question_emphasis`, `ai_reasoning_effort`, `ai_provider`, `tag_diff_base` | Error |
 | Anything but `true` or `false` for `label_repos` or `preview_only` | Error |
 | A `submission_tags` pattern outside the [supported syntax](triggers.md#pattern-syntax) | Error |
+| A `tag_range` that isn't a [usable range](triggers.md#when-a-tag-range-fails-the-run) | Error |
 | A `question_set` over 100 characters, or with no letter, digit, `-` or `_`, and the workflow's name, when `question_set` is `${{ github.workflow }}` | Error |
 | Text where a whole number belongs | Error |
 | A number below the input's smallest value or above its largest, where the action uses the nearest one it allows | Warning |
@@ -209,13 +210,15 @@ Some checks compare one input with another, or with the rest of the workflow:
 | What is underlined | Level |
 | ------------------ | ----- |
 | No `api_key`, unless `preview_only` is set | Error |
-| A workflow that runs on `on.push.tags` with no `submission_tags` | Error |
+| A workflow that runs on `on.push.tags` with neither `submission_tags` nor `tag_range` | Error |
 | `submission_tags` and `on.push.tags` that list different entries | Warning |
+| A `tag_range` with a second tag, beside `submission_tags` that lists any other | Warning |
 | `api_key`, `instructor_repo_token` or `github_token` written into the file, or read from a workflow input | Warning |
 | `label_repos` with no `instructor_repo_token` | Warning |
 | `starter_questions_one_in` when `starter_code` is not `ask` | Information |
-| `previous_work` when neither `tag_diff_base` nor `base_sha` gives the run earlier work | Information |
+| `previous_work` when none of `tag_diff_base`, `tag_range` or `base_sha` gives the run earlier work | Information |
 | `tag_diff_base` with no `submission_tags` | Information |
+| `tag_diff_base` beside a `tag_range` | Information |
 | `question_set: ${{ github.workflow }}` in a workflow with no `name:` | Information |
 
 One check compares the file with the other workflow files in its folder:

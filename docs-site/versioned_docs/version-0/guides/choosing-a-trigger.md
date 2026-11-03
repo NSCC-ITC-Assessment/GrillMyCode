@@ -91,6 +91,7 @@ GrillMyCode never runs by itself. You start each run from the repository's **Act
 - you want to decide exactly when questions are generated, for example once, after the deadline, so no student sees their questions early
 - you are trying GrillMyCode out on a few repositories before rolling it out
 - you only want questions for some students, such as spot checks
+- you want to assess one stage of a project, the work between two tags your students push; see the [Assess between two tags](../example-workflows/12-tag-range.md) recipe
 
 **Keep in mind:**
 

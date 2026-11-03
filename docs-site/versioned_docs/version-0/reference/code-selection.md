@@ -15,7 +15,7 @@ Each run works through these stages in order:
 
 ## 1. The commit range
 
-![A student repository's history: the empty tree, the first commit (the template copy), a bot commit, the student's commits, an earlier phase1 tag, more student commits, and the head. Four bars show what is assessed, from the base up to the head. With starter_code none, the base is the empty tree. With starter_code ignore (the default), context or ask, it is the first commit. skip_committers moves it past a leading run of verified bot commits. On a tag run, tag_diff_base previous-tag or tag:phase1 moves it to the earlier tag. base_sha and head_sha override all of these.](/img/commit-range.svg)
+![A student repository's history: the empty tree, the first commit (the template copy), a bot commit, the student's commits, an earlier phase1 tag, more student commits, and the head. Four bars show what is assessed, from the base up to the head. With starter_code none, the base is the empty tree. With starter_code ignore (the default), context or ask, it is the first commit. skip_committers moves it past a leading run of verified bot commits. On a tag run, tag_diff_base previous-tag or tag:phase1 moves it to the earlier tag, and on any run, so does tag_range. base_sha and head_sha override all of these.](/img/commit-range.svg)
 
 ### Head
 
@@ -38,9 +38,10 @@ The base does **not** depend on what was pushed. Every run assesses all of the s
 | `ignore` (default), `context` or `ask` | The repository's first commit | The first commit, usually the template copy, is left out |
 | `none` | The empty tree | Every commit counts, including the first |
 
-Two things can move the base later than that:
+Three things can move the base later than that:
 
 - **`tag_diff_base: previous-tag`** (tag runs only). The base becomes the nearest earlier commit carrying one of your `submission_tags`, so a tag assesses only the work since the previous one. With no earlier tag, the base above is used. **`tag_diff_base: tag:<name>`** moves it to the tag you name instead, and fails the run if it can't. See [Triggers in depth](triggers.md#what-each-tag-assesses).
+- **`tag_range`** (any run). The base becomes the range's first tag, in place of `tag_diff_base`, and the head can be its second tag. See [Tag ranges](triggers.md#tag-ranges).
 - **`skip_committers`**. See [Skipping bot commits](#skipping-bot-commits).
 
 `base_sha` overrides everything above. When both `base_sha` and `head_sha` are set, the run uses them as given and skips all other resolution.
@@ -124,7 +125,7 @@ The comparison is made **after** comment stripping, between the base and head ve
 
 If no file in the submission has a single added or changed line, for example because the student only edited comments, the files are sent whole without markers, and the run summary says so.
 
-What counts as "before the range" follows the base. By default that is the first commit, so the unmarked lines are starter code. With `tag_diff_base: previous-tag` or `tag:<name>`, the unmarked lines also include the student's own work from before that tag, and the questions cover only what changed since. Earlier files the submission didn't touch at all can be sent as [codebase context](#codebase-context). With `starter_code: none` the base is the empty tree, so nothing is marked.
+What counts as "before the range" follows the base. By default that is the first commit, so the unmarked lines are starter code. With `tag_diff_base: previous-tag` or `tag:<name>`, or a `tag_range`, the unmarked lines also include the student's own work from before that tag, and the questions cover only what changed since. Earlier files the submission didn't touch at all can be sent as [codebase context](#codebase-context). With `starter_code: none` the base is the empty tree, so nothing is marked.
 
 With `starter_code: ask`, an unchanged line that is also unchanged since the first commit is marked `s` instead of a space. On a tag run with `previous-tag`, that separates your starter code from the student's earlier work in the same file: only the `s` lines may be asked about.
 
@@ -189,7 +190,7 @@ In practice these files come in two kinds, and which ones exist depends on the c
 | Kind | What it is | When there is any | Sent when |
 |---|---|---|---|
 | **Starter code** | Files from the first commit that the student has never changed | Whenever `starter_code` isn't `none` | `starter_code: context` or `ask` |
-| **Earlier work** | The student's own files from before the range that this submission didn't touch, including starter files they changed in an earlier submission | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, or a manual `base_sha` | `previous_work: context` (default) |
+| **Earlier work** | The student's own files from before the range that this submission didn't touch, including starter files they changed in an earlier submission | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, `tag_range`, or a manual `base_sha` | `previous_work: context` (default) |
 
 Some examples:
 
@@ -235,7 +236,7 @@ A run ends early, without calling the AI or creating an issue, in two cases:
 
 | Run summary says | Cause | What to check |
 |---|---|---|
-| The commit range contains no changed files | Base and head are the same commit, so nothing was compared | `starter_code: none` for empty-repository assignments; any `base_sha`/`head_sha` override |
+| The commit range contains no changed files | Base and head are the same commit, or hold the same files, so nothing was compared | `starter_code: none` for empty-repository assignments; any `base_sha`/`head_sha` override; a `tag_range` whose tags hold the same files |
 | All N changed files were removed by the exclude patterns | Files changed, but every one was filtered out | The summary lists the excluded files; use `exclude_pattern_overrides` to bring back the ones you need |
 
 Both are normal straight after an assignment is accepted, so by default such a run **succeeds**. Set `fail_on_empty_assessment: 'true'` to have it fail instead, once students have started work.

@@ -5,6 +5,32 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.32.0 — 2026-11-03
+
+### What's Changed
+
+### Features
+
+- 11 - Enhance tag range functionality and submission handling
+- 10 - update commit range documentation to include tag_range functionality
+- 9 - add documentation for assessing work between two tags and update related references
+- 8 - enhance documentation for tag range functionality across various files
+- 7 - add tag_range validation and handling across various components
+- 6 - implement tag range functionality in workflow wizard, including validation and UI updates
+- 5 - implement tag range functionality and related validations in workflow wizard
+- 4 - update descriptions and implement tag_range handling in various components
+- 3 - implement tag_range functionality and update related descriptions
+- 2 - add tests for tag_range functionality in resolveSHAs
+- 1 - add tag_range input for assessing work between specified tags
+
+### Chores & Maintenance
+
+- **jetbrains:** run the plugin verifier only when plugin code changes
+- refresh gitignore templates
+- **deps:** update react monorepo to v19.3.1
+- **deps:** update renovatebot/github-action action to v46.3.9
+- release VS Code extension 0.6.0 and JetBrains plugin 0.3.0
+
 ## v0.31.0 — 2026-10-23
 
 ### What's Changed

@@ -12,9 +12,9 @@ import {
 /**
  * Which step shows the codebase context limit: the first one that switches
  * codebase context on. Starter code comes first, on the Repositories step;
- * then earlier work on a tag run, on the Trigger step; then earlier work left
- * by a base_sha override, which the Advanced step sets. null when nothing is
- * sent, so the limit isn't shown at all.
+ * then earlier work on a tag run or from a tag range, on the Trigger step; then
+ * earlier work left by a base_sha override, which the Advanced step sets. null
+ * when nothing is sent, so the limit isn't shown at all.
  */
 export function codebaseLimitStep(cfg) {
   if (!sendsCodebaseContext(cfg)) return null;

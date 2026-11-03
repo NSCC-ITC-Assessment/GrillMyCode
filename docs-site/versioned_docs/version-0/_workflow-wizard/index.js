@@ -18,6 +18,7 @@ import {
   instructorRepoActive,
   invalidSubmissionTags,
   isTagTrigger,
+  tagRangeError,
   namedDiffBaseTagError,
   submissionTagList,
   starterQuestionsOneInError,
@@ -99,6 +100,10 @@ const INITIAL_CONFIG = {
   // run uses. Tags are never inferred — only what is listed here fires a run.
   submissionTags: '',
   tagDiffBase: 'cumulative',
+  // The tags of tag_range, on any other trigger. An empty end tag means the
+  // range runs up to the commit the run started on.
+  tagRangeFrom: '',
+  tagRangeTo: '',
   // Action inputs additionally exposed as workflow_dispatch inputs, so a manual
   // run can change them from the Actions tab. Copied, not referenced, so the
   // exported default list is never mutated through wizard state.
@@ -218,6 +223,10 @@ function getStepError(stepIndex, cfg) {
     }
     const namedTagError = namedDiffBaseTagError(cfg);
     if (namedTagError) return namedTagError;
+  }
+  if (label === 'Trigger') {
+    const rangeError = tagRangeError(cfg);
+    if (rangeError) return rangeError;
   }
   if (label === 'Questions') {
     const oneInError = starterQuestionsOneInError(cfg);
