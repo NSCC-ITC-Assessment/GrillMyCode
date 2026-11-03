@@ -239,8 +239,8 @@ jobs:
 
           # Send the student's earlier work that this submission didn't touch
           # as background (default: "context"), or "ignore" to leave it out.
-          # Only matters when tag_diff_base assesses only the latest phase, or
-          # base_sha is set. Never asked about on its own.
+          # Only matters when tag_diff_base or tag_range assesses only a later
+          # phase, or base_sha is set. Never asked about on its own.
           # previous_work: "context"
 
           # Maximum characters sent as codebase context, shared by starter code
@@ -278,6 +278,15 @@ jobs:
           # submission tag; "tag:phase1" — only the work since that tag
           # (the run fails if the tag is missing or not an earlier commit).
           # tag_diff_base: "cumulative"
+
+          # ── Tag range (any trigger) ───────────────────────────────────────
+
+          # Assesses only the work between two tags, whatever starts the run:
+          # "phase1..phase2", or "phase1.." for everything since that tag. The
+          # run fails if a tag is missing or not usable. On a submission tag run,
+          # that tag ends the range, so write only the first. Takes precedence
+          # over tag_diff_base.
+          # tag_range: "phase1..phase2"
 
           # Manually override the base and/or head commit SHA.
           # These take precedence over all automatic SHA resolution.

@@ -1,6 +1,6 @@
 import React from 'react';
 import styles from '../styles.module.css';
-import { isTagTrigger } from '../generateYaml';
+import { isTagTrigger, offersTagRange, tagRangeValue } from '../generateYaml';
 import CodebaseContextLimit, { codebaseLimitStep } from './CodebaseContextLimit';
 
 /** @import { StepProps } from '../index' */
@@ -23,6 +23,42 @@ const TRIGGERS = [
   },
 ];
 
+/**
+ * Whether earlier work goes to the AI, for a range that starts after the first
+ * commit: a tag run diffed from an earlier tag, or a tag range.
+ *
+ * @param {Pick<StepProps, 'cfg' | 'onChange'>} props
+ */
+function PreviousWorkField({ cfg, onChange }) {
+  return (
+    <div className={styles.fieldGroup}>
+      <label className={styles.checkboxLabel}>
+        <input
+          type="checkbox"
+          checked={cfg.previousWork === 'context'}
+          onChange={(e) => onChange({ previousWork: e.target.checked ? 'context' : 'ignore' })}
+        />
+        <span>
+          <strong>Give the AI the student's earlier work as context</strong>{' '}
+          <code>previous_work</code>
+          <div className={styles.radioDescription}>
+            Earlier files that the assessed work didn't touch, such as phase 1 code while phase 2 is
+            assessed, are sent as background, so questions can ask how the new code fits with them.
+            They are never asked about on their own, except starter code still in them when the AI
+            may ask about your starter code. Untick to send only the new work, which costs less per
+            run.
+          </div>
+        </span>
+      </label>
+      {cfg.previousWork === 'context' && codebaseLimitStep(cfg) === 'Repositories' && (
+        <span className={styles.hint} style={{ marginTop: '0.5rem' }}>
+          Earlier work shares the codebase context limit you set on the Repositories step.
+        </span>
+      )}
+    </div>
+  );
+}
+
 /** @param {StepProps} props */
 export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
   const showBranchOption = cfg.triggerEvent === 'push+workflow_dispatch';
@@ -30,6 +66,8 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
   const tagTrigger = isTagTrigger(cfg);
   const namedTagMode = (cfg.tagDiffBase || '').startsWith('tag:');
   const namedTag = namedTagMode ? cfg.tagDiffBase.slice('tag:'.length) : '';
+  const tagRange = tagRangeValue(cfg);
+  const pushTrigger = cfg.triggerEvent === 'push+workflow_dispatch';
 
   return (
     <div>
@@ -217,35 +255,69 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
           </div>
 
           {(cfg.tagDiffBase || 'cumulative') !== 'cumulative' && (
-            <div className={styles.fieldGroup}>
-              <label className={styles.checkboxLabel}>
-                <input
-                  type="checkbox"
-                  checked={cfg.previousWork === 'context'}
-                  onChange={(e) =>
-                    onChange({ previousWork: e.target.checked ? 'context' : 'ignore' })
-                  }
-                />
-                <span>
-                  <strong>Give the AI the student's earlier work as context</strong>{' '}
-                  <code>previous_work</code>
-                  <div className={styles.radioDescription}>
-                    Earlier files that this tag's work didn't touch, such as phase 1 code while
-                    phase 2 is assessed, are sent as background, so questions can ask how the new
-                    code fits with them. They are never asked about on their own, except starter code
-                    still in them when the AI may ask about your starter code. Untick to send only the
-                    new work, which costs less per run.
-                  </div>
-                </span>
-              </label>
-              {cfg.previousWork === 'context' && codebaseLimitStep(cfg) === 'Repositories' && (
-                <span className={styles.hint} style={{ marginTop: '0.5rem' }}>
-                  Earlier work shares the codebase context limit you set on the Repositories step.
-                </span>
-              )}
-            </div>
+            <PreviousWorkField cfg={cfg} onChange={onChange} />
           )}
           {codebaseLimitStep(cfg) === 'Trigger' && <CodebaseContextLimit cfg={cfg} onChange={onChange} />}
+        </div>
+      )}
+
+      {offersTagRange(cfg) && (
+        <div className={styles.subField}>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>
+              Assess only the work between two tags{' '}
+              <span className={styles.optionalBadge}>optional</span> <code>tag_range</code>
+            </label>
+            <span className={styles.hint}>
+              Leave both empty to assess all the student's work. Students create these tags, so put
+              the names and the commands in the assignment instructions, e.g.{' '}
+              <code>git tag phase1 &amp;&amp; git push origin phase1</code>. Names are case-sensitive. A run fails if a repository doesn't have a tag you name, or
+              if the first tag isn't an earlier commit, and the tag that ends the range must be on
+              the default branch.
+            </span>
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>From tag</label>
+            <span className={styles.hint}>The work after this tag is assessed.</span>
+            <input
+              type="text"
+              className={styles.input}
+              value={cfg.tagRangeFrom}
+              onChange={(e) => onChange({ tagRangeFrom: e.target.value })}
+              placeholder="phase1"
+            />
+          </div>
+          <div className={styles.fieldGroup}>
+            <label className={styles.label}>
+              To tag <span className={styles.optionalBadge}>optional</span>
+            </label>
+            <span className={styles.hint}>
+              The work up to this tag is assessed. Leave empty to assess up to the commit the run
+              starts on.
+            </span>
+            <input
+              type="text"
+              className={styles.input}
+              value={cfg.tagRangeTo}
+              onChange={(e) => onChange({ tagRangeTo: e.target.value })}
+              placeholder="phase2"
+            />
+          </div>
+          {tagRange && pushTrigger && (
+            <div
+              className={styles.notice}
+              style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)' }}
+            >
+              On this trigger, every push fails until the student has pushed{' '}
+              {cfg.tagRangeTo.trim() ? 'both tags' : 'the tag'}.
+              {cfg.tagRangeTo.trim() &&
+                ' Once they have, every push assesses the same work again, at the cost of a full run each time. Consider Manual only, or leave To tag empty.'}
+            </div>
+          )}
+          {tagRange && <PreviousWorkField cfg={cfg} onChange={onChange} />}
+          {tagRange && codebaseLimitStep(cfg) === 'Trigger' && (
+            <CodebaseContextLimit cfg={cfg} onChange={onChange} />
+          )}
         </div>
       )}
     </div>

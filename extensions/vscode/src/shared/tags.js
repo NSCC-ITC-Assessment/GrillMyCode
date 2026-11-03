@@ -25,6 +25,27 @@ export function isSafeTagName(name) {
 }
 
 /**
+ * Why the action rejects `value` as a tag_range: 'format', 'same' when it starts
+ * and ends at one tag, or '' when it accepts it.
+ *
+ * @param {string} value
+ * @returns {'format' | 'same' | ''}
+ */
+export function tagRangeProblem(value) {
+  const parts = value.split('..').map((part) => part.trim());
+  const [from = '', to = ''] = parts;
+  if (
+    parts.length !== 2 ||
+    value.includes('...') ||
+    !isSafeTagName(from) ||
+    (to !== '' && !isSafeTagName(to))
+  ) {
+    return 'format';
+  }
+  return from === to ? 'same' : '';
+}
+
+/**
  * True when the action accepts `pattern` as a submission_tags entry.
  *
  * @param {string} pattern

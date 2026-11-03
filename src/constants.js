@@ -639,7 +639,7 @@ export const DEFAULT_STARTER_CODE = 'ignore';
  * Accepted values of the previous_work input: whether the student's own
  * earlier work that this submission did not touch is sent as background. It
  * exists only when the assessed range starts after the first commit
- * (tag_diff_base: previous-tag or tag:<name>, or base_sha).
+ * (tag_diff_base: previous-tag or tag:<name>, tag_range, or base_sha).
  */
 export const PREVIOUS_WORK_MODES = ['context', 'ignore'];
 
@@ -776,6 +776,12 @@ export const TAG_DIFF_BASE_NAMED_PREFIX = 'tag:';
  * the assessment runs but not what it covers.
  */
 export const DEFAULT_TAG_DIFF_BASE = 'cumulative';
+
+/**
+ * What separates the two tags of a tag_range value, as in "phase1..phase2". A
+ * tag name may not contain it (see isSafeTagName), so a value splits one way.
+ */
+export const TAG_RANGE_SEPARATOR = '..';
 
 /**
  * Name a tag group's PDF and instructor-repository folder are filed under when

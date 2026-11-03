@@ -1004,6 +1004,175 @@
         }
       ],
       "problems": []
+    },
+    {
+      "name": "tag_range may name two tags",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..phase2"
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_range may leave out the end tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1.."
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_range worked out at run time is not checked",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: ${{ inputs.range }}"
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_range needs the separator",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "phase1"
+        }
+      ]
+    },
+    {
+      "name": "tag_range needs a start tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: ..phase2"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "..phase2"
+        }
+      ]
+    },
+    {
+      "name": "tag_range may not use three dots",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1...phase2"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "phase1...phase2"
+        }
+      ]
+    },
+    {
+      "name": "tag_range may not name a pattern",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase*..phase2"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "phase*..phase2"
+        }
+      ]
+    },
+    {
+      "name": "tag_range may not start and end at one tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..phase1"
+      ],
+      "problems": [
+        {
+          "severity": "error",
+          "code": "invalid-value",
+          "text": "phase1..phase1"
+        }
+      ]
+    },
+    {
+      "name": "previous_work applies to a run with a tag_range",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..phase2",
+        "previous_work: ignore"
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_diff_base has no effect beside a tag_range",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..phase2",
+        "tag_diff_base: previous-tag"
+      ],
+      "problems": [
+        {
+          "severity": "info",
+          "code": "no-effect",
+          "text": "tag_diff_base"
+        }
+      ]
+    },
+    {
+      "name": "submission_tags applies beside a tag_range with no end tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..",
+        "submission_tags: phase2, final"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a tag_range may end at the one submission tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..phase2",
+        "submission_tags: phase2"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a tag_range with an end tag fails on any other submission tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1..phase2",
+        "submission_tags: phase2, final"
+      ],
+      "problems": [
+        {
+          "severity": "warning",
+          "code": "tag-range-end",
+          "text": "phase1..phase2"
+        }
+      ]
+    },
+    {
+      "name": "a tag_range worked out at run time may leave submission_tags in use",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: ${{ inputs.range }}",
+        "submission_tags: phase1"
+      ],
+      "problems": []
+    },
+    {
+      "name": "a workflow run on tags needs no submission_tags beside a tag_range",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: phase1.."
+      ],
+      "on": "on:\n  push:\n    tags: [\"phase2\"]",
+      "problems": []
     }
   ]
 }

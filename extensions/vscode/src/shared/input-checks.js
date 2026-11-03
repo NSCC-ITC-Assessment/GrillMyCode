@@ -16,7 +16,7 @@
 import { ACTION_INPUTS } from './action-inputs.js';
 import { INPUT_NAME_MAX_EDITS, QUESTION_SET_MAX_CHARS } from './constants.js';
 import { questionSetSlug } from './identity.js';
-import { isSafeTagName, isSafeTagPattern, splitTagList } from './tags.js';
+import { isSafeTagName, isSafeTagPattern, splitTagList, tagRangeProblem } from './tags.js';
 import { readWorkflow } from './workflow.js';
 
 /** @import { ActionInput } from './action-inputs.js' */
@@ -239,6 +239,22 @@ function checkValue(name, rule, raw) {
 
   if (rule.kind === 'questionSet') return questionSetProblem(name, value);
 
+  if (rule.kind === 'tagRange') {
+    const problem = tagRangeProblem(value);
+    if (problem === '') return undefined;
+    return {
+      severity: 'error',
+      code: 'invalid-value',
+      message:
+        problem === 'same'
+          ? `${name}: ${quote(value)} starts and ends at the same tag, so there is no work to ` +
+            'assess. A run with this value fails.'
+          : `${name}: ${quote(value)} is not a usable range. Write it as "phase1..phase2", or ` +
+            '"phase1.." for everything since that tag. A name may use letters, digits and ' +
+            '. _ / - but no wildcards. A run with this value fails.',
+    };
+  }
+
   if (rule.kind === 'tags') {
     const unsafe = splitTagList(value).filter((pattern) => !isSafeTagPattern(pattern));
     if (unsafe.length === 0) return undefined;
@@ -438,22 +454,55 @@ function checkStep(step, { tagFilters, unknownInputs, workflowName, path, otherW
   }
 
   // Earlier work exists only when the assessed range starts after the first
-  // commit: a tag run diffed from an earlier tag, or a base_sha.
+  // commit: a tag run diffed from an earlier tag, a tag_range, or a base_sha.
   const diffBase = literal('tag_diff_base')?.toLowerCase();
   const fromEarlierTag = set.has('tag_diff_base') && diffBase !== '' && diffBase !== 'cumulative';
-  if (set.has('previous_work') && !unset('previous_work') && !fromEarlierTag && unset('base_sha')) {
+  const hasTagRange = !unset('tag_range');
+  if (
+    set.has('previous_work') &&
+    !unset('previous_work') &&
+    !fromEarlierTag &&
+    !hasTagRange &&
+    unset('base_sha')
+  ) {
     at(set.get('previous_work') ?? stepItself, {
       severity: 'info',
       code: 'no-effect',
       message:
         'previous_work has no effect here. A run has earlier work only when tag_diff_base ' +
-        'is "previous-tag" or "tag:<tag name>", or base_sha is set.',
+        'is "previous-tag" or "tag:<tag name>", or tag_range or base_sha is set.',
     });
   }
 
   // ── Submission tags ───────────────────────────────────────────────────────
 
-  if (unset('submission_tags')) {
+  if (hasTagRange) {
+    // A tag that matches no submission_tags entry does not fail a run with a
+    // tag_range, so nothing here needs an entry. A value worked out at run time
+    // might be empty, so only a written one is checked.
+    const range = literal('tag_range');
+    if (range) {
+      // A submission's tag ends its range, so a second tag naming another fails it.
+      const end = tagRangeProblem(range) === '' ? range.split('..')[1].trim() : '';
+      if (end && splitTagList(literal('submission_tags')).some((tag) => tag !== end)) {
+        atValue(/** @type {InputValue} */ (set.get('tag_range')), {
+          severity: 'warning',
+          code: 'tag-range-end',
+          message:
+            `tag_range ends at ${quote(end)}, but submission_tags lists other tags. A run ` +
+            'started by one of them is a submission that the tag itself ends, so it fails. ' +
+            'Leave out the second tag.',
+        });
+      }
+      if (diffBase && diffBase !== 'cumulative') {
+        at(set.get('tag_diff_base') ?? stepItself, {
+          severity: 'info',
+          code: 'no-effect',
+          message: 'tag_diff_base has no effect here: tag_range takes precedence over it.',
+        });
+      }
+    }
+  } else if (unset('submission_tags')) {
     if (tagFilters) {
       at(set.get('submission_tags') ?? stepItself, {
         severity: 'error',

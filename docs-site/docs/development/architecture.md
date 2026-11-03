@@ -42,16 +42,21 @@ resolveTagName() → resolveSubmissionTag()
     │  Only on a run started by a tag (a tag push, or a manual run on a tag)
     │  Matches the tag against submission_tags; no match fails the run
     │  The matched pattern names the delivery group (issue, PDF, instructor folder)
+    │  With tag_range set, a tag that matches nothing leaves an ordinary run
+    │  (resolveSubmissionRunTag) rather than failing it
     │
 resolveSHAs()
     │  Determines baseSha and headSha from the event context
     │  Handles: push, workflow_dispatch, and tag runs (head peeled to its commit)
     │  Pins the base to the first commit, or the empty tree when starter_code is none
     │  Applies tag_diff_base (previous-tag / tag:<name>) on a tag run
+    │  Applies tag_range on any run, in place of tag_diff_base
     │
 resolveBranch()  — or, on a tag run, assertOnDefaultBranch()
     │  Extracts the branch name from the event payload or GITHUB_REF
     │  A tag run instead fails unless the tagged commit is on the default branch
+    │  With tag_range, resolveTagRangeBranch(): a range ending at a tag makes the
+    │  same check and files under the default branch; otherwise as resolveBranch()
     │
 resolveSubmissionIdentity()
     │  Lists the repository's direct collaborators (one API call)
@@ -119,7 +124,7 @@ loadCodebaseContext()   ← only when starter_code is context or ask, or previou
     │  (skippedRange from resolveSHAs)
     │  'starter' if also unchanged since the first commit (never when
     │  starter_code is none), otherwise 'earlier' — student work from before
-    │  a later base (tag_diff_base, base_sha); each kind is kept only when
+    │  a later base (tag_diff_base, tag_range, base_sha); each kind is kept only when
     │  its input asks for it
     │  An 'earlier' file also in the first commit began as starter code: it
     │  carries its first-commit copy and is headed "(began as starter code)"
@@ -279,6 +284,8 @@ After event-specific resolution, `starter_code` overrides the base SHA: every va
 
 On a run started by a submission tag (`{ tagName }` passed as the fourth argument), the head is the tagged commit, peeled with `git rev-parse <sha>^{commit}` because an annotated tag's push names the tag object. With `tag_diff_base: previous-tag`, the base then moves to the nearest strict ancestor carrying a tag that matches any `submission_tags` pattern (`pickPreviousSubmissionTag` in `src/tags.js`); with none, the base above stands. With `tag_diff_base: tag:<name>`, the base moves to that tag instead (`resolveTagCommit` in `src/git.js`, looked up under `refs/tags/`), and the run throws if the tag is missing, is not an ancestor of the head, or is on the head itself; it is skipped when `base_sha` is set. The chosen tag is returned as `previousTag`.
 
+With `tag_range` (`inputs.tagRange`, `{ from, to }`), on any event, the head is the `to` tag's commit, or with no `to` the event's commit, peeled as above since the run may have started on a tag. The base is the `from` tag's commit. The run throws if a tag is missing, or if `from` is not an ancestor of the head or is on it. `tag_diff_base` is not applied. `from` is returned as `previousTag`. A run that is a submission (`resolveSubmissionRunTag`) keeps its tag group, and throws if `to` names another tag; any other run has no `tagName`, so no tag group, and files under `resolveTagRangeBranch()`.
+
 Manual `base_sha` / `head_sha` inputs always take precedence over all of the above.
 
 ### `reportEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePatterns, inputs })`
@@ -289,7 +296,7 @@ Two distinct conditions reach this point and need different fixes, so each gets 
 
 | `reason` | Condition | Points at |
 |---|---|---|
-| `empty-range` | `git diff --name-only` returned nothing — base and head resolved to the same commit | `starter_code`, or a `base_sha`/`head_sha` override |
+| `empty-range` | `git diff --name-only` returned nothing — base and head resolved to the same commit, or to commits holding the same files | `starter_code`, a `base_sha`/`head_sha` override, or `tag_range` |
 | `fully-excluded` | Files did change, but every one was removed by the exclude patterns | `exclude_pattern_overrides`, and the applied pattern list |
 
 Both write a `core.summary` block, because a warning annotation shows on the run page but not in a list of runs — an instructor scanning a cohort would otherwise see an unbroken row of green ticks. Summary writing is wrapped in `try`/`catch`: a summary is a convenience, never a reason to lose the diagnosis.

@@ -32,8 +32,11 @@ import {
   assertOnDefaultBranch,
   resolveBranch,
   resolveSHAs,
+  resolveSubmissionRunTag,
   resolveSubmissionTag,
   resolveTagName,
+  resolveTagRangeBranch,
+  tagRangeText,
   safeFilePart,
 } from './context.js';
 import { resolveSubmissionIdentity } from './submission-identity.js';
@@ -571,9 +574,12 @@ function renderConfiguration(state) {
     ],
     ['Answers shown to student', `${i.includeAnswers ? '**YES**' : 'no'}${flag(i.includeAnswers)}`],
     ['Starter code', renderStarterCodeSetting(state)],
-    ...(state.tagName ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
+    ...(state.tagName && !i.tagRange ? [['Tag diff base', `\`${i.tagDiffBase}\``]] : []),
+    ...(i.tagRange ? [['Tag range', `\`${tagRangeText(i.tagRange)}\``]] : []),
     // Earlier work exists only once the base moves past the first commit.
-    ...(state.tagName || i.baseSha ? [['Previous work', `\`${i.previousWork}\``]] : []),
+    ...(state.tagName || i.tagRange || i.baseSha
+      ? [['Previous work', `\`${i.previousWork}\``]]
+      : []),
     ['Repository labels', i.labelRepos ? 'on' : '**off**'],
     ['Manual SHA override', i.baseSha || i.headSha ? `**in effect**${flag(true)}` : 'none'],
     [
@@ -971,8 +977,10 @@ function explainEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePat
     // base is the empty tree, so a freshly accepted repository has files in
     // range and this is genuinely unexpected — saying otherwise would send the
     // reader looking for a cause that cannot apply.
+    // A tag_range sets the base itself, so neither starter_code nor the moment
+    // of acceptance can account for it.
     const noStarter = inputs.starterCode === 'none';
-    const acceptTimeExplains = !noStarter && !inputs.baseSha && !inputs.headSha;
+    const acceptTimeExplains = !noStarter && !inputs.baseSha && !inputs.headSha && !inputs.tagRange;
     cause = `the commit range ${shortBase}..${shortHead} contains no changed files.`;
     detail =
       `Nothing was compared, so the exclude patterns were never involved.` +
@@ -982,12 +990,16 @@ function explainEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePat
         : '');
     checks = [
       `The range assessed was \`${shortBase}..${shortHead}\`${baseSha === headSha ? ' — base and head are the same commit.' : '.'}`,
-      noStarter
-        ? '`starter_code` is **none**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'
-        : `\`starter_code\` is **${inputs.starterCode}**, so the first commit is treated as starter code and excluded. If this is a Classroom 50 empty-repository assignment (\`--empty-repo\`), the student's own first push is that first commit — set \`starter_code: none\` so their work is assessed.`,
+      inputs.tagRange && !inputs.baseSha
+        ? `\`tag_range\` is \`${tagRangeText(inputs.tagRange)}\`, so the first tag sets the base, not \`starter_code\`. The files at the end of the range are the same as at that tag, so the student's work between them changed nothing overall.`
+        : noStarter
+          ? '`starter_code` is **none**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'
+          : `\`starter_code\` is **${inputs.starterCode}**, so the first commit is treated as starter code and excluded. If this is a Classroom 50 empty-repository assignment (\`--empty-repo\`), the student's own first push is that first commit — set \`starter_code: none\` so their work is assessed.`,
       inputs.baseSha || inputs.headSha
         ? 'A manual `base_sha`/`head_sha` override is set on this workflow. Check it still points at the range you intend.'
-        : 'No manual SHA override is set, so the range came from the event and `starter_code`.',
+        : inputs.tagRange
+          ? 'No manual SHA override is set, so the range came from `tag_range`.'
+          : 'No manual SHA override is set, so the range came from the event and `starter_code`.',
     ];
   } else {
     // Only claim the accept-time explanation when the excluded set actually is
@@ -1048,8 +1060,8 @@ function reportPreview(state) {
  *             Sent under starter_code: context or ask. With starter_code: none
  *             the first commit is the student's own work, so there are none.
  *   earlier — changed before the range but not in it: the student's own work
- *             from an earlier submission, once tag_diff_base or base_sha moves
- *             the base past the first commit. Sent under previous_work:
+ *             from an earlier submission, once tag_diff_base, tag_range or
+ *             base_sha moves the base past the first commit. Sent under previous_work:
  *             context. A starter file the student changed before the range is
  *             earlier work too, headed as having begun as starter code, and
  *             under ask its lines still as given may be asked about. Under
@@ -1222,15 +1234,16 @@ async function run() {
     // A tag run files its assessment under the submission_tags pattern it
     // matched rather than under a branch, so the pattern is settled before
     // anything else and a mismatch fails the run before any work is done.
-    const tagName = resolveTagName(ctx);
+    const startedOnTag = resolveTagName(ctx);
+    if (startedOnTag && ctx.eventName === 'push' && ctx.payload.deleted) {
+      // Deleting a tag is not a submission, and there is no commit to assess.
+      state.handled = true;
+      core.info(`Tag "${startedOnTag}" was deleted — nothing to assess.`);
+      return;
+    }
+    const tagName = resolveSubmissionRunTag(startedOnTag, inputs);
     let tagSlug = '';
     if (tagName) {
-      if (ctx.eventName === 'push' && ctx.payload.deleted) {
-        // Deleting a tag is not a submission, and there is no commit to assess.
-        state.handled = true;
-        core.info(`Tag "${tagName}" was deleted — nothing to assess.`);
-        return;
-      }
       const submissionTag = resolveSubmissionTag(tagName, inputs.submissionTags);
       state.tagName = tagName;
       state.tagPattern = submissionTag.pattern;
@@ -1267,7 +1280,9 @@ async function run() {
     if (tagName) {
       await assertOnDefaultBranch(ctx, octokit, headSha, tagName);
     } else {
-      branchName = resolveBranch(ctx);
+      branchName = inputs.tagRange
+        ? await resolveTagRangeBranch(ctx, octokit, inputs, headSha)
+        : resolveBranch(ctx);
       core.info(`Branch: ${branchName}`);
     }
     state.branchName = branchName;

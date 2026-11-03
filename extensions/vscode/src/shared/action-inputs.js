@@ -11,6 +11,7 @@
  *   | { kind: 'integer', min: number, max?: number }
  *   | { kind: 'number', min: number, max: number }
  *   | { kind: 'tags' }
+ *   | { kind: 'tagRange' }
  *   | { kind: 'questionSet' }
  *   | { kind?: undefined }} InputRule
  */
@@ -174,7 +175,7 @@ export const ACTION_INPUTS = {
   },
   previous_work: {
     description:
-      'Whether the student\'s own earlier work that this submission did not touch is sent to the AI as background: "context" (the default) or "ignore". Earlier work exists only when the assessed range starts after the first commit — tag_diff_base previous-tag or tag:<name>, or base_sha — so this has no effect on other runs. It is never asked about on its own, except the unchanged starter lines of a starter file the student changed earlier, under starter_code ask. Under ignore, such a file is not sent either. Shares codebase_context_max_chars with starter code.',
+      'Whether the student\'s own earlier work that this submission did not touch is sent to the AI as background: "context" (the default) or "ignore". Earlier work exists only when the assessed range starts after the first commit — tag_diff_base previous-tag or tag:<name>, tag_range, or base_sha — so this has no effect on other runs. It is never asked about on its own, except the unchanged starter lines of a starter file the student changed earlier, under starter_code ask. Under ignore, such a file is not sent either. Shares codebase_context_max_chars with starter code.',
     default: 'context',
     required: false,
     kind: 'enum',
@@ -242,19 +243,26 @@ export const ACTION_INPUTS = {
   },
   submission_tags: {
     description:
-      'Tag names that mark a submission, for workflows triggered by a tag push (on.push.tags). These are the tags you define for the assignment — no tag is recognised unless it is listed here. Give the same entries as the workflow\'s on.push.tags, separated by commas or newlines, e.g. "complete" or "phase1, phase2, final". A wildcard entry is allowed and uses GitHub\'s filter syntax: * (not crossing /), **, ?, + and [ ] classes; ! negation is not supported. Matching is case-sensitive. A run started by a tag (a tag push, or a manual run with a tag selected) fails unless the tag matches one of these entries and points at a commit on the default branch. Each entry is its own delivery group: it has one assessment issue, one PDF and one instructor-repo folder, so phase1 and phase2 are kept apart. Ignored on runs not started by a tag.',
+      'Tag names that mark a submission, for workflows triggered by a tag push (on.push.tags). These are the tags you define for the assignment — no tag is recognised unless it is listed here. Give the same entries as the workflow\'s on.push.tags, separated by commas or newlines, e.g. "complete" or "phase1, phase2, final". A wildcard entry is allowed and uses GitHub\'s filter syntax: * (not crossing /), **, ?, + and [ ] classes; ! negation is not supported. Matching is case-sensitive. A run started by a tag (a tag push, or a manual run with a tag selected) fails unless the tag matches one of these entries and points at a commit on the default branch. Each entry is its own delivery group: it has one assessment issue, one PDF and one instructor-repo folder, so phase1 and phase2 are kept apart. Ignored on runs not started by a tag. With tag_range set, a tag that matches no entry does not fail the run: it is filed under a branch instead.',
     default: '',
     required: false,
     kind: 'tags',
   },
   tag_diff_base: {
     description:
-      'Diff base for a run started by a submission tag. "cumulative" (the default) uses the same base as any other run, so each tag assesses all of the student\'s work to date. "previous-tag" starts the diff at the nearest earlier commit carrying a submission_tags tag, so each tag assesses only the work since the one before it; with no earlier tag it falls back to the cumulative base. "tag:<name>" (e.g. "tag:phase1") starts the diff at that tag, which need not be in submission_tags; the name is case-sensitive. The run fails if the tag is missing, is not an earlier commit, or is on the assessed commit. A manual base_sha takes precedence over all three. Ignored on runs not started by a tag.',
+      'Diff base for a run started by a submission tag. "cumulative" (the default) uses the same base as any other run, so each tag assesses all of the student\'s work to date. "previous-tag" starts the diff at the nearest earlier commit carrying a submission_tags tag, so each tag assesses only the work since the one before it; with no earlier tag it falls back to the cumulative base. "tag:<name>" (e.g. "tag:phase1") starts the diff at that tag, which need not be in submission_tags; the name is case-sensitive. The run fails if the tag is missing, is not an earlier commit, or is on the assessed commit. A manual base_sha and tag_range take precedence over all three. Ignored on runs not started by a tag.',
     default: 'cumulative',
     required: false,
     kind: 'enum',
     values: ['cumulative', 'previous-tag'],
     prefix: 'tag:',
+  },
+  tag_range: {
+    description:
+      'The tags that mark the work to assess, whatever started the run. Write it as "<from tag>..<to tag>", e.g. "phase1..phase2", to assess the work after the first tag up to the second, or as "<from tag>..", e.g. "phase1..", to assess the work after that tag up to the commit the run started on. Names are case-sensitive and need not be in submission_tags. The run fails if a tag is missing, if the first tag is not an earlier commit than the end of the range, or if the range ends at a tag that is not on the default branch. A run started on a tag in submission_tags is a submission, as it is without this: that tag ends the range, and the run fails if a second tag names another. Any other run is filed under the default branch when the range ends at a tag, and otherwise under the branch it ran on. Takes precedence over tag_diff_base; base_sha and head_sha take precedence over this.',
+    default: '',
+    required: false,
+    kind: 'tagRange',
   },
   question_set: {
     description:

@@ -269,9 +269,9 @@ inputs:
       Whether the student's own earlier work that this submission did not
       touch is sent to the AI as background: "context" (the default) or
       "ignore". Earlier work exists only when the assessed range starts after
-      the first commit — tag_diff_base previous-tag or tag:<name>, or base_sha
-      — so this has no effect on other runs. It is never asked about on its
-      own, except the unchanged starter lines of a starter file the student
+      the first commit — tag_diff_base previous-tag or tag:<name>, tag_range,
+      or base_sha — so this has no effect on other runs. It is never asked about
+      on its own, except the unchanged starter lines of a starter file the student
       changed earlier, under starter_code ask. Under ignore, such a file is not
       sent either. Shares codebase_context_max_chars with starter code.
     required: false
@@ -405,7 +405,9 @@ inputs:
       fails unless the tag matches one of these entries and points at a commit
       on the default branch. Each entry is its own delivery group: it has one
       assessment issue, one PDF and one instructor-repo folder, so phase1 and
-      phase2 are kept apart. Ignored on runs not started by a tag.
+      phase2 are kept apart. Ignored on runs not started by a tag. With
+      tag_range set, a tag that matches no entry does not fail the run: it is
+      filed under a branch instead.
     required: false
     default: ""
 
@@ -419,10 +421,28 @@ inputs:
       the cumulative base. "tag:<name>" (e.g. "tag:phase1") starts the diff at
       that tag, which need not be in submission_tags; the name is
       case-sensitive. The run fails if the tag is missing, is not an earlier
-      commit, or is on the assessed commit. A manual base_sha takes precedence
-      over all three. Ignored on runs not started by a tag.
+      commit, or is on the assessed commit. A manual base_sha and tag_range take
+      precedence over all three. Ignored on runs not started by a tag.
     required: false
     default: "cumulative"
+
+  tag_range:
+    description: >
+      The tags that mark the work to assess, whatever started the run. Write it
+      as "<from tag>..<to tag>", e.g. "phase1..phase2", to assess the work after
+      the first tag up to the second, or as "<from tag>..", e.g. "phase1..", to
+      assess the work after that tag up to the commit the run started on. Names
+      are case-sensitive and need not be in submission_tags. The run fails if a
+      tag is missing, if the first tag is not an earlier commit than the end of
+      the range, or if the range ends at a tag that is not on the default
+      branch. A run started on a tag in submission_tags is a submission, as it
+      is without this: that tag ends the range, and the run fails if a second
+      tag names another. Any other run is filed under the default branch when
+      the range ends at a tag, and otherwise under the branch it ran on. Takes
+      precedence over tag_diff_base; base_sha and head_sha take precedence over
+      this.
+    required: false
+    default: ""
 
   question_set:
     description: >

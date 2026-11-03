@@ -12,6 +12,7 @@ import {
   GIT_EMPTY_TREE_SHA,
   GIT_SHA_SHORT_LENGTH,
   SUBMISSION_TAG_GROUP_FALLBACK,
+  TAG_RANGE_SEPARATOR,
 } from './constants.js';
 import {
   getLeadingSkipCandidates,
@@ -43,6 +44,11 @@ import { findMatchingTagPattern, namedDiffBaseTag, pickPreviousSubmissionTag } f
  * names the tag object rather than the commit — and with tag_diff_base set to
  * previous-tag the base moves up to the nearest earlier submission tag, and
  * with tag:<name> to that tag, failing the run if it cannot be used.
+ *
+ * tag_range applies whatever started the run and takes precedence over
+ * tag_diff_base: the base is its first tag, and the head its second, or the
+ * commit the run started on when it names none. A tag it needs and cannot use
+ * fails the run.
  *
  * Returns { baseSha, headSha, previousTag, skippedRange }, where previousTag is
  * the { name, commit } the base was moved to, or null, and skippedRange is the
@@ -79,6 +85,16 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
     };
   }
 
+  // A submission's tag ends its range, so a second tag naming another commit
+  // would file that commit's work under this tag's group.
+  if (tagName && inputs.tagRange?.to && inputs.tagRange.to !== tagName && !overrideHead) {
+    throw new Error(
+      `tag_range is "${tagRangeText(inputs.tagRange)}", but this run is a submission under tag ` +
+        `"${tagName}", which ends the range. Leave out the second tag, as in ` +
+        `"${inputs.tagRange.from}${TAG_RANGE_SEPARATOR}".`,
+    );
+  }
+
   const event = ctx.eventName;
   let baseSha, headSha;
 
@@ -94,9 +110,13 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // that is about to be discarded. base_sha cannot move up here in the same
   // way: it is documented as taking precedence over starter_code,
   // so it has to be applied after that block has had its say.
-  if (tagName) {
+  if (inputs.tagRange?.to) {
+    headSha = overrideHead ?? resolveRangeTag(inputs.tagRange, inputs.tagRange.to);
+  } else if (tagName || inputs.tagRange) {
     // A tag push or a manual run started on a tag. Push payloads carry the
-    // pushed object in `after`; a dispatch carries the commit in ctx.sha.
+    // pushed object in `after`; a dispatch carries the commit in ctx.sha. A
+    // tag_range with no end tag comes here too, since its run may have started
+    // on a tag, and peeling a commit gives that commit.
     const eventSha = event === 'push' ? ctx.payload.after : ctx.sha;
     headSha = overrideHead ?? sanitiseSha(peelToCommit(sanitiseSha(eventSha)));
   } else if (event === 'push') {
@@ -126,7 +146,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // empty tree, so it is the tighter of the two whenever one exists.
   /** @type {{ name: string, commit: string } | null} */
   let previousTag = null;
-  if (tagName && inputs.tagDiffBase === 'previous-tag') {
+  if (tagName && !inputs.tagRange && inputs.tagDiffBase === 'previous-tag') {
     previousTag = pickPreviousSubmissionTag({
       tags: listTags(),
       ancestors: listAncestors(headSha),
@@ -154,7 +174,7 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // range. Skipped when base_sha is set, since that override wins anyway and a
   // missing tag should not fail a run that would never use it.
   const namedTag = namedDiffBaseTag(inputs.tagDiffBase);
-  if (tagName && namedTag && !inputs.baseSha) {
+  if (tagName && namedTag && !inputs.tagRange && !inputs.baseSha) {
     const commit = resolveTagCommit(namedTag);
     if (!commit) {
       throw new Error(
@@ -183,6 +203,34 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
     core.info(
       `tag_diff_base is ${inputs.tagDiffBase}: base set to ` +
         `${commit.substring(0, GIT_SHA_SHORT_LENGTH)}, so only work since that tag is assessed.`,
+    );
+  }
+
+  // ── Apply tag_range ────────────────────────────────────────────────────────
+  // As with tag:<name>, there is no fallback, and base_sha skips it so a missing
+  // tag does not fail a run that would never use it.
+  if (inputs.tagRange && !inputs.baseSha) {
+    const { from } = inputs.tagRange;
+    const commit = resolveRangeTag(inputs.tagRange, from);
+    const range = tagRangeText(inputs.tagRange);
+    if (commit === headSha) {
+      throw new Error(
+        `tag_range is "${range}", but tag "${from}" is on the commit being assessed ` +
+          `(${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}), so there is no work since it to assess.`,
+      );
+    }
+    if (!isAncestor(commit, headSha)) {
+      throw new Error(
+        `tag_range is "${range}", but tag "${from}" (${commit.substring(0, GIT_SHA_SHORT_LENGTH)}) ` +
+          `is not an earlier commit in the history of ${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}, ` +
+          `so the work since it cannot be worked out.`,
+      );
+    }
+    previousTag = { name: from, commit };
+    baseSha = commit;
+    core.info(
+      `tag_range is ${range}: assessing ${commit.substring(0, GIT_SHA_SHORT_LENGTH)}..` +
+        `${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}.`,
     );
   }
 
@@ -242,6 +290,31 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   return { baseSha, headSha, previousTag, skippedRange };
 }
 
+/** A parsed tag_range as the workflow wrote it, for messages. */
+export function tagRangeText({ from, to }) {
+  return `${from}${TAG_RANGE_SEPARATOR}${to}`;
+}
+
+/**
+ * The commit one of tag_range's tags points at. Throws when there is no such
+ * tag: an assessment of a wider range than the workflow names would look like
+ * the one it asked for.
+ *
+ * @param {{ from: string, to: string }} tagRange
+ * @param {string} name
+ */
+function resolveRangeTag(tagRange, name) {
+  const commit = resolveTagCommit(name);
+  if (!commit) {
+    throw new Error(
+      `tag_range is "${tagRangeText(tagRange)}", but there is no tag "${name}" in this ` +
+        `repository. Check the tag name, that the student has pushed it, and that the checkout ` +
+        `step sets fetch-depth: 0 so tags are fetched.`,
+    );
+  }
+  return sanitiseSha(commit);
+}
+
 /**
  * Validates that a string looks like a git SHA to prevent shell injection.
  */
@@ -270,6 +343,21 @@ export function resolveTagName(ctx) {
   const ref = process.env.GITHUB_REF || ctx.ref || '';
   const match = ref.match(/^refs\/tags\/(.+)$/);
   return match ? match[1] : '';
+}
+
+/**
+ * The tag that makes this run a submission, or '' when it is not one. A run
+ * started on a tag is a submission when the tag is in submission_tags. Without a
+ * tag_range it must be, and resolveSubmissionTag fails the run if not; with one,
+ * the range says what to assess, so any other tag leaves an ordinary run.
+ *
+ * @param {string} startedOnTag
+ * @param {import('./inputs.js').Inputs} inputs
+ */
+export function resolveSubmissionRunTag(startedOnTag, inputs) {
+  if (!startedOnTag) return '';
+  if (inputs.tagRange && !findMatchingTagPattern(inputs.submissionTags, startedOnTag)) return '';
+  return startedOnTag;
 }
 
 /**
@@ -336,11 +424,7 @@ export function questionSetSlug(name) {
  * the tag, which tells the student the submission did not register.
  */
 export async function assertOnDefaultBranch(ctx, octokit, headSha, tagName) {
-  let defaultBranch = ctx.payload?.repository?.default_branch;
-  if (!defaultBranch) {
-    const { data } = await octokit.rest.repos.get({ owner: ctx.repo.owner, repo: ctx.repo.repo });
-    defaultBranch = data.default_branch;
-  }
+  const defaultBranch = await resolveDefaultBranch(ctx, octokit);
   const ref = `refs/remotes/origin/${defaultBranch}`;
   if (!refExists(ref)) {
     throw new Error(
@@ -355,6 +439,36 @@ export async function assertOnDefaultBranch(ctx, octokit, headSha, tagName) {
         `re-tag the merged commit and push the tag again (git push --force origin ${tagName}).`,
     );
   }
+}
+
+/**
+ * The branch a run with a tag_range files under, when it is not a submission
+ * (see resolveSubmissionRunTag). A range that ends at a tag
+ * files under the default branch, and that tag must be on it, so a range's
+ * assessment goes to the same place whichever ref the run was started from.
+ * That tag is the range's own, or the one the run started on when it names none.
+ * A range that ends on a branch files under that branch, as any run there does.
+ *
+ * A head_sha replaces the tag as the end of the range, so it skips the check.
+ *
+ * @param {typeof import('@actions/github').context} ctx
+ * @param {ReturnType<typeof import('@actions/github').getOctokit>} octokit
+ * @param {import('./inputs.js').Inputs} inputs
+ * @param {string} headSha
+ */
+export async function resolveTagRangeBranch(ctx, octokit, inputs, headSha) {
+  const endTag = inputs.tagRange?.to || resolveTagName(ctx);
+  if (!endTag) return resolveBranch(ctx);
+  if (!inputs.headSha) await assertOnDefaultBranch(ctx, octokit, headSha, endTag);
+  return resolveDefaultBranch(ctx, octokit);
+}
+
+/** The repository's default branch, from the event when it says. */
+async function resolveDefaultBranch(ctx, octokit) {
+  const named = ctx.payload?.repository?.default_branch;
+  if (named) return named;
+  const { data } = await octokit.rest.repos.get({ owner: ctx.repo.owner, repo: ctx.repo.repo });
+  return data.default_branch;
 }
 
 /**
