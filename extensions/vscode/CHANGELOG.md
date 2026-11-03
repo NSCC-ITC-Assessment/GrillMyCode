@@ -2,6 +2,11 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## 0.8.0, 2026-11-03
+
+- The Workflow Wizard can assess only the work between two tags, such as `phase1` and `phase2`, whatever starts the run. Choose **Assess only the work between two tags** on the **Push, PR Merge, or Manual** or **Manual only** trigger, and fill in **From tag** and, if you want one, **To tag**.
+- The workflow checks underline a `tag_range` the action rejects. They warn when a range ends at a tag and `submission_tags` lists other tags, since a run started by one of those fails, and note that `tag_diff_base` has no effect alongside `tag_range`.
+
 ## 0.6.0, 2026-10-23
 
 - Reads the questions of a question set: a workflow whose name keeps its questions apart from another workflow's. **Choose Which Questions to Show** lists each set by its name, such as **Lab 3 · main**, and the instructor view reads that set's answer key.

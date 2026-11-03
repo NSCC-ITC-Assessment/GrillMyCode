@@ -5,6 +5,19 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
+## [0.4.0]
+
+### Added
+
+- The Workflow Wizard can assess only the work between two tags, such as
+  `phase1` and `phase2`, whatever starts the run. Choose **Assess only the
+  work between two tags** on the **Push, PR Merge, or Manual** or **Manual
+  only** trigger, and fill in **From tag** and, if you want one, **To tag**.
+- The workflow help marks a `tag_range` the action rejects. It warns when a
+  range ends at a tag and `submission_tags` lists other tags, since a run
+  started by one of those fails, and notes that `tag_diff_base` has no effect
+  alongside `tag_range`.
+
 ## [0.3.0]
 
 ### Added
