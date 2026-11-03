@@ -5,6 +5,11 @@ name: JetBrains Plugin Checks
 # ZIP is attached to the run, so a reviewer can install it by hand ("Install
 # Plugin from Disk…" in Settings, Plugins).
 #
+# The verifier runs only when the plugin's Kotlin or Gradle files change: it
+# checks the compiled classes against each IDE's API, which nothing else on the
+# list below can change. On a pull request it checks the oldest and newest IDE,
+# and on main every IDE JetBrains recommends, as the release workflow does.
+#
 # Nothing is published. Releases are jetbrains-plugin-release.yml's, on
 # jetbrains-v* tags.
 
@@ -95,9 +100,52 @@ jobs:
           path: extensions/jetbrains/build/distributions/*.zip
           if-no-files-found: error
 
-  # A job of its own: it downloads several IDEs, each over a gigabyte.
+  # Whether the plugin's code changed, which is all the verifier checks. Its
+  # tests are left out, since the verifier never sees them.
+  changes:
+    name: Plugin code changed
+    runs-on: ubuntu-latest
+    outputs:
+      plugin: ${{ steps.diff.outputs.plugin }}
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          # The full history, without file contents, so the diff below can
+          # reach the commit a push started from.
+          fetch-depth: 0
+          filter: blob:none
+
+      - name: List the changed files
+        id: diff
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          BEFORE: ${{ github.event.before }}
+        run: |
+          if [ "$EVENT_NAME" = "pull_request" ]; then
+            # The checkout is GitHub's merge of the pull request, whose first
+            # parent is the base branch.
+            range="HEAD^1 HEAD"
+          elif git cat-file -e "$BEFORE^{commit}" 2>/dev/null; then
+            range="$BEFORE HEAD"
+          else
+            # A push whose earlier commit isn't known: verify to be safe.
+            echo "plugin=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          # shellcheck disable=SC2086 # range is two commits
+          if git diff --name-only $range | grep -qE '^(extensions/jetbrains/(src/main/|gradle/|build\.gradle\.kts$|settings\.gradle\.kts$|gradle\.properties$)|\.github/workflows/jetbrains-plugin-checks\.yml$)'; then
+            echo "plugin=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "plugin=false" >> "$GITHUB_OUTPUT"
+            echo "The plugin's Kotlin and Gradle files are unchanged, so the verifier is skipped."
+          fi
+
+  # A job of its own: it downloads IDEs, each over a gigabyte. A skipped run
+  # counts as passing, so this can still be a required check.
   verify:
     name: Plugin Verifier
+    needs: changes
+    if: needs.changes.outputs.plugin == 'true'
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -136,8 +184,14 @@ jobs:
         working-directory: extensions/vscode
         run: pnpm install --frozen-lockfile
 
+      # A pull request checks the two ends of the supported range; main checks
+      # them all (verifyOldestAndNewest in build.gradle.kts).
       - name: Run the Plugin Verifier
-        run: ./gradlew verifyPlugin
+        env:
+          VERIFY_ARGS: ${{ github.event_name == 'pull_request' && '-PverifyOldestAndNewest' || '' }}
+        run: |
+          # shellcheck disable=SC2086 # VERIFY_ARGS is empty or one flag
+          ./gradlew verifyPlugin $VERIFY_ARGS
 
       - name: Attach the verifier's reports
         if: always()

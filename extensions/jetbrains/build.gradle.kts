@@ -1,4 +1,5 @@
 import org.jetbrains.changelog.Changelog
+import org.jetbrains.intellij.platform.gradle.IntelliJPlatformType
 import org.jetbrains.intellij.platform.gradle.TestFrameworkType
 import org.jetbrains.kotlin.gradle.dsl.JvmDefaultMode
 import org.jetbrains.kotlin.gradle.dsl.KotlinVersion
@@ -140,10 +141,19 @@ intellijPlatform {
 
     pluginVerification {
         ides {
-            // The IDEs JetBrains recommends checking, worked out from the
-            // supported builds: from the oldest (2025.1) to the latest
-            // release and EAP, Community and Ultimate.
-            recommended()
+            if (providers.gradleProperty("verifyOldestAndNewest").isPresent) {
+                // The two ends of the supported range, for a pull request: the
+                // IDE the plugin compiles against (2025.1), which catches a
+                // call too new for it, and the newest IntelliJ IDEA, which
+                // catches one deprecated or removed since.
+                current()
+                latest { types = listOf(IntelliJPlatformType.IntellijIdea) }
+            } else {
+                // The IDEs JetBrains recommends checking, worked out from the
+                // supported builds: from the oldest (2025.1) to the latest
+                // release and EAP, Community and Ultimate.
+                recommended()
+            }
         }
     }
 }
