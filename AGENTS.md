@@ -237,7 +237,9 @@ load its JavaScript.
 - **Checks run through Gradle, not pnpm.** From `extensions/jetbrains/`: `./gradlew check` (ktlint
   and the tests) and `./gradlew buildPlugin`. `pnpm lint` and Prettier do not read Kotlin.
   `./gradlew verifyPlugin` needs more disk than a codespace has; `jetbrains-plugin-checks.yml`
-  runs it on every pull request that touches the plugin.
+  runs it when the plugin's Kotlin or Gradle files change, against the oldest and newest IDE on a
+  pull request (`-PverifyOldestAndNewest`) and every recommended IDE on `main`. The release
+  workflow runs it against every recommended IDE.
 - **The oldest supported IDE is `pluginSinceBuild` and `platformVersion` in `gradle.properties`.**
   The plugin compiles against that release. Raise both together, deliberately, and the Kotlin
   `apiVersion` in `build.gradle.kts` with them: the IDE supplies the Kotlin standard library.

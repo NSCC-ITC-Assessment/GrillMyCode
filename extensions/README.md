@@ -110,8 +110,9 @@ also needs Node and the VS Code extension's packages: run `pnpm install` in
 The first build downloads IntelliJ IDEA 2025.1, the oldest release the plugin
 supports and the one it compiles against. `verifyPlugin` downloads every IDE
 the verifier checks, several of them over a gigabyte, and needs more disk than
-a codespace has free. Leave it to **JetBrains Plugin Checks**, which runs on
-every pull request that touches the plugin.
+a codespace has free. Leave it to **JetBrains Plugin Checks**, which runs it
+when the plugin's Kotlin or Gradle files change: against the oldest and newest
+IDE on a pull request, and every IDE on `main`.
 
 `runIde` opens a window, so it needs a desktop: run it on your own machine, not
 in a codespace.
