@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.32.1 — 2026-11-09
+
+### What's Changed
+
+### Bug Fixes
+
+- **ci:** stop the image cleanup deleting images that tags point at
+
+### Chores & Maintenance
+
+- update version to 0.4.0 and enhance changelog for Workflow Wizard features
+- refresh gitignore templates
+
 ## v0.32.0 — 2026-11-03
 
 ### What's Changed
