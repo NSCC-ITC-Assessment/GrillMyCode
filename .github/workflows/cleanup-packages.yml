@@ -5,13 +5,14 @@ name: Cleanup Untagged Images
 # GHCR forever as an untagged "sha256:..." entry. Nothing references those,
 # so this sweeps them up weekly.
 #
-# NOTE: this is only safe because every image in this package is a single
-# manifest. An index (multi-arch, or an image with a buildx attestation) has
-# children that are themselves untagged, and deleting them breaks the tagged
-# image: the runner's builder began adding provenance attestations by
-# default, and v0.32.0 failed to pull once this swept its children. The
-# build workflows therefore set `provenance: false` and `sbom: false`. Keep
-# them, or make this sweep skip the children of tagged indexes.
+# An index (multi-arch, or an image with a buildx attestation) is listed in
+# GHCR as one version per manifest, and only the index carries the tags: the
+# image it points at is listed as untagged. Sweeping every untagged version
+# would delete it and leave the tag unpullable, as happened to v0.32.0 when
+# the runner's builder began adding provenance attestations by default. The
+# build workflows set `provenance: false` and `sbom: false` so each image is
+# a single manifest, and this sweep also keeps every manifest a tagged index
+# points at, in case an index is pushed anyway.
 
 on:
   schedule:
@@ -31,34 +32,64 @@ jobs:
 
     steps:
       - name: List untagged versions
+        id: list
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           OWNER: ${{ github.repository_owner }}
+        # Fails rather than deleting if any tagged manifest cannot be read:
+        # without it, the images that manifest points at cannot be told apart
+        # from superseded builds.
         run: |
+          set -euo pipefail
+          IMAGE="${OWNER,,}/grillmycode"
+
+          # id, digest, created_at, tags (comma-separated, empty if untagged)
           gh api --paginate \
             "/orgs/${OWNER}/packages/container/grillmycode/versions" \
-            --jq '.[] | select((.metadata.container.tags | length) == 0)
-                  | "\(.id)\t\(.name[0:19])\t\(.created_at)"' \
-            > /tmp/untagged.txt || true
-          COUNT=$(wc -l < /tmp/untagged.txt)
-          echo "Untagged versions found: ${COUNT}"
+            --jq '.[] | [.id, .name, .created_at, (.metadata.container.tags | join(","))] | @tsv' \
+            > /tmp/versions.tsv
+
+          REGISTRY_TOKEN=$(curl -fsS -u "x:${GH_TOKEN}" \
+            "https://ghcr.io/token?scope=repository:${IMAGE}:pull" | jq -r .token)
+          awk -F'\t' '$4 != "" { print $2 }' /tmp/versions.tsv \
+            | while read -r DIGEST; do
+                curl -fsS \
+                  -H "Authorization: Bearer ${REGISTRY_TOKEN}" \
+                  -H "Accept: application/vnd.oci.image.index.v1+json, application/vnd.docker.distribution.manifest.list.v2+json, application/vnd.oci.image.manifest.v1+json, application/vnd.docker.distribution.manifest.v2+json" \
+                  "https://ghcr.io/v2/${IMAGE}/manifests/${DIGEST}" \
+                  | jq -r '.manifests[]?.digest'
+              done > /tmp/referenced.txt
+
+          # Untagged, not inside a tagged index, and over a day old, so a
+          # build pushing its index while this runs cannot lose the images
+          # it has pushed but not yet tagged.
+          CUTOFF=$(date -u -d '1 day ago' +%Y-%m-%dT%H:%M:%SZ)
+          awk -F'\t' -v cutoff="$CUTOFF" '
+            FILENAME == ARGV[1] { referenced[$1]; next }
+            $4 == "" && !($2 in referenced) && $3 < cutoff
+          ' /tmp/referenced.txt /tmp/versions.tsv > /tmp/untagged.tsv
+
+          COUNT=$(wc -l < /tmp/untagged.tsv)
+          KEPT=$(sort -u /tmp/referenced.txt | wc -l)
+          awk -F'\t' '{ printf "%s\t%.19s\t%s\n", $1, $2, $3 }' /tmp/untagged.tsv > /tmp/untagged.txt
+          echo "Untagged versions to delete: ${COUNT}"
+          echo "Kept because a tagged index points at them: ${KEPT}"
           cat /tmp/untagged.txt
           {
-            echo "### Untagged image versions: ${COUNT}"
+            echo "### Untagged image versions to delete: ${COUNT}"
+            echo ""
+            echo "Kept because a tagged index points at them: ${KEPT}"
             echo ""
             echo '```'
             cat /tmp/untagged.txt
             echo '```'
           } >> "$GITHUB_STEP_SUMMARY"
+          echo "ids=$(cut -f1 /tmp/untagged.tsv | paste -sd, -)" >> "$GITHUB_OUTPUT"
 
       - name: Delete untagged versions
-        if: github.event.inputs.dry_run != 'true'
+        if: github.event.inputs.dry_run != 'true' && steps.list.outputs.ids != ''
         uses: actions/delete-package-versions@v5
         with:
           package-name: grillmycode
           package-type: container
-          delete-only-untagged-versions: true
-          # 0 = delete every untagged version. There is nothing to preserve:
-          # an untagged digest is a superseded build that no tag points at.
-          # Note: the action deletes at most 100 versions per run.
-          min-versions-to-keep: 0
+          package-version-ids: ${{ steps.list.outputs.ids }}
