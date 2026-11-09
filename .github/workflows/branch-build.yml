@@ -101,5 +101,10 @@ jobs:
           push: true
           tags: |
             ghcr.io/${{ steps.repo.outputs.name }}:branch-${{ steps.tag.outputs.value }}
+          # A single manifest, not an index with an attestation beside it:
+          # cleanup-packages.yml deletes untagged versions, and an index's
+          # children are untagged, so it would delete the image itself.
+          provenance: false
+          sbom: false
           secrets: |
             GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}

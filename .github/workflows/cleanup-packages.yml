@@ -6,9 +6,12 @@ name: Cleanup Untagged Images
 # so this sweeps them up weekly.
 #
 # NOTE: this is only safe because every image in this package is a single
-# manifest. If multi-arch builds or buildx attestations are ever added, a
-# tagged image becomes an index whose children are themselves untagged, and
-# deleting untagged versions would break it. Revisit this then.
+# manifest. An index (multi-arch, or an image with a buildx attestation) has
+# children that are themselves untagged, and deleting them breaks the tagged
+# image: the runner's builder began adding provenance attestations by
+# default, and v0.32.0 failed to pull once this swept its children. The
+# build workflows therefore set `provenance: false` and `sbom: false`. Keep
+# them, or make this sweep skip the children of tagged indexes.
 
 on:
   schedule:
