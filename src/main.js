@@ -184,11 +184,13 @@ function createRunState() {
     // lines marked (see buildAssessedCodeContent).
     markedFiles: /** @type {string[]} */ ([]),
     // Codebase context (starter_code: context or ask, previous_work: context):
-    // the starter files and the files of earlier work sent, those left out to
-    // stay within the size limit, and the characters sent.
-    // codebaseContextChars stays null when nothing asks for it.
+    // the starter files and the files of earlier work sent, those of them that
+    // began as starter code, those left out to stay within the size limit, and
+    // the characters sent. codebaseContextChars stays null when nothing asks
+    // for it.
     codebaseStarterFiles: /** @type {string[]} */ ([]),
     codebaseEarlierFiles: /** @type {string[]} */ ([]),
+    codebaseEarlierFromStarter: /** @type {string[]} */ ([]),
     codebaseContextOmitted: /** @type {string[]} */ ([]),
     codebaseContextChars: /** @type {number | null} */ (null),
 
@@ -322,22 +324,40 @@ function fileLists(groups) {
 }
 
 /**
- * "7 of 19 changed files", with the number left out when there are any.
+ * The context files whose starter code may be asked about under
+ * starter_code: ask: the unchanged starter files, then the files of earlier
+ * work that began as starter code, whose unchanged starter lines may be.
+ *
+ * @param {RunState} state
+ */
+function starterCandidates(state) {
+  if (!state.inputs || !asksAboutStarter(state.inputs)) return [];
+  return [...state.codebaseStarterFiles, ...state.codebaseEarlierFromStarter];
+}
+
+/**
+ * "7 of 19 changed files", with the starter files open to questions and the
+ * number left out when there are any.
  *
  * @param {RunState} state
  */
 function fileCounts(state) {
   const changed = state.allFiles.length;
   const leftOut = changed - state.files.length;
+  const starter = starterCandidates(state).length;
   return {
     assessed: `**${fmtNum(state.files.length)} of ${fmtNum(changed)} changed file${changed === 1 ? '' : 's'}**`,
+    starter:
+      starter > 0
+        ? [`**${fmtNum(starter)} starter file${starter === 1 ? '' : 's'}** open to questions`]
+        : [],
     leftOut: leftOut > 0 ? [`**${fmtNum(leftOut)} left out**`] : [],
   };
 }
 
 /** @param {RunState} state */
 function renderHeadline(state) {
-  const { assessed, leftOut } = fileCounts(state);
+  const { assessed, starter, leftOut } = fileCounts(state);
   const counts = [];
   if (state.questionsGenerated !== null) {
     counts.push(`**${fmtNum(state.questionsGenerated)} questions**`);
@@ -350,7 +370,7 @@ function renderHeadline(state) {
   }
   if (state.pdfUrl) links.push(`[Download PDF](${state.pdfUrl})`);
 
-  return [counts.join(' from '), ...leftOut, ...links].join(' · ');
+  return [counts.join(' from '), ...starter, ...leftOut, ...links].join(' · ');
 }
 
 /**
@@ -361,12 +381,12 @@ function renderHeadline(state) {
  * @param {RunState} state
  */
 function renderPreviewHeadline(state) {
-  const { assessed, leftOut } = fileCounts(state);
+  const { assessed, starter, leftOut } = fileCounts(state);
   const empty = state.previewEmpty;
   const lines = [
     empty
       ? `**Nothing would be assessed: ${empty.cause}**`
-      : [`${assessed} would be assessed`, ...leftOut].join(' · '),
+      : [`${assessed} would be assessed`, ...starter, ...leftOut].join(' · '),
     'This run was a preview (`preview_only`): the AI was not called, and no questions, issue ' +
       'or PDF were produced. An assessment from an earlier run is unchanged.',
   ];
@@ -485,10 +505,67 @@ function renderOverview(state) {
   return table(['', ''], rows);
 }
 
-/** @param {RunState} state */
-function renderAssessedFiles(state) {
-  if (state.files.length === 0) return '';
+/**
+ * The candidate files: every file a question may be about, grouped by whose
+ * code it is. The files the student changed come first, with their line
+ * counts; under starter_code: ask, the starter files follow, which are sent
+ * as context and so appear nowhere else among the files. An instructor
+ * checking a preview sees every file the questions can come from in one
+ * place.
+ *
+ * @param {RunState} state
+ */
+function renderCandidateFiles(state) {
+  const inputs = state.inputs;
+  if (!inputs || state.files.length === 0) return '';
 
+  const preview = inputs.previewOnly;
+  const starter = starterCandidates(state);
+  const sections = [renderStudentFiles(state)];
+  if (starter.length > 0) {
+    const earlier = new Set(state.codebaseEarlierFromStarter);
+    const shown = starter.slice(0, SUMMARY_FILE_TABLE_LIMIT);
+    const rows = shown.map((f) => [
+      `\`${f}\``,
+      earlier.has(f)
+        ? 'its unchanged starter lines (the student changed it before this submission)'
+        : 'the whole file',
+    ]);
+    const limit = maxStarterQuestions(inputs.numQuestions, inputs.starterQuestionsOneIn);
+    sections.push(
+      `#### Starter code (${fmtNum(starter.length)})\n\n` +
+        `Code from the first commit, sent as context. Up to ${fmtNum(limit)} of the ` +
+        `${fmtNum(inputs.numQuestions)} questions ${preview ? 'could' : 'may'} be about ` +
+        `starter code alone (\`starter_code: ask\`).\n\n` +
+        table(['File', 'Open to questions'], rows) +
+        overflowNote(starter.length, shown.length),
+    );
+  }
+
+  const omitted = state.codebaseContextOmitted;
+  const notSent =
+    omitted.length > 0
+      ? `\n${fmtNum(omitted.length)} other file${omitted.length === 1 ? ' was' : 's were'} ` +
+        `left out of the context to stay within \`codebase_context_max_chars\` ` +
+        `(${fmtNum(inputs.codebaseContextMaxChars)}), so the AI ${preview ? 'would not see' : 'did not see'} ` +
+        `${omitted.length === 1 ? 'it' : 'them'}: ${fileListCell([{ label: 'Not sent', files: omitted }])}\n`
+      : '';
+
+  return (
+    `### Candidate files\n\n` +
+    `The files questions ${preview ? 'could' : 'may'} be about.\n\n` +
+    sections.join('\n') +
+    notSent
+  );
+}
+
+/**
+ * The student's changed files among the candidates, with the lines added and
+ * removed in each.
+ *
+ * @param {RunState} state
+ */
+function renderStudentFiles(state) {
   const statByPath = new Map(state.fileStats.map((s) => [s.filepath, s]));
   const shown = state.files.slice(0, SUMMARY_FILE_TABLE_LIMIT);
   const rows = shown.map((f) => {
@@ -517,20 +594,54 @@ function renderAssessedFiles(state) {
   }
 
   const preview = state.inputs?.previewOnly;
+  // Under ask, a starter file the student edited keeps its unchanged starter
+  // lines open to questions too.
+  const starterLines =
+    state.inputs && asksAboutStarter(state.inputs) ? ', and to its unchanged starter lines' : '';
   const marked =
     state.markedFiles.length > 0
       ? `\n${fmtNum(state.markedFiles.length)} of these file(s) existed before this submission, ` +
-        `so questions ${preview ? 'would be' : 'were'} limited to the lines added or changed in it.\n`
+        `so questions ${preview ? 'would be' : 'were'} limited to the lines added or changed in it` +
+        `${starterLines}.\n`
       : '';
 
   return (
-    `### ${preview ? 'Files that would be assessed' : 'Files assessed'}\n\n` +
+    `#### Changed by the student (${fmtNum(state.files.length)})\n\n` +
     table(['File', 'Added', 'Removed'], rows) +
     overflowNote(state.files.length, shown.length) +
     `\n**Total:** +${fmtNum(totals.added)} / −${fmtNum(totals.removed)} lines` +
     (sizes.length > 0 ? ` · ${sizes.join(' · ')}` : '') +
     `\n` +
     marked
+  );
+}
+
+/**
+ * The context files no question may be about: starter files under
+ * starter_code: context, and the student's earlier work. They are listed
+ * apart from the candidates so that sending a file is never taken for
+ * opening it to questions.
+ *
+ * @param {RunState} state
+ */
+function renderBackgroundFiles(state) {
+  const starter = new Set(starterCandidates(state));
+  const groups = [
+    { label: 'Starter code', files: state.codebaseStarterFiles },
+    { label: 'Earlier work', files: state.codebaseEarlierFiles },
+  ].map((g) => ({ ...g, files: g.files.filter((f) => !starter.has(f)) }));
+  const total = groups.reduce((n, g) => n + g.files.length, 0);
+  if (total === 0) return '';
+
+  const preview = state.inputs?.previewOnly;
+  const rows = groups.flatMap((g) => g.files.map((f) => [`\`${f}\``, g.label]));
+  const shown = rows.slice(0, SUMMARY_FILE_TABLE_LIMIT);
+  return (
+    `### Background files (${fmtNum(total)})\n\n` +
+    `Not changed in this submission. ${preview ? 'Would be sent' : 'Sent'} so the AI can see ` +
+    `what the student's code uses, but never asked about.\n\n` +
+    table(['File', 'Kind'], shown) +
+    overflowNote(rows.length, shown.length)
   );
 }
 
@@ -725,7 +836,8 @@ function wantsCodebaseContext(inputs) {
 }
 
 /**
- * The codebase context row of the configuration table.
+ * The codebase context row of the configuration table: the counts only. The
+ * files are listed under the candidate and background files.
  *
  * @param {RunState} state
  */
@@ -740,12 +852,7 @@ function renderCodebaseContextSetting(state) {
     `${fmtNum(state.codebaseContextChars)} chars` +
     (state.codebaseContextOmitted.length > 0
       ? `, ${fmtNum(state.codebaseContextOmitted.length)} left out for size`
-      : '') +
-    fileListCell([
-      { label: 'Starter code', files: state.codebaseStarterFiles },
-      { label: 'Earlier work', files: state.codebaseEarlierFiles },
-      { label: 'Left out for size', files: state.codebaseContextOmitted },
-    ])
+      : '')
   );
 }
 
@@ -858,7 +965,8 @@ async function writeRunSummary(state) {
       banner,
       renderOwnWorkWarning(state),
       renderOverview(state),
-      renderAssessedFiles(state),
+      renderCandidateFiles(state),
+      renderBackgroundFiles(state),
       renderLeftOutFiles(state),
       // A preview delivers nothing, so it has no delivery to report.
       preview ? '' : renderDelivery(state),
@@ -1169,6 +1277,7 @@ function loadCodebaseContext({
   } = selection;
   state.codebaseStarterFiles = starterFiles;
   state.codebaseEarlierFiles = earlierFiles;
+  state.codebaseEarlierFromStarter = earlierFiles.filter((f) => starterCopyOf.has(f));
   state.codebaseContextOmitted = omitted;
   state.codebaseContextChars = starterContent.length + earlierContent.length;
 
