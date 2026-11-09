@@ -87,6 +87,8 @@
     ".aug": "Augeas",
     ".auk": "Awk",
     ".aux": "TeX",
+    ".avs": "AviSynth",
+    ".avsi": "AviSynth",
     ".aw": "PHP",
     ".awk": "Awk",
     ".axd": "ASP.NET",
@@ -316,7 +318,10 @@
       "Euphoria"
     ],
     ".ebuild": "Shell",
-    ".ec": "eC",
+    ".ec": [
+      "EasyCrypt",
+      "eC"
+    ],
     ".ecl": [
       "ECL",
       "Prolog"
@@ -331,6 +336,7 @@
     ".ejs": "EJS",
     ".ejs.t": "EJS",
     ".el": "Emacs Lisp",
+    ".eld": "Emacs Lisp",
     ".eliom": "OCaml",
     ".eliomi": "OCaml",
     ".elm": "Elm",
@@ -745,6 +751,7 @@
     ".mermaid": "Mermaid",
     ".metal": "Metal",
     ".metta": "MeTTa",
+    ".mf": "METAFONT",
     ".mg": "Modula-3",
     ".minid": "MiniD",
     ".mint": "Mint",
@@ -784,6 +791,7 @@
     ".moo": "Moocode",
     ".moon": "MoonScript",
     ".move": "Move",
+    ".mp": "MetaPost",
     ".mpl": "JetBrains MPS",
     ".mps": [
       "JetBrains MPS",
@@ -1253,6 +1261,7 @@
     ".tsp": [
       "TypeSpec"
     ],
+    ".tsrx": "TSRX",
     ".tst": [
       "GAP",
       "Scilab"
@@ -1263,6 +1272,7 @@
     ".txl": "TXL",
     ".txx": "C++",
     ".typ": "Typst",
+    ".ua": "Uiua",
     ".uc": [
       "UnrealScript",
       "ucode"
@@ -1305,6 +1315,7 @@
     ".vimrc": "Vim script",
     ".vmb": "Vim script",
     ".volt": "Volt",
+    ".vpy": "Python",
     ".vrx": "GLSL",
     ".vs": "GLSL",
     ".vsh": "GLSL",
@@ -1320,6 +1331,7 @@
     ".watchr": "Ruby",
     ".wdl": "WDL",
     ".webidl": "WebIDL",
+    ".wesl": "WESL",
     ".wgsl": "WGSL",
     ".whiley": "Whiley",
     ".wisp": "wisp",
