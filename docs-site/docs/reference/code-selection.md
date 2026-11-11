@@ -129,7 +129,7 @@ What counts as "before the range" follows the base. By default that is the first
 
 With `starter_code: ask`, an unchanged line that is also unchanged since the first commit is marked `s` instead of a space. On a tag run with `previous-tag`, that separates your starter code from the student's earlier work in the same file: only the `s` lines may be asked about.
 
-The run summary's **Files assessed** section says how many files were marked. A question that shows none of the marked lines is dropped after the AI replies; see [step 3](#4-after-the-ai-replies).
+The run summary's **Candidate files** section says how many files were marked. A question that shows none of the marked lines is dropped after the AI replies; see [step 3](#4-after-the-ai-replies).
 
 ## Starter code
 
@@ -227,7 +227,7 @@ A file that would go over the limit is left out, and smaller files after it are 
 ### Where it shows
 
 - **Report header:** **Codebase context**, with the number of files used.
-- **Run summary:** the **Codebase context** row of the configuration table shows the starter and earlier-work counts, the size, and how many files were left out, with a collapsed list of the files of each kind. The **Starter code** and, on tag and `base_sha` runs, **Previous work** rows show the settings.
+- **Run summary:** with `starter_code: ask`, the **Candidate files** section lists the starter files under **Starter code**, as files questions may be about, and says how many questions may be about starter code alone. The other files sent are listed under **Background files**, and those left out for size under **Candidate files**. The **Codebase context** row of the configuration table gives the counts and the size, and the **Starter code** and, on tag and `base_sha` runs, **Previous work** rows show the settings.
 - **Run log:** every file sent, by kind.
 
 ## When there is nothing to assess

@@ -60,7 +60,7 @@ jobs:
 
 ## Good to know
 
-- The run summary lists the files that would be assessed, and the files left out with the pattern responsible for each.
+- The run summary lists the candidate files questions could be about (the student's changed files and, with `starter_code: ask`, the starter code), the background files sent as context, and the files left out with the pattern responsible for each.
 - A preview costs nothing and works before the OpenRouter key is set up. It leaves an existing assessment as it is.
 - Run it in a repository that holds some work, such as your own solution. Straight after an assignment is accepted there is nothing to assess.
 - Keep the `|| 'false'` fallback. With `preview_only: "true"` written into the file, every run is a preview and no student is assessed.

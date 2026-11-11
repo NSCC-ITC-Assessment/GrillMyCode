@@ -164,7 +164,7 @@
     "required": false
   },
   "preview_only": {
-    "description": "When true, the run stops once it has worked out which files it would assess, and reports them in the run summary: the files that would be assessed, the changed files left out with the pattern or rule that left each one out, and the context files that would be sent. The AI is never called, so the run costs nothing and needs no api_key. No questions, issue, PDF, instructor copy or repository labels are produced, the outputs are empty, and an assessment from an earlier run is left as it is. Use it to check additional_exclude_patterns and exclude_pattern_overrides against a real repository before the first assessed run. A preview that finds nothing to assess says so and succeeds, whatever fail_on_empty_assessment is set to.",
+    "description": "When true, the run stops once it has worked out which files it would assess, and reports them in the run summary: the candidate files questions could be about (the files that would be assessed and, under starter_code: ask, the starter files), the other context files that would be sent, and the changed files left out with the pattern or rule that left each one out. The AI is never called, so the run costs nothing and needs no api_key. No questions, issue, PDF, instructor copy or repository labels are produced, the outputs are empty, and an assessment from an earlier run is left as it is. Use it to check additional_exclude_patterns and exclude_pattern_overrides against a real repository before the first assessed run. A preview that finds nothing to assess says so and succeeds, whatever fail_on_empty_assessment is set to.",
     "default": "false",
     "required": false,
     "kind": "boolean",

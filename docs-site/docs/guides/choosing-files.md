@@ -55,7 +55,7 @@ At the bottom of the **Files** step, under **Try the patterns on your files**, c
 
 Each student's repository is checked for its languages and frameworks separately, so two students can get slightly different rules. If your starter template fixes the language and the folder layout, tick **Use these templates for every student** in the preview, and every repository gets the rules shown. Otherwise leave it unticked. See [Using the same stack for every student](../reference/exclude-patterns.md#using-the-same-stack-for-every-student).
 
-For the exact answer, preview a real repository, such as one holding your solution: [start a run by hand](running-manually.md) with the form's preview field set to **true**. The run lists the files it would assess and leave out, then stops. It generates no questions and costs nothing.
+For the exact answer, preview a real repository, such as one holding your solution: [start a run by hand](running-manually.md) with the form's preview field set to **true**. The run lists every file questions could be about, including your starter code if questions may be asked about it, and the files it would leave out, then stops. It generates no questions and costs nothing.
 
 ## Checking what was assessed
 
