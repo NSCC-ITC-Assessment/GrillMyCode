@@ -5,6 +5,14 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.33.0 — 2026-11-11
+
+### What's Changed
+
+### Features
+
+- **summary:** list every file questions can be about as candidate files
+
 ## v0.32.1 — 2026-11-09
 
 ### What's Changed

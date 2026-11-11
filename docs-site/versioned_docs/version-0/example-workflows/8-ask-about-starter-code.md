@@ -55,6 +55,7 @@ jobs:
 - Your starter code is the same for every student, so answers to these questions can be shared.
 - Questions about starter code are worded as about "the provided code", and the report header says how many there are.
 - Sending the starter code makes each run cost more.
+- A [preview run](9-preview-files.md) lists the starter files open to questions under **Candidate files**.
 
 ## Related
 

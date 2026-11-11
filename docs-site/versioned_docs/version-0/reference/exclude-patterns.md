@@ -345,11 +345,12 @@ Set `preview_only: "true"` and a run stops once it has worked out which files it
 
 The summary is headed **GrillMyCode — file preview, no questions generated** and shows:
 
-- how many of the changed files would be assessed, and how many are left out;
-- **Files that would be assessed**, with the lines added and removed in each;
+- how many of the changed files would be assessed, how many starter files are open to questions, and how many are left out;
+- **Candidate files**, every file questions could be about: under **Changed by the student**, the files that would be assessed, with the lines added and removed in each, and with `starter_code: ask`, under **Starter code**, the starter files sent as [codebase context](code-selection.md#codebase-context);
+- **Background files**, the other files that would be sent as codebase context, which are never asked about;
 - **Files left out**, one row per pattern or rule, with where the pattern comes from; see [Confirming what was applied](#confirming-what-was-applied);
 - a warning when a detected pattern leaves out source files;
-- the settings the run used, including the assignment and codebase context files it would have sent.
+- the settings the run used, including the assignment context files it would have sent.
 
 A preview run:
 
@@ -425,4 +426,4 @@ The **Files left out** section has one row per pattern, largest group first, the
 
 In the **Configuration used by this run** table, the **Stack templates** row says whether the stack was detected or set by `stack_templates`, and lists it as `stack_templates` entries, ready to copy into a workflow.
 
-A row marked ⚠️ holds at least one of the flagged source files. The lists show at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path. In the **Configuration used by this run** table, the **Codebase context** row lists the files sent as context the same way.
+A row marked ⚠️ holds at least one of the flagged source files. The lists show at most 1,000 paths in total, shared so that small groups are always listed in full; the run log always has every path.
