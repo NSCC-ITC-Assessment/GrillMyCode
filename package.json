@@ -24,7 +24,7 @@
     "@actions/http-client": "^4.0.1",
     "mammoth": "^1.13.0",
     "md-to-pdf": "^5.2.5",
-    "minimatch": "^10.2.6",
+    "minimatch": "^11.0.0",
     "unpdf": "^1.8.1"
   },
   "type": "module",
