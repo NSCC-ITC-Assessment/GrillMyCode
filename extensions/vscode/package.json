@@ -317,7 +317,7 @@
     "@vscode/vsce": "^4.0.0",
     "clsx": "^2.1.1",
     "esbuild": "^0.28.2",
-    "minimatch": "^10.2.6",
+    "minimatch": "^11.0.0",
     "react": "^19.3.0",
     "react-dom": "^19.3.0",
     "typescript": "^7.0.2",
