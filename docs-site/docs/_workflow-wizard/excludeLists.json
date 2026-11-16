@@ -1402,10 +1402,6 @@
       ".angular/**",
       "**/.angular/**",
       "node_modules/**",
-      "package-lock.json",
-      "package-lock.json/**",
-      "yarn.lock",
-      "yarn.lock/**",
       ".env",
       ".env/**",
       ".angular-cli.json",
@@ -2695,7 +2691,13 @@
       "**/.vite/**",
       "**/.astro/**",
       "**/.turbo",
-      "**/.turbo/**"
+      "**/.turbo/**",
+      ".nx/cache",
+      ".nx/cache/**",
+      ".nx/workspace-data",
+      ".nx/workspace-data/**",
+      ".nx/migrate-runs",
+      ".nx/migrate-runs/**"
     ],
     "OCaml": [
       "**/*.annot",
@@ -3366,6 +3368,7 @@
       "**/*.stc[0-9]*",
       "**/_minted*",
       "**/*.data.minted",
+      "**/*.errlog.minted",
       "**/*.pyg",
       "**/*.mw",
       "**/*.newpax",
@@ -3821,6 +3824,7 @@
       "**/*.cab",
       "**/*.msi",
       "**/*.msix",
+      "**/*.msixbundle",
       "**/*.msm",
       "**/*.msp"
     ],

@@ -71,10 +71,6 @@
     ".angular/**",
     "**/.angular/**",
     "node_modules/**",
-    "package-lock.json",
-    "package-lock.json/**",
-    "yarn.lock",
-    "yarn.lock/**",
     ".env",
     ".env/**",
     ".angular-cli.json",
@@ -1031,7 +1027,10 @@
     "**/CLAUDE.local.md/**",
     "**/gemini-debug.log",
     "**/gemini-debug.log/**",
-    "**/.gemini-clipboard/**"
+    "**/.gemini-clipboard/**",
+    "**/.playwright-mcp/**",
+    "**/.remember/**",
+    "**/.superpowers/**"
   ],
   "Global/Anjuta": [".anjuta/**", ".anjuta_sym_db.db", ".anjuta_sym_db.db/**"],
   "Global/Ansible": ["**/.ansible/**", "**/*.retry"],
@@ -3870,7 +3869,13 @@
     "**/.vite/**",
     "**/.astro/**",
     "**/.turbo",
-    "**/.turbo/**"
+    "**/.turbo/**",
+    ".nx/cache",
+    ".nx/cache/**",
+    ".nx/workspace-data",
+    ".nx/workspace-data/**",
+    ".nx/migrate-runs",
+    ".nx/migrate-runs/**"
   ],
   "OCaml": [
     "**/*.annot",
@@ -4883,6 +4888,7 @@
     "**/*.stc[0-9]*",
     "**/_minted*",
     "**/*.data.minted",
+    "**/*.errlog.minted",
     "**/*.pyg",
     "**/*.mw",
     "**/*.newpax",
@@ -4980,6 +4986,19 @@
     "**/HISTORY.txt/**",
     "**/README.txt",
     "**/README.txt/**"
+  ],
+  "TouchDesigner": [
+    "**/Backup/**",
+    "**/CrashAutoSave.*",
+    "**/*.dmp",
+    "**/TDImportCache/**",
+    "**/*.log",
+    "**/logs/**",
+    "**/*.*.toe",
+    "**/*Autosave*.toe",
+    "**/__pycache__/**",
+    "**/*.pyc",
+    "**/*.pyo"
   ],
   "TurboGears2": [
     "**/*.py[co]",
@@ -5439,6 +5458,7 @@
     "**/*.cab",
     "**/*.msi",
     "**/*.msix",
+    "**/*.msixbundle",
     "**/*.msm",
     "**/*.msp"
   ],
@@ -6014,6 +6034,16 @@
     "**/npm-debug.log*",
     "**/yarn-debug.log*",
     "**/yarn-error.log*"
+  ],
+  "community/JavaScript/Hardhat": [
+    "artifacts",
+    "artifacts/**",
+    "cache",
+    "cache/**",
+    "types",
+    "types/**",
+    "typechain-types",
+    "typechain-types/**"
   ],
   "community/JavaScript/Meteor": [
     "**/settings-production.json",
@@ -6800,7 +6830,11 @@
     "**/*.X/dist/**",
     "**/*.X/debug/**",
     "**/*.X/mcc_generated_files/**",
-    "**/*.X/mcc-manifest-*.yml"
+    "**/*.X/mcc-manifest-*.yml",
+    "**/*.X/_build/**",
+    "**/*.X/cmake/**",
+    "**/*.X/out/**",
+    "**/*.X/*.log*"
   ],
   "community/embedded/esp-idf": [
     "**/build/**",
@@ -6871,7 +6905,6 @@
     "**/*.ko",
     "**/*.obj",
     "**/*.elf",
-    "**/*.o",
     "**/*.bin",
     "**/*.ilk",
     "**/*.map",
@@ -6893,7 +6926,6 @@
     "**/*.x86_64",
     "**/*.hex",
     "**/*.dol",
-    "**/*.elf",
     "**/*.dSYM/**",
     "**/*.su",
     "**/*.idb",
