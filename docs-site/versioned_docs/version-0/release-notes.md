@@ -5,6 +5,19 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.33.1 — 2026-11-17
+
+### What's Changed
+
+### Bug Fixes
+
+- **deps:** update dependency minimatch to v11 [security]
+
+### Chores & Maintenance
+
+- **deps:** update dependency serialize-javascript to v7.1.3 [security]
+- refresh gitignore templates
+
 ## v0.33.0 — 2026-11-11
 
 ### What's Changed
