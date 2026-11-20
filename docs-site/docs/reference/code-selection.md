@@ -41,7 +41,7 @@ The base does **not** depend on what was pushed. Every run assesses all of the s
 Three things can move the base later than that:
 
 - **`tag_diff_base: previous-tag`** (tag runs only). The base becomes the nearest earlier commit carrying one of your `submission_tags`, so a tag assesses only the work since the previous one. With no earlier tag, the base above is used. **`tag_diff_base: tag:<name>`** moves it to the tag you name instead, and fails the run if it can't. See [Triggers in depth](triggers.md#what-each-tag-assesses).
-- **`tag_range`** (any run). The base becomes the range's first tag, in place of `tag_diff_base`, and the head can be its second tag. See [Tag ranges](triggers.md#tag-ranges).
+- **`tag_range`** (any run). The base becomes the range's first tag, in place of `tag_diff_base`, and the head can be its second tag. A range with no first tag keeps the base `starter_code` sets. See [Tag ranges](triggers.md#tag-ranges).
 - **`skip_committers`**. See [Skipping bot commits](#skipping-bot-commits).
 
 `base_sha` overrides everything above. When both `base_sha` and `head_sha` are set, the run uses them as given and skips all other resolution.
@@ -125,7 +125,7 @@ The comparison is made **after** comment stripping, between the base and head ve
 
 If no file in the submission has a single added or changed line, for example because the student only edited comments, the files are sent whole without markers, and the run summary says so.
 
-What counts as "before the range" follows the base. By default that is the first commit, so the unmarked lines are starter code. With `tag_diff_base: previous-tag` or `tag:<name>`, or a `tag_range`, the unmarked lines also include the student's own work from before that tag, and the questions cover only what changed since. Earlier files the submission didn't touch at all can be sent as [codebase context](#codebase-context). With `starter_code: none` the base is the empty tree, so nothing is marked.
+What counts as "before the range" follows the base. By default that is the first commit, so the unmarked lines are starter code. With `tag_diff_base: previous-tag` or `tag:<name>`, or a `tag_range` with a first tag, the unmarked lines also include the student's own work from before that tag, and the questions cover only what changed since. Earlier files the submission didn't touch at all can be sent as [codebase context](#codebase-context). With `starter_code: none` the base is the empty tree, so nothing is marked.
 
 With `starter_code: ask`, an unchanged line that is also unchanged since the first commit is marked `s` instead of a space. On a tag run with `previous-tag`, that separates your starter code from the student's earlier work in the same file: only the `s` lines may be asked about.
 
@@ -190,7 +190,7 @@ In practice these files come in two kinds, and which ones exist depends on the c
 | Kind | What it is | When there is any | Sent when |
 |---|---|---|---|
 | **Starter code** | Files from the first commit that the student has never changed | Whenever `starter_code` isn't `none` | `starter_code: context` or `ask` |
-| **Earlier work** | The student's own files from before the range that this submission didn't touch, including starter files they changed in an earlier submission | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, `tag_range`, or a manual `base_sha` | `previous_work: context` (default) |
+| **Earlier work** | The student's own files from before the range that this submission didn't touch, including starter files they changed in an earlier submission | Only when the base is later than the first commit: `tag_diff_base: previous-tag` or `tag:<name>`, `tag_range` with a first tag, or a manual `base_sha` | `previous_work: context` (default) |
 
 Some examples:
 

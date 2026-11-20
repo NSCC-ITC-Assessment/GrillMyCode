@@ -269,7 +269,8 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
               <span className={styles.optionalBadge}>optional</span> <code>tag_range</code>
             </label>
             <span className={styles.hint}>
-              Leave both empty to assess all the student's work. Students create these tags, so put
+              Leave both empty to assess all the student's work. Set only To tag to assess
+              everything up to that tag. Students create these tags, so put
               the names and the commands in the assignment instructions, e.g.{' '}
               <code>git tag phase1 &amp;&amp; git push origin phase1</code>. Names are case-sensitive. A run fails if a repository doesn't have a tag you name, or
               if the first tag isn't an earlier commit, and the tag that ends the range must be on
@@ -277,8 +278,13 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
             </span>
           </div>
           <div className={styles.fieldGroup}>
-            <label className={styles.label}>From tag</label>
-            <span className={styles.hint}>The work after this tag is assessed.</span>
+            <label className={styles.label}>
+              From tag <span className={styles.optionalBadge}>optional</span>
+            </label>
+            <span className={styles.hint}>
+              The work after this tag is assessed. Leave empty to assess all the student's work up
+              to To tag.
+            </span>
             <input
               type="text"
               className={styles.input}
@@ -309,12 +315,14 @@ export default function StepTrigger({ cfg, onChange, docsBase = '/docs' }) {
               style={{ borderLeftColor: 'var(--ifm-color-warning, #f59e0b)' }}
             >
               On this trigger, every push fails until the student has pushed{' '}
-              {cfg.tagRangeTo.trim() ? 'both tags' : 'the tag'}.
+              {cfg.tagRangeFrom.trim() && cfg.tagRangeTo.trim() ? 'both tags' : 'the tag'}.
               {cfg.tagRangeTo.trim() &&
                 ' Once they have, every push assesses the same work again, at the cost of a full run each time. Consider Manual only, or leave To tag empty.'}
             </div>
           )}
-          {tagRange && <PreviousWorkField cfg={cfg} onChange={onChange} />}
+          {tagRange && cfg.tagRangeFrom.trim() && (
+            <PreviousWorkField cfg={cfg} onChange={onChange} />
+          )}
           {tagRange && codebaseLimitStep(cfg) === 'Trigger' && (
             <CodebaseContextLimit cfg={cfg} onChange={onChange} />
           )}

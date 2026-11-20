@@ -46,9 +46,9 @@ import { findMatchingTagPattern, namedDiffBaseTag, pickPreviousSubmissionTag } f
  * with tag:<name> to that tag, failing the run if it cannot be used.
  *
  * tag_range applies whatever started the run and takes precedence over
- * tag_diff_base: the base is its first tag, and the head its second, or the
- * commit the run started on when it names none. A tag it needs and cannot use
- * fails the run.
+ * tag_diff_base: the base is its first tag, or the one starter_code picks when it
+ * names none, and the head its second, or the commit the run started on when it names
+ * none. A tag it needs and cannot use fails the run.
  *
  * Returns { baseSha, headSha, previousTag, skippedRange }, where previousTag is
  * the { name, commit } the base was moved to, or null, and skippedRange is the
@@ -90,8 +90,10 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   if (tagName && inputs.tagRange?.to && inputs.tagRange.to !== tagName && !overrideHead) {
     throw new Error(
       `tag_range is "${tagRangeText(inputs.tagRange)}", but this run is a submission under tag ` +
-        `"${tagName}", which ends the range. Leave out the second tag, as in ` +
-        `"${inputs.tagRange.from}${TAG_RANGE_SEPARATOR}".`,
+        `"${tagName}", which ends the range. ` +
+        (inputs.tagRange.from
+          ? `Leave out the second tag, as in "${inputs.tagRange.from}${TAG_RANGE_SEPARATOR}".`
+          : `Name "${tagName}" as the second tag, as in "${TAG_RANGE_SEPARATOR}${tagName}".`),
     );
   }
 
@@ -209,7 +211,15 @@ export async function resolveSHAs(ctx, octokit, inputs, { tagName = '' } = {}) {
   // ── Apply tag_range ────────────────────────────────────────────────────────
   // As with tag:<name>, there is no fallback, and base_sha skips it so a missing
   // tag does not fail a run that would never use it.
-  if (inputs.tagRange && !inputs.baseSha) {
+  if (inputs.tagRange && !inputs.baseSha && !inputs.tagRange.from) {
+    // No start tag: the range runs from the beginning of the history, so the
+    // base is whatever starter_code chose above, as on a run with no range.
+    core.info(
+      `tag_range is ${tagRangeText(inputs.tagRange)}: assessing from the beginning of the history ` +
+        `(${baseSha.substring(0, GIT_SHA_SHORT_LENGTH)}, from starter_code) to ` +
+        `${headSha.substring(0, GIT_SHA_SHORT_LENGTH)}.`,
+    );
+  } else if (inputs.tagRange && !inputs.baseSha) {
     const { from } = inputs.tagRange;
     const commit = resolveRangeTag(inputs.tagRange, from);
     const range = tagRangeText(inputs.tagRange);

@@ -1098,7 +1098,9 @@ function explainEmptyAssessment({ reason, baseSha, headSha, allFiles, excludePat
         : '');
     checks = [
       `The range assessed was \`${shortBase}..${shortHead}\`${baseSha === headSha ? ' — base and head are the same commit.' : '.'}`,
-      inputs.tagRange && !inputs.baseSha
+      // A range with no start tag takes its base from starter_code, so the
+      // starter_code lines below explain it.
+      inputs.tagRange?.from && !inputs.baseSha
         ? `\`tag_range\` is \`${tagRangeText(inputs.tagRange)}\`, so the first tag sets the base, not \`starter_code\`. The files at the end of the range are the same as at that tag, so the student's work between them changed nothing overall.`
         : noStarter
           ? '`starter_code` is **none**, so the base is the empty tree and every commit should be in range. An empty range here means the repository has no commits with files.'

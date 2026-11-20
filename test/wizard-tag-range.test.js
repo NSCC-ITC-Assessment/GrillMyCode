@@ -33,6 +33,10 @@ describe('the tag range the Wizard writes', () => {
     expect(actionInputs(range('phase1')).tag_range).toBe('phase1..');
   });
 
+  it('writes a range with no start tag', () => {
+    expect(actionInputs(range('', 'phase2')).tag_range).toBe('..phase2');
+  });
+
   it('writes it on a push trigger', () => {
     const config = range('phase1', 'phase2', { triggerEvent: 'push+workflow_dispatch' });
     expect(actionInputs(config).tag_range).toBe('phase1..phase2');
@@ -64,13 +68,17 @@ describe('the tag range the Wizard writes', () => {
 
   it('is never written when the action would reject it', () => {
     expect(actionInputs(range('phase*', 'phase2'))).not.toHaveProperty('tag_range');
-    expect(actionInputs(range('', 'phase2'))).not.toHaveProperty('tag_range');
+    expect(actionInputs(range('', 'phase*'))).not.toHaveProperty('tag_range');
   });
 
   it('counts as leaving earlier work, so previous_work can be written', () => {
     expect(hasEarlierWork(cfg())).toBe(false);
     expect(hasEarlierWork(range('phase1'))).toBe(true);
     expect(hasEarlierWork(range('phase*'))).toBe(false);
+    expect(hasEarlierWork(range('', 'phase2'))).toBe(false);
+    expect(actionInputs(range('', 'phase2', { previousWork: 'ignore' }))).not.toHaveProperty(
+      'previous_work',
+    );
     expect(actionInputs(range('phase1', '', { previousWork: 'ignore' })).previous_work).toBe(
       'ignore',
     );
@@ -120,7 +128,10 @@ describe("the Wizard's tag range check", () => {
     'phase/',
     'a..b',
   ];
-  const pairs = NAMES.flatMap((from) => ['', ...NAMES].map((to) => [from, to]));
+  // Both empty is no range at all here, and the Wizard writes nothing for it.
+  const pairs = ['', ...NAMES]
+    .flatMap((from) => ['', ...NAMES].map((to) => [from, to]))
+    .filter(([from, to]) => from || to);
 
   it.each(pairs)('agrees with the action about "%s" and "%s"', (from, to) => {
     expect(tagRangeError(range(from, to)) === '').toBe(actionAccepts(from, to));
@@ -130,8 +141,8 @@ describe("the Wizard's tag range check", () => {
     expect(tagRangeError(cfg())).toBe('');
   });
 
-  it('asks for a start tag when only an end tag is set', () => {
-    expect(tagRangeError(range('', 'phase2'))).toMatch(/starts from/);
+  it('accepts an end tag with no start tag', () => {
+    expect(tagRangeError(range('', 'phase2'))).toBe('');
   });
 
   it('names a tag it cannot use', () => {

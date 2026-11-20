@@ -38,6 +38,11 @@ describe('tag_range input', () => {
     expect(tagRange('phase1..')).toEqual({ from: 'phase1', to: '' });
   });
 
+  it('reads a range with no start tag', () => {
+    expect(tagRange('..phase2')).toEqual({ from: '', to: 'phase2' });
+    expect(tagRange(' .. phase2 ')).toEqual({ from: '', to: 'phase2' });
+  });
+
   it('keeps the case of the names and ignores spaces around them', () => {
     expect(tagRange(' Phase1 .. Phase2 ')).toEqual({ from: 'Phase1', to: 'Phase2' });
   });
@@ -48,8 +53,9 @@ describe('tag_range input', () => {
 
   it.each([
     ['no separator', 'phase1'],
-    ['no start tag', '..phase2'],
     ['only the separator', '..'],
+    ['only the separator with spaces', ' .. '],
+    ['a start tag that starts like an option', '-phase1..'],
     ['a third tag', 'phase1..phase2..final'],
     ['three dots', 'phase1...phase2'],
     ['a wildcard', 'phase*..phase2'],
@@ -83,6 +89,7 @@ describe("the extension's copy of the tag_range rule", () => {
     'v1.0..release/v2.0',
     'phase1',
     '..phase2',
+    ' .. phase2',
     '..',
     'phase1..phase2..final',
     'phase1...phase2',

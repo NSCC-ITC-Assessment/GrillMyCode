@@ -114,8 +114,8 @@ const MIN_COUNT = 1;
  *   integer   a whole number, clamped to `min` and `max`.
  *   number    a number from `min` to `max`. Anything else is ignored.
  *   tags      a list of submission tag patterns.
- *   tagRange  two tag names separated by "..", the second optional. Anything
- *             else fails the run.
+ *   tagRange  two tag names separated by "..", either optional but not both.
+ *             Anything else fails the run.
  *   questionSet  a question set's name: at most QUESTION_SET_MAX_CHARS long,
  *             with a character a folder name can keep. Anything else fails
  *             the run.
