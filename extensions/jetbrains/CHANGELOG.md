@@ -5,6 +5,8 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
+## [0.5.0]
+
 ### Changed
 
 - A tag range may leave out its first tag, as in `..phase2`, to assess all the
