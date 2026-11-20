@@ -51,8 +51,8 @@ A run with `tag_range` set fails, rather than assessing something wider, when it
 - **`is not an earlier commit`.** The tags are the wrong way round or on different branches. Check the range, then ask the student to move the tag with `git tag -f <name>` and push it with `git push --force origin <name>`.
 - **`no work since it to assess`.** Both ends of the range are on the same commit.
 - **`is not on the default branch`.** Merge the work into the default branch, move the tag to the merged commit and push it again.
-- **`which ends the range`.** The run is a submission under its own tag, so that tag ends the range. Leave out the second tag, as in `phase1..`.
-- **`is not a usable range`.** Write the value as `phase1..phase2`, or `phase1..` for everything since that tag.
+- **`which ends the range`.** The run is a submission under its own tag, so that tag ends the range. Leave out the second tag, as in `phase1..`, or with no first tag, name that tag as the second.
+- **`is not a usable range`.** Write the value as `phase1..phase2`, `phase1..` for everything since that tag, or `..phase2` for everything up to it.
 - **`starts and ends at the same tag`.** Name two different tags, or leave out the second.
 
 See [Tag ranges](reference/triggers.md#tag-ranges).

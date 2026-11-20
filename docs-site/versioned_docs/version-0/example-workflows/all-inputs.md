@@ -282,8 +282,9 @@ jobs:
           # ── Tag range (any trigger) ───────────────────────────────────────
 
           # Assesses only the work between two tags, whatever starts the run:
-          # "phase1..phase2", or "phase1.." for everything since that tag. The
-          # run fails if a tag is missing or not usable. On a submission tag run,
+          # "phase1..phase2", "phase1.." for everything since that tag, or
+          # "..phase2" for everything up to it. The run fails if a tag is
+          # missing or not usable. On a submission tag run,
           # that tag ends the range, so write only the first. Takes precedence
           # over tag_diff_base.
           # tag_range: "phase1..phase2"

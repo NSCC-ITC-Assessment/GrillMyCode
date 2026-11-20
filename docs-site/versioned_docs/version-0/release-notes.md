@@ -5,6 +5,18 @@ toc_max_heading_level: 2
 ---
 
 # Release Notes
+## v0.34.0 — 2026-11-20
+
+### What's Changed
+
+### Features
+
+- **tag_range:** allow a range with no start tag
+
+### Chores & Maintenance
+
+- **deps:** update renovatebot/github-action action to v46.3.13
+
 ## v0.33.1 — 2026-11-17
 
 ### What's Changed

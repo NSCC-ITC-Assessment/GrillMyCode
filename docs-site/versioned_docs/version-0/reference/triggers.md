@@ -220,8 +220,9 @@ on:
 |---|---|
 | `phase1..phase2` | The work after `phase1` up to `phase2`, whichever branch or tag the run was started from |
 | `phase1..` | The work after `phase1` up to the commit the run started on |
+| `..phase2` | All the work up to `phase2`, from where a run with no range starts: after the first commit, or from the empty tree with `starter_code: none` |
 
-Names are case-sensitive and can't use wildcards. They don't need to be in `submission_tags`. In the Workflow Wizard, this is **Assess only the work between two tags**, with **From tag** and **To tag** fields, on the *Push, PR Merge, or Manual* and *Manual only* triggers. On *Submission tag or Manual*, **Only work since a tag you name** gives the same result.
+Names are case-sensitive and can't use wildcards. They don't need to be in `submission_tags`. In the Workflow Wizard, this is **Assess only the work between two tags**, with **From tag** and **To tag** fields, either of which can be left empty, on the *Push, PR Merge, or Manual* and *Manual only* triggers. On *Submission tag or Manual*, **Only work since a tag you name** gives the same result.
 
 Students create the tags, so put the names and the commands in the assignment instructions. The range is fixed in the workflow file, so changing it takes a commit, or a separate workflow for each range. It can't be a field on the run form; see [Settings to keep out of the form](#settings-to-keep-out-of-the-form). For a complete workflow, see the [Assess between two tags](../example-workflows/12-tag-range.md) recipe.
 
@@ -233,7 +234,7 @@ A range never falls back to assessing something wider. The run **fails** when:
 - the first tag isn't an earlier commit than the end of the range, for example because the tags are the wrong way round, are on the same commit, or are on different branches
 - the range ends at a tag that isn't on the default branch, whether that is its second tag or, with no second tag, the tag the run started on
 - a run is a submission under one tag and the range ends at another; see [Tag ranges and each trigger](#tag-ranges-and-each-trigger)
-- the value isn't a usable range, such as `phase1`, `..phase2`, `phase1...phase2`, `phase*..phase2` or `phase1..phase1`
+- the value isn't a usable range, such as `phase1`, `..`, `phase1...phase2`, `phase*..phase2` or `phase1..phase1`
 
 ### Tag ranges and each trigger
 
@@ -241,7 +242,7 @@ A range never falls back to assessing something wider. The run **fails** when:
 |---|---|---|
 | Manual only | The same range each time, from any branch or tag. The workflow file only has to be on the branch or tag you start it from | The best fit |
 | Push | With `phase1..`, each push assesses the work since `phase1`. With a second tag, each push assesses the same work again, at the cost of a full run. Either way, every push fails until the student has pushed the tags | Works, but check the cost |
-| Submission tags | The pushed tag ends the range, so write only the first tag, as in `phase1..`. This assesses what [`tag_diff_base: tag:phase1`](#what-each-tag-assesses) does | Works; either input will do |
+| Submission tags | The pushed tag ends the range, so write only the first tag, as in `phase1..`. This assesses what [`tag_diff_base: tag:phase1`](#what-each-tag-assesses) does. A range with no first tag has to end at the pushed tag, which is the same as no range | Works; either input will do |
 
 `tag_range` doesn't change what counts as a submission. A run started on a tag in `submission_tags` is one, with or without a range: it files in that tag's [delivery group](#delivery-groups), and is added to the [resubmission record](instructor-repository.md#spotting-resubmissions). `tag_range` takes precedence over `tag_diff_base`.
 
@@ -261,8 +262,9 @@ The run summary's configuration table shows the range in its **Tag range** row. 
 ### How a tag range works with other settings
 
 - **`base_sha` and `head_sha`** take precedence. A tag either one replaces doesn't have to exist, and with `head_sha` there is no default branch check.
-- **`skip_committers`** still applies, stepping past bot commits straight after the first tag.
-- **`previous_work`** applies, since a range leaves earlier work; see [Codebase context](code-selection.md#codebase-context).
+- **`starter_code`** has no effect with a first tag, which sets the base. With no first tag, it sets the base as on any run.
+- **`skip_committers`** still applies, stepping past bot commits straight after the first tag, or after the base with no first tag.
+- **`previous_work`** applies when the range has a first tag, since that leaves earlier work; see [Codebase context](code-selection.md#codebase-context).
 - **`assignment_context`** reads its files from the commit the run started on, not from the end of the range, so a run started from the default branch uses the latest brief there.
 
 ## Question sets

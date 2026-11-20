@@ -47,7 +47,7 @@ jobs:
 
 ## Change these
 
-- **`tag_range`:** your tag names. Leave out the second, as in `phase1..`, to assess everything since the first tag.
+- **`tag_range`:** your tag names. Leave out the second, as in `phase1..`, to assess everything since the first tag, or the first, as in `..phase1`, to assess everything up to the second.
 - **`name:`** and the file name, one per range, so each range keeps its own questions.
 
 ## Good to know
@@ -55,7 +55,7 @@ jobs:
 - Give students the commands, for example `git tag phase2 && git push origin phase2`. Names are case-sensitive.
 - A repository without the tags fails its run and is not assessed, so the failed run tells you who hasn't tagged.
 - The tag that ends the range must be on the default branch.
-- Earlier work isn't assessed again, but is sent to the AI as background.
+- With a first tag, earlier work isn't assessed again, but is sent to the AI as background.
 
 ## Related
 

@@ -50,14 +50,13 @@ function buildChecklist(cfg, docsBase, host) {
   }
 
   if (tagRangeValue(cfg)) {
-    const from = cfg.tagRangeFrom.trim();
-    const to = cfg.tagRangeTo.trim();
+    const tags = [cfg.tagRangeFrom.trim(), cfg.tagRangeTo.trim()].filter(Boolean);
     items.push({
       text:
-        `Tell students to tag their work: "git tag ${from} && git push origin ${from}"` +
-        (to ? ` and later "git tag ${to} && git push origin ${to}". ` : '. ') +
-        'A run fails in any repository without ' +
-        (to ? 'these tags' : 'this tag') +
+        'Tell students to tag their work: ' +
+        tags.map((tag) => `"git tag ${tag} && git push origin ${tag}"`).join(' and later ') +
+        '. A run fails in any repository without ' +
+        (tags.length > 1 ? 'these tags' : 'this tag') +
         ', and the names are case-sensitive.',
       linkHref: `${docsBase}/reference/triggers#tag-ranges`,
       linkLabel: 'Tag ranges',
