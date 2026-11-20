@@ -2,6 +2,11 @@
 
 What changed in each version of GrillMyCode Companion. A version marked pre-release is installed only if you ask VS Code for pre-release versions.
 
+## 0.10.0, 2026-11-20
+
+- A tag range may leave out its first tag, as in `..phase2`, to assess all the work up to that tag. The Workflow Wizard's **From tag** is optional, and the workflow checks accept the range.
+- The Workflow Wizard uses minimatch 11, which fixes a security issue, to match file patterns.
+
 ## 0.8.0, 2026-11-03
 
 - The Workflow Wizard can assess only the work between two tags, such as `phase1` and `phase2`, whatever starts the run. Choose **Assess only the work between two tags** on the **Push, PR Merge, or Manual** or **Manual only** trigger, and fill in **From tag** and, if you want one, **To tag**.
