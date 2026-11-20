@@ -1044,16 +1044,24 @@
       ]
     },
     {
-      "name": "tag_range needs a start tag",
+      "name": "tag_range may leave out the start tag",
       "inputs": [
         "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
         "tag_range: ..phase2"
+      ],
+      "problems": []
+    },
+    {
+      "name": "tag_range needs at least one tag",
+      "inputs": [
+        "api_key: ${{ secrets.OPENROUTER_API_KEY }}",
+        "tag_range: .."
       ],
       "problems": [
         {
           "severity": "error",
           "code": "invalid-value",
-          "text": "..phase2"
+          "text": ".."
         }
       ]
     },

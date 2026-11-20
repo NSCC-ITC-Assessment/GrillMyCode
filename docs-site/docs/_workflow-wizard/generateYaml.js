@@ -60,7 +60,8 @@ export function effectiveAiModel(cfg) {
 /**
  * Whether a run can have earlier work — the student's own code from before the
  * assessed range — which only a base later than the first commit leaves: a tag
- * run diffed from an earlier tag, a tag range, or a base_sha override.
+ * run diffed from an earlier tag, a tag range with a start tag, or a base_sha
+ * override. A range with no start tag begins where a run with no range does.
  * previous_work has no effect otherwise, so it is neither offered nor emitted.
  *
  * @param {WizardConfig} cfg
@@ -68,7 +69,7 @@ export function effectiveAiModel(cfg) {
 export function hasEarlierWork(cfg) {
   return (
     (isTagTrigger(cfg) && (cfg.tagDiffBase || 'cumulative') !== 'cumulative') ||
-    Boolean(tagRangeValue(cfg)) ||
+    Boolean(tagRangeValue(cfg) && (cfg.tagRangeFrom || '').trim()) ||
     Boolean(cfg.baseSha)
   );
 }
@@ -243,7 +244,6 @@ export function tagRangeError(cfg) {
   const from = (cfg.tagRangeFrom || '').trim();
   const to = (cfg.tagRangeTo || '').trim();
   if (!from && !to) return '';
-  if (!from) return 'Please enter the tag the range starts from, or clear the end tag.';
   const bad = [from, to].find((name) => name && !isUsableTagName(name));
   if (bad) {
     return `"${bad}" is not a usable tag name. Use letters, digits and . _ / - with no wildcards.`;
@@ -265,8 +265,9 @@ export function tagRangeError(cfg) {
  */
 export function tagRangeValue(cfg) {
   const from = (cfg.tagRangeFrom || '').trim();
-  if (!offersTagRange(cfg) || !from || tagRangeError(cfg)) return '';
-  return `${from}..${(cfg.tagRangeTo || '').trim()}`;
+  const to = (cfg.tagRangeTo || '').trim();
+  if (!offersTagRange(cfg) || (!from && !to) || tagRangeError(cfg)) return '';
+  return `${from}..${to}`;
 }
 
 // ── Workflow name and question set ───────────────────────────────────────────

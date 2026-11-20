@@ -28,7 +28,12 @@ fun tagRangeProblem(value: String): String {
     val parts = value.split("..").map { it.trim() }
     val from = parts.getOrElse(0) { "" }
     val to = parts.getOrElse(1) { "" }
-    if (parts.size != 2 || value.contains("...") || !isSafeTagName(from) || (to != "" && !isSafeTagName(to))) {
+    if (parts.size != 2 ||
+        value.contains("...") ||
+        (from == "" && to == "") ||
+        (from != "" && !isSafeTagName(from)) ||
+        (to != "" && !isSafeTagName(to))
+    ) {
         return "format"
     }
     return if (from == to) "same" else ""

@@ -37,7 +37,8 @@ export function tagRangeProblem(value) {
   if (
     parts.length !== 2 ||
     value.includes('...') ||
-    !isSafeTagName(from) ||
+    (from === '' && to === '') ||
+    (from !== '' && !isSafeTagName(from)) ||
     (to !== '' && !isSafeTagName(to))
   ) {
     return 'format';

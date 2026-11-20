@@ -123,11 +123,13 @@ function readTagDiffBase() {
 }
 
 /**
- * Reads tag_range: "<from>..<to>", or "<from>.." for no end tag, in which case
- * `to` is ''. Returns null when the input is empty. Tag names keep their case,
- * as in tag_diff_base. Three dots are rejected rather than split: a tag name may
- * start or end with a dot, so "v1...v2" could be read two ways, and it means
- * something else to git.
+ * Reads tag_range: "<from>..<to>", "<from>.." for no end tag, in which case
+ * `to` is '', or "..<to>" for no start tag, in which case `from` is '' and the
+ * range starts at the beginning of the history. Returns null when the input is
+ * empty. A range needs at least one tag, so ".." alone is rejected. Tag names
+ * keep their case, as in tag_diff_base. Three dots are rejected rather than
+ * split: a tag name may start or end with a dot, so "v1...v2" could be read two
+ * ways, and it means something else to git.
  *
  * @returns {{ from: string, to: string } | null}
  */
@@ -139,13 +141,15 @@ function readTagRange() {
   if (
     parts.length !== 2 ||
     raw.includes(`${TAG_RANGE_SEPARATOR}.`) ||
-    !isSafeTagName(from) ||
+    (from === '' && to === '') ||
+    (from !== '' && !isSafeTagName(from)) ||
     (to !== '' && !isSafeTagName(to))
   ) {
     throw new Error(
       `tag_range "${raw}" is not a usable range. Write it as ` +
-        `"<from tag>${TAG_RANGE_SEPARATOR}<to tag>", e.g. "phase1${TAG_RANGE_SEPARATOR}phase2", or ` +
-        `"<from tag>${TAG_RANGE_SEPARATOR}" for everything since that tag; a name may use ` +
+        `"<from tag>${TAG_RANGE_SEPARATOR}<to tag>", e.g. "phase1${TAG_RANGE_SEPARATOR}phase2", ` +
+        `"<from tag>${TAG_RANGE_SEPARATOR}" for everything since that tag, or ` +
+        `"${TAG_RANGE_SEPARATOR}<to tag>" for everything up to that tag; a name may use ` +
         'letters, digits and . _ / - but no wildcards.',
     );
   }

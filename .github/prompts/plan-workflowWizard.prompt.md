@@ -32,7 +32,7 @@ Steps run from the student repositories, through what the AI should know about t
   pushBranches: ['main'],                // push only
   submissionTags: '',                    // tag only — comma/newline-separated tag names
   tagDiffBase: 'cumulative',             // tag only — 'cumulative' | 'previous-tag' | 'tag:<name>'
-  tagRangeFrom: '',                      // push and manual only — first tag of tag_range
+  tagRangeFrom: '',                      // push and manual only — first tag of tag_range; '' to start where starter_code does
   tagRangeTo: '',                        // push and manual only — second tag; '' for none
   dispatchOverridesEnabled: null,        // Manual runs step's Yes/No; null until answered
   dispatchOverrides: [...],              // ticked override keys, kept while the answer is No
@@ -108,14 +108,15 @@ Steps run from the student repositories, through what the AI should know about t
   "Only work since a tag you name" radio stores `tag:<name>` from a text box shown beneath it;
   `namedDiffBaseTagError` mirrors the action's `isSafeTagName` and blocks the step on an empty or
   unusable name
-- `tag_range` is emitted as `<from>..<to>` by `tagRangeValue(cfg)`, on the push and manual-only
+- `tag_range` is emitted as `<from>..<to>` by `tagRangeValue(cfg)`, either tag optional but not both, on the push and manual-only
   triggers alone (`offersTagRange`): a submission tag run already has an end, the pushed tag, and
   the "Only work since a tag you name" radio gives the same result while keeping `tag_diff_base`
   on the run form. It changes nothing under `on:`. `tagRangeError` mirrors the action's `readTagRange` and blocks the
-  Trigger step on a name it rejects, an end tag with no start tag, or the same tag at both ends;
+  Trigger step on a name it rejects or the same tag at both ends;
   `test/wizard-tag-range.test.js` compares the two. It is not a dispatch override, since it
-  narrows what gets assessed, like `base_sha`. The Review step's checklist tells the instructor
-  to give students the tag commands
+  narrows what gets assessed, like `base_sha`. A range with no start tag begins where a run
+  with no range does, so it leaves no earlier work and does not offer `previousWork`. The Review step's
+  checklist tells the instructor to give students the tag commands
 - `tag_diff_base` is a `tagTriggerOnly` dispatch override (`type: 'choice'`, options
   `cumulative` / `previous-tag`, plus the configured `tag:<name>` value appended by
   `dispatchInputLines` when one is set): it is offered on the
@@ -276,7 +277,7 @@ opens.
    `submission_tags` carry the same list, the step blocks with no tags or an unsupported pattern,
    and switching back to push drops `tag_diff_base` from both the output and the override list.
    On push and manual only, From tag and To tag write `tag_range` without changing `on:`, an end
-   tag alone or an unsupported name blocks the step, and push shows the warning; switching to tag
+   tag alone writes `..<to>` and hides the earlier-work checkbox, an unsupported name blocks the step, and push shows the warning; switching to tag
    mode drops `tag_range`
 5. Choose a pre-tested model, then "Own Choice" — the model picker appears, Next is blocked until a model is picked from it, and the picked ID reaches the YAML
 6. Clear the API key secret name — the step blocks with a validation message; `api_key` is always present in the output

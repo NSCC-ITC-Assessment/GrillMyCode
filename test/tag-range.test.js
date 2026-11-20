@@ -9,6 +9,7 @@ import {
   resolveTagRangeBranch,
   tagRangeText,
 } from '../src/context.js';
+import { GIT_EMPTY_TREE_SHA } from '../src/constants.js';
 import { findCodebaseContextFiles } from '../src/files.js';
 import { formatReport } from '../src/report.js';
 
@@ -129,6 +130,60 @@ describe('tag_range', () => {
       inputs('phase1', 'phase2', { starterCode: 'none' }),
     );
     expect(baseSha).toBe(commits.one);
+  });
+
+  describe('with no start tag', () => {
+    it.each([
+      ['ignore', () => commits.first],
+      ['context', () => commits.first],
+      ['none', () => GIT_EMPTY_TREE_SHA],
+    ])('starts where starter_code %s does', async (starterCode, base) => {
+      const result = await resolveSHAs(
+        dispatchCtx(),
+        octokit,
+        inputs('', 'phase2', { starterCode }),
+      );
+      expect(result.baseSha).toBe(base());
+      expect(result.headSha).toBe(commits.two);
+      expect(result.previousTag).toBeNull();
+    });
+
+    it('fails when the end tag is missing', async () => {
+      await expect(resolveSHAs(dispatchCtx(), octokit, inputs('', 'nope'))).rejects.toThrow(
+        /no tag "nope"/,
+      );
+    });
+
+    it('gives way to base_sha', async () => {
+      const { baseSha } = await resolveSHAs(
+        dispatchCtx(),
+        octokit,
+        inputs('', 'phase2', { baseSha: commits.one }),
+      );
+      expect(baseSha).toBe(commits.one);
+    });
+
+    it('is a submission when the run started on its end tag', async () => {
+      const { baseSha, headSha } = await resolveSHAs(
+        dispatchCtx(commits.two),
+        octokit,
+        inputs('', 'phase2', { submissionTags: ['phase*'] }),
+        { tagName: 'phase2' },
+      );
+      expect(baseSha).toBe(commits.first);
+      expect(headSha).toBe(commits.two);
+    });
+
+    it('fails a submission under another tag, and says to name that tag', async () => {
+      await expect(
+        resolveSHAs(
+          dispatchCtx(commits.two),
+          octokit,
+          inputs('', 'final', { submissionTags: ['phase*'] }),
+          { tagName: 'phase2' },
+        ),
+      ).rejects.toThrow(/Name "phase2" as the second tag, as in "\.\.phase2"/);
+    });
   });
 
   it('is not read as the event when the event has no usable SHA', async () => {
@@ -336,6 +391,7 @@ describe('tagRangeText', () => {
   it('writes the range as the workflow did', () => {
     expect(tagRangeText({ from: 'phase1', to: 'phase2' })).toBe('phase1..phase2');
     expect(tagRangeText({ from: 'phase1', to: '' })).toBe('phase1..');
+    expect(tagRangeText({ from: '', to: 'phase2' })).toBe('..phase2');
   });
 });
 

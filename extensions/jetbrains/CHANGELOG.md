@@ -5,6 +5,12 @@ Each heading is a version as `gradle.properties` writes it.
 
 ## [Unreleased]
 
+### Changed
+
+- A tag range may leave out its first tag, as in `..phase2`, to assess all the
+  work up to that tag. The Workflow Wizard's **From tag** is optional, and the
+  workflow checks accept the range.
+
 ## [0.4.0]
 
 ### Added
