@@ -1899,8 +1899,6 @@
       "firebase-debug.*.log",
       "**/.firebaserc",
       "**/.firebaserc/**",
-      "firebase.json",
-      "firebase.json/**",
       "**/*.cache",
       "hosting/.cache",
       "hosting/.cache/**",
