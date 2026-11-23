@@ -181,6 +181,7 @@
     ".cdc": "Cadence",
     ".cdf": "Wolfram Language",
     ".cds": "CAP CDS",
+    ".cedar": "Cedar",
     ".ceylon": "Ceylon",
     ".cfc": "ColdFusion",
     ".cfm": "ColdFusion",
@@ -466,6 +467,7 @@
     ".god": "Ruby",
     ".gohtml": "Go Template",
     ".golo": "Golo",
+    ".goose": "Goose",
     ".gotmpl": "Go Template",
     ".gp": "Gnuplot",
     ".grace": "Grace",
@@ -627,6 +629,7 @@
       "KFramework"
     ],
     ".kak": "KakouneScript",
+    ".kerml": "KerML",
     ".kid": "Genshi",
     ".kit": "Kit",
     ".kk": "Koka",
@@ -1208,6 +1211,7 @@
     ".swg": "SWIG",
     ".swift": "Swift",
     ".swig": "SWIG",
+    ".sysml": "SysML",
     ".t": [
       "Perl",
       "Raku",
